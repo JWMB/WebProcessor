@@ -1,0 +1,9 @@
+{
+  {
+    "customData": {
+      "unlockAllPlanets": true,
+      "canLogout": true,
+      "menuButton": true
+    }
+  }
+}
