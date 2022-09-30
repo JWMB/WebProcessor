@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PluginModuleBase;
 using ProblemSource.Models;
+using ProblemSource.Models.Statistics;
 using ProblemSource.Services;
 using Shouldly;
 
@@ -23,7 +24,8 @@ namespace ProblemSource.Tests
 
             dataSink = fixture.Create<IDataSink>();
             userStateRepository = fixture.Create<IUserStateRepository>();
-            pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(), fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>());
+            pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(), 
+                fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IPhaseRepository>());
         }
 
         [Fact]
@@ -80,6 +82,49 @@ namespace ProblemSource.Tests
 
             state.training_plan.metaphor.ShouldBe("Magical");
             state.training_settings.customData.unlockAllPlanets.ShouldBe(true);
+        }
+
+        [Fact]
+        public void X()
+        {
+            var logItems = new List<LogItem>
+            {
+                new NewPhaseLogItem { time = 1, exercise = "A" },
+                new NewProblemLogItem { time = 2 },
+                new AnswerLogItem { time = 3 }
+            };
+            PrepareLog(logItems);
+
+            var phasesResult = LogEventsToPhases.Create(logItems);
+
+            phasesResult.PhasesCreated.Count.ShouldBe(1);
+            phasesResult.Errors.ShouldBeEmpty();
+
+            logItems = new List<LogItem> {
+                new SyncLogStateLogItem { type = "ALREADY_SYNCED" },
+            }.Concat(logItems)
+            .Concat(new List<LogItem> {
+                new SyncLogStateLogItem { type = "NOT_SYNCED" },
+                new NewProblemLogItem { time = 6 },
+                new AnswerLogItem { time = 7 },
+                new PhaseEndLogItem { time = 8 },
+                new NewPhaseLogItem { time = 9, exercise = "B" },
+                new NewProblemLogItem { time = 10 },
+                new AnswerLogItem { time = 11 },
+                new PhaseEndLogItem { time = 12 },
+            }).ToList();
+
+            var newPhasesResult = LogEventsToPhases.Create(logItems, phasesResult.PhasesCreated);
+            newPhasesResult.PhasesUpdated.Count.ShouldBe(1);
+            newPhasesResult.PhasesCreated.Count.ShouldBe(1);
+        }
+
+        private void PrepareLog(IEnumerable<LogItem> logItems)
+        {
+            foreach (var item in logItems)
+            {
+                item.className = item.GetType().Name;
+            }
         }
     }
 }

@@ -38,6 +38,7 @@
         public int sequence { get; set; }
         public string phase_type { get; set; } = ""; 
     }
+
     public class NewProblemLogItem : LogItem
     {
         public static string _type = "NEW_PROBLEM";
@@ -45,6 +46,7 @@
         public string problem_string { get; set; } = "";
         public decimal level { get; set; } = 0; //Number.NaN;
     }
+
     public class PhaseEndLogItem : LogItem
     {
         public static string _type = "PHASE_END";
@@ -59,6 +61,7 @@
         public bool wonRace { get; set; }
         public bool completedPlanet { get; set; }
     }
+
     public class AnswerLogItem : LogItem
     {
         public static string _type = "ANSWER";
@@ -77,4 +80,45 @@
         public object? user_data { get; set; }
     }
 
+    public class EndOfDayLogItem : LogItem
+    {
+        public static string _type = "END_OF_DAY";
+
+        public int training_day { get; set; }
+    }
+
+    public class LeaveTestLogItem : LogItem
+    {
+        public static string _type = "LEAVE_TEST";
+
+        public int training_day { get; set; }
+    }
+
+    public class SyncLogStateLogItem : LogItem
+    {
+        public static string _type = "ALREADY_SYNCED"; // "NOT_SYNCED";
+
+        public bool syncedUpToHere { get; set; }
+    }
+    public class SyncInfoLogItem : LogItem
+    {
+        public static string _type = "SYNC";
+
+        public bool syncedUpToHere { get; set; }
+
+        public bool isStartMarker { get; set; }
+        public bool success { get; set; }
+        public string error { get; set; }
+    }
+
+
+    public class ErrorLogItem : LogItem
+    {
+        public static string _type = "ERROR";
+
+        //timeStamp: Date;
+        public string level { get; set; } = string.Empty; //error level (INFO, WARNING, ERROR, FATAL etc)
+        public object[]? messages { get; set; }
+        public object? exception { get; set; }
+    }
 }

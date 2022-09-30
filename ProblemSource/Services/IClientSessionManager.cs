@@ -2,7 +2,7 @@
 {
     public interface IClientSessionManager
     {
-        GetOrCreateSessionResult GetOrOpenSession(string? sessionToken);
+        GetOrCreateSessionResult GetOrOpenSession(string userId, string? sessionToken = null);
     }
 
     public class Session
@@ -13,45 +13,42 @@
             Overtaken,
             Purged
         }
+
         private class CallInfo
         {
-            public DateTime Time { get; set; }
-            public CallInfo()
-            {
-                Time = DateTime.Now;
-            }
+            public DateTime Time { get; } = DateTime.Now;
         }
-        public SessionStates SessionState { get; set; } //private set
-        private List<CallInfo> Calls = new List<CallInfo>();
-        public string SessionToken { get; set; }
-        //public string ApiKey { get; set; }
 
-        public DateTime StartTime  => Calls[0].Time;
-        public DateTime LastActivityTime  => Calls[^1].Time;
-        public int NumCalls => Calls.Count;
+        public SessionStates SessionState { get; set; }
+        public readonly string SessionToken = Guid.NewGuid().ToString();
+        public string UserId { get; }
 
-        public Session()
+        private List<CallInfo> calls = new();
+
+        //public DateTime StartTime => Calls.First().Time;
+        //public int NumCalls => Calls.Count;
+        public DateTime LastActivityTime => calls.Last().Time;
+
+        public Session(string userId)
         {
+            UserId = userId;
             MadeCall();
             SessionState = SessionStates.Active;
         }
         public void MadeCall()
         {
-            Calls.Add(new CallInfo { });
+            calls.Add(new CallInfo());
         }
+
+        // TODO: put cached data here? (e.g. TrainingDay / Phase stats)
+        // or in completely separate services?
     }
 
     public class GetOrCreateSessionResult
     {
         public bool AlreadyExisted { get; set; }
-        public Session Session { get; private set; }
-        public ErrorTypes Error { get; set; } = ErrorTypes.OK;
-
-
-        public GetOrCreateSessionResult(Session session)
-        {
-            Session = session;
-        }
+        public Session Session { get; }
+        public ErrorTypes Error { get; set; }
 
         public enum ErrorTypes
         {
@@ -60,40 +57,33 @@
             SessionWasPurged,
             SessionWasOvertaken
         }
+
+        public GetOrCreateSessionResult(Session session)
+        {
+            Session = session;
+        }
     }
 
     public class InMemorySessionManager : IClientSessionManager
     {
-        List<Session> _sessions = new List<Session>();
-        object _listLock = new object();
+        private object _listLock = new object();
+        private List<Session> sessions = new();
 
-        List<Session> Purge_NO_LOCK()
-        {
-            var timeLimit = DateTime.Now.AddMinutes(-20);
-            var toPurge = _sessions.Where(_ => _.SessionState != Session.SessionStates.Purged && _.LastActivityTime < timeLimit).ToList();
-            toPurge.ForEach(_ => _.SessionState = Session.SessionStates.Purged);
-
-            timeLimit = timeLimit.AddMinutes(-5);
-            var toRemove = _sessions.Where(_ => _.SessionState == Session.SessionStates.Purged && _.LastActivityTime < timeLimit).ToList();
-            _sessions.RemoveAll(_ => toRemove.Contains(_));
-
-            return toPurge;
-        }
-
-        public GetOrCreateSessionResult GetOrOpenSession(string? sessionToken) //SyncInData sid)
+        public GetOrCreateSessionResult GetOrOpenSession(string userId, string? sessionToken = null)
         {
             lock (_listLock)
             {
-                Purge_NO_LOCK();
+                Purge();
+                var found = string.IsNullOrEmpty(sessionToken) ? null : sessions.FirstOrDefault(_ => _.SessionToken == sessionToken);
                 var error = GetOrCreateSessionResult.ErrorTypes.OK;
 
-                var found = sessionToken == null ? null : _sessions.Find(_ => _.SessionToken == sessionToken);
                 if (found != null)
                 {
                     if (found.SessionState != Session.SessionStates.Active)
                     {
-                        error = found.SessionState == Session.SessionStates.Purged ?
-                            GetOrCreateSessionResult.ErrorTypes.SessionWasPurged : GetOrCreateSessionResult.ErrorTypes.SessionWasOvertaken;
+                        error = found.SessionState == Session.SessionStates.Purged
+                            ? GetOrCreateSessionResult.ErrorTypes.SessionWasPurged
+                            : GetOrCreateSessionResult.ErrorTypes.SessionWasOvertaken;
                     }
                     else
                     {
@@ -102,7 +92,7 @@
                 }
                 else
                 {
-                    var otherOngoing = _sessions.Where(_ => /*_.ApiKey == sid.ApiKey &&*/ _.SessionState == Session.SessionStates.Active).ToList();
+                    var otherOngoing = sessions.Where(_ => _.UserId == userId && _.SessionState == Session.SessionStates.Active).ToList();
                     if (otherOngoing.Count > 0)
                     {
                         //TODO: send message to others and await logout, timeout or activity from them.
@@ -110,34 +100,34 @@
                         otherOngoing.ForEach(_ => _.SessionState = Session.SessionStates.Overtaken);
                     }
                 }
-                var result = new GetOrCreateSessionResult(found == null ? CreateSession_NO_LOCK() : found)
+                var result = new GetOrCreateSessionResult(found == null ? CreateSession(userId) : found)
                 {
                     AlreadyExisted = found != null,
                     Error = error
                 };
                 return result;
             }
-        }
-        private Session CreateSession_NO_LOCK() //SyncInData sid
-        {
-            var s = new Session() { SessionToken = Guid.NewGuid().ToString(), /*ApiKey = sid.ApiKey*/ };
-            this._sessions.Add(s);
-            return s;
-        }
-        private Session CreateSession() //SyncInData sid
-        {
-            lock (_listLock)
+
+            List<Session> Purge()
             {
-                Purge_NO_LOCK();
-                return CreateSession_NO_LOCK();
+                var timeLimit = DateTime.Now.AddMinutes(-20);
+                var toPurge = sessions.Where(_ => _.SessionState != Session.SessionStates.Purged && _.LastActivityTime < timeLimit).ToList();
+                toPurge.ForEach(_ => _.SessionState = Session.SessionStates.Purged);
+
+                timeLimit = timeLimit.AddMinutes(-5);
+                var toRemove = sessions.Where(_ => _.SessionState == Session.SessionStates.Purged && _.LastActivityTime < timeLimit).ToList();
+                sessions.RemoveAll(_ => toRemove.Contains(_));
+
+                return toPurge;
             }
-        }
-        private void CloseSession(Session s)
-        {
-            lock (_listLock)
+
+            Session CreateSession(string userId)
             {
-                _sessions.Remove(s);
+                var session = new Session(userId);
+                sessions.Add(session);
+                return session;
             }
         }
     }
 }
+

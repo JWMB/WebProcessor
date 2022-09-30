@@ -1,7 +1,9 @@
 ﻿using Newtonsoft.Json;
 using PluginModuleBase;
 using ProblemSource.Models;
+using ProblemSource.Models.Statistics;
 using ProblemSource.Services;
+using System.Security.Principal;
 
 namespace ProblemSource
 {
@@ -12,15 +14,17 @@ namespace ProblemSource
         private readonly IClientSessionManager sessionManager;
         private readonly IDataSink dataSink;
         private readonly IEventDispatcher eventDispatcher;
+        private readonly IPhaseRepository phaseRepository;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
-            IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher)
+            IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IPhaseRepository phaseRepository)
         {
             this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;
             this.sessionManager = sessionManager;
             this.dataSink = dataSink;
             this.eventDispatcher = eventDispatcher;
+            this.phaseRepository = phaseRepository;
         }
 
         public async Task<object?> Process(object input)
@@ -45,7 +49,7 @@ namespace ProblemSource
 
             var result = new SyncResult();
 
-            var sessionInfo = sessionManager.GetOrOpenSession(root.SessionToken);
+            var sessionInfo = sessionManager.GetOrOpenSession(root.Uuid, root.SessionToken);
             if (sessionInfo.Error != GetOrCreateSessionResult.ErrorTypes.OK)
                 result.error = sessionInfo.Error.ToString();
             result.sessionToken = sessionInfo.Session.SessionToken;
@@ -89,69 +93,84 @@ namespace ProblemSource
                 result.state = JsonConvert.SerializeObject(fullState);
             }
 
-            var stateIndices = GetUserStatePushLogItemIndices(root);
-            if (stateIndices.Any())
+            if (root.Events.Any() == true)
             {
-                var lastItem = root.Events[stateIndices.Last()];
-                var asJson = JsonConvert.SerializeObject(lastItem);
-                var pushedStateItem = JsonConvert.DeserializeObject<UserStatePushLogItem>(asJson);
+                var logItems = DeserializeEvents(root.Events);
+                var userStates = logItems.OfType<UserStatePushLogItem>();
+                if (userStates.Any())
+                {
+                    await HandleUserState(root.Uuid, userStates.Last());
+                }
+
+                //logItems.OfType<ErrorLogItem>()
 
                 {
                     // Log incoming data - but remove large State items
-                    var clearedEvents = new List<object>(root.Events);
-                    for (int i = stateIndices.Count - 1; i >= 0; i--)
-                        clearedEvents.RemoveAt(stateIndices[i]);
-                    root.Events = clearedEvents.ToArray(); // Warning: modifying incoming data instead of making a copy
+                    // Warning: modifying incoming data instead of making a copy
+                    root.Events = root.Events.Where(o => ((dynamic)o).className != "UserStatePushLogItem").ToArray();
 
                     await dataSink.Log(root.Uuid, root);
                 }
 
-                if (pushedStateItem == null)
+                // TODO: Move to async service (Azure (Durable) Functions maybe)?
+                // But what if we want to adapt response depending on some analysis? Then it needs to be handled right here
+
+                // TODO: We may also need previous data, e.g. if this sync doesn't contain the new phase or new problem items
+                // logItems.OfType<NewPhaseLogItem>().Min(o => o.training_day)
+                var preexisting = await phaseRepository.Get(root.Uuid);
+                var phasesResult = LogEventsToPhases.Create(logItems, preexisting);
+                if (phasesResult.Errors?.Any() == true)
                 {
-                    // TODO: log warning
+
+                }
+                var trainingDays = TrainingDayAccount.Create(root.Uuid, 0, phasesResult.AllPhases);
+                // get previous training days
+
+                var phaseStats = PhaseStatistics.Create(0, phasesResult.AllPhases);
+            }
+
+            return result;
+        }
+
+        private async Task HandleUserState(string uuid, UserStatePushLogItem lastItem)
+        {
+            var asJson = JsonConvert.SerializeObject(lastItem);
+            var pushedStateItem = JsonConvert.DeserializeObject<UserStatePushLogItem>(asJson);
+
+            if (pushedStateItem == null)
+            {
+                // TODO: log warning
+            }
+            else
+            {
+                var state = await userStateRepository.Get<UserGeneratedState>(uuid);
+                if (state != null && pushedStateItem.exercise_stats.trainingDay < state.exercise_stats.trainingDay)
+                {
+                    // TODO: warning - newer data on server
                 }
                 else
                 {
-                    var state = await userStateRepository.Get<UserGeneratedState>(root.Uuid);
-                    if (state != null && pushedStateItem.exercise_stats.trainingDay < state.exercise_stats.trainingDay)
-                    {
-                        // TODO: warning - newer data on server
-                    }
-                    else
-                    {
-                        var asDynamic = JsonConvert.DeserializeObject<dynamic>(asJson); // so as to keep any non-typed properties/data
-                        await userStateRepository.Set(root.Uuid, new { exercise_stats = asDynamic.exercise_stats, user_data = asDynamic.user_data });
-                    }
+                    var asDynamic = JsonConvert.DeserializeObject<dynamic>(asJson); // so as to keep any non-typed properties/data
+                    await userStateRepository.Set(uuid, new { exercise_stats = asDynamic.exercise_stats, user_data = asDynamic.user_data });
                 }
             }
+        }
 
-            //if (root.Events?.Any() == true)
-            //{
-            //    for (int i = root.Events.Count() - 1; i >= 0; i--)
-            //    {
-            //        var s = JsonConvert.SerializeObject(root.Events[i]);
-            //        var item = JsonConvert.DeserializeObject<LogItem>(s);
-            //        if (item?.className == "UserStatePushLogItem")
-            //        {
-            //            var pushedStateItem = JsonConvert.DeserializeObject<UserStatePushLogItem>(s);
-            //            if (pushedStateItem != null)
-            //            {
-            //                var state = await userStateRepository.Get<UserGeneratedState>(root.Uuid);
-            //                if (state != null && pushedStateItem.exercise_stats.trainingDay < state.exercise_stats.trainingDay)
-            //                {
-            //                    // TODO: warning - newer data on server
-            //                }
-            //                else
-            //                {
-            //                    var asDynamic = JsonConvert.DeserializeObject<dynamic>(s); // so as to keep any non-typed properties/data
-            //                    await userStateRepository.Set(root.Uuid, new { exercise_stats = asDynamic.exercise_stats, user_data = asDynamic.user_data });
-            //                }
-            //            }
-            //            break;
-            //        }
-            //    }
-            //}
-            return result;
+        private List<LogItem> DeserializeEvents(object[] events)
+        {
+            var nameToType = GetType().Assembly.GetTypes().Where(o => typeof(LogItem).IsAssignableFrom(o)).ToDictionary(o => o.Name, o => o);
+            return events.Select(item =>
+            {
+                var className = (string)((dynamic)item).className;
+                if (nameToType.TryGetValue(className, out var type))
+                {
+                    var asJson = JsonConvert.SerializeObject(item);
+                    var typed = JsonConvert.DeserializeObject(asJson, type);
+                    return typed as LogItem;
+                }
+                return null;
+            }).OfType<LogItem>()
+            .ToList();
         }
 
         private List<int> GetUserStatePushLogItemIndices(SyncInput root)
