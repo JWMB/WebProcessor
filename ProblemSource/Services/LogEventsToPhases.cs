@@ -19,7 +19,6 @@ namespace ProblemSource.Services
         public static Result Create(IEnumerable<LogItem> logItems, IEnumerable<Phase>? preexisting = null)
         {
             var isAlreadySynced = false;
-            var skipToNewSession = false;
 
             Phase? currentPhase = null;
             Problem? currentProblem = null;
@@ -31,13 +30,7 @@ namespace ProblemSource.Services
 
             foreach (var item in logItems.Where(o => !(o is UserStatePushLogItem)))
             {
-                if (skipToNewSession && item.type != "NEW_SESSION")
-                {
-                    result.Unprocessed.Add(item);
-                    continue;
-                }
-                skipToNewSession = false;
-
+                // Note: Client does not implement the NEW_SESSION item - removed related code
                 if (item.type == "ALREADY_SYNCED")
                     isAlreadySynced = true;
                 else if (item.type == "NEW_SESSION" || item.type == "NOT_SYNCED")
@@ -52,12 +45,11 @@ namespace ProblemSource.Services
                         if (currentPhase == null)
                         {
                             result.Errors.Add($"Old phase not found: {newPhase.time} {newPhase.exercise}");
-                            skipToNewSession = true;
                         }
                         else
                         {
                             isCurrentPhasePreexisting = true;
-                            //result.PhasesUpdated.Add(currentPhase);
+                            result.PhasesUpdated.Add(currentPhase);
                         }
                     }
                     else
