@@ -25,6 +25,10 @@ namespace ProblemSource.Services
             Problem? currentProblem = null;
             var result = new Result();
 
+            var isCurrentPhasePreexisting = false;
+            var isCurrentProblemPreexisting = false;
+
+
             foreach (var item in logItems.Where(o => !(o is UserStatePushLogItem)))
             {
                 if (skipToNewSession && item.type != "NEW_SESSION")
@@ -41,6 +45,7 @@ namespace ProblemSource.Services
 
                 if (item is NewPhaseLogItem newPhase)
                 {
+                    isCurrentPhasePreexisting = false;
                     if (isAlreadySynced)
                     {
                         currentPhase = preexisting?.FirstOrDefault(o => o.time == item.time && o.exercise == newPhase.exercise && o.phase_type == newPhase.phase_type && o.sequence == newPhase.sequence);
@@ -51,7 +56,8 @@ namespace ProblemSource.Services
                         }
                         else
                         {
-                            result.PhasesUpdated.Add(currentPhase);
+                            isCurrentPhasePreexisting = true;
+                            //result.PhasesUpdated.Add(currentPhase);
                         }
                     }
                     else
@@ -69,17 +75,7 @@ namespace ProblemSource.Services
                             result.Unprocessed.Add(item);
                             continue;
                         }
-
-                        var numWithCorrect = currentPhase.problems.SumOrDefault(_ => _.answers.Exists(p => p.correct) ? 1 : 0, 0);
-                        var lastProb = currentPhase.problems.Last();
-                        var lastTime = lastProb.time;
-                        if (lastProb.answers.Any())
-                        {
-                            var lastAnsw = lastProb.answers.Last();
-                            lastTime = lastAnsw.time; //TODO: or add lastAnsw.response_time?
-                        }
                         currentPhase.user_test = UserTest.Create(phaseEnd);
-                        currentPhase.time = lastTime;
                         currentPhase = null;
                     }
                     else if (item is NewProblemLogItem newProblem)
@@ -91,13 +87,7 @@ namespace ProblemSource.Services
                             if (currentPhase == null)
                             {
                                 result.Errors.Add($"No phase found for problem time={item.time} {newProblem.problem_type} {newProblem.problem_string}");
-                                currentPhase = new Phase
-                                {
-                                    exercise = "N/A",
-                                    time = item.time,
-                                    phase_type = "N/A",
-                                    training_day = preexisting?.Max(o => o.training_day) ?? 0,
-                                };
+                                currentPhase = Phase.CreateUnknown(item.time, preexisting?.Max(o => o.training_day) ?? 0);
                                 result.PhasesCreated.Add(currentPhase);
                             }
                         }
@@ -122,6 +112,9 @@ namespace ProblemSource.Services
                     {
                         if (item is AnswerLogItem answer)
                         {
+                            if (isAlreadySynced)
+                                continue;
+
                             if (currentPhase == null)
                             {
                                 result.Unprocessed.Add(item);
@@ -137,14 +130,26 @@ namespace ProblemSource.Services
                                 currentProblem = new Problem();
                             }
 
-                            if (isAlreadySynced)
-                                continue;
                             currentProblem.answers.Add(Answer.Create(answer));
                         }
                     }
                 }
             }
             return result;
+        }
+
+        private static void UpdateCurrentPhaseEnded(Phase currentPhase)
+        {
+            // TODO: where does this go? Part of PhaseStatistics instead?
+            var numWithCorrect = currentPhase.problems.SumOrDefault(_ => _.answers.Exists(p => p.correct) ? 1 : 0, 0);
+            var lastProb = currentPhase.problems.Last();
+            var lastTime = lastProb.time;
+            if (lastProb.answers.Any())
+            {
+                var lastAnsw = lastProb.answers.Last();
+                lastTime = lastAnsw.time; //TODO: or add lastAnsw.response_time?
+            }
+            // TODO: this can't be right: currentPhase.time = lastTime; Set somewhere in
         }
 
         //public static SyncedData CreatePhases(Account account, JArray json)

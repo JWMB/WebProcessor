@@ -140,6 +140,17 @@ namespace ProblemSource.Models.Statistics
             };
         }
 
+        public static Phase CreateUnknown(long time, int trainingDay)
+        {
+            return new Phase
+            {
+                exercise = "N/A",
+                time = time,
+                phase_type = "N/A",
+                training_day = trainingDay,
+            };
+        }
+
         public static Phase FromRow(DataRow row)
         {
             var p = new Phase
