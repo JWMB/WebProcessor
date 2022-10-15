@@ -1,7 +1,14 @@
-﻿namespace ProblemSource.Services
+﻿using Azure;
+using Azure.Data.Tables;
+using Newtonsoft.Json;
+using ProblemSource.Models.Statistics;
+using ProblemSource.Services.Storage;
+
+namespace ProblemSource.Services
 {
     public interface IClientSessionManager
     {
+        // TODO: if we have >1 server instances, this session concept doesn't work. Sure, ARRAffinity but instances can be recycled
         GetOrCreateSessionResult GetOrOpenSession(string userId, string? sessionToken = null);
     }
 
@@ -40,8 +47,32 @@
             calls.Add(new CallInfo());
         }
 
-        // TODO: put cached data here? (e.g. TrainingDay / Phase stats)
-        // or in completely separate services?
+        public IUserGeneratedRepositories? UserRepositories { get; set; }
+    }
+
+    public interface IUserGeneratedRepositories
+    {
+        IRepository<Phase> Phases { get; }
+        IRepository<TrainingDayAccount> TrainingDays { get; }
+        IRepository<PhaseStatistics> PhaseStatistics { get; }
+    }
+
+    public class UserGeneratedRepositories : IUserGeneratedRepositories
+    {
+        public UserGeneratedRepositories(ITableClientFactory tableClientFactory, string userId)
+        {
+            Phases = new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases, p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), userId);
+            TrainingDays = new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays, p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), userId);
+            PhaseStatistics = Create<PhaseStatistics>(p => $"{p.timestamp}");
+
+            CachingUserAggregatesRepository<Tx> Create<Tx>(Func<Tx, string> idFunc) => new CachingUserAggregatesRepository<Tx>(new InMemoryRepository<Tx>(idFunc), idFunc);
+        }
+
+        public IRepository<Phase> Phases { get; }
+
+        public IRepository<TrainingDayAccount> TrainingDays { get; }
+
+        public IRepository<PhaseStatistics> PhaseStatistics { get; }
     }
 
     public class GetOrCreateSessionResult
@@ -74,20 +105,20 @@
             lock (_listLock)
             {
                 Purge();
-                var found = string.IsNullOrEmpty(sessionToken) ? null : sessions.FirstOrDefault(_ => _.SessionToken == sessionToken);
+                var foundBySessionToken = string.IsNullOrEmpty(sessionToken) ? null : sessions.FirstOrDefault(_ => _.SessionToken == sessionToken);
                 var error = GetOrCreateSessionResult.ErrorTypes.OK;
 
-                if (found != null)
+                if (foundBySessionToken != null)
                 {
-                    if (found.SessionState != Session.SessionStates.Active)
+                    if (foundBySessionToken.SessionState != Session.SessionStates.Active)
                     {
-                        error = found.SessionState == Session.SessionStates.Purged
+                        error = foundBySessionToken.SessionState == Session.SessionStates.Purged
                             ? GetOrCreateSessionResult.ErrorTypes.SessionWasPurged
                             : GetOrCreateSessionResult.ErrorTypes.SessionWasOvertaken;
                     }
                     else
                     {
-                        found.MadeCall();
+                        foundBySessionToken.MadeCall();
                     }
                 }
                 else
@@ -100,9 +131,9 @@
                         otherOngoing.ForEach(_ => _.SessionState = Session.SessionStates.Overtaken);
                     }
                 }
-                var result = new GetOrCreateSessionResult(found == null ? CreateSession(userId) : found)
+                var result = new GetOrCreateSessionResult(foundBySessionToken == null ? CreateSession(userId) : foundBySessionToken)
                 {
-                    AlreadyExisted = found != null,
+                    AlreadyExisted = foundBySessionToken != null,
                     Error = error
                 };
                 return result;

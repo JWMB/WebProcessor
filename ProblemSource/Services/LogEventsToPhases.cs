@@ -24,9 +24,8 @@ namespace ProblemSource.Services
             Problem? currentProblem = null;
             var result = new Result();
 
-            var isCurrentPhasePreexisting = false;
-            var isCurrentProblemPreexisting = false;
-
+            //var isCurrentPhasePreexisting = false;
+            //var isCurrentProblemPreexisting = false;
 
             foreach (var item in logItems.Where(o => !(o is UserStatePushLogItem)))
             {
@@ -34,27 +33,34 @@ namespace ProblemSource.Services
                 if (item.type == "ALREADY_SYNCED")
                     isAlreadySynced = true;
                 else if (item.type == "NEW_SESSION" || item.type == "NOT_SYNCED")
+                {
+                    if (isAlreadySynced)
+                    {
+
+                    }
                     isAlreadySynced = false;
+                }
 
                 if (item is NewPhaseLogItem newPhase)
                 {
-                    isCurrentPhasePreexisting = false;
+                    //isCurrentPhasePreexisting = false;
                     if (isAlreadySynced)
                     {
                         currentPhase = preexisting?.FirstOrDefault(o => o.time == item.time && o.exercise == newPhase.exercise && o.phase_type == newPhase.phase_type && o.sequence == newPhase.sequence);
                         if (currentPhase == null)
                         {
-                            result.Errors.Add($"Old phase not found: {newPhase.time} {newPhase.exercise}");
+                            HandleMissingParent(newPhase);
                         }
                         else
                         {
-                            isCurrentPhasePreexisting = true;
+                            //isCurrentPhasePreexisting = true;
                             result.PhasesUpdated.Add(currentPhase);
+                            // TODO: the phase might not actually be updated. Check it's current total # Q/A:s and compare with after - if no change, it hasn't been updated
                         }
                     }
                     else
                     {
-                        currentPhase = Phase.Create(newPhase);
+                        currentPhase = Phase.Create(newPhase); //userId
                         result.PhasesCreated.Add(currentPhase);
                     }
                 }
@@ -64,11 +70,13 @@ namespace ProblemSource.Services
                     {
                         if (currentPhase == null)
                         {
-                            result.Unprocessed.Add(item);
-                            continue;
+                            result.Unprocessed.Add(phaseEnd);
                         }
-                        currentPhase.user_test = UserTest.Create(phaseEnd);
-                        currentPhase = null;
+                        else
+                        {
+                            currentPhase.user_test = UserTest.Create(phaseEnd);
+                            currentPhase = null;
+                        }
                     }
                     else if (item is NewProblemLogItem newProblem)
                     {
@@ -89,9 +97,7 @@ namespace ProblemSource.Services
                             currentProblem = currentPhase.problems.FirstOrDefault(_ => _.time == item.time && _.problem_type == newProblem.problem_type && _.problem_string == newProblem.problem_string);
                             if (currentProblem == null)
                             {
-                                result.Errors.Add($"Old {nameof(Problem)} not found: {newProblem.time} {newProblem.problem_string}");
-                                result.Unprocessed.Add(item);
-                                continue;
+                                HandleMissingParent(newProblem);
                             }
                         }
                         else
@@ -109,17 +115,14 @@ namespace ProblemSource.Services
 
                             if (currentPhase == null)
                             {
-                                result.Unprocessed.Add(item);
-                                result.Errors.Add($"No phase for problem : {item.time} {item.className}");
+                                HandleMissingParent(answer);
                                 continue;
                             }
-
-                            if (currentProblem == null)
+                            else if (currentProblem == null)
                             {
                                 currentPhase.problems.FirstOrDefault(_ => _.time == item.time && _.problem_type == currentProblem.problem_type && _.problem_string == currentProblem.problem_string);
-
                                 result.Errors.Add($"No current problem : {item.time} {item.className}");
-                                currentProblem = new Problem();
+                                currentProblem = Problem.CreateUnknown(item.time);
                             }
 
                             currentProblem.answers.Add(Answer.Create(answer));
@@ -128,6 +131,12 @@ namespace ProblemSource.Services
                 }
             }
             return result;
+
+            void HandleMissingParent(LogItem item)
+            {
+                result.Unprocessed.Add(item);
+                result.Errors.Add($"Could not find parent of {item.GetType().Name} (time={item.time})");
+            }
         }
 
         private static void UpdateCurrentPhaseEnded(Phase currentPhase)

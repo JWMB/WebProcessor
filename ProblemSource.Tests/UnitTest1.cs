@@ -24,8 +24,8 @@ namespace ProblemSource.Tests
 
             dataSink = fixture.Create<IDataSink>();
             userStateRepository = fixture.Create<IUserStateRepository>();
-            pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(), 
-                fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IPhaseRepository>());
+            pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(),
+                fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>());
         }
 
         [Fact]
@@ -82,6 +82,43 @@ namespace ProblemSource.Tests
 
             state.training_plan.metaphor.ShouldBe("Magical");
             state.training_settings.customData.unlockAllPlanets.ShouldBe(true);
+        }
+
+        [Fact]
+        public async Task Sync()
+        {
+            // Arrange
+            var logItems = new List<LogItem> {
+                    new SyncLogStateLogItem { type = "NOT_SYNCED" },
+                    new NewPhaseLogItem { time = 5, exercise = "A" },
+                    new NewProblemLogItem { time = 6 },
+                    new AnswerLogItem { time = 7 },
+                    new PhaseEndLogItem { time = 8 },
+                    new NewPhaseLogItem { time = 9, exercise = "B" },
+                    new NewProblemLogItem { time = 10 },
+                    new AnswerLogItem { time = 11 },
+                    new PhaseEndLogItem { time = 12 },
+                };
+            PrepareLog(logItems);
+
+            var input = new SyncInput
+            {
+                ApiKey = "abc",
+                Uuid = fixture.Create<string>(),
+                Events = logItems.ToArray(),
+                RequestState = true,
+            };
+
+            var sessionManager = new InMemorySessionManager();
+            var pipeline = new ProblemSourceProcessingPipeline(fixture.Create<IUserStateRepository>(), new TrainingPlanRepository(),
+                sessionManager, fixture.Create<IDataSink>(), fixture.Create<IEventDispatcher>());
+
+            var syncResult = await pipeline.Sync(JsonConvert.SerializeObject(input));
+
+            var phaseRepo = sessionManager.GetOrOpenSession(input.Uuid, syncResult.sessionToken).Session.UserRepositories!.Phases;
+            (await phaseRepo.GetAll()).Count().ShouldBe(2);
+            //Mock.Get<IUserRepositories>().Verify
+            //Mock.Get<IRepository<Phase>>().Verify(o => o.AddOrUpdate(It.IsAny<IEnumerable<Phase>>)).
         }
 
         [Fact]

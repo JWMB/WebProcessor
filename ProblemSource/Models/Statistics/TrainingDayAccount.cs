@@ -117,6 +117,7 @@ namespace ProblemSource.Models.Statistics
     }
     public class Phase
     {
+        //public string uuid { get; set; }
         public int id { get; set; }
         public int training_day { get; set; }
         public string exercise { get; set; } = string.Empty;
@@ -124,14 +125,15 @@ namespace ProblemSource.Models.Statistics
         public long time { get; set; }
         public int sequence { get; set; }
         public List<Problem> problems { get; set; } = new(); 
-        public DateTime updated_at { get; set; }
+        //public DateTime updated_at { get; set; }
         //public List<UserTest> user_tests { get; set; }
         public UserTest? user_test { get; set; }
 
-        public static Phase Create(NewPhaseLogItem newPhase)
+        public static Phase Create(NewPhaseLogItem newPhase) //, string userId)
         {
             return new Phase
             {
+                //uuid = userId,
                 time = newPhase.time,
                 phase_type = newPhase.phase_type,
                 exercise = newPhase.exercise,
@@ -151,31 +153,33 @@ namespace ProblemSource.Models.Statistics
             };
         }
 
-        public static Phase FromRow(DataRow row)
-        {
-            var p = new Phase
-            {
-                id = (int)row["id"],
-                exercise = row["exercise"].ToString(),
-                training_day = (int)row["training_day"],
-                time = (long)row["time"],
-                updated_at = (DateTime)row["updated_at"],
-                problems = new List<Problem>()
-            };
-            //TODO: these shouldn't be null, right?
-            object obj = row["phase_type"]; //.ToString(),
-            if (obj == DBNull.Value)
-            {
-            }
-            else
-                p.phase_type = obj.ToString();
+        public string UniqueIdWithinUser => $"{training_day}_{exercise}_{time}";
 
-            obj = row["sequence"];
-            if (obj != DBNull.Value)
-                p.sequence = (int)obj;
+        //public static Phase FromRow(DataRow row)
+        //{
+        //    var p = new Phase
+        //    {
+        //        id = (int)row["id"],
+        //        exercise = row["exercise"].ToString(),
+        //        training_day = (int)row["training_day"],
+        //        time = (long)row["time"],
+        //        updated_at = (DateTime)row["updated_at"],
+        //        problems = new List<Problem>()
+        //    };
+        //    //TODO: these shouldn't be null, right?
+        //    object obj = row["phase_type"]; //.ToString(),
+        //    if (obj == DBNull.Value)
+        //    {
+        //    }
+        //    else
+        //        p.phase_type = obj.ToString();
 
-            return p;
-        }
+        //    obj = row["sequence"];
+        //    if (obj != DBNull.Value)
+        //        p.sequence = (int)obj;
+
+        //    return p;
+        //}
     }
     public class Problem
     {
@@ -199,6 +203,18 @@ namespace ProblemSource.Models.Statistics
                 time = newProblem.time,
             };
         }
+
+        public static Problem CreateUnknown(long time)
+        {
+            return new Problem
+            {
+                level = 0,
+                problem_string = "N/A",
+                problem_type = "N/A",
+                time = time,
+            };
+        }
+
 
         public static Problem FromRow(DataRow row)
         {

@@ -44,11 +44,9 @@ namespace ProblemSource.Services
         //public TableClient CreateTableClient(string tableName) =>
         //    new TableClient(new Uri(StorageUri), tableName, CreateCredentials());
 
-        public TableServiceClient CreateServiceClient() =>
-            new TableServiceClient(ConnectionString); // new Uri(StorageUri));
+        public TableServiceClient CreateServiceClient() => new TableServiceClient(ConnectionString); // new Uri(StorageUri));
 
-        public TableClient CreateTableClient(string tableName) =>
-            new TableClient(ConnectionString, tableName); // new Uri(StorageUri), tableName, CreateCredentials());
+        public TableClient CreateTableClient(string tableName) => new TableClient(ConnectionString, tableName); // new Uri(StorageUri), tableName, CreateCredentials());
 
         public static void SetLongString(TableEntity entity, string str, string prefix = "Data")
         {

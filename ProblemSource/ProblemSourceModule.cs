@@ -14,6 +14,8 @@ namespace ProblemSource
             services.AddSingleton<ITrainingPlanRepository, TrainingPlanRepository>();
             services.AddSingleton<ProblemSourceProcessingPipeline>();
             services.AddSingleton<IEventDispatcher, QueueEventDispatcher>(); //QueueEventDispatcher NullEventDispatcher
+
+
         }
 
         public void Configure(IServiceProvider serviceProvider)

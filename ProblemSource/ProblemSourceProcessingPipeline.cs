@@ -3,7 +3,10 @@ using PluginModuleBase;
 using ProblemSource.Models;
 using ProblemSource.Models.Statistics;
 using ProblemSource.Services;
+using ProblemSource.Services.Storage;
+using System.ComponentModel;
 using System.Security.Principal;
+using static ProblemSource.Services.LogEventsToPhases;
 
 namespace ProblemSource
 {
@@ -14,17 +17,15 @@ namespace ProblemSource
         private readonly IClientSessionManager sessionManager;
         private readonly IDataSink dataSink;
         private readonly IEventDispatcher eventDispatcher;
-        private readonly IPhaseRepository phaseRepository;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
-            IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IPhaseRepository phaseRepository)
+            IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher)
         {
             this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;
             this.sessionManager = sessionManager;
             this.dataSink = dataSink;
             this.eventDispatcher = eventDispatcher;
-            this.phaseRepository = phaseRepository;
         }
 
         public async Task<object?> Process(object input)
@@ -38,59 +39,21 @@ namespace ProblemSource
 
         public async Task<SyncResult> Sync(string jsonString)
         {
-            var root = JsonConvert.DeserializeObject<SyncInput>(jsonString);
-
-            if (root == null)
-                throw new ArgumentException("Cannot deserialize", nameof(jsonString));
-            if (root.ApiKey != "abc")
-                throw new ArgumentException("Incorrect value", nameof(root.ApiKey));
-            if (string.IsNullOrEmpty(root.Uuid))
-                throw new ArgumentNullException(nameof(root.Uuid));
-
             var result = new SyncResult();
+
+            var root = ParseJson(jsonString);
 
             var sessionInfo = sessionManager.GetOrOpenSession(root.Uuid, root.SessionToken);
             if (sessionInfo.Error != GetOrCreateSessionResult.ErrorTypes.OK)
                 result.error = sessionInfo.Error.ToString();
             result.sessionToken = sessionInfo.Session.SessionToken;
 
-            await eventDispatcher.Dispatch(root.Events);
+            await eventDispatcher.Dispatch(root.Events); // E.g. for real-time teacher view
 
             if (root.RequestState)
             {
-                var trainingPlanName = "testplan";
-                var trainingPlan = await trainingPlanRepository.Get(trainingPlanName);
-                if (trainingPlan == null)
-                    throw new Exception($"Training plan '{trainingPlanName}' does not exist");
-
-                var fullState = Newtonsoft.Json.Linq.JObject.FromObject(new UserFullState
-                {
-                    uuid = root.Uuid,
-                    training_plan = trainingPlan,
-                    training_settings = new TrainingSettings { customData = new CustomData { unlockAllPlanets = true }  }
-                });
-
-                if (trainingPlan.clientRequirements != null && trainingPlan.clientRequirements.Version != null)
-                {
-                    SemVerHelper.AssertClientVersion(root.ClientVersion?.Split(',')[^1], trainingPlan.clientRequirements.Version.Min, trainingPlan.clientRequirements.Version.Max);
-                }
-
-                var storedUserState = await userStateRepository.Get(root.Uuid);
-                if (storedUserState != null)
-                {
-                    var d = storedUserState as dynamic;
-                    if (d != null)
-                    {
-                        try
-                        {
-                            fullState["exercise_stats"] = d.exercise_stats;
-                            fullState["user_data"] = d.user_data;
-                        }
-                        catch (Exception ex)
-                        { }
-                    }
-                }
-                result.state = JsonConvert.SerializeObject(fullState);
+                // client wants TrainingPlan, stats for trained exercises, training day number etc
+                result.state = await CreateClientState(root);
             }
 
             if (root.Events.Any() == true)
@@ -102,8 +65,6 @@ namespace ProblemSource
                     await HandleUserState(root.Uuid, userStates.Last());
                 }
 
-                //logItems.OfType<ErrorLogItem>()
-
                 {
                     // Log incoming data - but remove large State items
                     // Warning: modifying incoming data instead of making a copy
@@ -112,24 +73,88 @@ namespace ProblemSource
                     await dataSink.Log(root.Uuid, root);
                 }
 
-                // TODO: Move to async service (Azure (Durable) Functions maybe)?
-                // But what if we want to adapt response depending on some analysis? Then it needs to be handled right here
-
-                // TODO: We may also need previous data, e.g. if this sync doesn't contain the new phase or new problem items
-                // logItems.OfType<NewPhaseLogItem>().Min(o => o.training_day)
-                var preexisting = await phaseRepository.Get(root.Uuid);
-                var phasesResult = LogEventsToPhases.Create(logItems, preexisting);
-                if (phasesResult.Errors?.Any() == true)
-                {
-
-                }
-                var trainingDays = TrainingDayAccount.Create(root.Uuid, 0, phasesResult.AllPhases);
-                // get previous training days
-
-                var phaseStats = PhaseStatistics.Create(0, phasesResult.AllPhases);
+                await UpdateAggregates(sessionInfo.Session, logItems, root.Uuid);
             }
 
             return result;
+        }
+
+        private async Task UpdateAggregates(Session session, List<LogItem> logItems, string userId)
+        {
+            // TODO: Move to async service (Azure (Durable) Functions maybe)?
+            // But if we want to adapt response depending on some analysis... Then it's easier to handle it right here (instead of waiting for separate service)
+
+            if (session.UserRepositories == null)
+            {
+                var tableFactory = new TableClientFactory();
+                await tableFactory.Init();
+                session.UserRepositories = new UserGeneratedRepositories(tableFactory, userId);
+            }
+
+            var phaseRepo = session.UserRepositories.Phases;
+            var phasesResult = LogEventsToPhases.Create(logItems, await phaseRepo.GetAll());
+            if (phasesResult.Errors?.Any() == true)
+            {
+            }
+            await phaseRepo.AddOrUpdate(phasesResult.AllPhases);
+
+            // TODO: both trainingday and phasestatistics need previous data as well (e.g. trained second half of training day in another session
+            // TODO: don't optimize early, re-run aggregation from scratch each time for now
+            var trainingDays = TrainingDayAccount.Create(userId, 0, phasesResult.AllPhases);
+            await session.UserRepositories.TrainingDays.AddOrUpdate(trainingDays);
+
+            var phaseStats = PhaseStatistics.Create(0, phasesResult.AllPhases);
+            await session.UserRepositories.PhaseStatistics.AddOrUpdate(phaseStats);
+        }
+
+        private SyncInput ParseJson(string jsonString)
+        {
+            var root = JsonConvert.DeserializeObject<SyncInput>(jsonString);
+
+            if (root == null)
+                throw new ArgumentException("Cannot deserialize", nameof(jsonString));
+            if (root.ApiKey != "abc")
+                throw new ArgumentException("Incorrect value", nameof(root.ApiKey));
+            if (string.IsNullOrEmpty(root.Uuid))
+                throw new ArgumentNullException(nameof(root.Uuid));
+            return root;
+        }
+
+        private async Task<string> CreateClientState(SyncInput root)
+        {
+            var trainingPlanName = "testplan";
+            var trainingPlan = await trainingPlanRepository.Get(trainingPlanName);
+            if (trainingPlan == null)
+                throw new Exception($"Training plan '{trainingPlanName}' does not exist");
+
+            var fullState = Newtonsoft.Json.Linq.JObject.FromObject(new UserFullState
+            {
+                uuid = root.Uuid,
+                training_plan = trainingPlan,
+                training_settings = new TrainingSettings { customData = new CustomData { unlockAllPlanets = true } }
+            });
+
+            if (trainingPlan.clientRequirements != null && trainingPlan.clientRequirements.Version != null)
+            {
+                SemVerHelper.AssertClientVersion(root.ClientVersion?.Split(',')[^1], trainingPlan.clientRequirements.Version.Min, trainingPlan.clientRequirements.Version.Max);
+            }
+
+            var storedUserState = await userStateRepository.Get(root.Uuid);
+            if (storedUserState != null)
+            {
+                var d = storedUserState as dynamic;
+                if (d != null)
+                {
+                    try
+                    {
+                        fullState["exercise_stats"] = d.exercise_stats;
+                        fullState["user_data"] = d.user_data;
+                    }
+                    catch (Exception ex)
+                    { }
+                }
+            }
+            return JsonConvert.SerializeObject(fullState);
         }
 
         private async Task HandleUserState(string uuid, UserStatePushLogItem lastItem)
