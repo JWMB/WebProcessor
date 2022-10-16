@@ -17,7 +17,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProblemSource.Tests", "ProblemSource.Tests\ProblemSource.Tests.csproj", "{4B7A7DDE-003A-45FF-9EF4-94ADD681D3CF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestClient", "TestClient\TestClient.csproj", "{2B2B67A3-2961-433B-9DD3-1322F0B83F52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProblemSourceTestClient", "TestClient\ProblemSourceTestClient.csproj", "{2B2B67A3-2961-433B-9DD3-1322F0B83F52}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

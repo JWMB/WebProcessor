@@ -1,6 +1,7 @@
 ﻿using Common;
 using ProblemSource.Models;
-using ProblemSource.Models.Statistics;
+using ProblemSource.Models.Aggregates;
+using ProblemSource.Models.LogItems;
 
 namespace ProblemSource.Services
 {

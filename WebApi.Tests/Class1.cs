@@ -46,10 +46,10 @@ namespace WebApi.Tests
         {
             var response = await Post("/api/sync/sync", new
             {
-                ApiKey = "abc",
+                //ApiKey = "abc",
                 Uuid = "abc"
             });
-            response.IsSuccessStatusCode.ShouldBe(true);
+            response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK);
             var doc = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         }
 

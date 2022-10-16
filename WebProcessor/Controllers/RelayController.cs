@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers
 {
+    // TODO: for backwards compatibility. This was used for load-balancing, but now, we'd do scalable multi-instance services with ARRAffinity instead
+
     [ApiController]
     //[EnableCors]
     [Route("api/[controller]/[action]")]

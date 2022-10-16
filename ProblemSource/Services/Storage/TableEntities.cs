@@ -1,7 +1,7 @@
 ﻿using Azure.Data.Tables;
 using Azure;
 using Newtonsoft.Json;
-using ProblemSource.Models.Statistics;
+using ProblemSource.Models.Aggregates;
 
 namespace ProblemSource.Services.Storage
 {

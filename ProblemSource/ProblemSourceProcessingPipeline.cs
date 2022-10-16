@@ -1,12 +1,9 @@
 ﻿using Newtonsoft.Json;
 using PluginModuleBase;
 using ProblemSource.Models;
-using ProblemSource.Models.Statistics;
+using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
-using System.ComponentModel;
-using System.Security.Principal;
-using static ProblemSource.Services.LogEventsToPhases;
 
 namespace ProblemSource
 {
@@ -17,15 +14,17 @@ namespace ProblemSource
         private readonly IClientSessionManager sessionManager;
         private readonly IDataSink dataSink;
         private readonly IEventDispatcher eventDispatcher;
+        private readonly IAggregationService aggregationService;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
-            IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher)
+            IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService)
         {
             this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;
             this.sessionManager = sessionManager;
             this.dataSink = dataSink;
             this.eventDispatcher = eventDispatcher;
+            this.aggregationService = aggregationService;
         }
 
         public async Task<object?> Process(object input)
@@ -56,7 +55,7 @@ namespace ProblemSource
                 result.state = await CreateClientState(root);
             }
 
-            if (root.Events.Any() == true)
+            if (root.Events?.Any() == true)
             {
                 var logItems = DeserializeEvents(root.Events);
                 var userStates = logItems.OfType<UserStatePushLogItem>();
@@ -73,48 +72,25 @@ namespace ProblemSource
                     await dataSink.Log(root.Uuid, root);
                 }
 
-                await UpdateAggregates(sessionInfo.Session, logItems, root.Uuid);
+                if (sessionInfo.Session.UserRepositories == null)
+                {
+                    // TODO: creating user repos must be done in an injected function
+                    var tableFactory = new TableClientFactory();
+                    await tableFactory.Init();
+                    sessionInfo.Session.UserRepositories = new UserGeneratedRepositories(tableFactory, root.Uuid);
+                }
+                await aggregationService.UpdateAggregates(sessionInfo.Session.UserRepositories, logItems, root.Uuid);
             }
 
             return result;
         }
 
-        private async Task UpdateAggregates(Session session, List<LogItem> logItems, string userId)
-        {
-            // TODO: Move to async service (Azure (Durable) Functions maybe)?
-            // But if we want to adapt response depending on some analysis... Then it's easier to handle it right here (instead of waiting for separate service)
-
-            if (session.UserRepositories == null)
-            {
-                var tableFactory = new TableClientFactory();
-                await tableFactory.Init();
-                session.UserRepositories = new UserGeneratedRepositories(tableFactory, userId);
-            }
-
-            var phaseRepo = session.UserRepositories.Phases;
-            var phasesResult = LogEventsToPhases.Create(logItems, await phaseRepo.GetAll());
-            if (phasesResult.Errors?.Any() == true)
-            {
-            }
-            await phaseRepo.AddOrUpdate(phasesResult.AllPhases);
-
-            // TODO: both trainingday and phasestatistics need previous data as well (e.g. trained second half of training day in another session
-            // TODO: don't optimize early, re-run aggregation from scratch each time for now
-            var trainingDays = TrainingDayAccount.Create(userId, 0, phasesResult.AllPhases);
-            await session.UserRepositories.TrainingDays.AddOrUpdate(trainingDays);
-
-            var phaseStats = PhaseStatistics.Create(0, phasesResult.AllPhases);
-            await session.UserRepositories.PhaseStatistics.AddOrUpdate(phaseStats);
-        }
-
-        private SyncInput ParseJson(string jsonString)
+        private static SyncInput ParseJson(string jsonString)
         {
             var root = JsonConvert.DeserializeObject<SyncInput>(jsonString);
 
             if (root == null)
                 throw new ArgumentException("Cannot deserialize", nameof(jsonString));
-            if (root.ApiKey != "abc")
-                throw new ArgumentException("Incorrect value", nameof(root.ApiKey));
             if (string.IsNullOrEmpty(root.Uuid))
                 throw new ArgumentNullException(nameof(root.Uuid));
             return root;
@@ -181,9 +157,9 @@ namespace ProblemSource
             }
         }
 
-        private List<LogItem> DeserializeEvents(object[] events)
+        private static List<LogItem> DeserializeEvents(object[] events)
         {
-            var nameToType = GetType().Assembly.GetTypes().Where(o => typeof(LogItem).IsAssignableFrom(o)).ToDictionary(o => o.Name, o => o);
+            var nameToType = typeof(LogItem).Assembly.GetTypes().Where(o => typeof(LogItem).IsAssignableFrom(o)).ToDictionary(o => o.Name, o => o);
             return events.Select(item =>
             {
                 var className = (string)((dynamic)item).className;
@@ -198,7 +174,7 @@ namespace ProblemSource
             .ToList();
         }
 
-        private List<int> GetUserStatePushLogItemIndices(SyncInput root)
+        private static List<int> GetUserStatePushLogItemIndices(SyncInput root)
         {
             if (root.Events?.Any() == true)
             {
@@ -220,15 +196,5 @@ namespace ProblemSource
                 return defaultValue;
             }
         }
-        //public static string ToJsonString(JsonDocument jdoc)
-        //{
-        //    using (var stream = new MemoryStream())
-        //    {
-        //        var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
-        //        jdoc.WriteTo(writer);
-        //        writer.Flush();
-        //        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
-        //    }
-        //}
     }
 }

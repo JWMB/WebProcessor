@@ -1,5 +1,4 @@
 using WebApi.Services;
-using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -92,6 +91,7 @@ namespace WebApi
 
             app.Run();
         }
+
         static void ConfigureTypedConfiguration(IServiceCollection services, IConfiguration config)
         {
             // TODO: continue investigation - how to avoid reflection and get validation errors immediately
@@ -182,5 +182,3 @@ namespace WebApi
         }
     }
 }
-
-//public partial class Program { }

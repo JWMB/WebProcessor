@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using ProblemSource.Models.LogItems;
 using System.Data;
-using System.Linq;
-using System.Security.Principal;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
-namespace ProblemSource.Models.Statistics
+namespace ProblemSource.Models.Aggregates
 {
     public class TrainingDayAccount
     {

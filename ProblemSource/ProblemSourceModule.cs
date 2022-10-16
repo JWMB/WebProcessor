@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using PluginModuleBase;
 using ProblemSource.Services;
+using ProblemSource.Services.Storage;
 
 namespace ProblemSource
 {
@@ -14,8 +14,11 @@ namespace ProblemSource
             services.AddSingleton<ITrainingPlanRepository, TrainingPlanRepository>();
             services.AddSingleton<ProblemSourceProcessingPipeline>();
             services.AddSingleton<IEventDispatcher, QueueEventDispatcher>(); //QueueEventDispatcher NullEventDispatcher
+            services.AddSingleton<IAggregationService, AggregationService>(); // NullAggregationService AggregationService
 
-
+            //var tableFactory = new TableClientFactory();
+            //tableFactory.Init().Wait();
+            //services.AddSingleton<Func<IUserGeneratedRepositories>>(sp => new )
         }
 
         public void Configure(IServiceProvider serviceProvider)

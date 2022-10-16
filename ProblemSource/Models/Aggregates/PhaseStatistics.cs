@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ProblemSource.Models.Statistics
+namespace ProblemSource.Models.Aggregates
 {
     public class PhaseStatistics
     {

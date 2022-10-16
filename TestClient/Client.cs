@@ -1,9 +1,5 @@
 ﻿using ProblemSource.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using ProblemSource.Models.LogItems;
 
 namespace TestClient
 {
@@ -25,7 +21,6 @@ namespace TestClient
         {
             var data = new SyncInput
             {
-                ApiKey = "abc",
                 Uuid = uuid,
                 RequestState = true,
             };
@@ -36,7 +31,6 @@ namespace TestClient
         {
             var data = new SyncInput
             {
-                ApiKey = "abc",
                 Uuid = uuid,
                 RequestState = false,
                 Events = logItems.ToArray()

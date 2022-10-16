@@ -1,7 +1,7 @@
 ﻿using Azure;
 using Azure.Data.Tables;
 using Newtonsoft.Json;
-using ProblemSource.Models.Statistics;
+using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
 
 namespace ProblemSource.Services
@@ -9,6 +9,7 @@ namespace ProblemSource.Services
     public interface IClientSessionManager
     {
         // TODO: if we have >1 server instances, this session concept doesn't work. Sure, ARRAffinity but instances can be recycled
+        // Either we use a separate single-instance session server, or a pub/sub service so all instances share (some) sessions info
         GetOrCreateSessionResult GetOrOpenSession(string userId, string? sessionToken = null);
     }
 
