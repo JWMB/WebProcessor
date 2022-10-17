@@ -16,9 +16,10 @@ namespace ProblemSource
             services.AddSingleton<IEventDispatcher, QueueEventDispatcher>(); //QueueEventDispatcher NullEventDispatcher
             services.AddSingleton<IAggregationService, AggregationService>(); // NullAggregationService AggregationService
 
-            //var tableFactory = new TableClientFactory();
-            //tableFactory.Init().Wait();
-            //services.AddSingleton<Func<IUserGeneratedRepositories>>(sp => new )
+            var tableFactory = new TableClientFactory();
+            tableFactory.Init().Wait();
+            services.AddSingleton<ITableClientFactory>(sp => tableFactory);
+            services.AddSingleton<UserGeneratedRepositoriesFactory>();
         }
 
         public void Configure(IServiceProvider serviceProvider)

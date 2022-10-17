@@ -15,9 +15,11 @@ namespace ProblemSource
         private readonly IDataSink dataSink;
         private readonly IEventDispatcher eventDispatcher;
         private readonly IAggregationService aggregationService;
+        private readonly UserGeneratedRepositoriesFactory userGeneratedRepositoriesFactory;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
-            IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService)
+            IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
+            UserGeneratedRepositoriesFactory userGeneratedRepositoriesFactory)
         {
             this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;
@@ -25,6 +27,7 @@ namespace ProblemSource
             this.dataSink = dataSink;
             this.eventDispatcher = eventDispatcher;
             this.aggregationService = aggregationService;
+            this.userGeneratedRepositoriesFactory = userGeneratedRepositoriesFactory;
         }
 
         public async Task<object?> Process(object input)
@@ -74,10 +77,11 @@ namespace ProblemSource
 
                 if (sessionInfo.Session.UserRepositories == null)
                 {
-                    // TODO: creating user repos must be done in an injected function
-                    var tableFactory = new TableClientFactory();
-                    await tableFactory.Init();
-                    sessionInfo.Session.UserRepositories = new UserGeneratedRepositories(tableFactory, root.Uuid);
+                    sessionInfo.Session.UserRepositories = userGeneratedRepositoriesFactory.Create(root.Uuid);
+                    //// TODO: creating user repos must be done in an injected function
+                    //var tableFactory = new TableClientFactory();
+                    //await tableFactory.Init();
+                    //sessionInfo.Session.UserRepositories = new UserGeneratedRepositories(tableFactory, root.Uuid);
                 }
                 await aggregationService.UpdateAggregates(sessionInfo.Session.UserRepositories, logItems, root.Uuid);
             }

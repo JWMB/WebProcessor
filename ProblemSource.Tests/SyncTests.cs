@@ -25,7 +25,7 @@ namespace ProblemSource.Tests
             dataSink = fixture.Create<IDataSink>();
             userStateRepository = fixture.Create<IUserStateRepository>();
             pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(),
-                fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>());
+                fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), fixture.Create<UserGeneratedRepositoriesFactory>());
         }
 
         [Fact]

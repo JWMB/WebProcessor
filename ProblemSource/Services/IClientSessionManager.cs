@@ -51,31 +51,6 @@ namespace ProblemSource.Services
         public IUserGeneratedRepositories? UserRepositories { get; set; }
     }
 
-    public interface IUserGeneratedRepositories
-    {
-        IRepository<Phase> Phases { get; }
-        IRepository<TrainingDayAccount> TrainingDays { get; }
-        IRepository<PhaseStatistics> PhaseStatistics { get; }
-    }
-
-    public class UserGeneratedRepositories : IUserGeneratedRepositories
-    {
-        public UserGeneratedRepositories(ITableClientFactory tableClientFactory, string userId)
-        {
-            Phases = new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases, p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), userId);
-            TrainingDays = new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays, p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), userId);
-            PhaseStatistics = Create<PhaseStatistics>(p => $"{p.timestamp}");
-
-            CachingUserAggregatesRepository<Tx> Create<Tx>(Func<Tx, string> idFunc) => new CachingUserAggregatesRepository<Tx>(new InMemoryRepository<Tx>(idFunc), idFunc);
-        }
-
-        public IRepository<Phase> Phases { get; }
-
-        public IRepository<TrainingDayAccount> TrainingDays { get; }
-
-        public IRepository<PhaseStatistics> PhaseStatistics { get; }
-    }
-
     public class GetOrCreateSessionResult
     {
         public bool AlreadyExisted { get; set; }
