@@ -78,10 +78,6 @@ namespace ProblemSource
                 if (sessionInfo.Session.UserRepositories == null)
                 {
                     sessionInfo.Session.UserRepositories = userGeneratedRepositoriesFactory.Create(root.Uuid);
-                    //// TODO: creating user repos must be done in an injected function
-                    //var tableFactory = new TableClientFactory();
-                    //await tableFactory.Init();
-                    //sessionInfo.Session.UserRepositories = new UserGeneratedRepositories(tableFactory, root.Uuid);
                 }
                 await aggregationService.UpdateAggregates(sessionInfo.Session.UserRepositories, logItems, root.Uuid);
             }
