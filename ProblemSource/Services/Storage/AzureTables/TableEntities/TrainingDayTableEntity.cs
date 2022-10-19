@@ -3,7 +3,7 @@ using Azure;
 using Newtonsoft.Json;
 using ProblemSource.Models.Aggregates;
 
-namespace ProblemSource.Services.Storage
+namespace ProblemSource.Services.Storage.AzureTables.TableEntities
 {
     public class TrainingDayTableEntity : ITableEntity
     {

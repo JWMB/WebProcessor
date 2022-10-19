@@ -1,18 +1,11 @@
 ﻿using ProblemSource.Models.Aggregates;
-using ProblemSource.Services.Storage;
+using ProblemSource.Services.Storage.AzureTables.TableEntities;
 
-namespace ProblemSource.Services
+namespace ProblemSource.Services.Storage.AzureTables
 {
-    public interface IUserGeneratedDataRepositoryProvider
+    public class AzureTableUserGeneratedDataRepositoryProvider : IUserGeneratedDataRepositoryProvider
     {
-        IRepository<Phase> Phases { get; }
-        IRepository<TrainingDayAccount> TrainingDays { get; }
-        IRepository<PhaseStatistics> PhaseStatistics { get; }
-    }
-
-    public class UserGeneratedDataRepositoryProvider : IUserGeneratedDataRepositoryProvider
-    {
-        public UserGeneratedDataRepositoryProvider(ITableClientFactory tableClientFactory, string userId)
+        public AzureTableUserGeneratedDataRepositoryProvider(ITableClientFactory tableClientFactory, string userId)
         {
             Phases = new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases, p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), userId);
             TrainingDays = new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays, p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), userId);

@@ -9,6 +9,7 @@ using Shouldly;
 using ProblemSource.Services.Storage;
 using Moq;
 using ProblemSource.Models.Aggregates;
+using ProblemSource.Services.Storage.AzureTables;
 
 namespace ProblemSource.Tests
 {
@@ -40,7 +41,7 @@ namespace ProblemSource.Tests
 
             var tableFactory = new TableClientFactory();
             await tableFactory.Init();
-            var userRepos = new UserGeneratedDataRepositoryProvider(tableFactory, userId);
+            var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableFactory, userId);
 
             var aggS = new AggregationService();
             await aggS.UpdateAggregates(userRepos, logItems, userId);

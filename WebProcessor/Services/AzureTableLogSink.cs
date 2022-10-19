@@ -1,6 +1,6 @@
 ﻿using Azure.Data.Tables;
 using PluginModuleBase;
-using ProblemSource.Services;
+using ProblemSource.Services.Storage.AzureTables;
 
 namespace WebApi.Services
 {

@@ -1,4 +1,4 @@
-﻿using ProblemSource.Services;
+﻿using ProblemSource.Services.Storage.AzureTables;
 
 namespace WebApi
 {

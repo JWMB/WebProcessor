@@ -10,6 +10,8 @@ using ProblemSource.Models.Aggregates;
 using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
+using ProblemSource.Services.Storage.AzureTables;
+using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using Shouldly;
 using System;
 using Xunit.Sdk;
@@ -30,7 +32,7 @@ namespace ProblemSource.Tests
             dataSink = fixture.Create<IDataSink>();
             userStateRepository = fixture.Create<IUserStateRepository>();
             pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(),
-                fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), fixture.Create<UserGeneratedDataRepositoriesProviderFactory>());
+                fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>());
         }
 
         [Fact]

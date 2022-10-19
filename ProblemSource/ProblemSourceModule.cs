@@ -2,6 +2,7 @@
 using PluginModuleBase;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
+using ProblemSource.Services.Storage.AzureTables;
 
 namespace ProblemSource
 {
@@ -28,7 +29,7 @@ namespace ProblemSource
                 throw;
             }
             services.AddSingleton<ITableClientFactory>(sp => tableFactory);
-            services.AddSingleton<UserGeneratedDataRepositoriesProviderFactory>();
+            services.AddSingleton<AzureTableUserGeneratedDataRepositoriesProviderFactory>();
         }
 
         public void Configure(IServiceProvider serviceProvider)

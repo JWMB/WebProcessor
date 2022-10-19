@@ -1,6 +1,6 @@
 ﻿using Azure.Data.Tables;
 
-namespace ProblemSource.Services.Storage
+namespace ProblemSource.Services.Storage.AzureTables
 {
     public interface ITableClientFactory
     {

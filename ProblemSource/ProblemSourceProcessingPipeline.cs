@@ -4,6 +4,7 @@ using ProblemSource.Models;
 using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
+using ProblemSource.Services.Storage.AzureTables;
 
 namespace ProblemSource
 {
@@ -15,11 +16,11 @@ namespace ProblemSource
         private readonly IDataSink dataSink;
         private readonly IEventDispatcher eventDispatcher;
         private readonly IAggregationService aggregationService;
-        private readonly UserGeneratedDataRepositoriesProviderFactory userGeneratedRepositoriesFactory;
+        private readonly AzureTableUserGeneratedDataRepositoriesProviderFactory userGeneratedRepositoriesFactory;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
-            UserGeneratedDataRepositoriesProviderFactory userGeneratedRepositoriesFactory)
+            AzureTableUserGeneratedDataRepositoriesProviderFactory userGeneratedRepositoriesFactory)
         {
             this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;

@@ -1,78 +1,7 @@
 ﻿using Azure.Data.Tables;
-using System.Collections.Concurrent;
-using ProblemSource.Models;
-using Azure;
 
-namespace ProblemSource.Services
+namespace ProblemSource.Services.Storage.AzureTables
 {
-    public interface IUserStateRepository
-    {
-        Task Set(string uuid, object state); //IUserGeneratedState
-        Task<object?> Get(string uuid);
-        Task<T?> Get<T>(string uuid) where T : class;
-    }
-
-    public class InMemoryUserStateRepository : IUserStateRepository
-    {
-        private static ConcurrentDictionary<string, object> userStates = new ConcurrentDictionary<string, object>(); //IUserGeneratedState
-        public Task Set(string uuid, object state)
-        {
-            userStates.AddOrUpdate(uuid, state, (s1, s2) => state);
-            return Task.CompletedTask;
-            //await File.WriteAllTextAsync(@"", Newtonsoft.Json.JsonConvert.SerializeObject(state));
-        }
-
-        public Task<object?> Get(string uuid) => Task.FromResult(userStates.GetValueOrDefault(uuid));
-
-        public Task<T?> Get<T>(string uuid) where T : class => Task.FromResult(userStates.GetValueOrDefault(uuid) as T);
-    }
-
-    public class AzureTableConfig
-    {
-        //public string StorageUri { get; set; }
-        //public string? AccountName { get; set; }
-        //public string? StorageAccountKey { get; set; }
-
-        public string ConnectionString { get; set; } = "";
-        public string TableUserStates { get; set; } = "";
-        public string TableUserLogs { get; set; } = "";
-        public string TableTrainingPlans { get; set; } = "";
-
-        //public TableSharedKeyCredential CreateCredentials() =>
-        //    new TableSharedKeyCredential(AccountName, StorageAccountKey);
-        //public TableServiceClient CreateServiceClient() =>
-        //    new TableServiceClient(new Uri(StorageUri), CreateCredentials());
-        //public TableClient CreateTableClient(string tableName) =>
-        //    new TableClient(new Uri(StorageUri), tableName, CreateCredentials());
-
-        public TableServiceClient CreateServiceClient() => new TableServiceClient(ConnectionString); // new Uri(StorageUri));
-
-        public TableClient CreateTableClient(string tableName) => new TableClient(ConnectionString, tableName); // new Uri(StorageUri), tableName, CreateCredentials());
-
-        public static void SetLongString(TableEntity entity, string str, string prefix = "Data")
-        {
-            var max = 32 * 1024;
-            for (int i = 0; i < (int)Math.Ceiling((decimal)str.Length / max); i++)
-            {
-                var index = i * max;
-                entity.Add($"{prefix}{i}", str.Substring(index, Math.Min(max, str.Length - index)));
-            }
-        }
-        public static string GetLongString(TableEntity entity, string prefix = "Data")
-        {
-            var sb = new System.Text.StringBuilder();
-            int i = 0;
-            while (true)
-            {
-                if (entity.TryGetValue($"{prefix}{i++}", out var obj))
-                    sb.Append(obj.ToString());
-                else
-                    break;
-            }
-            return sb.ToString();
-        }
-    }
-
     public class AzureTableUserStateRepository : IUserStateRepository
     {
         private readonly AzureTableConfig config;

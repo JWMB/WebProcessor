@@ -1,6 +1,6 @@
 ﻿using Azure.Data.Tables;
 
-namespace ProblemSource.Services.Storage
+namespace ProblemSource.Services.Storage.AzureTables
 {
     public class TableEntityRepository<T, TTableEntity> : IRepository<T> where TTableEntity : class, ITableEntity, new()
     {
@@ -31,7 +31,7 @@ namespace ProblemSource.Services.Storage
                 if (response.Value.Any(o => o.IsError))
                     throw new Exception("rrrr");
 
-                var itemAndStatus = items.Select((o, i) => new { Item = o, Status = response.Value[i].Status });
+                var itemAndStatus = items.Select((o, i) => new { Item = o, response.Value[i].Status });
                 return (itemAndStatus.Where(o => o.Status == 201).Select(o => o.Item), itemAndStatus.Where(o => o.Status != 201).Select(o => o.Item));
             }
             catch (TableTransactionFailedException ttfEx)
