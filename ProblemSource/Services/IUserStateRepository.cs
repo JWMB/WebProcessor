@@ -15,9 +15,10 @@ namespace ProblemSource.Services
     public class InMemoryUserStateRepository : IUserStateRepository
     {
         private static ConcurrentDictionary<string, object> userStates = new ConcurrentDictionary<string, object>(); //IUserGeneratedState
-        public async Task Set(string uuid, object state)
+        public Task Set(string uuid, object state)
         {
             userStates.AddOrUpdate(uuid, state, (s1, s2) => state);
+            return Task.CompletedTask;
             //await File.WriteAllTextAsync(@"", Newtonsoft.Json.JsonConvert.SerializeObject(state));
         }
 
