@@ -12,8 +12,11 @@ namespace ProblemSource.Services.Storage
     {
         private readonly string prefix = "vektor";
         private readonly string connectionString = "UseDevelopmentStorage=true";
+        private readonly TableClientOptions tableClientOptions;
         public TableClientFactory()
         {
+            tableClientOptions = new TableClientOptions();
+            tableClientOptions.Retry.MaxRetries = 1;
         }
 
         public async Task Init()
@@ -22,9 +25,10 @@ namespace ProblemSource.Services.Storage
             await TrainingDays.CreateIfNotExistsAsync();
         }
 
-        public TableClient Phases => new TableClient(connectionString, $"{prefix}{nameof(Phases)}");
-        public TableClient TrainingDays => new TableClient(connectionString, $"{prefix}{nameof(TrainingDays)}");
+        public TableClient Phases => CreateClient(nameof(Phases));
+        public TableClient TrainingDays => CreateClient(nameof(TrainingDays));
 
+        private TableClient CreateClient(string name) => new TableClient(connectionString, $"{prefix}{name}", tableClientOptions);
         //private Dictionary<string, bool> verifiedTableClients = new();
 
         //public async Task<TableClient?> Create(string name, string? connectionName = null)
@@ -73,12 +77,19 @@ namespace ProblemSource.Services.Storage
             var tableEntities = items.Select(toTableEntity).ToList();
 
             var batch = new List<TableTransactionAction>(tableEntities.Select(f => new TableTransactionAction(TableTransactionActionType.UpsertMerge, f)));
-            var response = await tableClient.SubmitTransactionAsync(batch);
-            if (response.Value.Any(o => o.IsError))
-                throw new Exception("rrrr");
+            try
+            {
+                var response = await tableClient.SubmitTransactionAsync(batch);
+                if (response.Value.Any(o => o.IsError))
+                    throw new Exception("rrrr");
 
-            var itemAndStatus = items.Select((o, i) => new { Item = o, Status = response.Value[i].Status });
-            return (itemAndStatus.Where(o => o.Status == 201).Select(o => o.Item), itemAndStatus.Where(o => o.Status != 201).Select(o => o.Item));
+                var itemAndStatus = items.Select((o, i) => new { Item = o, Status = response.Value[i].Status });
+                return (itemAndStatus.Where(o => o.Status == 201).Select(o => o.Item), itemAndStatus.Where(o => o.Status != 201).Select(o => o.Item));
+            }
+            catch (TableTransactionFailedException ttfEx)
+            {
+                throw ttfEx;
+            }
         }
 
         public async Task<IEnumerable<T>> GetAll()

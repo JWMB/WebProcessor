@@ -16,7 +16,7 @@ namespace ProblemSource.Services.Storage
         public int training_day { get; set; }
         public string exercise { get; set; } = string.Empty;
         public string phase_type { get; set; } = string.Empty;
-        public long time { get; set; }
+        public string time { get; set; } = "0"; // long is not a supported data type, convert to string
         public int sequence { get; set; }
 
         public string problemsSerialized { get; set; } = string.Empty;
@@ -30,7 +30,7 @@ namespace ProblemSource.Services.Storage
                 exercise = exercise,
                 phase_type = phase_type,
                 sequence = sequence,
-                time = time,
+                time = long.Parse(time),
                 training_day = training_day,
                 problems = problems ?? new List<Problem>(),
                 user_test = JsonConvert.DeserializeObject<UserTest>(userTestSerialized)
@@ -42,13 +42,13 @@ namespace ProblemSource.Services.Storage
             exercise = p.exercise,
             phase_type = p.phase_type,
             sequence = p.sequence,
-            time = p.time,
+            time = p.time.ToString(),
             training_day = p.training_day,
             problemsSerialized = JsonConvert.SerializeObject(p.problems),
             userTestSerialized = JsonConvert.SerializeObject(p.user_test),
 
             PartitionKey = userId,
-            RowKey = p.UniqueIdWithinUser
+            RowKey = Phase.UniqueIdWithinUser(p),
         };
     }
 

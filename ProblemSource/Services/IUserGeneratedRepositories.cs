@@ -3,7 +3,7 @@ using ProblemSource.Services.Storage;
 
 namespace ProblemSource.Services
 {
-    public interface IUserGeneratedRepositories
+    public interface IUserGeneratedRepositoryProvider
     {
         IRepository<Phase> Phases { get; }
         IRepository<TrainingDayAccount> TrainingDays { get; }
@@ -18,15 +18,15 @@ namespace ProblemSource.Services
         {
             this.tableClientFactory = tableClientFactory;
         }
-        public IUserGeneratedRepositories Create(string userId)
+        public IUserGeneratedRepositoryProvider Create(string userId)
         {
-            return new UserGeneratedRepositories(tableClientFactory, userId);
+            return new UserGeneratedRepositoryProvider(tableClientFactory, userId);
         }
     }
 
-    public class UserGeneratedRepositories : IUserGeneratedRepositories
+    public class UserGeneratedRepositoryProvider : IUserGeneratedRepositoryProvider
     {
-        public UserGeneratedRepositories(ITableClientFactory tableClientFactory, string userId)
+        public UserGeneratedRepositoryProvider(ITableClientFactory tableClientFactory, string userId)
         {
             Phases = new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases, p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), userId);
             TrainingDays = new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays, p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), userId);

@@ -148,7 +148,8 @@ namespace ProblemSource.Models.Aggregates
             };
         }
 
-        public string UniqueIdWithinUser => $"{training_day}_{exercise}_{time}";
+
+        public static string UniqueIdWithinUser(Phase p) => $"{p.training_day}_{p.exercise}_{p.time}";
 
         //public static Phase FromRow(DataRow row)
         //{

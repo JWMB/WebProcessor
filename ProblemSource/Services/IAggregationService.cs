@@ -6,18 +6,18 @@ namespace ProblemSource.Services
 {
     public interface IAggregationService
     {
-        Task UpdateAggregates(IUserGeneratedRepositories repos, List<LogItem> logItems, string userId);
+        Task UpdateAggregates(IUserGeneratedRepositoryProvider repos, List<LogItem> logItems, string userId);
     }
 
     public class NullAggregationService : IAggregationService
     {
-        public Task UpdateAggregates(IUserGeneratedRepositories repos, List<LogItem> logItems, string userId) => Task.CompletedTask;
+        public Task UpdateAggregates(IUserGeneratedRepositoryProvider repos, List<LogItem> logItems, string userId) => Task.CompletedTask;
         //public Task UpdateAggregates(Session session, List<LogItem> logItems, string userId) => Task.CompletedTask;
     }
 
     public class AggregationService : IAggregationService
     {
-        public async Task UpdateAggregates(IUserGeneratedRepositories repos, List<LogItem> logItems, string userId)
+        public async Task UpdateAggregates(IUserGeneratedRepositoryProvider repos, List<LogItem> logItems, string userId)
         {
             // TODO: Move to async service (Azure (Durable) Functions maybe)?
             // But if we want to adapt response depending on some analysis... Then it's easier to handle it right here (instead of waiting for separate service)

@@ -28,10 +28,7 @@
             return Task.FromResult((items.Where(o => existingIds.Contains(idGenerator(o)) == false), existing));
         }
 
-        public Task<IEnumerable<T>> GetAll()
-        {
-            throw new NotImplementedException();
-        }
+        public Task<IEnumerable<T>> GetAll() => Task.FromResult((IEnumerable<T>)cached);
     }
 
     public class CachingUserAggregatesRepository<T> : IRepository<T>

@@ -79,7 +79,14 @@ namespace ProblemSource
                 {
                     sessionInfo.Session.UserRepositories = userGeneratedRepositoriesFactory.Create(root.Uuid);
                 }
-                await aggregationService.UpdateAggregates(sessionInfo.Session.UserRepositories, logItems, root.Uuid);
+                try
+                {
+                    await aggregationService.UpdateAggregates(sessionInfo.Session.UserRepositories, logItems, root.Uuid);
+                }
+                catch (Exception ex)
+                {
+                    // TODO: log
+                }
             }
 
             return result;

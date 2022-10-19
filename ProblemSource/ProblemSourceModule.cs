@@ -17,7 +17,16 @@ namespace ProblemSource
             services.AddSingleton<IAggregationService, AggregationService>(); // NullAggregationService AggregationService
 
             var tableFactory = new TableClientFactory();
-            tableFactory.Init().Wait();
+            try
+            {
+                tableFactory.Init().Wait();
+            }
+            catch (Exception ex)
+            {
+                if (ex.ToString().Contains("127.0.0.1:"))
+                    throw new Exception("Could not connect to Azure Storage Emulator - have you started it?");
+                throw;
+            }
             services.AddSingleton<ITableClientFactory>(sp => tableFactory);
             services.AddSingleton<UserGeneratedRepositoriesFactory>();
         }
