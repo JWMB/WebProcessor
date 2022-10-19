@@ -28,7 +28,7 @@ namespace ProblemSource
                 throw;
             }
             services.AddSingleton<ITableClientFactory>(sp => tableFactory);
-            services.AddSingleton<UserGeneratedRepositoriesFactory>();
+            services.AddSingleton<UserGeneratedDataRepositoriesProviderFactory>();
         }
 
         public void Configure(IServiceProvider serviceProvider)

@@ -1,4 +1,5 @@
-﻿using ProblemSource.Models.LogItems;
+﻿using Common;
+using ProblemSource.Models.LogItems;
 using System.Data;
 using System.Text.RegularExpressions;
 
@@ -80,6 +81,40 @@ namespace ProblemSource.Models.Aggregates
                     ResponseMinutes = responseTime / 1000 / 60,
                     RemainingMinutes = (int)((totalTime - (long)responseTime) / 1000 / 60)
                 };
+            }).ToList();
+        }
+
+        public static List<TrainingDayAccount> Create(string uuid, int accountId, IEnumerable<PhaseStatistics> multiDayPhases)
+        {
+            return multiDayPhases.GroupBy(o => o.training_day).Select(dayAndPhases =>
+            {
+                var phases = dayAndPhases.ToList();
+                int responseTime;
+                try
+                {
+                    responseTime = phases.Sum(o => o.response_time_total);
+                }
+                catch (OverflowException)
+                {
+                    responseTime = int.MaxValue;
+                }
+
+                var result = new TrainingDayAccount
+                {
+                    AccountId = accountId,
+                    AccountUuid = uuid,
+                    TrainingDay = dayAndPhases.Key,
+                    StartTime = phases.MinOrDefault(o => o.timestamp, new DateTime(1970, 1, 1)),
+                    EndTimeStamp = phases.OrderBy(o => o.timestamp).LastOrDefault()?.end_timestamp ?? new DateTime(1970, 1, 1),
+                    NumRacesWon = phases.Count(o => o.won_race == true),
+                    NumRaces = phases.Count(o => o.won_race != null),
+                    NumPlanetsWon = phases.Count(o => o.completed_planet == true),
+                    NumCorrectAnswers = phases.SumOrDefault(o => o.num_correct_answers),
+                    NumQuestions = phases.SumOrDefault(o => o.num_questions),
+                    ResponseMinutes = responseTime / 1000 / 60,
+                };
+                result.RemainingMinutes = (int)(result.EndTimeStamp - result.StartTime).TotalMinutes - result.ResponseMinutes;
+                return result;
             }).ToList();
         }
     }

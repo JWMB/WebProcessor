@@ -15,11 +15,11 @@ namespace ProblemSource
         private readonly IDataSink dataSink;
         private readonly IEventDispatcher eventDispatcher;
         private readonly IAggregationService aggregationService;
-        private readonly UserGeneratedRepositoriesFactory userGeneratedRepositoriesFactory;
+        private readonly UserGeneratedDataRepositoriesProviderFactory userGeneratedRepositoriesFactory;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
-            UserGeneratedRepositoriesFactory userGeneratedRepositoriesFactory)
+            UserGeneratedDataRepositoriesProviderFactory userGeneratedRepositoriesFactory)
         {
             this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;

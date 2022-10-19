@@ -13,6 +13,8 @@ namespace ProblemSource.Models.Aggregates
         public string exercise { get; set; } = string.Empty;
         public string phase_type { get; set; } = string.Empty;
         public DateTime timestamp { get; set; }
+        public DateTime end_timestamp { get; set; }
+
         public int sequence { get; set; }
 
         public int num_questions { get; set; }
@@ -26,13 +28,17 @@ namespace ProblemSource.Models.Aggregates
         public int response_time_avg { get; set; }
         public int response_time_total { get; set; }
 
-        //Score,Target score,Planet target score,Won race,Completed planet
+        public bool? won_race { get; set; }
+        public bool? completed_planet { get; set; }
+
+        //Score,Target score,Planet target score
 
         public static List<PhaseStatistics> Create(int accountId, IEnumerable<Phase> phases)
         {
             return phases.Select(phase =>
             {
-                var lastAnswers = phase.problems.Select(o => o.answers?.LastOrDefault()).Where(o => o != null);
+                var lastAnswers = phase.problems.OrderBy(o => o.time).Select(o => o.answers?.LastOrDefault()).Where(o => o != null);
+                var lastTimestamp = new[] { phase.time, phase.problems.LastOrDefault()?.time ?? 0, lastAnswers.LastOrDefault()?.time ?? 0 }.Max();
                 return new PhaseStatistics
                 {
                     account_id = accountId,
@@ -40,6 +46,7 @@ namespace ProblemSource.Models.Aggregates
                     exercise = phase.exercise,
                     phase_type = phase.phase_type,
                     timestamp = new DateTime(1970, 1, 1).AddMilliseconds(phase.time),
+                    end_timestamp = new DateTime(1970, 1, 1).AddMilliseconds(lastTimestamp),
                     sequence = phase.sequence,
 
                     num_questions = phase.problems.Count,
@@ -52,6 +59,9 @@ namespace ProblemSource.Models.Aggregates
 
                     response_time_avg = lastAnswers.Any() ? (int)lastAnswers.Average(o => o.response_time) : 0,
                     response_time_total = lastAnswers.Any() ? lastAnswers.Sum(o => o.response_time) : 0,
+
+                    won_race = phase.user_test?.won_race,
+                    completed_planet = phase.user_test?.completed_planet,
                 };
             }).ToList();
         }

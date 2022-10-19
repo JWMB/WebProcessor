@@ -48,7 +48,7 @@ namespace ProblemSource.Services
             calls.Add(new CallInfo());
         }
 
-        public IUserGeneratedRepositoryProvider? UserRepositories { get; set; }
+        public IUserGeneratedDataRepositoryProvider? UserRepositories { get; set; }
     }
 
     public class GetOrCreateSessionResult

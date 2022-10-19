@@ -40,7 +40,7 @@ namespace ProblemSource.Tests
 
             var tableFactory = new TableClientFactory();
             await tableFactory.Init();
-            var userRepos = new UserGeneratedRepositoryProvider(tableFactory, userId);
+            var userRepos = new UserGeneratedDataRepositoryProvider(tableFactory, userId);
 
             var aggS = new AggregationService();
             await aggS.UpdateAggregates(userRepos, logItems, userId);
@@ -66,7 +66,7 @@ namespace ProblemSource.Tests
 
             var userId = fixture.Create<string>();
 
-            var repoProvider = fixture.Create<IUserGeneratedRepositoryProvider>();
+            var repoProvider = fixture.Create<IUserGeneratedDataRepositoryProvider>();
             Mock.Get(repoProvider).Setup(o => o.Phases).Returns(new InMemoryRepository<Phase>(Phase.UniqueIdWithinUser));
 
             var aggS = new AggregationService();
