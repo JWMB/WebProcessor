@@ -32,6 +32,7 @@ namespace ProblemSource.Models.Aggregates
         public bool? completed_planet { get; set; }
 
         //Score,Target score,Planet target score
+        public static string UniqueIdWithinUser(PhaseStatistics p) => $"{p.training_day}_{p.exercise}_{p.timestamp}";
 
         public static List<PhaseStatistics> Create(int accountId, IEnumerable<Phase> phases)
         {
