@@ -59,6 +59,7 @@ namespace Organization.Tests
         [Fact]
         public void Test1()
         {
+            //var x = 180 & (190 | "200");
             var classesPerSchool = 10;
             var studentsPerClass = 30;
             var numSchools = 1000;
@@ -147,6 +148,12 @@ namespace Organization.Tests
                 }
             }
             return school;
+        }
+
+        [Fact]
+        public void ASTTest()
+        {
+            BooleanExpressionTree.ParseExperiment(@"-1 && A && ""1"" && (2 || 3) && !4");
         }
     }
 }
