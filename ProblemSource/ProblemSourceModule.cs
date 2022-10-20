@@ -25,7 +25,7 @@ namespace ProblemSource
             catch (Exception ex)
             {
                 if (ex.ToString().Contains("127.0.0.1:"))
-                    throw new Exception("Could not connect to Azure Storage Emulator - have you started it?");
+                    throw new Exception("Could not connect to Storage Emulator - have you started it? See Azurite, https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio");
                 throw;
             }
             services.AddSingleton<ITableClientFactory>(sp => tableFactory);
