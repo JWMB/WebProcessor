@@ -7,22 +7,32 @@ namespace Organization
 {
     public class BooleanExpressionTree
     {
-        public static void ParseExperiment(string input)
+        public class ExpressionRenderer
+        {
+            public virtual string Render(LiteralExpressionSyntax exp) => exp.ToString();
+            public virtual string Render(IdentifierNameSyntax exp) => exp.ToString();
+            public virtual string Render(BinaryExpressionSyntax exp) => exp.OperatorToken.ToString();
+            public virtual string Render(PrefixUnaryExpressionSyntax exp) => exp.OperatorToken.ToString();
+        }
+
+        public static string? ParseExperiment(string input, ExpressionRenderer? renderer)
         {
             var tree = CSharpSyntaxTree.ParseText(input);
             if (tree == null)
-                return;
+                return null;
             var root = tree.GetCompilationUnitRoot();
             if (root == null)
-                return;
+                return null;
 
             var expressionRoot = root.DescendantNodes().FirstOrDefault(o => o is ExpressionStatementSyntax);
             if (expressionRoot == null)
-                return;
+                return null;
+
+            if (renderer == null)
+                renderer = new ExpressionRenderer();
 
             var list = new List<string>();
             Recurse(expressionRoot, list);
-            //var list = Traverse(expressionRoot).ToList();
 
             void Recurse(SyntaxNode parent, List<string> output)
             {
@@ -30,11 +40,11 @@ namespace Organization
 
                 if (parent is LiteralExpressionSyntax literal)
                 {
-                    output.Add(literal.ToString());
+                    output.Add(renderer.Render(literal));
                 }
                 else if (parent is IdentifierNameSyntax identifier)
                 {
-                    output.Add(identifier.ToString());
+                    output.Add(renderer.Render(identifier));
                 }
                 else if (parent is ParenthesizedExpressionSyntax paren)
                 {
@@ -45,13 +55,13 @@ namespace Organization
                 else if (parent is BinaryExpressionSyntax binary)
                 {
                     DoParentAndChildren(binary.Left);
-                    output.Add(binary.OperatorToken.ToString());
+                    output.Add(renderer.Render(binary));
                     DoParentAndChildren(binary.Right);
                 }
                 else if (parent is PrefixUnaryExpressionSyntax unary)
                 {
                     // Maybe only allow ! and -
-                    output.Add(unary.OperatorToken.ToString());
+                    output.Add(renderer.Render(unary));
                     DoChildren(parent);
                 }
                 else if (parent is ExpressionStatementSyntax)
@@ -61,12 +71,10 @@ namespace Organization
                 else
                     throw new Exception($"{parent.GetType().Name} {parent.Kind()} {parent.GetText()}");
 
-                void DoParentAndChildren(SyntaxNode p)
-                {
-                    Recurse(p, output);
-                }
+                void DoParentAndChildren(SyntaxNode p) => Recurse(p, output);
                 void DoChildren(SyntaxNode p) => p.ChildNodes().ToList().ForEach(o => Recurse(o, output));
             }
+            return String.Join(" ", list);
         }
 
         public static string TreeToString(SyntaxNode parent)
