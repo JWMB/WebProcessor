@@ -13,6 +13,7 @@ namespace Organization
             public virtual string Render(IdentifierNameSyntax exp) => exp.ToString();
             public virtual string Render(BinaryExpressionSyntax exp) => exp.OperatorToken.ToString();
             public virtual string Render(PrefixUnaryExpressionSyntax exp) => exp.OperatorToken.ToString();
+            public virtual string PostRender(PrefixUnaryExpressionSyntax exp) => String.Empty;
         }
 
         public static string? ParseExperiment(string input, ExpressionRenderer? renderer)
@@ -63,6 +64,7 @@ namespace Organization
                     // Maybe only allow ! and -
                     output.Add(renderer.Render(unary));
                     DoChildren(parent);
+                    output.Add(renderer.PostRender(unary));
                 }
                 else if (parent is ExpressionStatementSyntax)
                 {
