@@ -16,11 +16,11 @@ namespace ProblemSource
         private readonly IDataSink dataSink;
         private readonly IEventDispatcher eventDispatcher;
         private readonly IAggregationService aggregationService;
-        private readonly AzureTableUserGeneratedDataRepositoriesProviderFactory userGeneratedRepositoriesFactory;
+        private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
-            AzureTableUserGeneratedDataRepositoriesProviderFactory userGeneratedRepositoriesFactory)
+            IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory)
         {
             this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;

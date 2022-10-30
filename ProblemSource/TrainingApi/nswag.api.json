@@ -1,0 +1,310 @@
+{
+  "x-generator": "NSwag v13.17.0.0 (NJsonSchema v10.8.0.0 (Newtonsoft.Json v13.0.0.0))",
+  "swagger": "2.0",
+  "info": {
+    "title": "My Title",
+    "version": "1.0.0"
+  },
+  "produces": [
+    "text/plain",
+    "application/json",
+    "text/json"
+  ],
+  "paths": {
+    "/Accounts": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "Accounts_Get",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "skip",
+            "in": "query",
+            "format": "int32",
+            "default": 0,
+            "x-nullable": false
+          },
+          {
+            "type": "integer",
+            "name": "take",
+            "in": "query",
+            "format": "int32",
+            "default": 0,
+            "x-nullable": false
+          },
+          {
+            "type": "string",
+            "name": "orderBy",
+            "in": "query",
+            "x-nullable": true
+          },
+          {
+            "type": "boolean",
+            "name": "descending",
+            "in": "query",
+            "default": false,
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Account"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Aggregates/TrainingDayAccount": {
+      "get": {
+        "tags": [
+          "Aggregates"
+        ],
+        "operationId": "Aggregates_TrainingDayAccount",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "accountId",
+            "in": "query",
+            "format": "int32",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TrainingDayAccount"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Aggregates/PhaseStatistics": {
+      "get": {
+        "tags": [
+          "Aggregates"
+        ],
+        "operationId": "Aggregates_PhaseStatistics",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "accountId",
+            "in": "query",
+            "format": "int32",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PhaseStatistics"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Account": {
+      "type": "object",
+      "required": [
+        "id",
+        "numDays",
+        "latest"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numDays": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "latest": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "TrainingDayAccount": {
+      "type": "object",
+      "required": [
+        "accountId",
+        "accountUuid",
+        "trainingDay",
+        "startTime",
+        "endTimeStamp",
+        "numRacesWon",
+        "numRaces",
+        "numPlanetsWon",
+        "numCorrectAnswers",
+        "numQuestions",
+        "responseMinutes",
+        "remainingMinutes"
+      ],
+      "properties": {
+        "accountId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "accountUuid": {
+          "type": "string"
+        },
+        "trainingDay": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "startTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endTimeStamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "numRacesWon": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numRaces": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numPlanetsWon": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numCorrectAnswers": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numQuestions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "responseMinutes": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "remainingMinutes": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "PhaseStatistics": {
+      "type": "object",
+      "required": [
+        "id",
+        "phase_id",
+        "account_id",
+        "training_day",
+        "exercise",
+        "phase_type",
+        "timestamp",
+        "end_timestamp",
+        "sequence",
+        "num_questions",
+        "num_correct_first_try",
+        "num_correct_answers",
+        "num_incorrect_answers",
+        "level_min",
+        "level_max",
+        "response_time_avg",
+        "response_time_total"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "phase_id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "account_id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "training_day": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "exercise": {
+          "type": "string"
+        },
+        "phase_type": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sequence": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "num_questions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "num_correct_first_try": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "num_correct_answers": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "num_incorrect_answers": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "level_min": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "level_max": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "response_time_avg": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "response_time_total": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "won_race": {
+          "type": "boolean"
+        },
+        "completed_planet": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

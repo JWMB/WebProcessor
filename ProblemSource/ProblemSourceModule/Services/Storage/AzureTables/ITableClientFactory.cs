@@ -32,5 +32,21 @@ namespace ProblemSource.Services.Storage.AzureTables
         public TableClient PhaseStatistics => CreateClient(nameof(PhaseStatistics));
 
         private TableClient CreateClient(string name) => new TableClient(connectionString, $"{prefix}{name}", tableClientOptions);
+
+        public static async Task<TableClientFactory> Create()
+        {
+            var tableFactory = new TableClientFactory();
+            try
+            {
+                await tableFactory.Init();
+            }
+            catch (Exception ex)
+            {
+                if (ex.ToString().Contains("127.0.0.1:"))
+                    throw new Exception("Could not connect to Storage Emulator - have you started it? See Azurite, https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio");
+                throw;
+            }
+            return tableFactory;
+        }
     }
 }

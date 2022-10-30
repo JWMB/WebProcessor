@@ -1,5 +1,6 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
+using Azure;
 using Azure.Data.Tables;
 using Moq;
 using Newtonsoft.Json;
@@ -102,8 +103,15 @@ namespace ProblemSource.Tests
             await clientFactory.Init();
 
             var tableEntity = PhaseTableEntity.FromBusinessObject(phase!, userId);
-            var response = await clientFactory.Phases.UpsertEntityAsync(tableEntity);
-            response.Status.ShouldBe(204); //409 (Conflict)
+            try
+            {
+                var response = await clientFactory.Phases.UpsertEntityAsync(tableEntity);
+                response.Status.ShouldBe(204); //409 (Conflict)
+            }
+            catch (RequestFailedException ex) when (ex.Status == 404)
+            {
+                throw new Exception("Running old version of Azurite? This was fixed in 3.19.0 https://github.com/Azure/Azurite/issues/1565");
+            }
 
             //var repo = new TableEntityRepository<Phase, PhaseTableEntity>(clientFactory.Phases, p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), userId);
             //await repo.AddOrUpdate(new[] { phase });

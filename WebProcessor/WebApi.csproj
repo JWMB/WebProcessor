@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PluginModuleBase\PluginModuleBase.csproj" />
-    <ProjectReference Include="..\ProblemSource\ProblemSource.csproj" />
+    <ProjectReference Include="..\ProblemSource\ProblemSourceModule\ProblemSourceModule.csproj" />
   </ItemGroup>
 
   <ItemGroup>
