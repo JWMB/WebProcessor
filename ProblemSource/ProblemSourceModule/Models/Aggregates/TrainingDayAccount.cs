@@ -21,6 +21,12 @@ namespace ProblemSource.Models.Aggregates
         public int ResponseMinutes { get; set; }
         public int RemainingMinutes { get; set; }
 
+        public override string ToString()
+        {
+            // '{AccountUuid}' 
+            return $"{TrainingDay} {StartTime} rTime:{ResponseMinutes} #corr:{NumCorrectAnswers} #q:{NumQuestions} #racewon:{NumRacesWon}";
+        }
+
         public static List<TrainingDayAccount> Create(string uuid, int accountId, IEnumerable<Phase> multiDayPhases)
         {
             return multiDayPhases.GroupBy(o => o.training_day).Select(dayAndPhases =>
@@ -30,18 +36,7 @@ namespace ProblemSource.Models.Aggregates
                 var userTests = phases.Where(_ => _.user_test != null).Select(_ => _.user_test).ToList(); //TODO: also where _.ended ?
 
                 var allAnswers = phases.SelectMany(_ => _.problems.SelectMany(p => p.answers));
-                var groupedAnswers = allAnswers.GroupBy(_ => _.problem_id);
-                var allLastAnswers = new List<Answer>();
-                foreach (var group in groupedAnswers)
-                {
-                    if (group.Count() > 1)
-                    {
-                        var ordered = group.OrderBy(_ => _.time).ToList();
-                        allLastAnswers.Add(ordered[ordered.Count - 1]);
-                    }
-                    else
-                        allLastAnswers.AddRange(group);
-                }
+                var allLastAnswers = phases.SelectMany(o => o.problems.Select(p => p.answers.OrderBy(a => a.time).LastOrDefault())).OfType<Answer>();
                 int responseTime;
                 try
                 {

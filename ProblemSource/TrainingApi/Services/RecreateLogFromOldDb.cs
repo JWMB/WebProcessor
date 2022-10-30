@@ -7,14 +7,7 @@ namespace TrainingApi.Services
 {
     public class RecreateLogFromOldDb
     {
-        private readonly TrainingDbContext db;
-
-        public RecreateLogFromOldDb(TrainingDbContext db)
-        {
-            this.db = db;
-        }
-
-        public async Task<List<Phase>> Get(int accountId)
+        public async static Task<List<Phase>> Get(TrainingDbContext db, int accountId)
         {
             return await db.Phases
                 .Include(o => o.UserTests)
@@ -32,11 +25,6 @@ namespace TrainingApi.Services
                 result.AddRange(PhaseToLogItems(phase));
             }
             return result;
-        }
-
-        public static string PhasesToLogItemsJson(IEnumerable<Phase> phasesWithIncludes)
-        {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(ToLogItems(phasesWithIncludes));
         }
 
         public static List<LogItem> PhaseToLogItems(Phase phase)

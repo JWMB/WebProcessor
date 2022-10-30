@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using OldDb.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
+using System.Linq;
 using TrainingApi.Services;
 
 namespace TrainingApi.Controllers
@@ -29,25 +31,9 @@ namespace TrainingApi.Controllers
         {
             // id	uuid	trainingDay	startTime	endTimeStamp	numRacesWon	numRaces	numPlanetsWon	numCorrectAnswers	numQuestions	responseMinutes	remainingMinutes
 
-            var result = await oldDb.Read($"SELECT data FROM aggregated_data WHERE aggregator_id = 2 AND account_id = {accountId}", 
-                (reader, columns) => {
-                    var data = reader.GetString(0).Split('\t');
-                    return new TrainingDayAccount
-                    {
-                        AccountId = int.Parse(data[0]),
-                        AccountUuid = data[1],
-                        TrainingDay = int.Parse(data[2]),
-                        StartTime = DateTime.UtcNow, //data[3]
-                        EndTimeStamp = DateTime.UtcNow, // data[4]
-                        NumRacesWon = int.Parse(data[5]),
-                        NumRaces = int.Parse(data[6]),
-                        NumPlanetsWon = int.Parse(data[7]),
-                        NumCorrectAnswers = int.Parse(data[8]),
-                        ResponseMinutes = int.Parse(data[9]),
-                        RemainingMinutes = int.Parse(data[10]),
-                    };
-                });
-            return result;
+            var result = await oldDb.Read($"SELECT data FROM aggregated_data WHERE aggregator_id = 2 AND account_id = {accountId}",
+                (reader, columns) => new AggregatedDatum { Data = reader.GetString(0) }.ToTyped());
+            return result.OfType<TrainingDayAccount>();
             //return await GetDataProvider(accountId).TrainingDays.GetAll();
         }
 
@@ -56,6 +42,32 @@ namespace TrainingApi.Controllers
         public async Task<IEnumerable<PhaseStatistics>> PhaseStatistics(int accountId)
         {
             return await GetDataProvider(accountId).PhaseStatistics.GetAll();
+        }
+    }
+
+    public static class OldAggregatesExtensions
+    {
+        public static TrainingDayAccount? ToTyped(this AggregatedDatum? row)
+        {
+            if (row?.Data == null)
+                return null;
+
+            var data = row.Data.Split('\t');
+            return new TrainingDayAccount
+            {
+                AccountId = int.Parse(data[0]),
+                AccountUuid = data[1],
+                TrainingDay = int.Parse(data[2]),
+                StartTime = DateTime.Parse(data[3]), //data[3]
+                EndTimeStamp = new DateTime(1970, 1, 1).AddMilliseconds(long.Parse(data[4])),
+                NumRacesWon = int.Parse(data[5]),
+                NumRaces = int.Parse(data[6]),
+                NumPlanetsWon = int.Parse(data[7]),
+                NumCorrectAnswers = int.Parse(data[8]),
+                NumQuestions = int.Parse(data[9]),
+                ResponseMinutes = int.Parse(data[10]),
+                RemainingMinutes = int.Parse(data[11]),
+            };
         }
     }
 }
