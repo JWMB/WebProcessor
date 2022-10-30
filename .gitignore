@@ -10,6 +10,7 @@ venv
 /src/RunTestSuite.txt
 /src/tools/BacpacDownloads
 .vs
+.vscode
 **/npm-debug.log:wwq:wq
 
 *.bacpac
