@@ -4,7 +4,10 @@
   import Chart from 'chart.js/auto';
   //import { Chart, registerables } from 'chart.js' // see https://stackoverflow.com/questions/67060070/chart-js-core-js6162-error-error-line-is-not-a-registered-controller
   import { afterUpdate, onMount } from 'svelte';
-  import type { Account } from './apiClient';
+  import type { Account, PhaseStatistics, TrainingDayAccount } from './apiClient';
+  import convert from 'color-convert';
+  import TimePerExerciseAndDayChart from './components/timePerExerciseAndDayChart.svelte';
+  import { groupBy, max } from './arrayUtils';
 
   const apiFacade = get(apiFacadeStore);
 
@@ -16,16 +19,6 @@
   const getAccounts = async() => {
     accounts = await apiFacade.accounts.get(0, 20, "latest", true);
   };
-
-  function groupBy<T>(xs: T[], groupFunc: (val: T) => string): {[key: string]: T[]} {
-      return xs.reduce(function(rv, curr) {
-        (rv[groupFunc(curr)] = rv[groupFunc(curr)] || []).push(curr);
-        return rv;
-      }, {});
-  };
-  const max = (xs: number[]) => xs.reduce((p, c) => p > c ? p : c); 
-  const sum = (xs: number[]) => xs.reduce((p, c) => p + c); 
-  const min = (xs: number[]) => xs.reduce((p, c) => p > c ? c : p); 
 
   let gotChartData = false;
   afterUpdate(() => {
@@ -100,9 +93,11 @@
       }
   });
 
+  let phaseStatistics: PhaseStatistics[];
+  let trainingDays: TrainingDayAccount[];
   const accountId = 715955; //644507
   const loadData = async () => {
-    const [trainingDays, phaseStatistics] = await Promise.all([
+    [trainingDays, phaseStatistics] = await Promise.all([
       apiFacade.aggregates.trainingDayAccount(accountId),
       apiFacade.aggregates.phaseStatistics(accountId) 
     ]);
@@ -147,24 +142,26 @@
       ]
     };
 
-    //chart_timePerExercise
-    chart.config.options.scales.y = { stacked: true };
-    chart.data.datasets = [];
-    Object.keys(byExercise).map(key => {
-      const inEx = byExercise[key];
-      // TODO: nswag! o.timestamp is a string, not a Date!
-      const timeSeries = singleTrainingDays.map(std => {
-        const aa = inEx.filter(o => o.training_day == std.trainingDay);
-        return aa.length > 0 ? sum(aa.map(o => (new Date(o.end_timestamp).valueOf() - new Date(o.timestamp).valueOf()) / 1000 / 60)) : 0;
-      });
-      chart.data.datasets.push(
-        {
-          label: key,
-          data: timeSeries,
-          //backgroundColor
-        }
-      );
-    });
+    // //chart_timePerExercise
+    // chart.config.options.scales.y = { stacked: true };
+    // chart.data.datasets = [];
+    // Object.keys(byExercise).map((key, index) => {
+    //   const inEx = byExercise[key];
+    //   // TODO: nswag! o.timestamp is a string, not a Date!
+    //   const timeSeries = singleTrainingDays.map(std => {
+    //     const aa = inEx.filter(o => o.training_day == std.trainingDay);
+    //     return aa.length > 0 ? sum(aa.map(o => (new Date(o.end_timestamp).valueOf() - new Date(o.timestamp).valueOf()) / 1000 / 60)) : 0;
+    //   });
+    //   const rgb = convert.hsl.rgb([360 * index / Object.keys(byExercise).length, index % 2 * 50 + 50, 50]);
+    //   chart.data.datasets.push(
+    //     {
+    //       label: key,
+    //       data: timeSeries,
+    //       fill: true,
+    //       backgroundColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 1)`
+    //     }
+    //   );
+    // });
 
     chart.update();
   };
@@ -178,7 +175,8 @@
         options: {
           plugins: {
             legend: { display: true, position: "left" },
-          }
+          },
+          animation: false
         }
       });
     loadData();
@@ -191,9 +189,7 @@
     <canvas id="myChart" width="800" height="400"></canvas>
   </div>
 
-  <div>
-    <canvas id="chart_timePerExercise" width="800" height="400"></canvas>
-  </div>
+  <TimePerExerciseAndDayChart data={phaseStatistics}></TimePerExerciseAndDayChart>
 
   <div>
     {#each perExerciseChartData as exerciseChart}
