@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OldDb.Models;
+using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
+using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using System.Linq;
 using TrainingApi.Services;
+using Phase = ProblemSource.Models.Aggregates.Phase;
 
 namespace TrainingApi.Controllers
 {
@@ -25,16 +28,28 @@ namespace TrainingApi.Controllers
             _logger = logger;
         }
 
-        IUserGeneratedDataRepositoryProvider GetDataProvider(int accountId) =>
+        private IUserGeneratedDataRepositoryProvider GetDataProvider(int accountId) =>
             userGeneratedDataRepositoryProviderFactory.Create("7af76409-a7ee-44e9-9b4a-526b164de5f0");
+
+        private async Task<List<Phase>> RecreatePhases(int accountId)
+        {
+            var phases = await RecreateLogFromOldDb.Get(dbContext, accountId);
+            var log = RecreateLogFromOldDb.ToLogItems(phases);
+            return LogEventsToPhases.Create(log, null).PhasesCreated;
+        }
 
         [HttpGet]
         [Route("TrainingDayAccount")]
         public async Task<IEnumerable<TrainingDayAccount>> TrainingDayAccount(int accountId)
         {
-            var result = await oldDb.Read($"SELECT data FROM aggregated_data WHERE aggregator_id = 2 AND account_id = {accountId}",
-                (reader, columns) => new AggregatedDatum { Data = reader.GetString(0) }.ToTyped());
-            return result.OfType<TrainingDayAccount>();
+            //var result = await oldDb.Read($"SELECT data FROM aggregated_data WHERE aggregator_id = 2 AND account_id = {accountId}",
+            //    (reader, columns) => new AggregatedDatum { Data = reader.GetString(0) }.ToTyped());
+            //return result.OfType<TrainingDayAccount>();
+            //var rows = await dbContext.AggregatedData.Where(o => o.AggregatorId == 2 && o.AccountId == accountId)
+            //    .ToListAsync();
+            //return rows.Select(o => o.ToTyped()).OfType<TrainingDayAccount>();
+
+            return ProblemSource.Models.Aggregates.TrainingDayAccount.Create("", 0, await RecreatePhases(accountId)); // await phaseRepo.GetAll());
         }
 
         [HttpGet]
@@ -42,9 +57,11 @@ namespace TrainingApi.Controllers
         public async Task<IEnumerable<PhaseStatistics>> PhaseStatistics(int accountId)
         {
             // return await GetDataProvider(accountId).PhaseStatistics.GetAll();
-            var rows = await dbContext.AggregatedData.Where(o => o.AggregatorId == 1 && o.AccountId == accountId)
-                .ToListAsync();
-            return rows.Select(o => o.ToPhaseStatistics()).OfType<PhaseStatistics>();
+            //var rows = await dbContext.AggregatedData.Where(o => o.AggregatorId == 1 && o.AccountId == accountId)
+            //    .ToListAsync();
+            //return rows.Select(o => o.ToPhaseStatistics()).OfType<PhaseStatistics>();
+
+            return ProblemSource.Models.Aggregates.PhaseStatistics.Create(accountId, await RecreatePhases(accountId)); // await phaseRepo.GetAll());
         }
     }
 
