@@ -15,11 +15,18 @@
     accounts = await apiFacade.accounts.get(0, 20, "latest", true);
   };
 
+  const accountId = 715955; //644507
   const loadData = async () => {
-    const result = await apiFacade.aggregates.trainingDayAccount(644507);
+
+    const [trainingDays, phaseStatistics] = await Promise.all([
+      apiFacade.aggregates.trainingDayAccount(accountId),
+      apiFacade.aggregates.phaseStatistics(accountId) 
+    ]);
+
+    const result = await apiFacade.aggregates.trainingDayAccount(accountId);
 
     chart.data = {
-      labels: result.map((o, i) => i.toString()),
+      labels: trainingDays.map((o, i) => i.toString()),
       datasets: [
         {
           label: 'Response',
