@@ -82,7 +82,6 @@
     }
 
     $: {
-        console.log("ooo", data, chart, mounted);
         if (!!data && mounted) {
             update();
         }
@@ -91,7 +90,6 @@
     let mounted = false;
     onMount(() => {
         mounted = true;
-        console.log("xxx", data, chart);
         if (!!data) {
             update();
         }

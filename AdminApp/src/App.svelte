@@ -1,15 +1,14 @@
 <script lang="ts">
   import { apiFacade as apiFacadeStore } from './globalStore';
   import { get } from 'svelte/store';
-  import Chart from 'chart.js/auto';
+  import Chart from 'chart.js/auto'; // automatically register plugins so we don't have to elsewhere
   //import { Chart, registerables } from 'chart.js' // see https://stackoverflow.com/questions/67060070/chart-js-core-js6162-error-error-line-is-not-a-registered-controller
-  import { afterUpdate, onMount } from 'svelte';
-  import type { Account, PhaseStatistics, TrainingDayAccount } from './apiClient';
-  import convert from 'color-convert';
+  import type { PhaseStatistics, TrainingDayAccount } from './apiClient';
   import TimePerExerciseAndDayChart from './components/timePerExerciseAndDayChart.svelte';
   import { groupBy, max } from './arrayUtils';
   import ExerciseChart from './components/exerciseChart.svelte';
   import TrainingDaysChart from './components/trainingDaysChart.svelte';
+  import { onMount } from 'svelte';
 
   const apiFacade = get(apiFacadeStore);
 
@@ -19,12 +18,12 @@
   // const getAccounts = async() => {
   //   accounts = await apiFacade.accounts.get(0, 20, "latest", true);
   // };
-
+  
   let phaseStatistics: PhaseStatistics[];
   let trainingDays: TrainingDayAccount[];
   let singleTrainingDays: TrainingDayAccount[];
 
-  const accountId = 715955; //644507
+  const accountId = parseFloat(new URLSearchParams(window.location.search).get("id") ?? "715955");
   const loadData = async () => {
     [trainingDays, phaseStatistics] = await Promise.all([
       apiFacade.aggregates.trainingDayAccount(accountId),
