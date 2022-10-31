@@ -1,3 +1,4 @@
+using OldDb.Models;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using TrainingApi.Services;
@@ -10,6 +11,9 @@ var tableFactory = TableClientFactory.Create().Result;
 builder.Services.AddSingleton<ITableClientFactory>(sp => tableFactory);
 builder.Services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
 builder.Services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trainingdb;Trusted_Connection=True;"));
+builder.Services.AddScoped<TrainingDbContext>();
+builder.Services.AddScoped<IStatisticsProvider, RecreatedStatisticsProvider>();
+
 var oldDbStartup = new OldDb.Startup();
 oldDbStartup.ConfigureServices(builder.Services);
 
