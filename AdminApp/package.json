@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "chart.js": "^3.9.1",
-    "color-convert": "^2.0.1"
+    "color-convert": "^2.0.1",
+    "svelte-routing": "^1.6.0"
   }
 }
