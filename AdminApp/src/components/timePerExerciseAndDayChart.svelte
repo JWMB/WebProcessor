@@ -8,27 +8,22 @@
   export let data: PhaseStatistics[];
   let chart: Chart;
 
-//   const max = (xs: number[]) => xs.reduce((p, c) => p > c ? p : c); 
-//   const sum = (xs: number[]) => xs.reduce((p, c) => p + c); 
-
   const update = () => {
     if (!chart) return;
     if (!data) return;
     const byExercise = groupBy(data, o => o.exercise.split('#')[0]);
     const exerciseNames = Object.keys(byExercise);
-    // const maxDay = max(exerciseNames.map(key => max(data[key].map(o => o.training_day))));
     const maxDay = max(exerciseNames.map(key => max(byExercise[key].map(o => o.training_day))));
     const days = [...Array(maxDay).keys()].map(o => o + 1);
 
+    chart.data.labels = days.map(o => o.toString()),
     chart.data.datasets = exerciseNames.map((key, index) => {
       const inEx = byExercise[key];
-    //   console.log(key, inEx);
       // TODO: nswag! o.timestamp is a string, not a Date!
       const timeSeries = days.map(std => {
         const aa = inEx.filter(o => o.training_day == std);
         return aa.length > 0 ? sum(aa.map(o => (new Date(o.end_timestamp).valueOf() - new Date(o.timestamp).valueOf()) / 1000 / 60)) : 0;
       });
-    //   console.log("timesp", timeSeries);
       const rgb = convert.hsl.rgb([360 * index / exerciseNames.length, index % 2 * 50 + 50, 50]);
       return {
           label: key,

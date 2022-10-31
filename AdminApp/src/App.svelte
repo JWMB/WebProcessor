@@ -8,93 +8,22 @@
   import convert from 'color-convert';
   import TimePerExerciseAndDayChart from './components/timePerExerciseAndDayChart.svelte';
   import { groupBy, max } from './arrayUtils';
+  import ExerciseChart from './components/exerciseChart.svelte';
+  import TrainingDaysChart from './components/trainingDaysChart.svelte';
 
   const apiFacade = get(apiFacadeStore);
 
-  let chart: Chart | null = null;
+  let perExerciseChartData: { exercise: string, maxDay: number, days: {day: number, maxLevel: number, totalResponseTime: number}[]}[] = [];
 
-  let perExerciseChartData: { exercise: string, days: {day: number, maxLevel: number, totalResponseTime: number}[]}[] = [];
-
-  let accounts: Account[] = [];
-  const getAccounts = async() => {
-    accounts = await apiFacade.accounts.get(0, 20, "latest", true);
-  };
-
-  let gotChartData = false;
-  afterUpdate(() => {
-    if (gotChartData) {
-      gotChartData = false;
-
-      const maxDay = max(perExerciseChartData.map(o => max(o.days.map(p => p.day))));
-      for (const iterator of perExerciseChartData) {
-        const context = (<HTMLCanvasElement>document.getElementById(`chart_${iterator.exercise}`)).getContext("2d");
-        const chart = new Chart(context, 
-          {
-            type: 'scatter',
-            data: { 
-              //labels: iterator.days.map(o => o.day),
-              datasets: [ 
-              {
-                label: 'Max level',
-                backgroundColor: 'rgb(255, 99, 132)',
-                borderColor: 'rgb(255, 99, 132)',
-                // data: iterator.days.map(o => o.maxLevel),
-                data: iterator.days.map(o => ({ x: o.day, y: o.maxLevel })),
-                yAxisID: "y"
-              },
-              {
-                label: 'Response time',
-                backgroundColor: 'rgb(132, 255, 99)',
-                borderColor: 'rgb(132, 255, 99)',
-                // data: iterator.days.map(o => o.totalResponseTime / 60 / 1000),
-                data: iterator.days.map(o => ({ x: o.day, y: o.totalResponseTime / 60 / 1000})),
-                yAxisID: "y1"
-              },
-            ]},
-            options: {
-              plugins: {
-                legend: { display: true, position: "left" },
-                title: { display: true, text: iterator.exercise }
-              },
-              scales: {
-                // xAxes: [{
-                //     display: true,
-                //     scaleLabel: {
-                //         display: true,
-                //         labelString: 'Month'
-                //     }
-                // }],
-                x: {
-                  min: 0,
-                  beginAtZero: true,
-                  suggestedMax: maxDay,
-                  max: maxDay,
-                },
-                y: {
-                  beginAtZero: true,
-                  type: 'linear',
-                  display: true,
-                  position: 'left',
-                },
-                y1: {
-                  beginAtZero: true,
-                  type: 'linear',
-                  display: true,
-                  position: 'right',
-                  grid: {
-                    drawOnChartArea: false, // only want the grid lines for one axis to show up
-                  },
-                }
-              }
-            }
-          });
-          chart.update();
-        }
-      }
-  });
+  // let accounts: Account[] = [];
+  // const getAccounts = async() => {
+  //   accounts = await apiFacade.accounts.get(0, 20, "latest", true);
+  // };
 
   let phaseStatistics: PhaseStatistics[];
   let trainingDays: TrainingDayAccount[];
+  let singleTrainingDays: TrainingDayAccount[];
+
   const accountId = 715955; //644507
   const loadData = async () => {
     [trainingDays, phaseStatistics] = await Promise.all([
@@ -102,13 +31,16 @@
       apiFacade.aggregates.phaseStatistics(accountId) 
     ]);
 
-    const byExercise = groupBy(phaseStatistics, o => o.exercise.split('#')[0]);
+    const byDay = groupBy(trainingDays, o => `${o.trainingDay}`);
+    singleTrainingDays = Object.keys(byDay).map(key => byDay[key][0]);
 
+    const byExercise = groupBy(phaseStatistics, o => o.exercise.split('#')[0]);
     perExerciseChartData = Object.keys(byExercise).map(key => {
       const phases = byExercise[key];
       const byDay = groupBy(phases, p => `${p.training_day}`);
       return {
         exercise: key,
+        maxDay: max(singleTrainingDays.map(o => o.trainingDay)),
         days: Object.keys(byDay).map(day => {
           const inDay = byDay[day];
           return {
@@ -119,93 +51,30 @@
         })
       }
     });
-    gotChartData = true;
-    // console.log(perExerciseChartData);
-
-    const byDay = groupBy(trainingDays, o => `${o.trainingDay}`);
-    const singleTrainingDays = Object.keys(byDay).map(key => byDay[key][0]);
-    chart.data = {
-      labels: singleTrainingDays.map(o => o.trainingDay.toString()),
-      datasets: [
-        {
-          label: 'Response',
-          backgroundColor: 'rgb(255, 99, 132)',
-          borderColor: 'rgb(255, 99, 132)',
-          data: singleTrainingDays.map(o => o.responseMinutes)
-        },
-        {
-          label: 'Total',
-          backgroundColor: 'rgb(132, 99, 255)',
-          borderColor: 'rgb(132, 99, 255)',
-          data: singleTrainingDays.map(o => Math.min(100, o.responseMinutes + o.remainingMinutes))
-        }
-      ]
-    };
-
-    // //chart_timePerExercise
-    // chart.config.options.scales.y = { stacked: true };
-    // chart.data.datasets = [];
-    // Object.keys(byExercise).map((key, index) => {
-    //   const inEx = byExercise[key];
-    //   // TODO: nswag! o.timestamp is a string, not a Date!
-    //   const timeSeries = singleTrainingDays.map(std => {
-    //     const aa = inEx.filter(o => o.training_day == std.trainingDay);
-    //     return aa.length > 0 ? sum(aa.map(o => (new Date(o.end_timestamp).valueOf() - new Date(o.timestamp).valueOf()) / 1000 / 60)) : 0;
-    //   });
-    //   const rgb = convert.hsl.rgb([360 * index / Object.keys(byExercise).length, index % 2 * 50 + 50, 50]);
-    //   chart.data.datasets.push(
-    //     {
-    //       label: key,
-    //       data: timeSeries,
-    //       fill: true,
-    //       backgroundColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 1)`
-    //     }
-    //   );
-    // });
-
-    chart.update();
   };
 
   onMount(() => {
-    const context = (<HTMLCanvasElement>document.getElementById('myChart')).getContext("2d");
-    chart = new Chart(context, 
-      {
-        type: 'line',
-        data: { labels: [], datasets: [] },
-        options: {
-          plugins: {
-            legend: { display: true, position: "left" },
-          },
-          animation: false
-        }
-      });
     loadData();
-    getAccounts();
+    // getAccounts();
   });
 </script>
 
 <main>
-  <div>
-    <canvas id="myChart" width="800" height="400"></canvas>
-  </div>
-
+  <TrainingDaysChart data={singleTrainingDays}></TrainingDaysChart>
   <TimePerExerciseAndDayChart data={phaseStatistics}></TimePerExerciseAndDayChart>
 
   <div>
     {#each perExerciseChartData as exerciseChart}
-		<li>
-      <canvas id="chart_{exerciseChart.exercise}" width="800" height="200"></canvas>
-		</li>
+      <ExerciseChart data={exerciseChart}></ExerciseChart>
   	{/each}
   </div>
 
-  <div>
+
+  <!-- <div>
     {#each accounts as account}
-		<li>
 			{account.id} {account.numDays} {account.latest}
-		</li>
-	{/each}
-  </div>
+	  {/each}
+  </div> -->
 </main>
 
 <style>
