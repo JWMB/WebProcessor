@@ -5,7 +5,7 @@ export class ApiFacade {
     private accountsClient: AccountsClient;
 
     constructor(baseUrl: string) {
-        const http = { fetch: fetch }; //{ fetch: fetch.bind(window) };
+        const http = { fetch: fetch.bind(window) };
         this.aggregatesClient = new AggregatesClient(baseUrl, http);
         this.accountsClient = new AccountsClient(baseUrl, http);
     }

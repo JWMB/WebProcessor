@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ProblemSource.Models;
 using TrainingApi.Services;
 
 namespace TrainingApi.Controllers
@@ -14,6 +15,24 @@ namespace TrainingApi.Controllers
         {
             this.oldDb = oldDb;
             _logger = logger;
+        }
+
+        [HttpPost]
+        public async Task<Account> Post(AccountCreateDTO dto)
+        {
+            return new Account();
+        }
+
+        [HttpPut]
+        public async Task<Account> Put(AccountCreateDTO dto)
+        {
+            return new Account();
+        }
+
+        public class AccountCreateDTO
+        {
+            public string TrainingPlan { get; set; } = "";
+            public TrainingSettings TrainingSettings { get; set; } = new TrainingSettings();
         }
 
         [HttpGet]

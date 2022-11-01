@@ -45,18 +45,19 @@ namespace ProblemSource.Models
     public class TrainingSettings
     {
         public List<decimal> timeLimits { get; set; } = new List<decimal>(); //time_limits
-        public object uniqueGroupWeights { get; set; }
-        public List<string> manuallyUnlockedExercises { get; set; } = new List<string>();
-        public decimal idleTimeout { get; set; } = 10;
+        public object? uniqueGroupWeights { get; set; }
+        public List<string>? manuallyUnlockedExercises { get; set; }
+        public decimal? idleTimeout { get; set; }
         public string cultureCode { get; set; } = "sv-SE";
-        public CustomData customData { get; set; } = new CustomData();
+        public CustomData? customData { get; set; }
         //training_settings: any;
-        public List<TriggerData> triggers { get; set; } = new List<TriggerData>();
-        public decimal pacifistRatio { get; set; } = 0.1M; //TODO: add to a metaphorSettings structure instead
+        public List<TriggerData>? triggers { get; set; }
+        public decimal? pacifistRatio { get; set; } = 0.1M; //TODO: add to a metaphorSettings structure instead
 
-        public object trainingPlanOverrides { get; set; }
-        public TrainingSyncSettings syncSettings { get; set; } = new TrainingSyncSettings();
+        public object? trainingPlanOverrides { get; set; }
+        public TrainingSyncSettings? syncSettings { get; set; }
         //erase_local_data?: boolean;
+        public bool? alarmClockInvisible { get; set; }
     }
 
     public class TrainingSyncSettings

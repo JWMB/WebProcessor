@@ -1,2 +1,5 @@
-<h1>Hello and welcome to my site!</h1>
-<a href="/training">About my site</a>
+<script lang="ts">
+	import TrainingView from "../components/trainingView.svelte";
+</script>
+
+<TrainingView></TrainingView>
