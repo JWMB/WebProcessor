@@ -3,21 +3,15 @@
 
     import { apiFacade } from '../globalStore.js';
     import { ApiFacade } from '../apiFacade';
-	import { onMount } from 'svelte';
 
     const apiBaseUrl = "https://localhost:7090";
     const apiFacadeInstance = new ApiFacade(apiBaseUrl);
     apiFacade.set(apiFacadeInstance);
-
-    // onMount(() => {
-    //     apiFacadeInstance.aggregates.trainingDayAccount(715955).then(r => console.log(r));
-    // });
 </script>
 
 <nav>
-	<a href="./contacts">Contacts</a>
-	<a href="./workflows">Workflows</a>
-	<a href="./simulation">Simulation</a>
+	<a href="./">Home</a>
+	<a href="./teacher">Teacher</a>
 </nav>
 <div class="page-container">
 	<slot />
