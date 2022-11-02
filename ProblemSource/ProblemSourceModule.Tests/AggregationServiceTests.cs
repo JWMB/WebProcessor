@@ -10,6 +10,7 @@ using ProblemSource.Services.Storage;
 using Moq;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage.AzureTables;
+using Microsoft.Extensions.Logging;
 
 namespace ProblemSource.Tests
 {
@@ -39,11 +40,11 @@ namespace ProblemSource.Tests
 
             var userId = fixture.Create<string>();
 
-            var tableFactory = new TableClientFactory();
+            var tableFactory = new TableClientFactory(null);
             await tableFactory.Init();
             var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableFactory, userId);
 
-            var aggS = new AggregationService();
+            var aggS = new AggregationService(fixture.Create<ILogger>());
             await aggS.UpdateAggregates(userRepos, logItems, userId);
 
             (await userRepos.Phases.GetAll()).Count().ShouldBe(2);
@@ -70,7 +71,7 @@ namespace ProblemSource.Tests
             var repoProvider = fixture.Create<IUserGeneratedDataRepositoryProvider>();
             Mock.Get(repoProvider).Setup(o => o.Phases).Returns(new InMemoryRepository<Phase>(Phase.UniqueIdWithinUser));
 
-            var aggS = new AggregationService();
+            var aggS = new AggregationService(fixture.Create<ILogger>());
             await aggS.UpdateAggregates(repoProvider, logItems, userId);
 
             (await repoProvider.Phases.GetAll()).Count().ShouldBe(2);

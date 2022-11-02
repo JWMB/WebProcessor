@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using PluginModuleBase;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
@@ -10,32 +11,26 @@ namespace ProblemSource
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IUserStateRepository, InMemoryUserStateRepository>(); //AzureTableUserStateRepository
+            services.AddSingleton<IUserStateRepository, AzureTableUserStateRepository>(); //AzureTableUserStateRepository InMemoryUserStateRepository
             //services.AddSingleton<ITrainingPlanRepository>(sp => new TrainingPlanRepository(new DirectoryInfo(sp.GetRequiredService<IHostEnvironment>().ContentRootPath)));
             services.AddSingleton<ITrainingPlanRepository, TrainingPlanRepository>();
             services.AddSingleton<ProblemSourceProcessingPipeline>();
             services.AddSingleton<IEventDispatcher, QueueEventDispatcher>(); //QueueEventDispatcher NullEventDispatcher
-            services.AddSingleton<IAggregationService, AggregationService>(); // NullAggregationService AggregationService
+            services.AddSingleton<IAggregationService, AggregationService>(); // AggregationService NullAggregationService
 
-            var tableFactory = TableClientFactory.Create().Result;
-            //var tableFactory = new TableClientFactory();
-            //try
-            //{
-            //    tableFactory.Init().Wait();
-            //}
-            //catch (Exception ex)
-            //{
-            //    if (ex.ToString().Contains("127.0.0.1:"))
-            //        throw new Exception("Could not connect to Storage Emulator - have you started it? See Azurite, https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio");
-            //    throw;
-            //}
-            services.AddSingleton<ITableClientFactory>(sp => tableFactory);
+            services.AddSingleton<ITableClientFactory>(sp => new TableClientFactory(sp.GetService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
+            //var tableFactory = TableClientFactory.Create("").Result;
+            //services.AddSingleton<ITableClientFactory>(sp => tableFactory);
             services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
         }
 
         public void Configure(IServiceProvider serviceProvider)
         {
             serviceProvider.GetRequiredService<IProcessingPipelineRepository>().Register("problemsource", serviceProvider.GetRequiredService<ProblemSourceProcessingPipeline>());
+
+            // Initializing TableClientFactory on startup, in order to get an early error:
+            var tableClientFactory = serviceProvider.GetService<ITableClientFactory>() as TableClientFactory;
+            tableClientFactory?.Init().Wait();
         }
     }
 }
