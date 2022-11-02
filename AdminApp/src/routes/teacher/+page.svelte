@@ -16,7 +16,7 @@
 <div>
     {#each accounts as account}
     <div>
-      <a href="/?id={account.id}">{account.id}</a>{account.numDays} {account.latest}
+      <a href="/?id={account.id}">{account.id}</a>&nbsp;{account.numDays}&nbsp;{account.latest}
     </div>
 	{/each}
 </div>
