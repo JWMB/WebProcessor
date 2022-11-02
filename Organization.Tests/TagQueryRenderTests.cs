@@ -10,18 +10,21 @@ namespace Organization.Tests
         //[InlineData(@"-1 && A && ""1"" && (2 || 3) && !4")]
         //[InlineData(@"!1", "NOT IN ( act_id IN (SELECT act_id FROM m2m WHERE grp_id = 1) )")]
         // "act_id NOT IN (SELECT act_id FROM m2m WHERE actId IN (SELECT act_id FROM m2m WHERE grp_id = 1) )"
-        //[InlineData(@"1 || 2",
-        //    "SELECT DISTINCT account_id FROM accounts_groups WHERE account_id IN (SELECT account_id FROM accounts_groups WHERE group_id = 1 OR account_id IN (SELECT account_id FROM accounts_groups WHERE group_id = 2")]
-        //[InlineData(@"'Teacher 77' && '_country SE' && '_muni Sollentuna' && '_school Rösjöskolan'",
-        //    "SELECT DISTINCT account_id FROM accounts_groups WHERE account_id IN (SELECT account_id FROM accounts_groups WHERE group_id IN (SELECT id FROM groups WHERE name = 'Teacher 77')) AND account_id IN (SELECT account_id FROM accounts_groups WHERE group_id IN (SELECT id FROM groups WHERE name = '_country SE')) AND account_id IN (SELECT account_id FROM accounts_groups WHERE group_id IN (SELECT id FROM groups WHERE name = '_muni Sollentuna')) AND account_id IN (SELECT account_id FROM accounts_groups WHERE group_id IN (SELECT id FROM groups WHERE name = '_school Rösjöskolan'))")]
+        [InlineData(@"1 || 2",
+            "SELECT DISTINCT account_id FROM accounts_groups WHERE account_id IN (SELECT account_id FROM accounts_groups WHERE (group_id = 1)) OR account_id IN (SELECT account_id FROM accounts_groups WHERE (group_id = 2))")]
+        [InlineData(@"'Teacher 77' && '_country SE' && '_muni Sollentuna' && '_school Rösjöskolan'",
+            "SELECT DISTINCT account_id FROM accounts_groups WHERE account_id IN (SELECT account_id FROM accounts_groups WHERE (group_id IN (SELECT id FROM groups WHERE name = 'Teacher 77'))) AND account_id IN (SELECT account_id FROM accounts_groups WHERE (group_id IN (SELECT id FROM groups WHERE name = '_country SE'))) AND account_id IN (SELECT account_id FROM accounts_groups WHERE (group_id IN (SELECT id FROM groups WHERE name = '_muni Sollentuna'))) AND account_id IN (SELECT account_id FROM accounts_groups WHERE (group_id IN (SELECT id FROM groups WHERE name = '_school Rösjöskolan')))")]
         [InlineData(@"414 AND (438 OR 439)",
-            "SELECT DISTINCT account_id FROM accounts_groups WHERE account_id IN (SELECT account_id FROM accounts_groups WHERE group_id = 414 AND ( account_id IN (SELECT account_id FROM accounts_groups WHERE group_id = 438 OR account_id IN (SELECT account_id FROM accounts_groups WHERE group_id = 439 ))))")]
-        //[InlineData(@"!(1)")]
-        //[InlineData(@"!(1 || 2)")]
+            "SELECT DISTINCT account_id FROM accounts_groups WHERE account_id IN (SELECT account_id FROM accounts_groups WHERE (group_id = 414)) AND ( account_id IN (SELECT account_id FROM accounts_groups WHERE (group_id = 438)) OR account_id IN (SELECT account_id FROM accounts_groups WHERE (group_id = 439)) )")]
+        //[InlineData(@"!(1)",
+        //    "TODO")]
+        //[InlineData(@"!1",
+        //    "TODO")]
+        //[InlineData(@"!(1 || 2)", "TODO")]
         public void BooleanExpressionToSql(string input, string expected)
         {
-            var m2mTable = new SqlGroupExpressionRenderer.M2MTableConfig(); // { TableName = "m2m", GroupIdColumnName = "grp_id", OtherIdColumnName = "act_id" }
-            var groupTable = new SqlGroupExpressionRenderer.GroupTableConfig(); // { TableName = "grp", IdColumnName = "id", NameColumnName = "name" }
+            var m2mTable = new SqlGroupExpressionRenderer.M2MTableConfig();
+            var groupTable = new SqlGroupExpressionRenderer.GroupTableConfig();
             var renderer = new SqlGroupExpressionRenderer(m2mTable, groupTable);
 
             var convertedFromOld = input
@@ -30,16 +33,16 @@ namespace Organization.Tests
                 .Replace(" OR ", " || ")
                 .Replace(" NOT", " !");
 
-            var str = BooleanExpressionTree.ParseExperiment(convertedFromOld, renderer);
+            var str = BooleanExpressionTree.ParseAndRender(convertedFromOld, renderer);
             str.ShouldBe(expected);
         }
 
-        [Fact]
-        public void BooleanExpressionSimpleRender()
+        [Theory]
+        [InlineData("414 && (438 || 439)", "aa IN (414) AND ( aa IN (438) OR aa IN (439) )")]
+        public void BooleanExpressionSimpleRender(string input, string expected)
         {
-            var input = "414 && (438 || 439)";
-            var str = BooleanExpressionTree.ParseExperiment(input, new SimpleExpressionRenderer());
-
+            var str = BooleanExpressionTree.ParseAndRender(input, new SimpleExpressionRenderer());
+            str.ShouldBe(expected);
         }
 
         public class SimpleExpressionRenderer : BooleanExpressionTree.ExpressionRenderer
