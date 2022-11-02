@@ -11,13 +11,14 @@ venv
 /src/tools/BacpacDownloads
 .vs
 .vscode
+
 **/npm-debug.log:wwq:wq
 
 *.bacpac
 
+*.user
 **/gulp.*.log
 **/npm-debug.log
-*.bacpac
 
 Web.Test.config.secret
 node_modules
