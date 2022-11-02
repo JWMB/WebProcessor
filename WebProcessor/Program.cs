@@ -48,6 +48,7 @@ namespace WebApi
                     { securityScheme, new string[] { } },
                             });
             });
+            builder.Services.AddApplicationInsightsTelemetry();
 
             builder.Services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
             builder.Services.AddSingleton<IDataSink, AzureTableLogSink>();

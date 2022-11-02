@@ -29,7 +29,7 @@ namespace ProblemSource.Services.Storage.AzureTables
             {
                 var response = await tableClient.SubmitTransactionAsync(batch);
                 if (response.Value.Any(o => o.IsError))
-                    throw new Exception("rrrr");
+                    throw new Exception($"SubmitTransaction errors: {string.Join("\n", response.Value.Where(o => o.IsError).Select(o => o.ReasonPhrase))}");
 
                 var itemAndStatus = items.Select((o, i) => new { Item = o, response.Value[i].Status });
                 return (itemAndStatus.Where(o => o.Status == 201).Select(o => o.Item), itemAndStatus.Where(o => o.Status != 201).Select(o => o.Item));

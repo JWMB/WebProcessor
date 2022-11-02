@@ -12,10 +12,11 @@ namespace ProblemSource.Services.Storage.AzureTables
     public class TableClientFactory : ITableClientFactory
     {
         private readonly string prefix = "vektor";
-        private readonly string connectionString = "UseDevelopmentStorage=true";
+        private readonly string connectionString;
         private readonly TableClientOptions tableClientOptions;
-        public TableClientFactory()
+        public TableClientFactory(string? connectionString)
         {
+            this.connectionString = string.IsNullOrEmpty(connectionString) ? "UseDevelopmentStorage=true" : connectionString;
             tableClientOptions = new TableClientOptions();
             tableClientOptions.Retry.MaxRetries = 1;
         }
@@ -33,9 +34,9 @@ namespace ProblemSource.Services.Storage.AzureTables
 
         private TableClient CreateClient(string name) => new TableClient(connectionString, $"{prefix}{name}", tableClientOptions);
 
-        public static async Task<TableClientFactory> Create()
+        public static async Task<TableClientFactory> Create(string? connectionString)
         {
-            var tableFactory = new TableClientFactory();
+            var tableFactory = new TableClientFactory(connectionString);
             try
             {
                 await tableFactory.Init();
