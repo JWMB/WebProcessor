@@ -1,7 +1,9 @@
 ﻿using Azure.Storage.Queues;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
@@ -21,28 +23,51 @@ namespace ProblemSource.Services
 
     public class QueueEventDispatcher : IEventDispatcher
     {
-        private readonly QueueClient client;
-        public QueueEventDispatcher()
+        private QueueClient? client;
+        private readonly ILogger<QueueEventDispatcher> log;
+
+        public QueueEventDispatcher(string connectionString, ILogger<QueueEventDispatcher> log)
         {
-            // TODO: DI connectionString
-            client = new QueueClient("UseDevelopmentStorage=true", "problemsource-sync");
+            var options = new QueueClientOptions();
+            options.Retry.MaxRetries = 2;
+            client = new QueueClient(connectionString, "problemsource-sync", options);
+            this.log = log;
         }
 
-        public async Task Dispatch(object o)
+        public async Task Init()
         {
+            if (client == null)
+                return;
+
             try
             {
                 var response = await client.CreateIfNotExistsAsync();
                 if (response?.IsError == true)
-                    throw new Exception($"{response.Status} {response.ReasonPhrase}");
+                {
+                    client = null;
+                    log.LogError($"{response.Status} {response.ReasonPhrase}");
+                }
             }
             catch (Exception ex)
             {
-                // TODO: log
-                return;
+                client = null;
+                log.LogError(ex, "Initializing client");
             }
+        }
 
-            await client.SendMessageAsync(Newtonsoft.Json.JsonConvert.SerializeObject(0));
+        public async Task Dispatch(object o)
+        {
+            if (client == null)
+                return;
+
+            try
+            {
+                await client.SendMessageAsync(Newtonsoft.Json.JsonConvert.SerializeObject(0));
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "SendMessageAsync");
+            }
         }
     }
 }
