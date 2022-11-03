@@ -44,7 +44,7 @@ namespace ProblemSource.Tests
             await tableFactory.Init();
             var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableFactory, userId);
 
-            var aggS = new AggregationService(fixture.Create<ILogger>());
+            var aggS = new AggregationService(fixture.Create<ILogger<AggregationService>>());
             await aggS.UpdateAggregates(userRepos, logItems, userId);
 
             (await userRepos.Phases.GetAll()).Count().ShouldBe(2);
@@ -71,7 +71,7 @@ namespace ProblemSource.Tests
             var repoProvider = fixture.Create<IUserGeneratedDataRepositoryProvider>();
             Mock.Get(repoProvider).Setup(o => o.Phases).Returns(new InMemoryRepository<Phase>(Phase.UniqueIdWithinUser));
 
-            var aggS = new AggregationService(fixture.Create<ILogger>());
+            var aggS = new AggregationService(fixture.Create<ILogger<AggregationService>>());
             await aggS.UpdateAggregates(repoProvider, logItems, userId);
 
             (await repoProvider.Phases.GetAll()).Count().ShouldBe(2);

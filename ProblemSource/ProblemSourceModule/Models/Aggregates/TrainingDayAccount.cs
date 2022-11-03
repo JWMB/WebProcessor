@@ -33,7 +33,7 @@ namespace ProblemSource.Models.Aggregates
             {
                 var phases = dayAndPhases.ToList();
 
-                var userTests = phases.Where(_ => _.user_test != null).Select(_ => _.user_test).ToList(); //TODO: also where _.ended ?
+                var userTests = phases.Where(_ => _.user_test != null).Select(_ => _.user_test).OfType<UserTest>().ToList(); //TODO: also where _.ended ?
 
                 var allAnswers = phases.SelectMany(_ => _.problems.SelectMany(p => p.answers));
                 var allLastAnswers = phases.SelectMany(o => o.problems.Select(p => p.answers.OrderBy(a => a.time).LastOrDefault())).OfType<Answer>();
@@ -42,7 +42,7 @@ namespace ProblemSource.Models.Aggregates
                 {
                     responseTime = allLastAnswers.Sum(_ => _.response_time);
                 }
-                catch (OverflowException ex)
+                catch (OverflowException)
                 {
                     responseTime = int.MaxValue;
                 }

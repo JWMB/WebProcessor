@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using PluginModuleBase;
 using ProblemSource.Models;
 using ProblemSource.Models.LogItems;
@@ -17,10 +18,11 @@ namespace ProblemSource
         private readonly IEventDispatcher eventDispatcher;
         private readonly IAggregationService aggregationService;
         private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory;
+        private readonly ILogger<ProblemSourceProcessingPipeline> log;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
-            IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory)
+            IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, ILogger<ProblemSourceProcessingPipeline> log)
         {
             this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;
@@ -29,6 +31,7 @@ namespace ProblemSource
             this.eventDispatcher = eventDispatcher;
             this.aggregationService = aggregationService;
             this.userGeneratedRepositoriesFactory = userGeneratedRepositoriesFactory;
+            this.log = log;
         }
 
         public async Task<object?> Process(object input)
@@ -86,7 +89,7 @@ namespace ProblemSource
                 }
                 catch (Exception ex)
                 {
-                    // TODO: log
+                    log.LogError(ex, $"UpdateAggregates");
                 }
             }
 
@@ -135,7 +138,9 @@ namespace ProblemSource
                         fullState["user_data"] = d.user_data;
                     }
                     catch (Exception ex)
-                    { }
+                    {
+                        log.LogError(ex, "Why do we think there'll be an exception here?");
+                    }
                 }
             }
             return JsonConvert.SerializeObject(fullState);
@@ -199,7 +204,7 @@ namespace ProblemSource
             {
                 return func();
             }
-            catch (Exception ex)
+            catch
             {
                 return defaultValue;
             }

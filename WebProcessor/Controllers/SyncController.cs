@@ -9,12 +9,12 @@ namespace WebApi.Controllers
     [Route("api/[controller]/[action]")]
     public class SyncController : ControllerBase
     {
-        private readonly ILogger<SyncController> _logger;
+        private readonly ILogger<SyncController> log;
         private readonly IProcessingPipelineRepository pipelineRepository;
 
         public SyncController(ILogger<SyncController> logger, IProcessingPipelineRepository pipelineRepository)
         {
-            _logger = logger;
+            log = logger;
             this.pipelineRepository = pipelineRepository;
         }
 
@@ -28,7 +28,7 @@ namespace WebApi.Controllers
             {
                 pipeline = await pipelineRepository.Get("default");
                 if (pipeline == null)
-                    return null;
+                    return new EmptyResult();
             }
 
             // note: https://stackoverflow.com/a/40994711
@@ -47,6 +47,7 @@ namespace WebApi.Controllers
             }
             catch (ArgumentException aEx)
             {
+                log.LogError(aEx, $"Name:{User?.Identity?.Name} Authenticated:{User?.Identity?.IsAuthenticated}");
                 return BadRequest(aEx.Message);
             }
         }

@@ -16,7 +16,9 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
 
         public TrainingDayAccount ToBusinessObject()
         {
-            return JsonConvert.DeserializeObject<TrainingDayAccount>(Data);
+            var result = JsonConvert.DeserializeObject<TrainingDayAccount>(Data);
+            if (result == null) throw new Exception($"Couldn't deserialize {nameof(TrainingDayAccount)}: {PartitionKey}/{RowKey}");
+            return result;
         }
 
         public static TrainingDayTableEntity FromBusinessObject(TrainingDayAccount p) => new TrainingDayTableEntity

@@ -26,13 +26,14 @@ namespace TrainingApiTests
 
             var trainingDays = TrainingDayAccount.Create("", 0, recreatedPhasesResult.PhasesCreated); // await phaseRepo.GetAll());
 
-            var oldTrainingDayRows = await db.AggregatedData
+            var oldTrainingDayRows = (await db.AggregatedData
                 .Where(o => o.AggregatorId == 2 && o.AccountId == accountId)
                 .OrderBy(o => o.OtherId)
-                .ToListAsync();
-
+                .ToListAsync())
+                .OfType<TrainingDayAccount>().ToList()
+;
             var oldTrainingDays = oldTrainingDayRows
-                .Select(o => o.ToTyped())
+                //.Select(o => o.ToTyped())
                 .ToList();
 
             var oldSingleTrainingDays = oldTrainingDays

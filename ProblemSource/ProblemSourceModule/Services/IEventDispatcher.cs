@@ -24,6 +24,7 @@ namespace ProblemSource.Services
         private readonly QueueClient client;
         public QueueEventDispatcher()
         {
+            // TODO: DI connectionString
             client = new QueueClient("UseDevelopmentStorage=true", "problemsource-sync");
         }
 
@@ -37,6 +38,7 @@ namespace ProblemSource.Services
             }
             catch (Exception ex)
             {
+                // TODO: log
                 return;
             }
 

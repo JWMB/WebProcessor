@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddSingleton<ITableClientFactory>(sp => new TableClientFactory(sp.GetService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
+builder.Services.AddSingleton<ITableClientFactory>(sp => new TableClientFactory(sp.GetRequiredService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
 builder.Services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
 builder.Services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trainingdb;Trusted_Connection=True;"));
 builder.Services.AddScoped<TrainingDbContext>();

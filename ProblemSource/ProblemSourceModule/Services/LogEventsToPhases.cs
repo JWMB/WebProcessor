@@ -121,7 +121,7 @@ namespace ProblemSource.Services
                             }
                             else if (currentProblem == null)
                             {
-                                currentPhase.problems.FirstOrDefault(_ => _.time == item.time && _.problem_type == currentProblem.problem_type && _.problem_string == currentProblem.problem_string);
+                                currentPhase.problems.FirstOrDefault(_ => _.time == item.time); // && _.problem_type == currentProblem.problem_type && _.problem_string == currentProblem.problem_string);
                                 result.Errors.Add($"No current problem : {item.time} {item.className}");
                                 currentProblem = Problem.CreateUnknown(item.time);
                             }

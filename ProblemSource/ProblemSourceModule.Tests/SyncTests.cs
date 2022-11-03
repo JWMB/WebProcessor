@@ -2,6 +2,8 @@ using AutoFixture;
 using AutoFixture.AutoMoq;
 using Azure;
 using Azure.Data.Tables;
+using Castle.Core.Logging;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -33,7 +35,8 @@ namespace ProblemSource.Tests
             dataSink = fixture.Create<IDataSink>();
             userStateRepository = fixture.Create<IUserStateRepository>();
             pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(),
-                fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>());
+                fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), 
+                fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>(), fixture.Create<ILogger<ProblemSourceProcessingPipeline>>());
         }
 
         [Fact]

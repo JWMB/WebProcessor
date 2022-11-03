@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Organization.Entities;
 using Organization.Roles;
 using Shouldly;
+using System.Collections.Generic;
 
 namespace Organization.Tests
 {
@@ -14,7 +15,7 @@ namespace Organization.Tests
             var item = new ClassWithInit { Value = 10 };
             var json = JsonConvert.SerializeObject(item);
             var result = JsonConvert.DeserializeObject<ClassWithInit>(json);
-            result.Value.ShouldBe(10);
+            result!.Value.ShouldBe(10);
         }
 
         public class ClassWithInit
@@ -29,7 +30,7 @@ namespace Organization.Tests
             var item = new ClassWithReadOnlyAndConstructor(10);
             var json = JsonConvert.SerializeObject(item);
             var result = JsonConvert.DeserializeObject<ClassWithReadOnlyAndConstructor>(json);
-            result.Value.ShouldBe(10);
+            result!.Value.ShouldBe(10);
         }
 
         public class ClassWithReadOnlyAndConstructor
@@ -165,20 +166,20 @@ namespace Organization.Tests
 
         class SchoolBase
         {
-            public string Form { get; set; }
-            public string OrganisationId { get; set; }
-            public string Region { get; set; }
-            public string Municipality { get; set; }
-            public string ZipCode { get; set; }
-            public string City { get; set; }
+            public string Form { get; set; } = string.Empty;
+            public string OrganisationId { get; set; } = string.Empty;
+            public string Region { get; set; } = string.Empty;
+            public string Municipality { get; set; } = string.Empty;
+            public string ZipCode { get; set; } = string.Empty;
+            public string City { get; set; } = string.Empty;
 
-            public string SchoolUnitId { get; set; }
-            public string Name { get; set; }
-            public string Owner { get; set; }
+            public string SchoolUnitId { get; set; } = string.Empty;
+            public string Name { get; set; } = string.Empty;
+            public string Owner { get; set; } = string.Empty;
 
-            public string Uri { get; set; }
-            public string Email { get; set; }
-            public string PedagogyType { get; set; }
+            public string Uri { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string PedagogyType { get; set; } = string.Empty;
 
             public SchoolType Category { get; set; }
             // LÄN	KOMMUN	ADRESS	BESÖKSADRESS	BESÖKSPOSTNR	BESÖKSPOSTORT	TELENR	REKTORS NAMN

@@ -18,15 +18,15 @@ namespace TrainingApi.Controllers
         }
 
         [HttpPost]
-        public async Task<Account> Post(AccountCreateDTO dto)
+        public Task<Account> Post(AccountCreateDTO dto)
         {
-            return new Account();
+            return Task.FromResult(new Account());
         }
 
         [HttpPut]
-        public async Task<Account> Put(AccountCreateDTO dto)
+        public Task<Account> Put(AccountCreateDTO dto)
         {
-            return new Account();
+            return Task.FromResult(new Account());
         }
 
         public class AccountCreateDTO

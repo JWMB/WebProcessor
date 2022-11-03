@@ -18,7 +18,7 @@ namespace ProblemSource
             services.AddSingleton<IEventDispatcher, QueueEventDispatcher>(); //QueueEventDispatcher NullEventDispatcher
             services.AddSingleton<IAggregationService, AggregationService>(); // AggregationService NullAggregationService
 
-            services.AddSingleton<ITableClientFactory>(sp => new TableClientFactory(sp.GetService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
+            services.AddSingleton<ITableClientFactory>(sp => new TableClientFactory(sp.GetRequiredService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
             //var tableFactory = TableClientFactory.Create("").Result;
             //services.AddSingleton<ITableClientFactory>(sp => tableFactory);
             services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();

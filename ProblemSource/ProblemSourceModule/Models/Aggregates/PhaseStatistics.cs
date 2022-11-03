@@ -38,7 +38,7 @@ namespace ProblemSource.Models.Aggregates
         {
             return phases.Select(phase =>
             {
-                var lastAnswers = phase.problems.OrderBy(o => o.time).Select(o => o.answers?.LastOrDefault()).Where(o => o != null);
+                var lastAnswers = phase.problems.OrderBy(o => o.time).Select(o => o.answers?.LastOrDefault()).OfType<Answer>();
                 var lastTimestamp = new[] { phase.time, phase.problems.LastOrDefault()?.time ?? 0, lastAnswers.LastOrDefault()?.time ?? 0 }.Max();
                 return new PhaseStatistics
                 {

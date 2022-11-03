@@ -66,9 +66,9 @@ namespace ProblemSource.Models
         public bool eraseLocalUserFullState { get; set; } = false; //remove server settings and user-generated state
         public bool eraseLocalLog { get; set; } = false; //clear LogItems
         public bool syncOnInit { get; set; } = true;
-        public string defaultSyncUrl { get; set; }
-        public string routerUrl { get; set; }
-        public string syncTriggerCode { get; set; } //TODO... Can't use runtime execution of string, will fail after minification... "{ performSync: logItem.isOfType(LeaveTestLogItem), pushState: logItem.isOfType(LeaveTestLogItem) }"
+        public string defaultSyncUrl { get; set; } = string.Empty;
+        public string routerUrl { get; set; } = string.Empty;
+        public string syncTriggerCode { get; set; } = string.Empty; //TODO... Can't use runtime execution of string, will fail after minification... "{ performSync: logItem.isOfType(LeaveTestLogItem), pushState: logItem.isOfType(LeaveTestLogItem) }"
 
     }
     public class CustomData
