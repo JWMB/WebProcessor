@@ -4,6 +4,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProblemSource.Services;
 using PluginModuleBase;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging.ApplicationInsights;
 
 namespace WebApi
 {
@@ -43,12 +47,15 @@ namespace WebApi
                         Type = ReferenceType.SecurityScheme
                     }
                 };
-                c.AddSecurityRequirement(new OpenApiSecurityRequirement()
-                            {
-                    { securityScheme, new string[] { } },
-                            });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                    { { securityScheme, new string[] { } } }
+                );
             });
             builder.Services.AddApplicationInsightsTelemetry();
+            //builder.Services.Configure<TelemetryConfiguration>((config, o) => {
+            //     o.InstrumentationKey = "123";
+            //     o.TelemetryInitializers.Add(new OperationCorrelationTelemetryInitializer());
+            //});
 
             builder.Services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
             builder.Services.AddSingleton<IDataSink, AzureTableLogSink>();
@@ -89,6 +96,19 @@ namespace WebApi
 
             app.MapControllers();
 
+            try
+            {
+                var aiConn = app.Configuration.GetValue("ApplicationInsights:ConnectionString", "");
+                if (aiConn == "SECRET" || aiConn == string.Empty)
+                    throw new ArgumentException("InstrumentationKey not set");
+                var telemetryConfig = app.Services.GetRequiredService<TelemetryConfiguration>();
+                telemetryConfig.ConnectionString = aiConn;
+                var telemetry = new TelemetryClient(telemetryConfig);
+                telemetry.TrackEvent("Application start");
+                telemetry.TrackTrace("Trace Application start");
+            }
+            catch
+            { }
 
             app.Run();
         }
