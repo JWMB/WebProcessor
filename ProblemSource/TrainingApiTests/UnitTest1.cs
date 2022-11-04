@@ -12,17 +12,21 @@ namespace TrainingApiTests
 {
     public class UnitTest1
     {
-        [Fact(Skip = "Needs DB")]
-        //[Trait("Category", "MyCategoryName")]
+        public UnitTest1()
+        {
+            Skip.If(!System.Diagnostics.Debugger.IsAttached);
+        }
+
+        [SkippableFact]
         public async Task OldDbTraining_DeserializeAccounts()
         {
             using var db = new TrainingDbContext(new DbContextOptions<TrainingDbContext>() { });
 
-            var asdasd = await db.AccountsGroups
+            var schoolAccountsGroups = await db.AccountsGroups
                 .Include(o => o.Group)
                 .Where(o => o.Group != null && o.Group.Name != null && o.Group.Name.StartsWith("_school"))
                 .ToListAsync();
-            var dict = asdasd.GroupBy(o => o.Group.Name).Where(o => o.Count() > 100).ToDictionary(o => o.Key, o => o.ToList());
+            var dict = schoolAccountsGroups.GroupBy(o => o.Group.Name).Where(o => o.Count() > 100).ToDictionary(o => o.Key, o => o.ToList());
 
             var info = new List<string>();
             // 236944 
@@ -84,7 +88,7 @@ namespace TrainingApiTests
             //account.SyncLogs.Count().ShouldBe(0);
         }
 
-        [Fact(Skip = "Needs DB")]
+        [SkippableFact]
         public async Task OldDbTraining_RecreateFromLogAndVerify()
         {
             using var db = new TrainingDbContext(new DbContextOptions<TrainingDbContext>() { });
