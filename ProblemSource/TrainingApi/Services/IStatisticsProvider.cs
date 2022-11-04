@@ -72,7 +72,7 @@ namespace TrainingApi.Services
 
         private async Task<List<Phase>> RecreatePhases(int accountId)
         {
-            var phases = await RecreateLogFromOldDb.Get(dbContext, accountId);
+            var phases = await RecreateLogFromOldDb.GetFullPhases(dbContext, accountId);
             var log = RecreateLogFromOldDb.ToLogItems(phases);
             return LogEventsToPhases.Create(log, null).PhasesCreated;
         }

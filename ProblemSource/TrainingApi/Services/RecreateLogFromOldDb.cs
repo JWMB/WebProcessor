@@ -7,7 +7,7 @@ namespace TrainingApi.Services
 {
     public class RecreateLogFromOldDb
     {
-        public async static Task<List<Phase>> Get(TrainingDbContext db, int accountId)
+        public async static Task<List<Phase>> GetFullPhases(TrainingDbContext db, int accountId)
         {
             return await db.Phases
                 .Include(o => o.UserTests)

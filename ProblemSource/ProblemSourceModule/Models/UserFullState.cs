@@ -22,12 +22,18 @@ namespace ProblemSource.Models
         object? user_data { get; set; }
         //object syncInfo { get; set; }
     }
+
     public class UserGeneratedState : IUserGeneratedState
     {
         public ExerciseStats exercise_stats { get; set; } = new();
+
+        /// <summary>
+        /// Seems to be "metaphor"-related data, e.g. { "equipped": { "suit01": {},.. }, "bodyParts": { "eyes01": {},... }, "inventory": { "suit02": { },...
+        /// Why is this not in ExerciseStats.metaphorData?
+        /// </summary>
         public object? user_data { get; set; }
 
-        public object syncInfo { get; set; }
+        public object? syncInfo { get; set; } // TODO: what is this?
     }
 
     public class UserFullState : IUserServerSettings, IUserGeneratedState
@@ -101,29 +107,30 @@ namespace ProblemSource.Models
     public class TriggerData
     {
         public string? type { get; set; }
-        public string triggerTime { get; set; } //TriggerTimeType
-        public object[] criteriaValues { get; set; }
-        public TriggerActionData actionData { get; set; }
+        public TriggerTimeType triggerTime { get; set; } //string
+        public object[] criteriaValues { get; set; } = new object[0];
+        public TriggerActionData actionData { get; set; } = new TriggerActionData();
     }
 
-    //public enum TriggerTimeType
-    //{
-    //    POST_RACE,
-    //    POST_RACE_SUCCESS,
-    //    POST_RACE_FAIL,
-    //    LEAVE_TEST,
-    //    END_OF_DAY,
-    //    START_OF_DAY,
-    //    MAP,
-    //    MAP_POST_WIN
-    //}
+    public enum TriggerTimeType
+    {
+        POST_RACE,
+        POST_RACE_SUCCESS,
+        POST_RACE_FAIL,
+        LEAVE_TEST,
+        END_OF_DAY,
+        START_OF_DAY,
+        MAP,
+        MAP_POST_WIN
+    }
 
     public class TriggerActionData
     {
         public string? type { get; set; }// TODO: currently instanciates by string, possibly other solution (register classes)
         public string id { get; set; } = "";
-        public object properties { get; set; }
+        public object? properties { get; set; }
     }
+
     public class ExerciseStats
     {
         public string appVersion { get; set; } = "";
@@ -135,9 +142,9 @@ namespace ProblemSource.Models
         //    lastTimeStamp = (DateTime.Now - new DateTime(1970, 1, 1)).TotalMilliseconds,
         public long lastLogin { get; set; } = 0;
         public long lastTimeStamp { get; set; } = 0;
-        public object triggerData { get; set; }
+        public Dictionary<string, bool> triggerData { get; set; } = new();
         public List<GameRunStats> gameRuns { get; set; } = new List<GameRunStats>();
-        public object metaphorData { get; set; }
+        public object? metaphorData { get; set; }
         public TrainingPlanSettings trainingPlanSettings { get; set; } = new TrainingPlanSettings();
         public Dictionary<string, object> gameCustomData { get; set; } = new Dictionary<string, object>();
     }
@@ -152,7 +159,7 @@ namespace ProblemSource.Models
     {
         public long timestamp { get; set; }
         public string type { get; set; } = "";
-        public object change { get; set; }
+        public object? change { get; set; }
     }
 
     public class DeviceInfo
@@ -162,6 +169,7 @@ namespace ProblemSource.Models
         public string version { get; set; } = "";
         public string uuid { get; set; } = "";
     }
+
     public class GameRunStats
     {
         public string gameId { get; set; } = "";

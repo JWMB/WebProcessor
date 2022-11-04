@@ -123,23 +123,10 @@ namespace ProblemSource.Models.Aggregates
         public DateTime created_at { get; set; }
         public int secondary_training_plan_id { get; set; }
         public List<Phase> phases { get; set; } = new();
-        //public static Account FromRow(DataRow row)
-        //{
-        //    return new Account
-        //    {
-        //        id = (int)row["id"],
-        //        uuid = row["uuid"].ToString(),
-        //        person_id = Util.GetDefault<int>(row["person_id"], 0),
-        //        training_plan_id = Util.GetDefault<int>(row["training_plan_id"], 0), //(int)row["training_plan_id"],
-        //        created_at = (DateTime)row["created_at"],
-        //        //secondary_training_plan_id = (int)row["secondary_training_plan_id"],
-        //        phases = new List<Phase>(),
-        //        groups = new List<Group>()
-        //    };
-        //}
+
         public List<Group> groups { get; set; } = new();
-        //public Person person { get; set; }
     }
+
     public class Phase
     {
         //public string uuid { get; set; }
@@ -150,8 +137,6 @@ namespace ProblemSource.Models.Aggregates
         public long time { get; set; }
         public int sequence { get; set; }
         public List<Problem> problems { get; set; } = new(); 
-        //public DateTime updated_at { get; set; }
-        //public List<UserTest> user_tests { get; set; }
         public UserTest? user_test { get; set; }
 
         public static Phase Create(NewPhaseLogItem newPhase) //, string userId)
@@ -178,35 +163,9 @@ namespace ProblemSource.Models.Aggregates
             };
         }
 
-
         public static string UniqueIdWithinUser(Phase p) => $"{p.training_day}_{p.exercise}_{p.time}";
-
-        //public static Phase FromRow(DataRow row)
-        //{
-        //    var p = new Phase
-        //    {
-        //        id = (int)row["id"],
-        //        exercise = row["exercise"].ToString(),
-        //        training_day = (int)row["training_day"],
-        //        time = (long)row["time"],
-        //        updated_at = (DateTime)row["updated_at"],
-        //        problems = new List<Problem>()
-        //    };
-        //    //TODO: these shouldn't be null, right?
-        //    object obj = row["phase_type"]; //.ToString(),
-        //    if (obj == DBNull.Value)
-        //    {
-        //    }
-        //    else
-        //        p.phase_type = obj.ToString();
-
-        //    obj = row["sequence"];
-        //    if (obj != DBNull.Value)
-        //        p.sequence = (int)obj;
-
-        //    return p;
-        //}
     }
+
     public class Problem
     {
         public int id { get; set; }
@@ -240,17 +199,8 @@ namespace ProblemSource.Models.Aggregates
                 time = time,
             };
         }
-
-
-        public static Problem FromRow(DataRow row)
-        {
-            var result = new Problem { id = (int)row["id"], phase_id = (int)row["phase_id"], level = (decimal)row["level"], answers = new List<Answer>() };
-            result.time = (long)row["time"];
-            result.problem_type = "" + row["problem_type"];
-            result.problem_string = "" + row["problem_string"];
-            return result;
-        }
     }
+
     public class Answer
     {
         public int id { get; set; }
@@ -272,30 +222,8 @@ namespace ProblemSource.Models.Aggregates
                 tries = answer.tries
             };
         }
-
-        public static Answer FromRow(DataRow row)
-        {
-            var a = new Answer
-            {
-                id = (int)row["id"],
-                correct = (bool)row["correct"],
-                problem_id = (int)row["problem_id"],
-            };
-            object obj = row["response_time"];
-            if (obj != DBNull.Value)
-                a.response_time = (int)obj;
-            obj = row["time"];
-            if (obj != DBNull.Value) //TODO: shouldn't be null!
-                a.time = (long)obj;
-            obj = row["answer"];
-            if (obj != DBNull.Value)
-                a.answer = (string)obj;
-            obj = row["tries"];
-            if (obj != DBNull.Value)
-                a.tries = (int)obj;
-            return a;
-        }
     }
+
     public class UserTest
     {
         public int score { get; set; }
@@ -304,21 +232,6 @@ namespace ProblemSource.Models.Aggregates
         public bool won_race { get; set; }
         public bool completed_planet { get; set; }
         public bool? ended { get; set; }
-        public static UserTest FromRow(DataRow row)
-        {
-            var result = new UserTest
-            {
-                score = (int)row["score"],
-                target_score = (int)row["target_score"],
-                planet_target_score = (int)row["planet_target_score"],
-                completed_planet = (bool)row["completed_planet"],
-                won_race = (bool)row["won_race"],
-            };
-            object obj = row["ended"];
-            if (obj != DBNull.Value)
-                result.ended = (bool)obj;
-            return result;
-        }
 
         public static UserTest Create(PhaseEndLogItem phaseEnd)
         {

@@ -64,12 +64,16 @@ namespace ProblemSource.Tests
             var _ = await pipeline.Sync(JsonConvert.SerializeObject(input));
 
             // Assert
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8604 // Possible null reference argument.
             Mock.Get(userStateRepository).Verify(x =>
                 x.Set(It.IsAny<string>(), It.Is<object>(o => JObject.Parse(JsonConvert.SerializeObject(o))["exercise_stats"]["device"]["uuid"].Value<string?>() == userStatePushLogItem.exercise_stats.device.uuid)), Times.Once);
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
             //DataSink: the UserStatePushLogItem entry is removed
             Mock.Get(dataSink).Verify(x =>
-                x.Log(It.IsAny<string>(), It.Is<object>(o => (o as SyncInput).Events.Count() == input.Events.Count() - 1)), Times.Once);
+                x.Log(It.IsAny<string>(), It.Is<object>(o => ((SyncInput)o).Events.Count() == input.Events.Count() - 1)), Times.Once);
         }
 
         [Fact]
@@ -89,7 +93,7 @@ namespace ProblemSource.Tests
             // Assert
             var state = JsonConvert.DeserializeObject<UserFullState>(result.state);
             state!.training_plan.metaphor.ShouldBe("Magical");
-            state!.training_settings.customData.unlockAllPlanets.ShouldBe(true);
+            state!.training_settings.customData?.unlockAllPlanets.ShouldBe(true);
         }
 
         [Fact]

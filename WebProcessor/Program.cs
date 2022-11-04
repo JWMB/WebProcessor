@@ -116,7 +116,7 @@ namespace WebApi
 
         static void ConfigureTypedConfiguration(IServiceCollection services, IConfiguration config)
         {
-            // TODO: continue investigation - how to avoid reflection and get validation errors immediately
+            // TODO: (low) continue investigation - how to avoid reflection and get validation errors immediately
 
             // Note: This does NOT cause validation on startup...: services.AddOptions<AceKnowledgeConfiguration>().Bind(config.GetSection("AceKnowledge")).ValidateDataAnnotations().ValidateOnStart();
 
@@ -129,7 +129,7 @@ namespace WebApi
 
             var props = appSettings.GetType()
                 .GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
-                .Where(o => !o.PropertyType.IsSealed); // TODO: better check than IsSealed (also unit test)
+                .Where(o => !o.PropertyType.IsSealed); // TODO: (low) better check than IsSealed (also unit test)
             foreach (var prop in props)
             {
                 var instance = prop.GetValue(appSettings);

@@ -148,24 +148,27 @@ namespace ProblemSource
 
         private async Task HandleUserState(string uuid, UserStatePushLogItem lastItem)
         {
-            var asJson = JsonConvert.SerializeObject(lastItem);
-            var pushedStateItem = JsonConvert.DeserializeObject<UserStatePushLogItem>(asJson);
+            // TODO: What? Why serialize/deserialize?
+            //var asJson = JsonConvert.SerializeObject(lastItem);
+            //var pushedStateItem = JsonConvert.DeserializeObject<UserStatePushLogItem>(asJson);
+            var pushedStateItem = lastItem;
 
             if (pushedStateItem == null)
             {
-                // TODO: log warning
+                log.LogWarning($"({uuid}) Couldn't deserialize pushedStateItem");
             }
             else
             {
                 var state = await userStateRepository.Get<UserGeneratedState>(uuid);
                 if (state != null && pushedStateItem.exercise_stats.trainingDay < state.exercise_stats.trainingDay)
                 {
-                    // TODO: warning - newer data on server
+                    log.LogWarning($"({uuid}) Latest trainingDay in stored data: {state.exercise_stats.trainingDay}, incoming: {pushedStateItem.exercise_stats.trainingDay}");
                 }
                 else
                 {
-                    var asDynamic = JsonConvert.DeserializeObject<dynamic>(asJson); // so as to keep any non-typed properties/data
-                    await userStateRepository.Set(uuid, new { exercise_stats = asDynamic.exercise_stats, user_data = asDynamic.user_data });
+                    //var asDynamic = JsonConvert.DeserializeObject<dynamic>(asJson); // so as to keep any non-typed properties/data
+                    //await userStateRepository.Set(uuid, new { exercise_stats = asDynamic!.exercise_stats, user_data = asDynamic.user_data });
+                    await userStateRepository.Set(uuid, new { exercise_stats = lastItem.exercise_stats, user_data = lastItem.user_data });
                 }
             }
         }

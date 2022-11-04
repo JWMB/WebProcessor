@@ -9,7 +9,7 @@
         public List<object> phases { get; set; } = new List<object>();
 
         public string progVisualizer { get; set; } = "";
-        public object progVisualizerData { get; set; }
+        public object? progVisualizerData { get; set; }
     }
 
     public class LinearGameDefinition : GameDefinition

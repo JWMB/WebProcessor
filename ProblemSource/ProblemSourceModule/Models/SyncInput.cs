@@ -6,7 +6,7 @@
         public string Uuid { get; set; } = string.Empty;
         public string? SessionToken { get; set; }
         public bool RequestState { get; set; }
-        public object[] Events { get; set; } // TODO: LogItem[]
+        public object[] Events { get; set; } = new object[0]; // TODO: LogItem[] ?
         public bool ContinueOnEventsError { get; set; }
         public long CurrentTime { get; set; }
         public Device Device { get; set; } = new Device();
