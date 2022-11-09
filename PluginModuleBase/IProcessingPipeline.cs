@@ -2,7 +2,7 @@
 {
     public interface IProcessingPipeline
     {
-        Task<object?> Process(object input);
+        Task<object?> Process(object input, System.Security.Claims.ClaimsPrincipal? user);
     }
 
 }

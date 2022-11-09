@@ -25,6 +25,9 @@ namespace ProblemSource
             //var tableFactory = TableClientFactory.Create("").Result;
             //services.AddSingleton<ITableClientFactory>(sp => tableFactory);
             services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
+
+            services.AddSingleton(new MnemoJapanese(2));
+            services.AddSingleton(sp => new UsernameHashing(sp.GetRequiredService<MnemoJapanese>(), 2));
         }
 
         public void Configure(IServiceProvider serviceProvider)

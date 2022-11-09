@@ -18,17 +18,35 @@ namespace WebApi.Controllers
             this.pipelineRepository = pipelineRepository;
         }
 
+        [HttpPost]
+        public async Task<ActionResult<object?>> SyncUnauthorized()
+        {
+            var pipelineName = Request.Query["pipeline"];
+            return await RunPipeline(pipelineName, User);
+        }
+
         [Authorize]
         [HttpPost]
         public async Task<ActionResult<object?>> Sync()
         {
             var pipelineName = User?.Claims?.FirstOrDefault(o => o.Type == "pipeline")?.Value ?? "problemsource";
-            var pipeline = await pipelineRepository.Get(pipelineName);
+            try
+            {
+                return await RunPipeline(pipelineName, User);
+            }
+            catch (ArgumentException aEx)
+            {
+                log.LogError(aEx, $"Name:{User?.Identity?.Name} Authenticated:{User?.Identity?.IsAuthenticated}");
+                return BadRequest(aEx.Message);
+            }
+        }
+
+        private async Task<ActionResult<object?>> RunPipeline(string pipelineName, System.Security.Claims.ClaimsPrincipal? user)
+        {
+            var pipeline = await GetPipeline(pipelineName);
             if (pipeline == null)
             {
-                pipeline = await pipelineRepository.Get("default");
-                if (pipeline == null)
-                    return new EmptyResult();
+                return BadRequest($"Pipeline not found ${pipelineName}");
             }
 
             // note: https://stackoverflow.com/a/40994711
@@ -40,16 +58,18 @@ namespace WebApi.Controllers
                 body = await stream.ReadToEndAsync();
             }
 
-            //var document = JsonDocument.Parse(body);
-            try
-            {
-                return await pipeline.Process(body);
-            }
-            catch (ArgumentException aEx)
-            {
-                log.LogError(aEx, $"Name:{User?.Identity?.Name} Authenticated:{User?.Identity?.IsAuthenticated}");
-                return BadRequest(aEx.Message);
-            }
+            return await pipeline.Process(body, user);
         }
+
+        private async Task<IProcessingPipeline?> GetPipeline(string pipelineName)
+        {
+            var pipeline = await pipelineRepository.Get(pipelineName);
+            if (pipeline == null)
+            {
+                pipeline = await pipelineRepository.Get("default");
+            }
+            return pipeline;
+        }
+
     }
 }

@@ -98,13 +98,13 @@
         public BaseNNumber ToOtherBase(int baseX) => CreateFromNumber(baseX, ToNumber());
     }
 
-    public class HashedUsername
+    public class UsernameHashing
     {
         // TODO: not well composed, uses static MnemoJapanese methods
         private readonly int numHashCharacters;
         private readonly MnemoJapanese mnemoJapanese;
 
-        public HashedUsername(MnemoJapanese mnemoJapanese, int numHashCharacters = 2)
+        public UsernameHashing(MnemoJapanese mnemoJapanese, int numHashCharacters = 2)
         {
             this.mnemoJapanese = mnemoJapanese;
             this.numHashCharacters = numHashCharacters;
@@ -134,7 +134,7 @@
         public string? Dehash(string hashed_username)
         {
             if (!IsHashed(hashed_username))
-                return hashed_username;
+                return null;
 
             hashed_username = hashed_username.Replace(" ", "");
 

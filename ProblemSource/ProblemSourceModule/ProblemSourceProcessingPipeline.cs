@@ -18,11 +18,13 @@ namespace ProblemSource
         private readonly IEventDispatcher eventDispatcher;
         private readonly IAggregationService aggregationService;
         private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory;
+        private readonly UsernameHashing usernameHashing;
         private readonly ILogger<ProblemSourceProcessingPipeline> log;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
-            IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, ILogger<ProblemSourceProcessingPipeline> log)
+            IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, UsernameHashing usernameHashing,
+            ILogger<ProblemSourceProcessingPipeline> log)
         {
             this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;
@@ -31,23 +33,36 @@ namespace ProblemSource
             this.eventDispatcher = eventDispatcher;
             this.aggregationService = aggregationService;
             this.userGeneratedRepositoriesFactory = userGeneratedRepositoriesFactory;
+            this.usernameHashing = usernameHashing;
             this.log = log;
         }
 
-        public async Task<object?> Process(object input)
+        public async Task<object?> Process(object input, System.Security.Claims.ClaimsPrincipal? user)
         {
             if (input is string jsonString)
             {
-                return await Sync(jsonString);
+                var root = ParseJson(jsonString);
+                if (root == null)
+                    throw new ArgumentException("input: incorrect format"); // TODO: some HttpException with status code
+
+                var dehashedUuid = usernameHashing.Dehash(root.Uuid);
+                if (dehashedUuid == null)
+                    return new SyncResult { error = "Username not found" };
+
+                if (root.RequestState && root.SessionToken == "validate") // TODO: co-opting SessionToken for now
+                    return new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" };
+
+                if (user == null) // For actual sync, we require an authenticated user
+                    throw new Exception("Unauthenticated"); // TODO: some HttpException with status code
+
+                return await Sync(root);
             }
             return null;
         }
 
-        public async Task<SyncResult> Sync(string jsonString)
+        public async Task<SyncResult> Sync(SyncInput root)
         {
             var result = new SyncResult();
-
-            var root = ParseJson(jsonString);
 
             var sessionInfo = sessionManager.GetOrOpenSession(root.Uuid, root.SessionToken);
             if (sessionInfo.Error != GetOrCreateSessionResult.ErrorTypes.OK)

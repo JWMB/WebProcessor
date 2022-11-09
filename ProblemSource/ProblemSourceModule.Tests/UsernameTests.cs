@@ -31,7 +31,7 @@ namespace ProblemSource.Tests
         public void Hash_Dehash()
         {
             var mnemoJapanese = new MnemoJapanese(2);
-            var hashedUsername = new HashedUsername(mnemoJapanese, 2);
+            var hashedUsername = new UsernameHashing(mnemoJapanese, 2);
 
             var id = 1000;
             var username = mnemoJapanese.FromIntWithRandom(id);
@@ -50,7 +50,7 @@ namespace ProblemSource.Tests
         public void Dehash_IncorrectChecksum_ReturnsNull()
         {
             var mnemoJapanese = new MnemoJapanese(2);
-            var hashedUsername = new HashedUsername(mnemoJapanese, 2);
+            var hashedUsername = new UsernameHashing(mnemoJapanese, 2);
 
             var id = 1000;
             var username = mnemoJapanese.FromIntWithRandom(id);

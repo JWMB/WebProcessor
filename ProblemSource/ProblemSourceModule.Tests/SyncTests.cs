@@ -36,7 +36,8 @@ namespace ProblemSource.Tests
             userStateRepository = fixture.Create<IUserStateRepository>();
             pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(),
                 fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), 
-                fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>(), fixture.Create<ILogger<ProblemSourceProcessingPipeline>>());
+                fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>(), new UsernameHashing(new MnemoJapanese(2), 2),
+                fixture.Create<ILogger<ProblemSourceProcessingPipeline>>());
         }
 
         [Fact]
@@ -51,19 +52,21 @@ namespace ProblemSource.Tests
                 user_data = new { }
             };
 
-            var input = new SyncInput
-            {
-                Uuid = fixture.Create<string>(),
-                Events = new List<object> {
+            var originalEvents = new List<object> {
                     userStatePushLogItem,
                     new LogItem { className = "unknown" }
-                }.ToArray()
+            };
+            var input = new SyncInput
+            {
+                Uuid = "musa tadube",
+                Events = originalEvents.ToArray()
             };
 
             // Act
-            var _ = await pipeline.Sync(JsonConvert.SerializeObject(input));
+            var _ = await pipeline.Sync(input);
 
             // Assert
+
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
 #pragma warning disable CS8604 // Possible null reference argument.
             Mock.Get(userStateRepository).Verify(x =>
@@ -73,7 +76,7 @@ namespace ProblemSource.Tests
 
             //DataSink: the UserStatePushLogItem entry is removed
             Mock.Get(dataSink).Verify(x =>
-                x.Log(It.IsAny<string>(), It.Is<object>(o => ((SyncInput)o).Events.Count() == input.Events.Count() - 1)), Times.Once);
+                x.Log(It.IsAny<string>(), It.Is<object>(o => ((SyncInput)o).Events.Count() == originalEvents.Count() - 1)), Times.Once);
         }
 
         [Fact]
@@ -82,13 +85,13 @@ namespace ProblemSource.Tests
             // Arrange
             var input = new SyncInput
             {
-                Uuid = fixture.Create<string>(),
+                Uuid = "musa tadube",
                 Events = new object[0],
                 RequestState = true,
             };
 
             // Act
-            var result = await pipeline.Sync(JsonConvert.SerializeObject(input));
+            var result = await pipeline.Sync(input);
 
             // Assert
             var state = JsonConvert.DeserializeObject<UserFullState>(result.state);

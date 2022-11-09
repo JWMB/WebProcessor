@@ -11,7 +11,7 @@ namespace WebApi
             this.sink = sink;
         }
 
-        public async Task<object?> Process(object input)
+        public async Task<object?> Process(object input, System.Security.Claims.ClaimsPrincipal? user)
         {
             // TODO: a client and/or user id
             await sink.Log("unknown", input);
