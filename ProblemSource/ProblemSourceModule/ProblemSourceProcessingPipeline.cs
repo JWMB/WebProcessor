@@ -47,7 +47,7 @@ namespace ProblemSource
                 if (root == null)
                     throw new ArgumentException("input: incorrect format"); // TODO: some HttpException with status code
 
-                if (user == null  // anonymous access for "validate" request
+                if (user?.Claims.Any() == false  // anonymous access for "validate" request
                     && root.SessionToken == "validate") // TODO: co-opting SessionToken for now
                 {
                     var dehashedUuid = usernameHashing.Dehash(root.Uuid);
