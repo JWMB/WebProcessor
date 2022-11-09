@@ -36,7 +36,7 @@ namespace ProblemSource.Tests
             userStateRepository = fixture.Create<IUserStateRepository>();
             pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(),
                 fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), 
-                fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>(), new UsernameHashing(new MnemoJapanese(2), 2),
+                fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>(), new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
                 fixture.Create<ILogger<ProblemSourceProcessingPipeline>>());
         }
 

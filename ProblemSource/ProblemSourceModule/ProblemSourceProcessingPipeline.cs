@@ -19,11 +19,12 @@ namespace ProblemSource
         private readonly IAggregationService aggregationService;
         private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory;
         private readonly UsernameHashing usernameHashing;
+        private readonly MnemoJapanese mnemoJapanese;
         private readonly ILogger<ProblemSourceProcessingPipeline> log;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
-            IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, UsernameHashing usernameHashing,
+            IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, UsernameHashing usernameHashing, MnemoJapanese mnemoJapanese,
             ILogger<ProblemSourceProcessingPipeline> log)
         {
             this.userStateRepository = userStateRepository;
@@ -34,6 +35,7 @@ namespace ProblemSource
             this.aggregationService = aggregationService;
             this.userGeneratedRepositoriesFactory = userGeneratedRepositoriesFactory;
             this.usernameHashing = usernameHashing;
+            this.mnemoJapanese = mnemoJapanese;
             this.log = log;
         }
 
@@ -45,12 +47,19 @@ namespace ProblemSource
                 if (root == null)
                     throw new ArgumentException("input: incorrect format"); // TODO: some HttpException with status code
 
-                var dehashedUuid = usernameHashing.Dehash(root.Uuid);
-                if (dehashedUuid == null)
-                    return new SyncResult { error = "Username not found" };
-
-                if (root.RequestState && root.SessionToken == "validate") // TODO: co-opting SessionToken for now
+                if (user == null  // anonymous access for "validate" request
+                    && root.SessionToken == "validate") // TODO: co-opting SessionToken for now
+                {
+                    var dehashedUuid = usernameHashing.Dehash(root.Uuid);
+                    if (dehashedUuid == null)
+                        return new SyncResult { error = "Username not found" };
                     return new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" };
+                }
+
+                // TODO: client has already dehashed (but should not, let server handle ui)
+                var id = mnemoJapanese.ToIntWithRandom(root.Uuid);
+                if (id == null)
+                    return new SyncResult { error = "Username not found" };
 
                 if (user == null) // For actual sync, we require an authenticated user
                     throw new Exception("Unauthenticated"); // TODO: some HttpException with status code
