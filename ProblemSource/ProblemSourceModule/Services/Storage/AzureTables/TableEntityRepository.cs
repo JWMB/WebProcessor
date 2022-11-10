@@ -1,4 +1,6 @@
 ﻿using Azure.Data.Tables;
+using Newtonsoft.Json;
+using System.Linq;
 
 namespace ProblemSource.Services.Storage.AzureTables
 {
@@ -36,7 +38,14 @@ namespace ProblemSource.Services.Storage.AzureTables
             }
             catch (TableTransactionFailedException ttfEx)
             {
-                throw ttfEx;
+                string lengthsInfo = "N/A";
+                try
+                {
+                    lengthsInfo = string.Join(", ", tableEntities.Select(o => $"{o.PartitionKey}/{o.RowKey}: {JsonConvert.SerializeObject(o).Length}"));
+                }
+                catch { }
+
+                throw new Exception($"{GetType().Name} stored:{lengthsInfo}", ttfEx);
             }
         }
 

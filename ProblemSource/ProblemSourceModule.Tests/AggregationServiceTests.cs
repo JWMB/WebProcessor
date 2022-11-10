@@ -1,6 +1,4 @@
 ﻿using AutoFixture;
-using Newtonsoft.Json;
-using PluginModuleBase;
 using ProblemSource.Models.LogItems;
 using ProblemSource.Models;
 using ProblemSource.Services;
