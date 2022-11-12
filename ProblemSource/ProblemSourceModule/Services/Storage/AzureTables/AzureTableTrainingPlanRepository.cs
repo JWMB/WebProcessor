@@ -12,7 +12,7 @@ namespace ProblemSource.Services.Storage.AzureTables
             client = config.CreateTableClient(config.TableTrainingPlans);
         }
 
-        public async Task<TrainingPlan?> Get(string name)
+        public async Task<object?> Get(string name)
         {
             await client.CreateIfNotExistsAsync();
             var partitionKey = name;
@@ -21,7 +21,7 @@ namespace ProblemSource.Services.Storage.AzureTables
             await foreach (var entity in queryResultsFilter)
             {
                 var str = AzureTableConfig.GetLongString(entity);
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<LinearTrainingPlan>(str);
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(str);
             }
 
             return null;

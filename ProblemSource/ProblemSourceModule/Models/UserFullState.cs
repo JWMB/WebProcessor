@@ -5,14 +5,14 @@ namespace ProblemSource.Models
     public interface IUserServerSettings
     {
         string uuid { get; set; }
-        TrainingPlan training_plan { get; set; }
+        object training_plan { get; set; }
         TrainingSettings training_settings { get; set; }
     }
 
     public class UserServerSettings : IUserServerSettings
     {
         public string uuid { get; set; } = "";
-        public TrainingPlan training_plan { get; set; } = new();
+        public object training_plan { get; set; } = new(); //TrainingPlan
         public TrainingSettings training_settings { get; set; } = new();
     }
 
@@ -39,7 +39,7 @@ namespace ProblemSource.Models
     public class UserFullState : IUserServerSettings, IUserGeneratedState
     {
         public string uuid { get; set; } = "";
-        public TrainingPlan training_plan { get; set; } = new();
+        public object training_plan { get; set; } = new(); //TrainingPlan
         public TrainingSettings training_settings { get; set; } = new();
 
         public ExerciseStats exercise_stats { get; set; } = new();

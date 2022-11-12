@@ -4,17 +4,13 @@ namespace ProblemSource.Services.Storage
 {
     public interface ITrainingPlanRepository
     {
-        Task<TrainingPlan?> Get(string name);
+        // TODO: need to look into the types here - not sure what the client actually uses (and it seems pretty dynamic)
+        Task<object?> Get(string name);
     }
 
     public class TrainingPlanRepository : ITrainingPlanRepository
     {
-        //private readonly DirectoryInfo contentRoot;
-        //public TrainingPlanRepository(DirectoryInfo contentRoot)
-        //{
-        //    this.contentRoot = contentRoot;
-        //}
-        public async Task<TrainingPlan?> Get(string name)
+        public async Task<object?> Get(string name)
         {
             var resourceName = $"{GetType().Assembly.GetName().Name}.Resources.{name}.json";
             var resource = GetType().Assembly.GetManifestResourceInfo(resourceName);
@@ -26,7 +22,7 @@ namespace ProblemSource.Services.Storage
             {
                 var tpDef = await reader.ReadToEndAsync();
 
-                var tp = Newtonsoft.Json.JsonConvert.DeserializeObject<LinearTrainingPlan>(tpDef) as TrainingPlan;
+                var tp = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(tpDef); //LinearTrainingPlan as TrainingPlan;
                 if (tp == null)
                     throw new Exception("TP invalid");
                 return tp;
