@@ -9,6 +9,7 @@ using Moq;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage.AzureTables;
 using Microsoft.Extensions.Logging;
+using Xunit;
 
 namespace ProblemSource.Tests
 {
@@ -17,10 +18,48 @@ namespace ProblemSource.Tests
         private readonly IFixture fixture;
         public AggregationServiceTests()
         {
+            Skip.If(!System.Diagnostics.Debugger.IsAttached);
+
             fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
         }
 
-        [Fact]
+        [SkippableFact]
+        public async Task Aggregates_IndividualAggregators()
+        {
+            var userId = "test name";
+
+            var phases = Enumerable.Range(0, 10).Select(pi => Phase.CreateForTest(pi));
+
+            var tableFactory = new TableClientFactory(null);
+            await tableFactory.Init();
+            var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableFactory, userId);
+
+            await userRepos.Phases.AddOrUpdate(phases);
+
+            var phaseStats = PhaseStatistics.Create(0, phases);
+            await userRepos.PhaseStatistics.AddOrUpdate(phaseStats);
+
+            var trainingDays = TrainingDayAccount.Create(userId, 0, await userRepos.PhaseStatistics.GetAll());
+            await userRepos.TrainingDays.AddOrUpdate(trainingDays);
+        }
+
+        [SkippableFact]
+        public async Task InvalidAzureKeyCharactersHandled()
+        {
+            var userId = "test";
+            var phases = new[] {
+                new Phase { exercise = "a#" },
+                //new Phase { exercise = "a?" } // TODO
+            };
+
+            var tableFactory = new TableClientFactory(null);
+            await tableFactory.Init();
+            var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableFactory, userId);
+
+            await Should.NotThrowAsync(async () => await userRepos.Phases.AddOrUpdate(phases));
+        }
+
+        [SkippableFact]
         public async Task AggregatesUpdated_Table()
         {
             // Arrange

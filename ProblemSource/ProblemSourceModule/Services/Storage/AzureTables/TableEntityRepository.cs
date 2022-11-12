@@ -70,7 +70,7 @@ namespace ProblemSource.Services.Storage.AzureTables
 
             try
             {
-                var responses = await Upsert(tableEntities);
+                var responses = await UpsertBatch(tableEntities);
 
                 var itemAndStatus = items.Select((o, i) => new { Item = o, responses[i].Status });
                 return (itemAndStatus.Where(o => o.Status == 201).Select(o => o.Item), itemAndStatus.Where(o => o.Status != 201).Select(o => o.Item));
