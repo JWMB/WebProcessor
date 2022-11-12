@@ -23,18 +23,25 @@ namespace Organization.Tests
         //[InlineData(@"!(1 || 2)", "TODO")]
         public void BooleanExpressionToSql(string input, string expected)
         {
+            var str = RenderSqlExpression(input, true);
+            str.ShouldBe(expected);
+        }
+
+        private string? RenderSqlExpression(string input, bool convertFromOldFormat = false)
+        {
+            if (convertFromOldFormat)
+            {
+                input = input
+                    .Replace('\'', '"')
+                    .Replace(" AND ", " && ")
+                    .Replace(" OR ", " || ")
+                    .Replace(" NOT", " !");
+            }
             var m2mTable = new SqlGroupExpressionRenderer.M2MTableConfig();
             var groupTable = new SqlGroupExpressionRenderer.GroupTableConfig();
             var renderer = new SqlGroupExpressionRenderer(m2mTable, groupTable);
 
-            var convertedFromOld = input
-                .Replace('\'', '"')
-                .Replace(" AND ", " && ")
-                .Replace(" OR ", " || ")
-                .Replace(" NOT", " !");
-
-            var str = BooleanExpressionTree.ParseAndRender(convertedFromOld, renderer);
-            str.ShouldBe(expected);
+            return BooleanExpressionTree.ParseAndRender(input, renderer);
         }
 
         [Theory]
