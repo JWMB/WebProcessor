@@ -133,7 +133,7 @@ namespace ProblemSource
 
         private async Task<string> CreateClientState(SyncInput root)
         {
-            var trainingPlanName = "testplan";
+            var trainingPlanName = "2017 HT template Default"; // "testplan";
             var trainingPlan = await trainingPlanRepository.Get(trainingPlanName);
             if (trainingPlan == null)
                 throw new Exception($"Training plan '{trainingPlanName}' does not exist");
@@ -142,7 +142,11 @@ namespace ProblemSource
             {
                 uuid = root.Uuid,
                 training_plan = trainingPlan,
-                training_settings = new TrainingSettings { customData = new CustomData { unlockAllPlanets = true } }
+                training_settings = new TrainingSettings
+                {
+                    timeLimits = new List<decimal> { 33 },
+                    customData = new CustomData { unlockAllPlanets = false }
+                }
             });
 
             if (trainingPlan.clientRequirements != null && trainingPlan.clientRequirements.Version != null)

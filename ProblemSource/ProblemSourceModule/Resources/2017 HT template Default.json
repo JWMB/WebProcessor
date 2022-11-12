@@ -1,0 +1,4131 @@
+{
+  "clientRequirements": { "version": { "min": "1.5.1" } },
+  "__type": "DynamicTrainingPlanGenerator",
+  "valueType": "Time",
+  "minUnlockedExercises": 1,
+  "maxUnlockedExercises": 1,
+  "metaphor": "Magical",
+  "isTraining": true,
+  "preventSameExerciseTwice": false,
+  "triggers": [
+    {
+      "triggerTime": "MAP",
+      "criteriaValues": [
+        {
+          "name": "trainingDay",
+          "value": "3"
+        }
+      ],
+      "actionData": {
+        "type": "StartExerciseTriggerAction",
+        "id": "eval_mathtest_day2",
+        "properties": {
+          "id": "mathTest01",
+          "progVisualizer": "ProgVisualizerSnails"
+        }
+      }
+    },
+    {
+      "triggerTime": "MAP",
+      "criteriaValues": [
+        {
+          "name": "trainingDay",
+          "value": "4"
+        }
+      ],
+      "actionData": {
+        "type": "StartExerciseTriggerAction",
+        "id": "eval_mathtest_day3",
+        "properties": {
+          "id": "numberComparison01",
+          "progVisualizer": "ProgVisualizerSnails"
+        }
+      }
+    },
+    {
+      "triggerTime": "MAP",
+      "criteriaValues": [
+        {
+          "name": "trainingDay",
+          "value": "25"
+        }
+      ],
+      "actionData": {
+        "type": "StartExerciseTriggerAction",
+        "id": "eval_mathtest_day25",
+        "properties": {
+          "id": "mathTest02",
+          "progVisualizer": "ProgVisualizerSnails"
+        }
+      }
+    },
+    {
+      "triggerTime": "MAP",
+      "criteriaValues": [
+        {
+          "name": "trainingDay",
+          "value": "26"
+        }
+      ],
+      "actionData": {
+        "type": "StartExerciseTriggerAction",
+        "id": "eval_mathtest_day26",
+        "properties": {
+          "id": "numberComparison02",
+          "progVisualizer": "ProgVisualizerSnails"
+        }
+      }
+    },
+    {
+      "triggerTime": "MAP",
+      "criteriaValues": [
+        {
+          "name": "trainingDay",
+          "value": "35"
+        }
+      ],
+      "actionData": {
+        "type": "StartExerciseTriggerAction",
+        "id": "eval_mathtest_day35",
+        "properties": {
+          "id": "mathTest03",
+          "progVisualizer": "ProgVisualizerSnails"
+        }
+      }
+    },
+    {
+      "triggerTime": "MAP",
+      "criteriaValues": [
+        {
+          "name": "trainingDay",
+          "value": "36"
+        }
+      ],
+      "actionData": {
+        "type": "StartExerciseTriggerAction",
+        "id": "eval_mathtest_day36",
+        "properties": {
+          "id": "numberComparison03",
+          "progVisualizer": "ProgVisualizerSnails"
+        }
+      }
+    },
+    {
+      "triggerTime": "MAP",
+      "criteriaValues": [
+        {
+          "name": "trainingDay",
+          "value": 0
+        }
+      ],
+      "actionData": {
+        "type": "TrainingPlanModTriggerAction",
+        "id": "modDay0_0",
+        "properties": {
+          "weights": {
+            "Math": 40,
+            "WM": 30,
+            "Reasoning": 30,
+            "tangram#intro": 100,
+            "tangram": 100,
+            "nvr_so": 100,
+            "rotation#intro": 100,
+            "rotation": 100,
+            "nvr_rp": 100
+          },
+          "phases": {
+            "^WM_[\\w#]+": { "medalMode": "ONE_WIN" },
+            "^addsub[\\w#]*": {
+              "lvlMgr": {
+                "maxFallFromHighest": 3,
+                "phaseChange": { "change": -2 },
+                "trialChange": {
+                  "changeSuccess": 1,
+                  "changeFail": -1.5
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "triggerTime": "MAP",
+      "criteriaValues": [
+        {
+          "name": "trainingDay",
+          "value": 6
+        }
+      ],
+      "actionData": {
+        "type": "TrainingPlanModTriggerAction",
+        "id": "modDay6_1",
+        "properties": {
+          "weights": {
+            "Math": 48.5,
+            "WM": 48.5,
+            "Reasoning": 3,
+            "tangram#intro": 100,
+            "tangram": 100,
+            "nvr_rp": 0,
+            "nvr_so": 0,
+            "rotation": 0,
+            "rotation#intro": 0
+          }
+        }
+      }
+    }
+  ],
+  "groups": [
+    {
+      "__type": "DynamicGroup",
+      "id": "Math",
+      "weight": 49.25,
+      "exercises": [
+        {
+          "__type": "DynamicExercise",
+          "id": "addsub",
+          "weight": 15,
+          "runEstimationWeight": 30,
+          "data": {
+            "id": "addsub",
+            "title": "Speed math",
+            "phases": [
+              {
+                "medalMode": "ONE_WIN",
+                "phase": "TEST",
+                "type": "PhaseXMathMissingSymbol",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 10
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 7
+                  }
+                },
+                "problemGeneratorData": {
+                  "problemFile": { "path": "MathMissingSymbol.csv" },
+                  "problemProps": {
+                    "useDoneButton": false,
+                    "correctBeforeNext": false,
+                    "maxTime": 15
+                  },
+                  "problems": [
+                    {
+                      "type": "MISSING_SYMBOL",
+                      "problemString": "1+3=?,4"
+                    },
+                    {
+                      "type": "MISSING_SYMBOL",
+                      "problemString": "2+3=?,5"
+                    },
+                    {
+                      "type": "MISSING_SYMBOL",
+                      "problemString": "3+3=?,6"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "unlockCriteria": {
+            "__type": "DayCriteria",
+            "day": 40
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "npals",
+          "weight": 42,
+          "runEstimationWeight": 30,
+          "data": {
+            "title": "Number Pals",
+            "id": "npals",
+            "progVisualizer": "fullScreen",
+            "progVisualizerData": { "progressIndicatorType": "END" },
+            "phases": [
+              {
+                "phase": "TEST",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 11
+                  },
+                  "end": {
+                    "type": "TIME",
+                    "value": 90
+                  }
+                },
+                "type": "PhaseTenPals",
+                "levels": {
+                  "definitions": [
+                    {
+                      "maxValueRange": "5",
+                      "barType": "2COLOR/BARS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 0
+                    },
+                    {
+                      "maxValueRange": "5",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 1
+                    },
+                    {
+                      "maxValueRange": "5",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 2
+                    },
+                    {
+                      "maxValueRange": "5",
+                      "barType": "HIDDENBARIGHT/NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 3
+                    },
+                    {
+                      "maxValueRange": "5",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 4
+                    },
+                    {
+                      "maxValueRange": "5",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 8,
+                      "level": 5
+                    },
+                    {
+                      "maxValueRange": "5",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 7,
+                      "level": 6
+                    },
+                    {
+                      "maxValueRange": "5",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 6,
+                      "level": 7
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "2COLOR/BARS",
+                      "chunking": 5,
+                      "maxTimePerItem": 9,
+                      "level": 8
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 5,
+                      "maxTimePerItem": 9,
+                      "level": 9
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 5,
+                      "maxTimePerItem": 9,
+                      "level": 10
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 11
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "HIDDENBARIGHT/NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 12
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 13
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 8,
+                      "level": 14
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 7,
+                      "level": 15
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 6,
+                      "level": 16
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "HIDDENBARIGHT/NUMBERS",
+                      "chunking": 5,
+                      "maxTimePerItem": 7,
+                      "level": 17
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "NUMBERS",
+                      "chunking": 5,
+                      "maxTimePerItem": 5,
+                      "level": 18
+                    },
+                    {
+                      "maxValueRange": "15",
+                      "barType": "2COLOR/BARS",
+                      "chunking": 5,
+                      "maxTimePerItem": 9,
+                      "level": 19
+                    },
+                    {
+                      "maxValueRange": "15",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 5,
+                      "maxTimePerItem": 9,
+                      "level": 20
+                    },
+                    {
+                      "maxValueRange": "15",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 10,
+                      "maxTimePerItem": 9,
+                      "level": 21
+                    },
+                    {
+                      "maxValueRange": "15",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 22
+                    },
+                    {
+                      "maxValueRange": "15",
+                      "barType": "HIDDENBARIGHT/NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 23
+                    },
+                    {
+                      "maxValueRange": "15",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 24
+                    },
+                    {
+                      "maxValueRange": "15",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 8,
+                      "level": 25
+                    },
+                    {
+                      "maxValueRange": "15",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 7,
+                      "level": 26
+                    },
+                    {
+                      "maxValueRange": "15",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 6,
+                      "level": 27
+                    },
+                    {
+                      "maxValueRange": "15",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 5,
+                      "level": 28
+                    },
+                    {
+                      "maxValueRange": "10",
+                      "barType": "NUMBERS",
+                      "chunking": 5,
+                      "maxTimePerItem": 5,
+                      "level": 29
+                    },
+                    {
+                      "maxValueRange": "20",
+                      "barType": "2COLOR/BARS",
+                      "chunking": 5,
+                      "maxTimePerItem": 9,
+                      "level": 30
+                    },
+                    {
+                      "maxValueRange": "20",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 5,
+                      "maxTimePerItem": 9,
+                      "level": 31
+                    },
+                    {
+                      "maxValueRange": "20",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 10,
+                      "maxTimePerItem": 9,
+                      "level": 32
+                    },
+                    {
+                      "maxValueRange": "20",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 33
+                    },
+                    {
+                      "maxValueRange": "20",
+                      "barType": "HIDDENBARIGHT/NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 9,
+                      "level": 34
+                    },
+                    {
+                      "maxValueRange": "20",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 8,
+                      "level": 35
+                    },
+                    {
+                      "maxValueRange": "20",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 7,
+                      "level": 36
+                    },
+                    {
+                      "maxValueRange": "20",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 6,
+                      "level": 37
+                    },
+                    {
+                      "maxValueRange": "20",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 5,
+                      "level": 38
+                    },
+                    {
+                      "maxValueRange": "10,15,20",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 5,
+                      "maxTimePerItem": 9,
+                      "level": 39
+                    },
+                    {
+                      "maxValueRange": "10,15,20",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 5,
+                      "maxTimePerItem": 8,
+                      "level": 40
+                    },
+                    {
+                      "maxValueRange": "10,15,20",
+                      "barType": "2COLOR/BARS/NUMBERS",
+                      "chunking": 5,
+                      "maxTimePerItem": 7,
+                      "level": 41
+                    },
+                    {
+                      "maxValueRange": "10,15,20",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 7,
+                      "level": 42
+                    },
+                    {
+                      "maxValueRange": "10,15,20",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 6,
+                      "level": 43
+                    },
+                    {
+                      "maxValueRange": "10,15,20",
+                      "barType": "NUMBERS",
+                      "chunking": 0,
+                      "maxTimePerItem": 5,
+                      "level": 44
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "lockCriteria": {
+            "__type": "ExerciseLevelHighestCriteria",
+            "exerciseId": "npals",
+            "level": 44
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "numberline",
+          "weight": 43,
+          "runEstimationWeight": 30,
+          "data": {
+            "title": "Number Line",
+            "id": "numberline",
+            "phases": [
+              {
+                "type": "PhaseArrows",
+                "phase": "TEST",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 7
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 3
+                  }
+                },
+                "problemGeneratorData": {
+                  "generator": "ProblemGeneratorArrowsSummerTraining",
+                  "problemProps": { "correctBeforeNext": true }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "__type": "DynamicGroup",
+      "id": "WM",
+      "weight": 49.25,
+      "exercises": [
+        {
+          "__type": "DynamicExercise",
+          "id": "WM_grid#intro",
+          "weight": 1,
+          "runEstimationWeight": 30,
+          "lockCriteria": {
+            "__type": "PlanetCompleteCriteria",
+            "exerciseId": "WM_grid#intro"
+          },
+          "data": {
+            "title": "Grid Intro",
+            "id": "WM_grid#intro",
+            "phases": [
+              {
+                "type": "PhaseBase",
+                "phase": "GUIDE",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 2
+                  }
+                },
+                "problemGeneratorData": {
+                  "generator": "ProblemGeneratorBase",
+                  "problemProps": { "correctBeforeNext": true },
+                  "problems": [
+                    {
+                      "type": "WM_GRID",
+                      "problemString": "0,1",
+                      "showDemoAnimation": true,
+                      "usePrompt": false
+                    },
+                    {
+                      "type": "WM_GRID",
+                      "problemString": "3,7"
+                    },
+                    {
+                      "type": "WM_GRID",
+                      "problemString": "15,0"
+                    }
+                  ]
+                }
+              },
+              {
+                "phase": "TEST",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "dynamicValue": {
+                      "type": "MEDALS",
+                      "values": [ 6, 6, 6 ],
+                      "adaptAfterNoOfFails": 2
+                    }
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                },
+                "type": "PhaseWorkingMemory",
+                "stimuliType": "WM_GRID"
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "WM_grid",
+          "weight": 1,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "PlanetCompleteCriteria",
+            "exerciseId": "WM_grid#intro"
+          },
+          "data": {
+            "title": "Grid",
+            "id": "WM_grid",
+            "phases": [
+              {
+                "phase": "TEST",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "dynamicValue": {
+                      "type": "MEDALS",
+                      "values": [ 6, 6, 6 ],
+                      "adaptAfterNoOfFails": 2
+                    }
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                },
+                "type": "PhaseWorkingMemory",
+                "stimuliType": "WM_GRID"
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "WM_crush",
+          "weight": 1,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "DayCriteria",
+            "day": 6
+          },
+          "data": {
+            "title": "Memo Crush",
+            "id": "WM_crush",
+            "phases": [
+              {
+                "phase": "TEST",
+                "type": "PhaseMemoCrush",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "dynamicValue": {
+                      "type": "MEDALS",
+                      "values": [ 6, 6, 6 ],
+                      "adaptAfterNoOfFails": 2
+                    }
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                },
+                "showDialogBetween": true,
+                "stimuliType": "WM_CRUSH"
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "WM_3dgrid",
+          "weight": 1,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "DayCriteria",
+            "day": 9
+          },
+          "data": {
+            "id": "WM_3dgrid",
+            "title": "3d-Grid",
+            "phases": [
+              {
+                "phase": "TEST",
+                "type": "PhaseWorkingMemory",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "dynamicValue": {
+                      "type": "MEDALS",
+                      "values": [ 6, 6, 6 ],
+                      "adaptAfterNoOfFails": 2
+                    }
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                },
+                "stimuliType": "WM_3DGRID",
+                "problemGeneratorData": { "problemProps": { "gridWidth": 2 } }
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "WM_circle",
+          "weight": 1,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "DayCriteria",
+            "day": 13
+          },
+          "data": {
+            "title": "Circle",
+            "id": "WM_circle",
+            "phases": [
+              {
+                "phase": "TEST",
+                "type": "PhaseWorkingMemory",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "dynamicValue": {
+                      "type": "MEDALS",
+                      "values": [ 6, 6, 6 ],
+                      "adaptAfterNoOfFails": 2
+                    }
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                },
+                "stimuliType": "WM_CIRCLE"
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "WM_numbers#intro",
+          "weight": 1,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "DayCriteria",
+            "day": 18
+          },
+          "lockCriteria": {
+            "__type": "PlanetCompleteCriteria",
+            "exerciseId": "WM_numbers#intro"
+          },
+          "data": {
+            "id": "WM_numbers#intro",
+            "title": "Digits Backwards Intro",
+            "phases": [
+              {
+                "type": "PhaseBase",
+                "phase": "GUIDE",
+                "problemGeneratorData": {
+                  "generator": "ProblemGeneratorBase",
+                  "problemProps": { "correctBeforeNext": true },
+                  "problems": [
+                    {
+                      "type": "WM_NUMBERS",
+                      "problemString": "1,2",
+                      "showDemoAnimation": true,
+                      "usePrompt": false
+                    },
+                    {
+                      "type": "WM_NUMBERS",
+                      "problemString": "3,6",
+                      "showDemoAnimation": true
+                    },
+                    {
+                      "type": "WM_NUMBERS",
+                      "problemString": "9,1"
+                    }
+                  ]
+                }
+              },
+              {
+                "phase": "TEST",
+                "stimuliType": "WM_NUMBERS",
+                "type": "PhaseWorkingMemory",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "dynamicValue": {
+                      "type": "MEDALS",
+                      "values": [ 6, 6, 6 ],
+                      "adaptAfterNoOfFails": 2
+                    }
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "WM_numbers",
+          "weight": 1,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "PlanetCompleteCriteria",
+            "exerciseId": "WM_numbers#intro"
+          },
+          "data": {
+            "id": "WM_numbers",
+            "title": "Digits Backwards",
+            "phases": [
+              {
+                "phase": "TEST",
+                "stimuliType": "WM_NUMBERS",
+                "type": "PhaseWorkingMemory",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "dynamicValue": {
+                      "type": "MEDALS",
+                      "values": [ 6, 6, 6 ],
+                      "adaptAfterNoOfFails": 2
+                    }
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "WM_moving",
+          "weight": 1,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "DayCriteria",
+            "day": 23
+          },
+          "data": {
+            "title": "Moving",
+            "id": "WM_moving",
+            "phases": [
+              {
+                "phase": "TEST",
+                "type": "PhaseWorkingMemory",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "dynamicValue": {
+                      "type": "MEDALS",
+                      "values": [ 6, 6, 6 ],
+                      "adaptAfterNoOfFails": 2
+                    }
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                },
+                "stimuliType": "WM_MOVING"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "__type": "DynamicGroup",
+      "id": "Reasoning",
+      "weight": 1.5,
+      "exercises": [
+        {
+          "__type": "DynamicExercise",
+          "id": "tangram#intro",
+          "weight": 1,
+          "runEstimationWeight": 30,
+          "lockCriteria": {
+            "__type": "PlanetCompleteCriteria",
+            "exerciseId": "tangram#intro"
+          },
+          "data": {
+            "title": "Tangram intro",
+            "id": "tangram#intro",
+            "phases": [
+              {
+                "type": "PhaseBase",
+                "phase": "GUIDE",
+                "problemGeneratorData": {
+                  "problems": [
+                    {
+                      "problemString": "guide1",
+                      "type": "TANGRAM",
+                      "showDemoAnimation": true,
+                      "hintDelay": 0.5
+                    },
+                    {
+                      "problemString": "guide2",
+                      "type": "TANGRAM",
+                      "hintDelay": 0.5
+                    },
+                    {
+                      "problemString": "guide3",
+                      "type": "TANGRAM",
+                      "hintDelay": 0.5
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "PhaseTangram",
+                "phase": "TEST",
+                "medalMode": "THREE_WINS",
+                "problemGeneratorData": { "problemProps": { "hintDelay": 60 } },
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 1
+                  },
+                  "end": {
+                    "type": "TIME",
+                    "value": 90
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "boolean",
+          "weight": 0,
+          "runEstimationWeight": 30,
+          "data": {
+            "title": "Boolean",
+            "id": "boolean",
+            "isTest": false,
+            "phases": [
+              {
+                "type": "PhaseBoolean",
+                "phase": "TEST",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 7
+                  },
+                  "fail": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 3
+                  }
+                },
+                "problemGeneratorData": {
+                  "generator": "ProblemGeneratorBoolean",
+                  "problemProps": { "correctBeforeNext": true }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "tangram",
+          "weight": 1,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "PlanetCompleteCriteria",
+            "exerciseId": "tangram#intro"
+          },
+          "data": {
+            "title": "Tangram",
+            "id": "tangram",
+            "progVisualizer": "fullScreen",
+            "progVisualizerData": { "progressIndicatorType": "END" },
+            "phases": [
+              {
+                "type": "PhaseTangram",
+                "phase": "TEST",
+                "medalMode": "THREE_WINS",
+                "problemGeneratorData": { "problemProps": { "hintDelay": 60 } },
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 1
+                  },
+                  "end": {
+                    "type": "TIME",
+                    "value": 90
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "rotation#intro",
+          "weight": 0,
+          "runEstimationWeight": 30,
+          "lockCriteria": {
+            "__type": "PlanetCompleteCriteria",
+            "exerciseId": "rotation#intro"
+          },
+          "data": {
+            "title": "Rotation intro",
+            "id": "rotation#intro",
+            "isTest": false,
+            "phases": [
+              {
+                "type": "PhaseBase",
+                "phase": "GUIDE",
+                "problemGeneratorData": {
+                  "problems": [
+                    {
+                      "problemString": "guide0",
+                      "type": "ProblemVisiospatial"
+                    },
+                    {
+                      "problemString": "guide1",
+                      "type": "ProblemVisiospatial"
+                    },
+                    {
+                      "problemString": "guide2",
+                      "type": "ProblemVisiospatial"
+                    },
+                    {
+                      "problemString": "guide3",
+                      "type": "ProblemVisiospatial"
+                    }
+                  ],
+                  "problemProps": {}
+                }
+              },
+              {
+                "type": "PhaseVisiospatial",
+                "phase": "TEST",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 7
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "rotation",
+          "weight": 0,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "PlanetCompleteCriteria",
+            "exerciseId": "rotation#intro"
+          },
+          "data": {
+            "title": "Rotation",
+            "id": "rotation",
+            "isTest": false,
+            "phases": [
+              {
+                "type": "PhaseVisiospatial",
+                "phase": "TEST",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 7
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 3
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "nvr_so",
+          "weight": 0,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "DayCriteria",
+            "day": 1
+          },
+          "data": {
+            "title": "Ordering",
+            "id": "nvr_so",
+            "isTest": false,
+            "phases": [
+              {
+                "phase": "TEST",
+                "type": "PhaseNVR",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 7
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                },
+                "problemFactory": { "nvr_type": "SequentialOrder" },
+                "stimuliType": "NVR",
+                "problemGeneratorData": {
+                  "problemProps": {
+                    "correctBeforeNext": true,
+                    "useDoneButton": true
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "__type": "DynamicExercise",
+          "id": "nvr_rp",
+          "weight": 0,
+          "runEstimationWeight": 30,
+          "unlockCriteria": {
+            "__type": "DayCriteria",
+            "day": 1
+          },
+          "data": {
+            "title": "Ordering",
+            "id": "nvr_rp",
+            "isTest": false,
+            "phases": [
+              {
+                "phase": "TEST",
+                "type": "PhaseNVR",
+                "endCriteriaData": {
+                  "target": {
+                    "type": "CORRECT_TOTAL",
+                    "value": 7
+                  },
+                  "end": {
+                    "type": "INCORRECT_TOTAL",
+                    "value": 5
+                  }
+                },
+                "problemFactory": { "nvr_type": "RepeatedPatterns" },
+                "stimuliType": "NVR",
+                "problemGeneratorData": {
+                  "problemProps": {
+                    "correctBeforeNext": true,
+                    "useDoneButton": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "hiddenExercises": [
+    {
+      "title": "Mattetest 1",
+      "id": "mathTest01",
+      "progVisualizer": "ProgVisualizerSnails",
+      "progVisualizerData": { "progressIndicatorType": "END" },
+      "phases": [
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 4
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "useDoneButton": false,
+              "errorHiliteType": "SHOW_CORRECT",
+              "showIdleHelp": true
+            },
+            "problems": [
+              {
+                "problemString": "3+1=?,4",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6,
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "3+3=?,6",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6
+              },
+              {
+                "problemString": "5+5=?,10",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6,
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "2+1=?,3",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 46
+            },
+            "fail": {
+              "type": "INCORRECT_IN_ROW",
+              "value": 4
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "useDoneButton": false,
+              "errorHiliteType": "NONE",
+              "maxTime": 15
+            },
+            "problems": [
+              {
+                "problemString": "2+1=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1+3=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1+2=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+2=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+3=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+3=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1+5=?,6",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+2=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+5=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+2=?,6",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+3=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+6=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+4=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+7=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+3=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8+4=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+5=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+7=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6+6=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+6=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+5=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+6=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+8=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+6=?,13",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6+8=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+9=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9+5=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+10=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+7=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9+6=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8+8=?,16",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11+3=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+13=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "12+6=?,18",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+11=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10+7=?,17",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+12=?,19",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17+14=?,31",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "21+18=?,39",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "16+26=?,42",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17+36=?,53",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "28+28=?,56",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "18+55=?,73",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "37+46=?,83",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "38+58=?,96",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "26+67=?,93",
+                "type": "MISSING_SYMBOL"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 3
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "useDoneButton": false,
+              "errorHiliteType": "SHOW_CORRECT",
+              "showIdleHelp": true
+            },
+            "problems": [
+              {
+                "problemString": "3-1=?,2",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 3
+              },
+              {
+                "problemString": "3-3=?,0",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 3
+              },
+              {
+                "problemString": "5-2=?,3",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 3
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 46
+            },
+            "fail": {
+              "type": "INCORRECT_IN_ROW",
+              "value": 4
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "useDoneButton": false,
+              "errorHiliteType": "NONE",
+              "maxTime": 15
+            },
+            "problems": [
+              {
+                "problemString": "2-1=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1-1=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3-1=?,2",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2-1=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2-2=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3-2=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5-1=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4-1=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6-1=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6-6=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10-1=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10-5=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-1=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7-2=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5-4=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-4=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6-5=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9-8=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-2=?,6",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5-2=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "15-5=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11-11=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10-3=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11-10=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9-1=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-8=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11-1=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "20-19=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17-6=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "12-2=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "18-2=?,16",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17-5=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "13-5=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7-5=?,2",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "18-7=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "20-11=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "25-4=?,21",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "31-6=?,25",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "40-20=?,20",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "48-16=?,32",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "43-14=?,29",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "55-34=?,21",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "53-27=?,26",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "67-48=?,19",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "72-64=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "86-59=?,27",
+                "type": "MISSING_SYMBOL"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "Mattetest 2",
+      "id": "mathTest02",
+      "progVisualizer": "ProgVisualizerSnails",
+      "progVisualizerData": { "progressIndicatorType": "END" },
+      "phases": [
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 4
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "useDoneButton": false,
+              "errorHiliteType": "SHOW_CORRECT",
+              "showIdleHelp": true
+            },
+            "problems": [
+              {
+                "problemString": "3+1=?,4",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6,
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "3+3=?,6",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6
+              },
+              {
+                "problemString": "5+5=?,10",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6,
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "2+1=?,3",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 46
+            },
+            "fail": {
+              "type": "INCORRECT_IN_ROW",
+              "value": 4
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "useDoneButton": false,
+              "errorHiliteType": "NONE",
+              "maxTime": 15
+            },
+            "problems": [
+              {
+                "problemString": "2+1=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1+3=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1+2=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+2=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+3=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+3=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1+5=?,6",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+2=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+5=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+2=?,6",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+3=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+6=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+4=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+7=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+3=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8+4=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+5=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+7=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6+6=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+6=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+5=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+6=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+8=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+6=?,13",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6+8=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+9=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9+5=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+10=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+7=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9+6=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8+8=?,16",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11+3=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+13=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "12+6=?,18",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+11=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10+7=?,17",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+12=?,19",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17+14=?,31",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "21+18=?,39",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "16+26=?,42",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17+36=?,53",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "28+28=?,56",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "18+55=?,73",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "37+46=?,83",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "38+58=?,96",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "26+67=?,93",
+                "type": "MISSING_SYMBOL"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 3
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "useDoneButton": false,
+              "errorHiliteType": "SHOW_CORRECT",
+              "showIdleHelp": true
+            },
+            "problems": [
+              {
+                "problemString": "3-1=?,2",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 3
+              },
+              {
+                "problemString": "3-3=?,0",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 3
+              },
+              {
+                "problemString": "5-2=?,3",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 3
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 46
+            },
+            "fail": {
+              "type": "INCORRECT_IN_ROW",
+              "value": 4
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "useDoneButton": false,
+              "errorHiliteType": "NONE",
+              "maxTime": 15
+            },
+            "problems": [
+              {
+                "problemString": "2-1=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1-1=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3-1=?,2",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2-1=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2-2=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3-2=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5-1=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4-1=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6-1=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6-6=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10-1=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10-5=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-1=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7-2=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5-4=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-4=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6-5=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9-8=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-2=?,6",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5-2=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "15-5=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11-11=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10-3=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11-10=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9-1=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-8=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11-1=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "20-19=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17-6=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "12-2=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "18-2=?,16",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17-5=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "13-5=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7-5=?,2",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "18-7=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "20-11=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "25-4=?,21",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "31-6=?,25",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "40-20=?,20",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "48-16=?,32",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "43-14=?,29",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "55-34=?,21",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "53-27=?,26",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "67-48=?,19",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "72-64=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "86-59=?,27",
+                "type": "MISSING_SYMBOL"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "Mattetest 3",
+      "id": "mathTest03",
+      "progVisualizer": "ProgVisualizerSnails",
+      "progVisualizerData": { "progressIndicatorType": "END" },
+      "phases": [
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 4
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "useDoneButton": false,
+              "errorHiliteType": "SHOW_CORRECT",
+              "showIdleHelp": true
+            },
+            "problems": [
+              {
+                "problemString": "3+1=?,4",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6,
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "3+3=?,6",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6
+              },
+              {
+                "problemString": "5+5=?,10",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6,
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "2+1=?,3",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 6
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 46
+            },
+            "fail": {
+              "type": "INCORRECT_IN_ROW",
+              "value": 4
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "useDoneButton": false,
+              "errorHiliteType": "NONE",
+              "maxTime": 15
+            },
+            "problems": [
+              {
+                "problemString": "2+1=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1+3=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1+2=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+2=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+3=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+3=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1+5=?,6",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+2=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+5=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+2=?,6",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+3=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+6=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+4=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+7=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+3=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8+4=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+5=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+7=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6+6=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+6=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+5=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+6=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+8=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+6=?,13",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6+8=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3+9=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9+5=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5+10=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+7=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9+6=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8+8=?,16",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11+3=?,14",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2+13=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "12+6=?,18",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4+11=?,15",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10+7=?,17",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7+12=?,19",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17+14=?,31",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "21+18=?,39",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "16+26=?,42",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17+36=?,53",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "28+28=?,56",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "18+55=?,73",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "37+46=?,83",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "38+58=?,96",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "26+67=?,93",
+                "type": "MISSING_SYMBOL"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 3
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "useDoneButton": false,
+              "errorHiliteType": "SHOW_CORRECT",
+              "showIdleHelp": true
+            },
+            "problems": [
+              {
+                "problemString": "3-1=?,2",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 3
+              },
+              {
+                "problemString": "3-3=?,0",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 3
+              },
+              {
+                "problemString": "5-2=?,3",
+                "type": "MISSING_SYMBOL",
+                "hintDelay": 3
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 46
+            },
+            "fail": {
+              "type": "INCORRECT_IN_ROW",
+              "value": 4
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "useDoneButton": false,
+              "errorHiliteType": "NONE",
+              "maxTime": 15
+            },
+            "problems": [
+              {
+                "problemString": "2-1=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "1-1=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3-1=?,2",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2-1=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "2-2=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "3-2=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5-1=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "4-1=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6-1=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6-6=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10-1=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10-5=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-1=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7-2=?,5",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5-4=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-4=?,4",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "6-5=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9-8=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-2=?,6",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "5-2=?,3",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "15-5=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11-11=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "10-3=?,7",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11-10=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "9-1=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "8-8=?,0",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "11-1=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "20-19=?,1",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17-6=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "12-2=?,10",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "18-2=?,16",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "17-5=?,12",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "13-5=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "7-5=?,2",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "18-7=?,11",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "20-11=?,9",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "25-4=?,21",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "31-6=?,25",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "40-20=?,20",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "48-16=?,32",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "43-14=?,29",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "55-34=?,21",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "53-27=?,26",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "67-48=?,19",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "72-64=?,8",
+                "type": "MISSING_SYMBOL"
+              },
+              {
+                "problemString": "86-59=?,27",
+                "type": "MISSING_SYMBOL"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "Number comparison test 1",
+      "id": "numberComparison01",
+      "progVisualizer": "ProgVisualizerSnails",
+      "progVisualizerData": {
+        "progressIndicatorType": "END",
+        "useExponential": false,
+        "opponentGoalScreenPosition": 1
+      },
+      "phases": [
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 4
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "errorHiliteType": "SHOW_CORRECT"
+            },
+            "problems": [
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON",
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "DOT_4,DOT_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_2",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 50
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "errorHiliteType": "NONE"
+            },
+            "problems": [
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_2,DOT_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_6,DOT_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_6,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_2,DOT_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_2,DOT_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 3
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "errorHiliteType": "SHOW_CORRECT"
+            },
+            "problems": [
+              {
+                "problemString": "NUM_2,NUM_4",
+                "type": "VALUE_COMPARISON",
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "NUM_3,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_7",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 50
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "errorHiliteType": "NONE"
+            },
+            "problems": [
+              {
+                "problemString": "NUM_3,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_1,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_9",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_1,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_2",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "Number comparison test 2",
+      "id": "numberComparison02",
+      "progVisualizer": "ProgVisualizerSnails",
+      "progVisualizerData": {
+        "progressIndicatorType": "END",
+        "useExponential": false,
+        "opponentGoalScreenPosition": 1
+      },
+      "phases": [
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 4
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "errorHiliteType": "SHOW_CORRECT"
+            },
+            "problems": [
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON",
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "DOT_4,DOT_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_2",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 50
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "errorHiliteType": "NONE"
+            },
+            "problems": [
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_2,DOT_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_6,DOT_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_6,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_2,DOT_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_2,DOT_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 3
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "errorHiliteType": "SHOW_CORRECT"
+            },
+            "problems": [
+              {
+                "problemString": "NUM_2,NUM_4",
+                "type": "VALUE_COMPARISON",
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "NUM_3,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_7",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 50
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "errorHiliteType": "NONE"
+            },
+            "problems": [
+              {
+                "problemString": "NUM_3,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_1,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_9",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_1,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_2",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "Number comparison test 3",
+      "id": "numberComparison03",
+      "progVisualizer": "ProgVisualizerSnails",
+      "progVisualizerData": {
+        "progressIndicatorType": "END",
+        "useExponential": false,
+        "opponentGoalScreenPosition": 1
+      },
+      "phases": [
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 4
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "errorHiliteType": "SHOW_CORRECT"
+            },
+            "problems": [
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON",
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "DOT_4,DOT_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_2",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 50
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "errorHiliteType": "NONE"
+            },
+            "problems": [
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_2,DOT_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_6,DOT_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_6,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_2,DOT_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_2,DOT_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_3,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_5,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_4,DOT_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "DOT_1,DOT_5",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "GUIDE",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 3
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": true,
+              "hintCorrect": true,
+              "errorHiliteType": "SHOW_CORRECT"
+            },
+            "problems": [
+              {
+                "problemString": "NUM_2,NUM_4",
+                "type": "VALUE_COMPARISON",
+                "showDemoAnimation": true
+              },
+              {
+                "problemString": "NUM_3,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_7",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PhaseBase",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 50
+            },
+            "end": {
+              "type": "TIME",
+              "value": 180
+            }
+          },
+          "problemGeneratorData": {
+            "problemProps": {
+              "correctBeforeNext": false,
+              "errorHiliteType": "NONE"
+            },
+            "problems": [
+              {
+                "problemString": "NUM_3,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_1,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_3",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_9",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_7,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_4,NUM_1",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_6,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_2",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_8,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_2,NUM_5",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_4",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_9,NUM_8",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_1,NUM_6",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_3,NUM_7",
+                "type": "VALUE_COMPARISON"
+              },
+              {
+                "problemString": "NUM_5,NUM_2",
+                "type": "VALUE_COMPARISON"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
