@@ -1,5 +1,4 @@
 ﻿using Common;
-using ProblemSource.Models.LogItems;
 using System.Data;
 using System.Text.RegularExpressions;
 
@@ -114,136 +113,16 @@ namespace ProblemSource.Models.Aggregates
         }
     }
 
-    public class Account
-    {
-        public int id { get; set; }
-        public string uuid { get; set; } = string.Empty;
-        public int person_id { get; set; }
-        public int training_plan_id { get; set; }
-        public DateTime created_at { get; set; }
-        public int secondary_training_plan_id { get; set; }
-        public List<Phase> phases { get; set; } = new();
+    //public class Account
+    //{
+    //    public int id { get; set; }
+    //    public string uuid { get; set; } = string.Empty;
+    //    public int person_id { get; set; }
+    //    public int training_plan_id { get; set; }
+    //    public DateTime created_at { get; set; }
+    //    public int secondary_training_plan_id { get; set; }
+    //    public List<Phase> phases { get; set; } = new();
 
-        public List<Group> groups { get; set; } = new();
-    }
-
-    public class Phase
-    {
-        //public string uuid { get; set; }
-        public int id { get; set; }
-        public int training_day { get; set; }
-        public string exercise { get; set; } = string.Empty;
-        public string phase_type { get; set; } = string.Empty;
-        public long time { get; set; }
-        public int sequence { get; set; }
-        public List<Problem> problems { get; set; } = new(); 
-        public UserTest? user_test { get; set; }
-
-        public static Phase Create(NewPhaseLogItem newPhase) //, string userId)
-        {
-            return new Phase
-            {
-                //uuid = userId,
-                time = newPhase.time,
-                phase_type = newPhase.phase_type,
-                exercise = newPhase.exercise,
-                training_day = newPhase.training_day,
-                sequence = newPhase.sequence,
-            };
-        }
-
-        public static Phase CreateUnknown(long time, int trainingDay)
-        {
-            return new Phase
-            {
-                exercise = "N/A",
-                time = time,
-                phase_type = "N/A",
-                training_day = trainingDay,
-            };
-        }
-
-        public static string UniqueIdWithinUser(Phase p) => $"{p.training_day}_{p.exercise}_{p.time}";
-    }
-
-    public class Problem
-    {
-        public int id { get; set; }
-        public int phase_id { get; set; }
-        public decimal level { get; set; }
-
-        public long time { get; set; }
-        public string problem_type { get; set; } = string.Empty;
-        public string problem_string { get; set; } = string.Empty;
-
-        public List<Answer> answers { get; set; } = new();
-
-        public static Problem Create(NewProblemLogItem newProblem)
-        {
-            return new Problem
-            {
-                level = newProblem.level,
-                problem_string = newProblem.problem_string,
-                problem_type = newProblem.problem_type,
-                time = newProblem.time,
-            };
-        }
-
-        public static Problem CreateUnknown(long time)
-        {
-            return new Problem
-            {
-                level = 0,
-                problem_string = "N/A",
-                problem_type = "N/A",
-                time = time,
-            };
-        }
-    }
-
-    public class Answer
-    {
-        public int id { get; set; }
-        public int problem_id { get; set; }
-        public long time { get; set; }
-        public bool correct { get; set; }
-        public int response_time { get; set; }
-        public string answer { get; set; } = string.Empty;
-        public int tries { get; set; }
-
-        public static Answer Create(AnswerLogItem answer)
-        {
-            return new Answer
-            {
-                answer = answer.answer,
-                correct = answer.correct,
-                response_time = answer.response_time,
-                time = answer.time,
-                tries = answer.tries
-            };
-        }
-    }
-
-    public class UserTest
-    {
-        public int score { get; set; }
-        public int target_score { get; set; }
-        public int planet_target_score { get; set; }
-        public bool won_race { get; set; }
-        public bool completed_planet { get; set; }
-        public bool? ended { get; set; }
-
-        public static UserTest Create(PhaseEndLogItem phaseEnd)
-        {
-            return new UserTest
-            {
-                completed_planet = phaseEnd.completedPlanet,
-                planet_target_score = (int)phaseEnd.planetTargetScore,
-                score = (int)phaseEnd.score,
-                target_score = (int)phaseEnd.targetScore,
-                won_race = phaseEnd.wonRace,
-                ended = true // TODO: ?
-            };
-        }
-    }
+    //    public List<Group> groups { get; set; } = new();
+    //}
 }
