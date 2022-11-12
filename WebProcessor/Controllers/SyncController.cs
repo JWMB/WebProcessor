@@ -21,7 +21,9 @@ namespace WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<object?>> SyncUnauthorized()
         {
-            var pipelineName = Request.Query["pipeline"];
+            var pipelineName = Request.Query["pipeline"].FirstOrDefault();
+            if (pipelineName == null)
+                return BadRequest($"Pipeline not found ${pipelineName}");
             return await RunPipeline(pipelineName, User);
         }
 

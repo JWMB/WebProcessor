@@ -17,7 +17,7 @@ namespace TestClient
 
             var response = await client.GetStringAsync($"{apiUrl}Relay/GetSyncUrls?uuid=123");
             syncUri = Newtonsoft.Json.JsonConvert.DeserializeObject<List<SyncUrl>>(response).First().Url;
-            if (!syncUri.IsAbsoluteUri)
+            if (syncUri?.IsAbsoluteUri == false)
                 throw new Exception($"Sync URI incomplete: {syncUri}");
         }
 

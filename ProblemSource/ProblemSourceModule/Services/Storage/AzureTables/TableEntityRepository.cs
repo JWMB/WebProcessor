@@ -33,7 +33,7 @@ namespace ProblemSource.Services.Storage.AzureTables
                         throw new Exception($"{response.ReasonPhrase}");
                     result.Add(response);
                 }
-                catch (RequestFailedException rfEx)
+                catch
                 {
                     throw;
                 }

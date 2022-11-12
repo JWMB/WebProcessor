@@ -42,6 +42,18 @@
         public int tries { get; set; }
         public string? group { get; set; }
         public int response_time { get; set; } = 0;
+
+        public TimesRegisterStimuliResponse? timings { get; set; } //TODO: check if this actually gets sent
+
+        public class TimesRegisterStimuliResponse
+        {
+            public int? StimuliStart { get; set; }
+            public int? StimuliEnd { get; set; }
+            public int? ResponseAllowedStart { get; set; }
+            public List<int?>? ResponseTimes { get; set; }
+            public int? FeedbackStart { get; set; }
+            public int? FeedbackEnd { get; set; }
+        }
     }
 
     public class UserStatePushLogItem : LogItem, IUserGeneratedState
