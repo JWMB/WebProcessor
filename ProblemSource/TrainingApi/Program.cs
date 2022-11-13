@@ -1,4 +1,5 @@
 using OldDb.Models;
+using ProblemSource;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using TrainingApi.Services;
@@ -6,12 +7,12 @@ using TrainingApi.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
-builder.Services.AddSingleton<ITableClientFactory>(sp => new TableClientFactory(sp.GetRequiredService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
-builder.Services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
 builder.Services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trainingdb;Trusted_Connection=True;"));
 builder.Services.AddScoped<TrainingDbContext>();
 builder.Services.AddScoped<IStatisticsProvider, RecreatedStatisticsProvider>();
+
+var problemSourceModule = new ProblemSource.ProblemSourceModule();
+problemSourceModule.ConfigureServices(builder.Services, false);
 
 var oldDbStartup = new OldDb.Startup();
 oldDbStartup.ConfigureServices(builder.Services);
@@ -24,9 +25,10 @@ builder.Services.AddSwaggerDocument();
 
 var app = builder.Build();
 
-// Initializing TableClientFactory on startup, in order to get an early error:
-var tableClientFactory = app.Services.GetService<ITableClientFactory>() as TableClientFactory;
-tableClientFactory?.Init().Wait();
+//// Initializing TableClientFactory on startup, in order to get an early error:
+//var tableClientFactory = app.Services.GetService<ITableClientFactory>() as TableClientFactory;
+//tableClientFactory?.Init().Wait();
+problemSourceModule.Configure(app.Services);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
