@@ -17,7 +17,6 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
             tableClient = tableClientFactory.Trainings;
             converter = new ExpandableTableEntityConverter<Training>(t => (staticPartitionKey, t.Id.ToString()));
             repo = new TableEntityRepository<Training, TableEntity>(tableClient, converter.ToPoco, converter.FromPoco, staticPartitionKey);
-            this.tableClient = tableClient;
         }
 
         public async Task<Training?> Get(int id) => await repo.Get(id.ToString());

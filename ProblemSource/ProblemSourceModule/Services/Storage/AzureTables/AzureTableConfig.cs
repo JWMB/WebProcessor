@@ -9,8 +9,6 @@ namespace ProblemSource.Services.Storage.AzureTables
         public string TableUserLogs { get; set; } = "";
         public string TableTrainingPlans { get; set; } = "";
 
-        public TableServiceClient CreateServiceClient() => new TableServiceClient(ConnectionString);
-
         public TableClient CreateTableClient(string tableName) => new TableClient(ConnectionString, tableName);
 
         public static void SetLongString(TableEntity entity, string str, string prefix = "Data")

@@ -52,7 +52,6 @@ namespace WebApi
             builder.Services.AddApplicationInsightsTelemetry(options =>
                 options.ConnectionString = builder.Configuration.GetValue("ApplicationInsights:ConnectionString", ""));
 
-            builder.Services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
             builder.Services.AddSingleton<IDataSink, AzureTableLogSink>();
             builder.Services.AddSingleton<IProcessingPipelineRepository, ProcessingPipelineRepository>();
             builder.Services.AddSingleton<SinkOnlyProcessingPipeline>();

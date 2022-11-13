@@ -19,8 +19,6 @@ namespace ProblemSource.Tests
 
         public AggregationServiceTests()
         {
-            //Skip.If(!System.Diagnostics.Debugger.IsAttached);
-
             fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
         }
 

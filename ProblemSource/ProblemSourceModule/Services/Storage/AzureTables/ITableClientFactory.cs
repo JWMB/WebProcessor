@@ -9,6 +9,9 @@ namespace ProblemSource.Services.Storage.AzureTables
         TableClient TrainingDays { get; }
         TableClient PhaseStatistics { get; }
         TableClient Trainings { get; }
+        TableClient UserStates { get; }
+
+        Task<TableClient> CreateClientAndInit(string name);
     }
 
     public class TableClientFactory : ITableClientFactory
@@ -29,12 +32,14 @@ namespace ProblemSource.Services.Storage.AzureTables
             await TrainingDays.CreateIfNotExistsAsync();
             await PhaseStatistics.CreateIfNotExistsAsync();
             await Trainings.CreateIfNotExistsAsync();
+            await UserStates.CreateIfNotExistsAsync();
         }
 
         public TableClient Phases => CreateClient(nameof(Phases));
         public TableClient TrainingDays => CreateClient(nameof(TrainingDays));
         public TableClient PhaseStatistics => CreateClient(nameof(PhaseStatistics));
         public TableClient Trainings => CreateClient(nameof(Trainings));
+        public TableClient UserStates => CreateClient(nameof(UserStates));
 
         public TableClient CreateClient(string name) => new TableClient(connectionString, $"{prefix}{name}", tableClientOptions);
 
