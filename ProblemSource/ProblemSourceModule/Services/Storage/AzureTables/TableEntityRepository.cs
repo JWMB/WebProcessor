@@ -1,12 +1,12 @@
 ﻿using Azure;
 using Azure.Data.Tables;
 using Newtonsoft.Json;
-using System.Linq;
+using ProblemSourceModule.Services.Storage;
 using System.Text.RegularExpressions;
 
 namespace ProblemSource.Services.Storage.AzureTables
 {
-    public class TableEntityRepository<T, TTableEntity> : IRepository<T> where TTableEntity : class, ITableEntity, new()
+    public class TableEntityRepository<T, TTableEntity> : IRepository<T, string>, IBatchRepository<T> where TTableEntity : class, ITableEntity, new()
     {
         private readonly TableClient tableClient;
         private readonly Func<TTableEntity, T> toBusinessObject;
@@ -26,17 +26,10 @@ namespace ProblemSource.Services.Storage.AzureTables
             var result = new List<Response>();
             foreach (var item in entities)
             {
-                try
-                {
-                    var response = await tableClient.UpsertEntityAsync(item, TableUpdateMode.Replace);
-                    if (response.IsError)
-                        throw new Exception($"{response.ReasonPhrase}");
-                    result.Add(response);
-                }
-                catch
-                {
-                    throw;
-                }
+                var response = await tableClient.UpsertEntityAsync(item, TableUpdateMode.Replace);
+                if (response.IsError)
+                    throw new Exception($"{response.ReasonPhrase}");
+                result.Add(response);
             }
             return result;
         }
@@ -88,7 +81,7 @@ namespace ProblemSource.Services.Storage.AzureTables
                     (ex is RequestFailedException rfEx ? rfEx.ErrorCode : null);
                 throw new Exception($"{typeof(T).Name} code:{code} stored:{lengthsInfo}", ex);
             }
-            catch (Exception ex)
+            catch
             {
                 throw;
             }
@@ -106,5 +99,38 @@ namespace ProblemSource.Services.Storage.AzureTables
             }
             return result;
         }
+
+        public async Task<T?> Get(string id)
+        {
+            //var response = await tableClient.GetEntityIfExistsAsync<TTableEntity>(id.PartitionKey, id.RowKey);
+            var response = await tableClient.GetEntityIfExistsAsync<TTableEntity>(partitionKeyForFilter, id);
+            return response.HasValue ? toBusinessObject(response.Value) : default;
+        }
+
+        public async Task<string> Add(T item)
+        {
+            var entity = toTableEntity(item);
+            await tableClient.AddEntityAsync(entity);
+            //return new TableEntityId { PartitionKey = entity.PartitionKey, RowKey = entity.RowKey };
+            return entity.RowKey;
+        }
+
+        public async Task Update(T item)
+        {
+            var entity = toTableEntity(item);
+            await tableClient.UpdateEntityAsync(entity, ETag.All, TableUpdateMode.Replace);
+        }
+
+        public async Task Remove(T item)
+        {
+            var entity = toTableEntity(item);
+            await tableClient.DeleteEntityAsync(entity.PartitionKey, entity.RowKey);
+        }
+
+        //public class TableEntityId
+        //{
+        //    public string PartitionKey { get; set; } = string.Empty;
+        //    public string RowKey { get; set; } = string.Empty;
+        //}
     }
 }

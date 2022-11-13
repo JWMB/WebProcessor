@@ -1,18 +1,27 @@
 ﻿using Azure.Data.Tables;
 using Newtonsoft.Json;
 using System.Reflection;
-//using System.Linq;
 using Common;
-using Newtonsoft.Json.Linq;
 
 namespace ProblemSource.Services.Storage.AzureTables.TableEntities
 {
-    public class ExpandableTableEntity<T> where T : class, new()
+    public class ExpandableTableEntityConverter<T> where T : class, new()
     {
         private static readonly int maxLength = 32 * 1024;
         private static readonly string expandedColumnListPropertyName = "__ExpandedColumns";
 
-        public static T ToPoco(TableEntity entity)
+        private readonly Func<T, (string partitionKey, string rowKey)> idFunc;
+
+        public ExpandableTableEntityConverter(Func<T, (string partitionKey, string rowKey)> idFunc)
+        {
+            this.idFunc = idFunc;
+        }
+
+        public T ToPoco(TableEntity entity) => ToPocoStatic(entity);
+        public TableEntity FromPoco(T obj) => FromPoco(obj, idFunc);
+
+
+        public static T ToPocoStatic(TableEntity entity)
         {
             var poco = new T();
             var expanded = entity[expandedColumnListPropertyName] as Dictionary<string, int>;
@@ -38,7 +47,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                         }
                         catch (Exception ex)
                         {
-                            throw;
+                            throw ex;
                         }
                     }
                     else
@@ -53,7 +62,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             return poco;
         }
 
-        public static TableEntity FromPoco(T obj)
+        public static TableEntity FromPoco(T obj, Func<T, (string partitionKey, string rowKey)> idFunc)
         {
             var entity = new TableEntity();
 
@@ -82,6 +91,10 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
 
             if (expandedProps.Any())
                 entity[expandedColumnListPropertyName] = expandedProps;
+
+            var id = idFunc(obj);
+            entity.RowKey = id.rowKey;
+            entity.PartitionKey = id.partitionKey;
 
             return entity;
         }

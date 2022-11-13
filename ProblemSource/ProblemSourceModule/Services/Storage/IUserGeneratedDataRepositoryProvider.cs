@@ -4,8 +4,8 @@ namespace ProblemSource.Services.Storage
 {
     public interface IUserGeneratedDataRepositoryProvider
     {
-        IRepository<Phase> Phases { get; }
-        IRepository<TrainingDayAccount> TrainingDays { get; }
-        IRepository<PhaseStatistics> PhaseStatistics { get; }
+        IBatchRepository<Phase> Phases { get; }
+        IBatchRepository<TrainingDayAccount> TrainingDays { get; }
+        IBatchRepository<PhaseStatistics> PhaseStatistics { get; }
     }
 }

@@ -12,10 +12,10 @@ namespace ProblemSource.Services.Storage.AzureTables
             PhaseStatistics = new TableEntityRepository<PhaseStatistics, PhaseStatisticsTableEntity>(tableClientFactory.PhaseStatistics, p => p.ToBusinessObject(), p => PhaseStatisticsTableEntity.FromBusinessObject(p, userId), userId);
         }
 
-        public IRepository<Phase> Phases { get; }
+        public IBatchRepository<Phase> Phases { get; }
 
-        public IRepository<TrainingDayAccount> TrainingDays { get; }
+        public IBatchRepository<TrainingDayAccount> TrainingDays { get; }
 
-        public IRepository<PhaseStatistics> PhaseStatistics { get; }
+        public IBatchRepository<PhaseStatistics> PhaseStatistics { get; }
     }
 }

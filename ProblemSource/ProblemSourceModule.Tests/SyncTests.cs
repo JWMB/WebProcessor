@@ -95,8 +95,9 @@ namespace ProblemSource.Tests
 
             // Assert
             var state = JsonConvert.DeserializeObject<UserFullState>(result.state);
-            //TODO: state!.training_plan.metaphor.ShouldBe("Magical");
-            state!.training_settings.customData?.unlockAllPlanets.ShouldBe(true);
+            //state!.training_plan.metaphor.ShouldBe("Magical");
+            ((JObject)state!.training_plan)["metaphor"].Value<string>().ShouldBe("Magical");
+            state!.training_settings.customData?.unlockAllPlanets.ShouldBe(false);
         }
 
         [Fact]

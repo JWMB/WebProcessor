@@ -5,6 +5,8 @@ using PluginModuleBase;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Services.Storage;
+using ProblemSourceModule.Services.Storage.AzureTables;
 
 namespace ProblemSource
 {
@@ -25,6 +27,8 @@ namespace ProblemSource
             //var tableFactory = TableClientFactory.Create("").Result;
             //services.AddSingleton<ITableClientFactory>(sp => tableFactory);
             services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
+
+            services.AddSingleton<ITrainingRepository, AzureTableTrainingRepository>();
 
             services.AddSingleton(new MnemoJapanese(2));
             services.AddSingleton(sp => new UsernameHashing(sp.GetRequiredService<MnemoJapanese>(), 2));

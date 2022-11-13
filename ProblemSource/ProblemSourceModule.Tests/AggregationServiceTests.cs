@@ -16,16 +16,20 @@ namespace ProblemSource.Tests
     public class AggregationServiceTests
     {
         private readonly IFixture fixture;
+
         public AggregationServiceTests()
         {
-            Skip.If(!System.Diagnostics.Debugger.IsAttached);
+            //Skip.If(!System.Diagnostics.Debugger.IsAttached);
 
             fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
         }
 
+        private void EnableNonDebugSkip() => Skip.If(!System.Diagnostics.Debugger.IsAttached);
+
         [SkippableFact]
         public async Task Aggregates_IndividualAggregators()
         {
+            EnableNonDebugSkip();
             var userId = "test name";
 
             var phases = Enumerable.Range(0, 10).Select(pi => Phase.CreateForTest(pi));
@@ -46,6 +50,8 @@ namespace ProblemSource.Tests
         [SkippableFact]
         public async Task InvalidAzureKeyCharactersHandled()
         {
+            EnableNonDebugSkip();
+
             var userId = "test";
             var phases = new[] {
                 new Phase { exercise = "a#" },
@@ -62,6 +68,8 @@ namespace ProblemSource.Tests
         [SkippableFact]
         public async Task AggregatesUpdated_Table()
         {
+            EnableNonDebugSkip();
+
             // Arrange
             var logItems = new List<LogItem> {
                     new SyncLogStateLogItem { type = "NOT_SYNCED" },
@@ -106,7 +114,7 @@ namespace ProblemSource.Tests
             var userId = fixture.Create<string>();
 
             var repoProvider = fixture.Create<IUserGeneratedDataRepositoryProvider>();
-            Mock.Get(repoProvider).Setup(o => o.Phases).Returns(new InMemoryRepository<Phase>(Phase.UniqueIdWithinUser));
+            Mock.Get(repoProvider).Setup(o => o.Phases).Returns(new InMemoryBatchRepository<Phase>(Phase.UniqueIdWithinUser));
 
             var aggS = new AggregationService(fixture.Create<ILogger<AggregationService>>());
             await aggS.UpdateAggregates(repoProvider, logItems, userId);
