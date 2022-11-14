@@ -144,7 +144,10 @@ void ConfigureAuth(IServiceCollection services, IConfiguration config)
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidIssuer = config["Token:ValidIssuer"],
+                ValidateIssuer = true,
+
                 ValidAudiences = config["Token:ValidAudiences"]?.Split(',') ?? new[] { "" },
+                ValidateAudience = true,
 
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = securityKey,
@@ -154,6 +157,8 @@ void ConfigureAuth(IServiceCollection services, IConfiguration config)
                     securityToken.ValidFrom > issuedAfter &&
                     securityToken.ValidTo > DateTime.UtcNow
             };
+
+            options.Validate();
         })
         .AddPolicyScheme(combinedScheme, combinedScheme, options =>
         {
