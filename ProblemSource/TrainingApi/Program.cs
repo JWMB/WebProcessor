@@ -1,9 +1,7 @@
 using Common.Web;
+using Microsoft.OpenApi.Models;
 using OldDb.Models;
 using PluginModuleBase;
-using ProblemSource;
-using ProblemSource.Services.Storage;
-using ProblemSource.Services.Storage.AzureTables;
 using TrainingApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,7 +21,7 @@ oldDbStartup.ConfigureServices(builder.Services);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+AddSwaggerGen(builder.Services);
 builder.Services.AddSwaggerDocument();
 
 var app = builder.Build();
@@ -50,11 +48,12 @@ app.UseCors(cb =>
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
 
 app.MapControllers();
 
+app.UseAuthentication();
 oldDbStartup.ConfigureEndpoints(app);
+app.UseAuthorization();
 
 app.Run();
 
@@ -66,4 +65,34 @@ IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfigurati
     var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
     ServiceConfiguration.ConfigureProcessingPipelineServices(services, plugins);
     return plugins;
+}
+
+void AddSwaggerGen(IServiceCollection services)
+{
+    // services.AddSwaggerGen();
+    services.AddSwaggerGen(c =>
+    {
+        c.AddSecurityDefinition("jwt_auth", new OpenApiSecurityScheme()
+        {
+            Name = "Bearer",
+            BearerFormat = "JWT",
+            Scheme = "bearer",
+            Description = "Specify the authorization token.",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.Http,
+        });
+
+        // Make sure swagger UI requires a Bearer token specified
+        var securityScheme = new OpenApiSecurityScheme()
+        {
+            Reference = new OpenApiReference()
+            {
+                Id = "jwt_auth",
+                Type = ReferenceType.SecurityScheme
+            }
+        };
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                    { { securityScheme, new string[] { } } }
+        );
+    });
 }

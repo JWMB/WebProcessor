@@ -43,7 +43,7 @@ namespace Common.Web
                    {
                        // This is a way to invalidate older tokens in case of exposure
                        var issuedAfter = new DateTime(2022, 6, 15, 0, 0, 0, DateTimeKind.Utc); //DateTime.Parse(Configuration["Token:IssuedAfter"], System.Globalization.CultureInfo.InvariantCulture);
-                       var securityKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("somereallylongkeygoeshere")); //Configuration["Token:TokenSigningKey"]
+                       var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("somereallylongkeygoeshere")); //Configuration["Token:TokenSigningKey"]
 
                        cfg.TokenValidationParameters = new TokenValidationParameters
                        {
@@ -61,6 +61,11 @@ namespace Common.Web
                                securityToken.ValidFrom > issuedAfter &&
                                securityToken.ValidTo > DateTime.UtcNow
                        };
+
+                       //cfg.Events = new JwtBearerEvents();
+                       //cfg.Events.OnAuthenticationFailed = async (cc) =>
+                       //{
+                       //};
                    });
         }
 
