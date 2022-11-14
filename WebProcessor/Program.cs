@@ -21,7 +21,7 @@ namespace WebApi
 
             TypedConfiguration.ConfigureTypedConfiguration(builder.Services, builder.Configuration);
             ServiceConfiguration.ConfigureDefaultJwtAuth(builder.Services, builder.Configuration);
-                        
+
             var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
             ServiceConfiguration.ConfigureProcessingPipelineServices(builder.Services, plugins);
 

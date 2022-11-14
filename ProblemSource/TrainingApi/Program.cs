@@ -1,4 +1,6 @@
+using Common.Web;
 using OldDb.Models;
+using PluginModuleBase;
 using ProblemSource;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
@@ -11,8 +13,9 @@ builder.Services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trai
 builder.Services.AddScoped<TrainingDbContext>();
 builder.Services.AddScoped<IStatisticsProvider, RecreatedStatisticsProvider>();
 
-var problemSourceModule = new ProblemSource.ProblemSourceModule();
-problemSourceModule.ConfigureServices(builder.Services, false);
+//var problemSourceModule = new ProblemSource.ProblemSourceModule();
+//problemSourceModule.ConfigureServices(builder.Services, false);
+var plugins = ConfigureProblemSource(builder.Services, builder.Configuration);
 
 var oldDbStartup = new OldDb.Startup();
 oldDbStartup.ConfigureServices(builder.Services);
@@ -25,10 +28,8 @@ builder.Services.AddSwaggerDocument();
 
 var app = builder.Build();
 
-//// Initializing TableClientFactory on startup, in order to get an early error:
-//var tableClientFactory = app.Services.GetService<ITableClientFactory>() as TableClientFactory;
-//tableClientFactory?.Init().Wait();
-problemSourceModule.Configure(app.Services);
+//problemSourceModule.Configure(app.Services);
+ServiceConfiguration.ConfigurePlugins(app.Services, plugins);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -56,3 +57,13 @@ app.MapControllers();
 oldDbStartup.ConfigureEndpoints(app);
 
 app.Run();
+
+IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config)
+{
+    TypedConfiguration.ConfigureTypedConfiguration(services, config);
+    ServiceConfiguration.ConfigureDefaultJwtAuth(services, config);
+
+    var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
+    ServiceConfiguration.ConfigureProcessingPipelineServices(services, plugins);
+    return plugins;
+}
