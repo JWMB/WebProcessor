@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Common.Web.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PluginModuleBase;
@@ -46,6 +47,12 @@ namespace ProblemSource
             services.AddSingleton<IUserStateRepository, AzureTableUserStateRepository>(); //AzureTableUserStateRepository InMemoryUserStateRepository
 
             services.AddSingleton<ITypedTableClientFactory>(sp => new TypedTableClientFactory(sp.GetRequiredService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
+            RemoveService<ITableClientFactory>(services);
+            //var serviceDescriptor = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(ITableClientFactory));
+            //if (serviceDescriptor != null)
+            //    services.Remove(serviceDescriptor);
+            services.AddSingleton<ITableClientFactory>(sp => sp.GetRequiredService<ITypedTableClientFactory>());
+
             services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
 
             services.AddSingleton<ITrainingRepository, AzureTableTrainingRepository>();
@@ -69,6 +76,17 @@ namespace ProblemSource
 
             var queueEventDispatcher = serviceProvider.GetService<IEventDispatcher>() as QueueEventDispatcher;
             queueEventDispatcher?.Init().Wait();
+        }
+
+        private static bool RemoveService<T>(IServiceCollection services)
+        {
+            var serviceDescriptor = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(T));
+            if (serviceDescriptor != null)
+            {
+                services.Remove(serviceDescriptor);
+                return true;
+            }
+            return false;
         }
     }
 }
