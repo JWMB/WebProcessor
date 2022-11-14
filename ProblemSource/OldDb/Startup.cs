@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OldDb.Models;
@@ -18,19 +19,7 @@ namespace OldDb
             //.AddMutationType<MutationType>()
         }
 
-        public void ConfigureEndpoints(IApplicationBuilder app)
-        {
-            try
-            {
-                app.UseEndpoints(x => x.MapGraphQL());
-            }
-            catch (InvalidOperationException ex) when (ex.Source == "Microsoft.AspNetCore.Routing")
-            {
-                app.UseRouting();
-                app.UseEndpoints(x => x.MapGraphQL());
-                // EndpointRoutingMiddleware matches endpoints
-            }
-        }
+        public void ConfigureGraphQL(IEndpointRouteBuilder builder) => builder.MapGraphQL();
     }
 
     public class Query

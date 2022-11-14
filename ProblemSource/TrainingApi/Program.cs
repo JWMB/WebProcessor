@@ -52,8 +52,10 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 app.UseAuthentication();
-oldDbStartup.ConfigureEndpoints(app);
+app.UseRouting(); // Needed for GraphQL
 app.UseAuthorization();
+
+app.UseEndpoints(oldDbStartup.ConfigureGraphQL); //app.UseEndpoints(x => x.MapGraphQL()); app.Map(/graphql", )
 
 app.Run();
 
