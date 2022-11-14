@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OldDb.Models;
@@ -11,6 +12,7 @@ using Phase = ProblemSource.Models.Aggregates.Phase;
 
 namespace TrainingApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class AggregatesController : ControllerBase
