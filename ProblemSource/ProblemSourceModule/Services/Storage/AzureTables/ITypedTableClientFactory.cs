@@ -1,25 +1,23 @@
 ﻿using Azure.Data.Tables;
-using System.Runtime.CompilerServices;
+using Common.Web.Services;
 
 namespace ProblemSource.Services.Storage.AzureTables
 {
-    public interface ITableClientFactory
+    public interface ITypedTableClientFactory : ITableClientFactory
     {
         TableClient Phases { get; }
         TableClient TrainingDays { get; }
         TableClient PhaseStatistics { get; }
         TableClient Trainings { get; }
         TableClient UserStates { get; }
-
-        Task<TableClient> CreateClientAndInit(string name);
     }
 
-    public class TableClientFactory : ITableClientFactory
+    public class TypedTableClientFactory : ITypedTableClientFactory
     {
         private readonly string prefix = "vektor";
         private readonly string connectionString;
         private readonly TableClientOptions tableClientOptions;
-        public TableClientFactory(string? connectionString)
+        public TypedTableClientFactory(string? connectionString)
         {
             this.connectionString = string.IsNullOrEmpty(connectionString) ? "UseDevelopmentStorage=true" : connectionString;
             tableClientOptions = new TableClientOptions();
@@ -50,9 +48,9 @@ namespace ProblemSource.Services.Storage.AzureTables
             return client;
         }
 
-        public static async Task<TableClientFactory> Create(string? connectionString)
+        public static async Task<TypedTableClientFactory> Create(string? connectionString)
         {
-            var tableFactory = new TableClientFactory(connectionString);
+            var tableFactory = new TypedTableClientFactory(connectionString);
             try
             {
                 await tableFactory.Init();

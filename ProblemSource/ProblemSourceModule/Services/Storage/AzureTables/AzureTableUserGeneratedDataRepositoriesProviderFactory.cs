@@ -2,9 +2,9 @@
 {
     public class AzureTableUserGeneratedDataRepositoriesProviderFactory : IUserGeneratedDataRepositoryProviderFactory
     {
-        private readonly ITableClientFactory tableClientFactory;
+        private readonly ITypedTableClientFactory tableClientFactory;
 
-        public AzureTableUserGeneratedDataRepositoriesProviderFactory(ITableClientFactory tableClientFactory)
+        public AzureTableUserGeneratedDataRepositoriesProviderFactory(ITypedTableClientFactory tableClientFactory)
         {
             this.tableClientFactory = tableClientFactory;
         }

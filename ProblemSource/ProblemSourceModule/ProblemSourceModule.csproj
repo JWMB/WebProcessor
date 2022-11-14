@@ -45,6 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Common.Web\Common.Web.csproj" />
     <ProjectReference Include="..\..\Common\Common.csproj" />
     <ProjectReference Include="..\..\PluginModuleBase\PluginModuleBase.csproj" />
   </ItemGroup>

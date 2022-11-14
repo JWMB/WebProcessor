@@ -10,7 +10,7 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
         private readonly ExpandableTableEntityConverter<Training> converter;
         private readonly TableClient tableClient;
 
-        public AzureTableTrainingRepository(ITableClientFactory tableClientFactory)
+        public AzureTableTrainingRepository(ITypedTableClientFactory tableClientFactory)
         {
             var staticPartitionKey = "none";
 

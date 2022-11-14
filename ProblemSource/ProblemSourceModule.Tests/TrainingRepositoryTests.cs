@@ -20,7 +20,7 @@ namespace ProblemSourceModule.Tests
         [SkippableFact]
         public async Task AzureTableTrainingRepository_Add_Increment()
         {
-            var tableFactory = await TableClientFactory.Create(null);
+            var tableFactory = await TypedTableClientFactory.Create(null);
 
             ITrainingRepository repo = new AzureTableTrainingRepository(tableFactory);
 

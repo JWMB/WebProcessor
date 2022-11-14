@@ -5,7 +5,7 @@ namespace ProblemSource.Services.Storage.AzureTables
 {
     public class AzureTableUserGeneratedDataRepositoryProvider : IUserGeneratedDataRepositoryProvider
     {
-        public AzureTableUserGeneratedDataRepositoryProvider(ITableClientFactory tableClientFactory, string userId)
+        public AzureTableUserGeneratedDataRepositoryProvider(ITypedTableClientFactory tableClientFactory, string userId)
         {
             Phases = new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases, p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), userId);
             TrainingDays = new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays, p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), userId);

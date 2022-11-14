@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrainingApiTests", "Problem
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OldDb", "ProblemSource\OldDb\OldDb.csproj", "{D8D3E0FE-5627-4643-9004-3A28F6324EAF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common.Web", "Common.Web\Common.Web.csproj", "{45F91071-97FD-45AD-8A38-861F78ADEB95}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,10 @@ Global
 		{D8D3E0FE-5627-4643-9004-3A28F6324EAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8D3E0FE-5627-4643-9004-3A28F6324EAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8D3E0FE-5627-4643-9004-3A28F6324EAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45F91071-97FD-45AD-8A38-861F78ADEB95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45F91071-97FD-45AD-8A38-861F78ADEB95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45F91071-97FD-45AD-8A38-861F78ADEB95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45F91071-97FD-45AD-8A38-861F78ADEB95}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -45,7 +45,7 @@ namespace ProblemSource
         {
             services.AddSingleton<IUserStateRepository, AzureTableUserStateRepository>(); //AzureTableUserStateRepository InMemoryUserStateRepository
 
-            services.AddSingleton<ITableClientFactory>(sp => new TableClientFactory(sp.GetRequiredService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
+            services.AddSingleton<ITypedTableClientFactory>(sp => new TypedTableClientFactory(sp.GetRequiredService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
             services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
 
             services.AddSingleton<ITrainingRepository, AzureTableTrainingRepository>();
@@ -64,7 +64,7 @@ namespace ProblemSource
                 .Register("problemsource", serviceProvider.GetRequiredService<ProblemSourceProcessingPipeline>());
 
             // Initializing TableClientFactory on startup, in order to get an early error:
-            var tableClientFactory = serviceProvider.GetService<ITableClientFactory>() as TableClientFactory;
+            var tableClientFactory = serviceProvider.GetService<ITypedTableClientFactory>() as TypedTableClientFactory;
             tableClientFactory?.Init().Wait();
 
             var queueEventDispatcher = serviceProvider.GetService<IEventDispatcher>() as QueueEventDispatcher;

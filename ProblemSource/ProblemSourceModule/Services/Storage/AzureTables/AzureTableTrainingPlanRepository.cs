@@ -1,4 +1,5 @@
 ﻿using Azure.Data.Tables;
+using Common.Web;
 using ProblemSource.Models;
 
 namespace ProblemSource.Services.Storage.AzureTables
@@ -20,7 +21,7 @@ namespace ProblemSource.Services.Storage.AzureTables
 
             await foreach (var entity in queryResultsFilter)
             {
-                var str = AzureTableConfig.GetLongString(entity);
+                var str = AzureTableHelpers.GetLongString(entity);
                 return Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(str);
             }
 

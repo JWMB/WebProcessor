@@ -1,4 +1,5 @@
 ﻿using Azure.Data.Tables;
+using Common.Web;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Services.Storage;
 using System;
@@ -7,12 +8,12 @@ namespace ProblemSource.Services.Storage.AzureTables
 {
     public class AzureTableUserStateRepository : IUserStateRepository
     {
-        private readonly ITableClientFactory tableClientFactory;
+        private readonly ITypedTableClientFactory tableClientFactory;
         //private readonly ExpandableTableEntityConverter<Training> converter;
         //private readonly TableEntityRepository<object, TableEntity> repo;
         private readonly string staticPartitionKey = "none";
 
-        public AzureTableUserStateRepository(ITableClientFactory tableClientFactory)
+        public AzureTableUserStateRepository(ITypedTableClientFactory tableClientFactory)
         {
             this.tableClientFactory = tableClientFactory;
 
@@ -27,7 +28,7 @@ namespace ProblemSource.Services.Storage.AzureTables
 
             await foreach (var entity in queryResultsFilter)
             {
-                var str = AzureTableConfig.GetLongString(entity);
+                var str = AzureTableHelpers.GetLongString(entity);
                 return Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(str);
             }
 
@@ -43,7 +44,7 @@ namespace ProblemSource.Services.Storage.AzureTables
         public async Task Set(string uuid, object state)
         {
             var entity = new TableEntity(staticPartitionKey, uuid);
-            AzureTableConfig.SetLongString(entity, Newtonsoft.Json.JsonConvert.SerializeObject(state));
+            AzureTableHelpers.SetLongString(entity, Newtonsoft.Json.JsonConvert.SerializeObject(state));
 
             await tableClientFactory.UserStates.UpsertEntityAsync(entity, TableUpdateMode.Replace);
         }

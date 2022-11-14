@@ -18,6 +18,80 @@ export class AccountsClient {
         this.baseUrl = baseUrl !== undefined && baseUrl !== null ? baseUrl : "";
     }
 
+    post(dto: AccountCreateDTO): Promise<Account> {
+        let url_ = this.baseUrl + "/Accounts";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPost(_response);
+        });
+    }
+
+    protected processPost(response: Response): Promise<Account> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Account;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Account>(null as any);
+    }
+
+    put(dto: AccountCreateDTO): Promise<Account> {
+        let url_ = this.baseUrl + "/Accounts";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPut(_response);
+        });
+    }
+
+    protected processPut(response: Response): Promise<Account> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Account;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Account>(null as any);
+    }
+
     get(skip: number | undefined, take: number | undefined, orderBy: string | null | undefined, descending: boolean | undefined): Promise<Account[]> {
         let url_ = this.baseUrl + "/Accounts?";
         if (skip === null)
@@ -155,6 +229,74 @@ export interface Account {
     id: number;
     numDays: number;
     latest: Date;
+}
+
+export interface AccountCreateDTO {
+    trainingPlan: string;
+    trainingSettings: TrainingSettings;
+}
+
+export interface TrainingSettings {
+    timeLimits: number[];
+    uniqueGroupWeights?: any | undefined;
+    manuallyUnlockedExercises?: string[] | undefined;
+    idleTimeout?: number | undefined;
+    cultureCode: string;
+    customData?: CustomData | undefined;
+    triggers?: TriggerData[] | undefined;
+    pacifistRatio?: number | undefined;
+    trainingPlanOverrides?: any | undefined;
+    syncSettings?: TrainingSyncSettings | undefined;
+    alarmClockInvisible?: boolean | undefined;
+}
+
+export interface CustomData {
+    menuButton?: boolean | undefined;
+    canLogout?: boolean | undefined;
+    unlockAllPlanets?: boolean | undefined;
+    appVersion?: any | undefined;
+    allowMultipleLogins?: boolean | undefined;
+    canEnterCompleted?: boolean | undefined;
+    nuArch?: any | undefined;
+    medalMode?: any | undefined;
+    clearClientUserData?: any | undefined;
+    debugSync?: any | undefined;
+    numberLine?: any | undefined;
+    displayAppVersion?: boolean | undefined;
+}
+
+export interface TriggerData {
+    type?: string | undefined;
+    triggerTime: TriggerTimeType;
+    criteriaValues: any[];
+    actionData: TriggerActionData;
+}
+
+export enum TriggerTimeType {
+    POST_RACE = 0,
+    POST_RACE_SUCCESS = 1,
+    POST_RACE_FAIL = 2,
+    LEAVE_TEST = 3,
+    END_OF_DAY = 4,
+    START_OF_DAY = 5,
+    MAP = 6,
+    MAP_POST_WIN = 7,
+}
+
+export interface TriggerActionData {
+    type?: string | undefined;
+    id: string;
+    properties?: any | undefined;
+}
+
+export interface TrainingSyncSettings {
+    eraseLocalData: boolean;
+    eraseLocalUserFullState: boolean;
+    eraseLocalLog: boolean;
+    syncOnInit: boolean;
+    defaultSyncUrl: string;
+    routerUrl: string;
+    syncTriggerCode: string;
 }
 
 export interface TrainingDayAccount {

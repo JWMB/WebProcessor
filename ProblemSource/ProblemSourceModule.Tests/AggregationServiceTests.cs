@@ -32,7 +32,7 @@ namespace ProblemSource.Tests
 
             var phases = Enumerable.Range(0, 10).Select(pi => Phase.CreateForTest(pi));
 
-            var tableFactory = new TableClientFactory(null);
+            var tableFactory = new TypedTableClientFactory(null);
             await tableFactory.Init();
             var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableFactory, userId);
 
@@ -56,7 +56,7 @@ namespace ProblemSource.Tests
                 //new Phase { exercise = "a?" } // TODO
             };
 
-            var tableFactory = new TableClientFactory(null);
+            var tableFactory = new TypedTableClientFactory(null);
             await tableFactory.Init();
             var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableFactory, userId);
 
@@ -83,7 +83,7 @@ namespace ProblemSource.Tests
 
             var userId = fixture.Create<string>();
 
-            var tableFactory = new TableClientFactory(null);
+            var tableFactory = new TypedTableClientFactory(null);
             await tableFactory.Init();
             var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableFactory, userId);
 

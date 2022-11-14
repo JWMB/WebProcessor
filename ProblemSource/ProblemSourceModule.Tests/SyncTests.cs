@@ -110,7 +110,7 @@ namespace ProblemSource.Tests
             //    throw new NullException("Deserializing phaseData");
             var phase = new Phase { id = 0, training_day = 3, exercise = "tangram01", phase_type = "TEST", time = 1666182070947, sequence = 0, problems = new List<Problem>(), user_test = new UserTest() };
 
-            var clientFactory = new TableClientFactory(null);
+            var clientFactory = new TypedTableClientFactory(null);
             await clientFactory.Init();
 
             var tableEntity = PhaseTableEntity.FromBusinessObject(phase!, userId);

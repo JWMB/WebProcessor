@@ -12,6 +12,68 @@
   ],
   "paths": {
     "/Accounts": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "Accounts_Post",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AccountCreateDTO"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Account"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "Accounts_Put",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AccountCreateDTO"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Account"
+            }
+          }
+        }
+      },
       "get": {
         "tags": [
           "Accounts"
@@ -141,6 +203,197 @@
         "latest": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "AccountCreateDTO": {
+      "type": "object",
+      "required": [
+        "trainingPlan",
+        "trainingSettings"
+      ],
+      "properties": {
+        "trainingPlan": {
+          "type": "string"
+        },
+        "trainingSettings": {
+          "$ref": "#/definitions/TrainingSettings"
+        }
+      }
+    },
+    "TrainingSettings": {
+      "type": "object",
+      "required": [
+        "timeLimits",
+        "cultureCode"
+      ],
+      "properties": {
+        "timeLimits": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "decimal"
+          }
+        },
+        "uniqueGroupWeights": {},
+        "manuallyUnlockedExercises": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "idleTimeout": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "cultureCode": {
+          "type": "string"
+        },
+        "customData": {
+          "$ref": "#/definitions/CustomData"
+        },
+        "triggers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TriggerData"
+          }
+        },
+        "pacifistRatio": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "trainingPlanOverrides": {},
+        "syncSettings": {
+          "$ref": "#/definitions/TrainingSyncSettings"
+        },
+        "alarmClockInvisible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CustomData": {
+      "type": "object",
+      "properties": {
+        "menuButton": {
+          "type": "boolean"
+        },
+        "canLogout": {
+          "type": "boolean"
+        },
+        "unlockAllPlanets": {
+          "type": "boolean"
+        },
+        "appVersion": {},
+        "allowMultipleLogins": {
+          "type": "boolean"
+        },
+        "canEnterCompleted": {
+          "type": "boolean"
+        },
+        "nuArch": {},
+        "medalMode": {},
+        "clearClientUserData": {},
+        "debugSync": {},
+        "numberLine": {},
+        "displayAppVersion": {
+          "type": "boolean"
+        }
+      }
+    },
+    "TriggerData": {
+      "type": "object",
+      "required": [
+        "triggerTime",
+        "criteriaValues",
+        "actionData"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "triggerTime": {
+          "$ref": "#/definitions/TriggerTimeType"
+        },
+        "criteriaValues": {
+          "type": "array",
+          "items": {}
+        },
+        "actionData": {
+          "$ref": "#/definitions/TriggerActionData"
+        }
+      }
+    },
+    "TriggerTimeType": {
+      "type": "integer",
+      "description": "",
+      "x-enumNames": [
+        "POST_RACE",
+        "POST_RACE_SUCCESS",
+        "POST_RACE_FAIL",
+        "LEAVE_TEST",
+        "END_OF_DAY",
+        "START_OF_DAY",
+        "MAP",
+        "MAP_POST_WIN"
+      ],
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "TriggerActionData": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "properties": {}
+      }
+    },
+    "TrainingSyncSettings": {
+      "type": "object",
+      "required": [
+        "eraseLocalData",
+        "eraseLocalUserFullState",
+        "eraseLocalLog",
+        "syncOnInit",
+        "defaultSyncUrl",
+        "routerUrl",
+        "syncTriggerCode"
+      ],
+      "properties": {
+        "eraseLocalData": {
+          "type": "boolean"
+        },
+        "eraseLocalUserFullState": {
+          "type": "boolean"
+        },
+        "eraseLocalLog": {
+          "type": "boolean"
+        },
+        "syncOnInit": {
+          "type": "boolean"
+        },
+        "defaultSyncUrl": {
+          "type": "string"
+        },
+        "routerUrl": {
+          "type": "string"
+        },
+        "syncTriggerCode": {
+          "type": "string"
         }
       }
     },
