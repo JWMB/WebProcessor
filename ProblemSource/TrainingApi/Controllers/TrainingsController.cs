@@ -7,11 +7,12 @@ using ProblemSourceModule.Services.Storage;
 
 namespace TrainingApi.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = Roles.Admin)]
     [ApiController]
     [Route("[controller]")]
     public class TrainingsController : ControllerBase
     {
+        public static readonly string XX = "";
         private readonly ITrainingPlanRepository trainingPlanRepository;
         private readonly ITrainingRepository trainingRepository;
         private readonly MnemoJapanese mnemoJapanese;
@@ -54,27 +55,5 @@ namespace TrainingApi.Controllers
             public string TrainingPlan { get; set; } = "";
             public TrainingSettings TrainingSettings { get; set; } = new TrainingSettings();
         }
-
-//        [HttpGet]
-//        public async Task<IEnumerable<Account>> Get(int skip = 0, int take = 0, string? orderBy = null, bool descending = false)
-//        {
-//            var query = $@"
-//SELECT MAX(other_id) as maxDay, MAX(latest_underlying) as latest, account_id
-//FROM aggregated_data
-//WHERE aggregator_id = 2
-//GROUP BY account_id
-//{(orderBy == null ? "" : "ORDER BY " + orderBy + " " + (descending ? "DESC" : "ASC"))}
-//OFFSET {skip} ROWS FETCH NEXT {take} ROWS ONLY
-//";
-//            var result = await oldDb.Read(query, (reader, columns) => new Account { NumDays = reader.GetInt32(0), Latest = reader.GetDateTime(1), Id = reader.GetInt32(2) });
-//            return result;
-//        }
-
-//        public class Account
-//        {
-//            public int Id { get; set; }
-//            public int NumDays { get; set; }
-//            public DateTime Latest { get; set; }
-//        }
     }
 }
