@@ -2,7 +2,7 @@ name: Build and deploy .NET Core application to Web App kistudysync
 on:
   push:
     branches:
-    - sveltekit
+    - main
 env:
   AZURE_WEBAPP_NAME: kistudysync
   AZURE_WEBAPP_PACKAGE_PATH: WebProcessor\publish
