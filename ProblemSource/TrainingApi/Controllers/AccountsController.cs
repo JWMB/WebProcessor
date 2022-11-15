@@ -29,18 +29,17 @@ namespace TrainingApi.Controllers
             return "Hello!";
         }
 
-        
-        [HttpGet]
+        [HttpPost]
         [Route("login")]
-        public async Task<ActionResult> Login(string username, string password)
+        public async Task<ActionResult> Login([FromBody] LoginCredentials credentials)
         {
             // TODO: just until real auth is implemented
-            if (!users.TryGetValue(username, out var storedPwd) || storedPwd != password)
+            if (!users.TryGetValue(credentials.Username, out var storedPwd) || storedPwd != credentials.Password)
                 return Unauthorized();
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.Name, credentials.Username),
                 new Claim(ClaimTypes.Role, Roles.Admin)
             };
 
@@ -63,5 +62,11 @@ namespace TrainingApi.Controllers
 
             return Ok("logggg");
         }
+    }
+
+    public class LoginCredentials
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 }

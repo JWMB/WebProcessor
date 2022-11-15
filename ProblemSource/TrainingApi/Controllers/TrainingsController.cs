@@ -12,7 +12,6 @@ namespace TrainingApi.Controllers
     [Route("[controller]")]
     public class TrainingsController : ControllerBase
     {
-        public static readonly string XX = "";
         private readonly ITrainingPlanRepository trainingPlanRepository;
         private readonly ITrainingRepository trainingRepository;
         private readonly MnemoJapanese mnemoJapanese;
