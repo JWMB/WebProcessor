@@ -7,7 +7,7 @@ namespace TrainingApi.Controllers
 {
     [Authorize(Roles = Roles.Admin)]
     [ApiController]
-    [Route("[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class AggregatesController : ControllerBase
     {
         private readonly IStatisticsProvider statisticsProvider;

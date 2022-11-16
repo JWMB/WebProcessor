@@ -5,131 +5,73 @@
     "title": "My Title",
     "version": "1.0.0"
   },
-  "produces": [
-    "text/plain",
-    "application/json",
-    "text/json"
-  ],
   "paths": {
-    "/Accounts": {
-      "post": {
-        "tags": [
-          "Accounts"
-        ],
-        "operationId": "Accounts_Post",
-        "consumes": [
-          "application/json",
-          "text/json",
-          "application/*+json"
-        ],
-        "parameters": [
-          {
-            "name": "dto",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/AccountCreateDTO"
-            },
-            "x-nullable": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "x-nullable": false,
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/Account"
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Accounts"
-        ],
-        "operationId": "Accounts_Put",
-        "consumes": [
-          "application/json",
-          "text/json",
-          "application/*+json"
-        ],
-        "parameters": [
-          {
-            "name": "dto",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/AccountCreateDTO"
-            },
-            "x-nullable": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "x-nullable": false,
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/Account"
-            }
-          }
-        }
-      },
+    "/api/Accounts": {
       "get": {
         "tags": [
           "Accounts"
         ],
         "operationId": "Accounts_Get",
-        "parameters": [
-          {
-            "type": "integer",
-            "name": "skip",
-            "in": "query",
-            "format": "int32",
-            "default": 0,
-            "x-nullable": false
-          },
-          {
-            "type": "integer",
-            "name": "take",
-            "in": "query",
-            "format": "int32",
-            "default": 0,
-            "x-nullable": false
-          },
-          {
-            "type": "string",
-            "name": "orderBy",
-            "in": "query",
-            "x-nullable": true
-          },
-          {
-            "type": "boolean",
-            "name": "descending",
-            "in": "query",
-            "default": false,
-            "x-nullable": false
-          }
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
         ],
         "responses": {
           "200": {
             "x-nullable": false,
             "description": "",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Account"
-              }
+              "type": "string"
             }
           }
         }
       }
     },
-    "/Aggregates/TrainingDayAccount": {
+    "/api/Accounts/login": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "Accounts_Login",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "name": "credentials",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LoginCredentials"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
+    "/api/Aggregates/TrainingDayAccount": {
       "get": {
         "tags": [
           "Aggregates"
         ],
         "operationId": "Aggregates_TrainingDayAccount",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
         "parameters": [
           {
             "type": "integer",
@@ -153,12 +95,17 @@
         }
       }
     },
-    "/Aggregates/PhaseStatistics": {
+    "/api/Aggregates/PhaseStatistics": {
       "get": {
         "tags": [
           "Aggregates"
         ],
         "operationId": "Aggregates_PhaseStatistics",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
         "parameters": [
           {
             "type": "integer",
@@ -181,32 +128,320 @@
           }
         }
       }
+    },
+    "/api/Trainings": {
+      "post": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_Post",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TrainingCreateDTO"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_Put",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TrainingCreateDTO"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/api/Relay/GetSyncUrls": {
+      "get": {
+        "tags": [
+          "Relay"
+        ],
+        "operationId": "Relay_GetSyncUrls",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "uuid",
+            "in": "query",
+            "x-nullable": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
+    "/api/Sync/SyncUnauthorized": {
+      "post": {
+        "tags": [
+          "Sync"
+        ],
+        "operationId": "Sync_SyncUnauthorized",
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
+    "/api/Sync/Sync": {
+      "post": {
+        "tags": [
+          "Sync"
+        ],
+        "operationId": "Sync_Sync",
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
-    "Account": {
+    "LoginCredentials": {
+      "type": "object",
+      "required": [
+        "username",
+        "password"
+      ],
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "TrainingDayAccount": {
+      "type": "object",
+      "required": [
+        "accountId",
+        "accountUuid",
+        "trainingDay",
+        "startTime",
+        "endTimeStamp",
+        "numRacesWon",
+        "numRaces",
+        "numPlanetsWon",
+        "numCorrectAnswers",
+        "numQuestions",
+        "responseMinutes",
+        "remainingMinutes"
+      ],
+      "properties": {
+        "accountId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "accountUuid": {
+          "type": "string"
+        },
+        "trainingDay": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "startTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endTimeStamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "numRacesWon": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numRaces": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numPlanetsWon": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numCorrectAnswers": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numQuestions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "responseMinutes": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "remainingMinutes": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "PhaseStatistics": {
       "type": "object",
       "required": [
         "id",
-        "numDays",
-        "latest"
+        "phase_id",
+        "account_id",
+        "training_day",
+        "exercise",
+        "phase_type",
+        "timestamp",
+        "end_timestamp",
+        "sequence",
+        "num_questions",
+        "num_correct_first_try",
+        "num_correct_answers",
+        "num_incorrect_answers",
+        "level_min",
+        "level_max",
+        "response_time_avg",
+        "response_time_total"
       ],
       "properties": {
         "id": {
           "type": "integer",
           "format": "int32"
         },
-        "numDays": {
+        "phase_id": {
           "type": "integer",
           "format": "int32"
         },
-        "latest": {
+        "account_id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "training_day": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "exercise": {
+          "type": "string"
+        },
+        "phase_type": {
+          "type": "string"
+        },
+        "timestamp": {
           "type": "string",
           "format": "date-time"
+        },
+        "end_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sequence": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "num_questions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "num_correct_first_try": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "num_correct_answers": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "num_incorrect_answers": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "level_min": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "level_max": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "response_time_avg": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "response_time_total": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "won_race": {
+          "type": "boolean"
+        },
+        "completed_planet": {
+          "type": "boolean"
         }
       }
     },
-    "AccountCreateDTO": {
+    "TrainingCreateDTO": {
       "type": "object",
       "required": [
         "trainingPlan",
@@ -394,168 +629,6 @@
         },
         "syncTriggerCode": {
           "type": "string"
-        }
-      }
-    },
-    "TrainingDayAccount": {
-      "type": "object",
-      "required": [
-        "accountId",
-        "accountUuid",
-        "trainingDay",
-        "startTime",
-        "endTimeStamp",
-        "numRacesWon",
-        "numRaces",
-        "numPlanetsWon",
-        "numCorrectAnswers",
-        "numQuestions",
-        "responseMinutes",
-        "remainingMinutes"
-      ],
-      "properties": {
-        "accountId": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "accountUuid": {
-          "type": "string"
-        },
-        "trainingDay": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "startTime": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "endTimeStamp": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "numRacesWon": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "numRaces": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "numPlanetsWon": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "numCorrectAnswers": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "numQuestions": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "responseMinutes": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "remainingMinutes": {
-          "type": "integer",
-          "format": "int32"
-        }
-      }
-    },
-    "PhaseStatistics": {
-      "type": "object",
-      "required": [
-        "id",
-        "phase_id",
-        "account_id",
-        "training_day",
-        "exercise",
-        "phase_type",
-        "timestamp",
-        "end_timestamp",
-        "sequence",
-        "num_questions",
-        "num_correct_first_try",
-        "num_correct_answers",
-        "num_incorrect_answers",
-        "level_min",
-        "level_max",
-        "response_time_avg",
-        "response_time_total"
-      ],
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "phase_id": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "account_id": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "training_day": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "exercise": {
-          "type": "string"
-        },
-        "phase_type": {
-          "type": "string"
-        },
-        "timestamp": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "end_timestamp": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "sequence": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "num_questions": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "num_correct_first_try": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "num_correct_answers": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "num_incorrect_answers": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "level_min": {
-          "type": "number",
-          "format": "decimal"
-        },
-        "level_max": {
-          "type": "number",
-          "format": "decimal"
-        },
-        "response_time_avg": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "response_time_total": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "won_race": {
-          "type": "boolean"
-        },
-        "completed_planet": {
-          "type": "boolean"
         }
       }
     }

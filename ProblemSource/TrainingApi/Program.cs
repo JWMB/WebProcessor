@@ -1,14 +1,13 @@
 using Common.Web;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using OldDb.Models;
 using PluginModuleBase;
 using System.Text;
+using TrainingApi;
 using TrainingApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,7 +17,7 @@ builder.Services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trai
 builder.Services.AddScoped<TrainingDbContext>();
 builder.Services.AddScoped<IStatisticsProvider, RecreatedStatisticsProvider>();
 
-var plugins = ConfigureProblemSource(builder.Services, builder.Configuration);
+var plugins = ConfigureProblemSource(builder.Services, builder.Configuration, builder.Environment);
 
 var oldDbStartup = new OldDb.Startup();
 oldDbStartup.ConfigureServices(builder.Services);
@@ -43,13 +42,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUi3();
 }
 
-app.UseCors(cb =>
-    cb
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowAnyMethod()
-        .AllowAnyOrigin()
-    );
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    Secure = CookieSecurePolicy.Always
+});
 
 app.UseHttpsRedirection();
 
@@ -58,17 +54,33 @@ app.MapControllers();
 
 app.UseAuthentication();
 app.UseRouting(); // Needed for GraphQL
+
+// With endpoint routing, the CORS middleware must be configured to execute between the calls to UseRouting and UseEndpoints.
+// Incorrect configuration will cause the middleware to stop functioning correctly.
+app.UseCors(cb =>
+    cb
+        .WithOrigins((app.Configuration.GetValue("CorsOrigins", "") ?? "").Split(','))
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
+);
+
 app.UseAuthorization();
-app.UseCookiePolicy(new CookiePolicyOptions { MinimumSameSitePolicy = Microsoft.AspNetCore.Http.SameSiteMode.Lax });
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    // TODO: is this needed? We also have it in AddCookie() below.
+    MinimumSameSitePolicy = app.Environment.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.None : Microsoft.AspNetCore.Http.SameSiteMode.Lax
+});
+
 
 app.UseEndpoints(oldDbStartup.ConfigureGraphQL); //app.UseEndpoints(x => x.MapGraphQL()); app.Map(/graphql", )
 
 app.Run();
 
-IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config)
+IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
 {
     TypedConfiguration.ConfigureTypedConfiguration(services, config);
-    ConfigureAuth(services, config);
+    ConfigureAuth(services, config, env);
 
     var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
     ServiceConfiguration.ConfigureProcessingPipelineServices(services, plugins);
@@ -105,7 +117,7 @@ void AddSwaggerGen(IServiceCollection services)
     });
 }
 
-void ConfigureAuth(IServiceCollection services, IConfiguration config)
+void ConfigureAuth(IServiceCollection services, IConfiguration config, IHostEnvironment env)
 {
     var combinedScheme = "JWT_OR_COOKIE";
     services.AddAuthentication(options =>
@@ -120,20 +132,10 @@ void ConfigureAuth(IServiceCollection services, IConfiguration config)
         .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
             options.ExpireTimeSpan = TimeSpan.FromDays(1);
+            //options.Cookie.SecurePolicy = true ? CookieSecurePolicy.None : CookieSecurePolicy.Always; //_environment.IsDevelopment()
+            options.Cookie.SameSite = env.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.None : Microsoft.AspNetCore.Http.SameSiteMode.Lax;
 
-            //options.LoginPath = "/accounts/login";
-            options.Events.OnRedirectToAccessDenied = context =>
-            {
-                context.Response.StatusCode = 403;
-                return Task.CompletedTask;
-            };
-
-            //options.AccessDeniedPath = $"/account/unauthorized";
-            options.Events.OnRedirectToLogin = async (context) =>
-            {
-                context.Response.StatusCode = 401;
-                await context.Response.WriteAsJsonAsync(new { LoginUrl = "https://mylogin.com" }); // TODO
-            };
+            options.Events = new CustomCookieAuthEvents();
         })
         .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
         {

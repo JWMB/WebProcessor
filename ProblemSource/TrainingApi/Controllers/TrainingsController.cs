@@ -9,7 +9,7 @@ namespace TrainingApi.Controllers
 {
     [Authorize(Roles = Roles.Admin)]
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class TrainingsController : ControllerBase
     {
         private readonly ITrainingPlanRepository trainingPlanRepository;

@@ -7,7 +7,7 @@ using System.Security.Claims;
 namespace TrainingApi.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class AccountsController : ControllerBase
     {
         private readonly ILogger<AccountsController> log;
