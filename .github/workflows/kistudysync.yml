@@ -5,10 +5,10 @@ on:
     - main
 env:
   AZURE_WEBAPP_NAME: kistudysync
-  AZURE_WEBAPP_PACKAGE_PATH: WebProcessor\publish
+  AZURE_WEBAPP_PACKAGE_PATH: ProblemSource\TrainingApi\publish
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 7.0.x
-  WORKING_DIRECTORY: WebProcessor
+  WORKING_DIRECTORY: ProblemSource\TrainingApi
 jobs:
   build:
     runs-on: windows-latest
