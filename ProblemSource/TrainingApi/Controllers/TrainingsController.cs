@@ -48,6 +48,18 @@ namespace TrainingApi.Controllers
             return "";
         }
 
+        [HttpGet]
+        [Route("{id}")]
+        public async Task<Training?> GetById(int id)
+        {
+            return await trainingRepository.Get(id);
+        }
+
+        [HttpGet]
+        public async Task<List<Training>> Get()
+        {
+            return (await trainingRepository.GetAll()).ToList();
+        }
 
         public class TrainingCreateDTO
         {

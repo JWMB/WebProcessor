@@ -3,10 +3,43 @@
 
     import { apiFacade } from '../globalStore.js';
     import { ApiFacade } from '../apiFacade';
+	import { onMount } from 'svelte';
+	import { ApiException } from '../apiClient';
+	import { goto } from '$app/navigation';
 
-    const apiBaseUrl = "https://localhost:7090";
+	console.log("init layout");
+    const apiBaseUrl = "https://localhost:7173";
+    // const apiBaseUrl = "";
     const apiFacadeInstance = new ApiFacade(apiBaseUrl);
     apiFacade.set(apiFacadeInstance);
+
+	onMount(() => {
+		window.onunhandledrejection = (e) => {
+		  if (e.reason instanceof ApiException) {
+			const apiEx = <ApiException>e.reason;
+			if (apiEx.status === 401) {
+				console.warn("Not logged in!");
+				goto("/login");
+				return;
+			} else if (apiEx.status === 404) {
+				console.log("404!");
+				return;
+			}
+		  } else if (!!e.reason?.message) {
+			console.log(e.reason.message, e.reason.stack);
+			return;
+		  }
+		  console.log('we got exception, but the app has crashed', e);
+			// here we should gracefully show some fallback error or previous good known state
+			// this does not work though:
+			// current = C1; 
+			
+			// todo: This is unexpected error, send error to log server
+			// only way to reload page so that users can try again until error is resolved
+			// uncomment to reload page:
+			// window.location = "/oi-oi-oi";
+		}
+	});
 </script>
 
 <nav>

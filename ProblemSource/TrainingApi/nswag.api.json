@@ -201,6 +201,61 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_Get",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Training"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Trainings/{id}": {
+      "get": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_GetById",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "format": "int32",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Training"
+            }
+          }
+        }
       }
     },
     "/api/Relay/GetSyncUrls": {
@@ -628,6 +683,22 @@
           "type": "string"
         },
         "syncTriggerCode": {
+          "type": "string"
+        }
+      }
+    },
+    "Training": {
+      "type": "object",
+      "required": [
+        "id",
+        "trainingPlanName"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "trainingPlanName": {
           "type": "string"
         }
       }
