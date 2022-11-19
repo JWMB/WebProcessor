@@ -56,21 +56,21 @@ namespace ProblemSource
                 {
                     var dehashedUuid = usernameHashing.Dehash(root.Uuid);
                     if (dehashedUuid == null)
-                        return new SyncResult { error = "Username not found" };
+                        return new SyncResult { error = $"Username not found ({root.Uuid}/deh)" };
                     return new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" };
                 }
 
                 // TODO: client has already dehashed (but should not, let server handle ui)
                 var id = mnemoJapanese.ToIntWithRandom(root.Uuid);
                 if (id == null)
-                    return new SyncResult { error = "Username not found" };
+                    return new SyncResult { error = $"Username not found ({root.Uuid}/dec)" };
 
                 if (user == null) // For actual sync, we require an authenticated user
                     throw new Exception("Unauthenticated"); // TODO: some HttpException with status code
 
                 var training = await trainingRepository.Get(id.Value);
                 if (training == null)
-                    return new SyncResult { error = "Username not found" };
+                    return new SyncResult { error = $"Username not found ({root.Uuid}/{id.Value})" };
 
                 return await Sync(root);
             }
