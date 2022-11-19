@@ -6,6 +6,7 @@ using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Services.Storage;
 
 namespace ProblemSource
 {
@@ -20,11 +21,13 @@ namespace ProblemSource
         private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory;
         private readonly UsernameHashing usernameHashing;
         private readonly MnemoJapanese mnemoJapanese;
+        private readonly ITrainingRepository trainingRepository;
         private readonly ILogger<ProblemSourceProcessingPipeline> log;
 
         public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
             IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, UsernameHashing usernameHashing, MnemoJapanese mnemoJapanese,
+            ITrainingRepository trainingRepository,
             ILogger<ProblemSourceProcessingPipeline> log)
         {
             this.userStateRepository = userStateRepository;
@@ -36,6 +39,7 @@ namespace ProblemSource
             this.userGeneratedRepositoriesFactory = userGeneratedRepositoriesFactory;
             this.usernameHashing = usernameHashing;
             this.mnemoJapanese = mnemoJapanese;
+            this.trainingRepository = trainingRepository;
             this.log = log;
         }
 
@@ -63,6 +67,10 @@ namespace ProblemSource
 
                 if (user == null) // For actual sync, we require an authenticated user
                     throw new Exception("Unauthenticated"); // TODO: some HttpException with status code
+
+                var training = await trainingRepository.Get(id.Value);
+                if (training == null)
+                    return new SyncResult { error = "Username not found" };
 
                 return await Sync(root);
             }

@@ -15,6 +15,7 @@ using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
+using ProblemSourceModule.Services.Storage;
 using Shouldly;
 using System;
 using Xunit.Sdk;
@@ -37,6 +38,7 @@ namespace ProblemSource.Tests
             pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(),
                 fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), 
                 fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>(), new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
+                fixture.Create<ITrainingRepository>(),
                 fixture.Create<ILogger<ProblemSourceProcessingPipeline>>());
         }
 
