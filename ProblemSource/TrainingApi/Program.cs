@@ -28,9 +28,11 @@ builder.Services.AddEndpointsApiExplorer();
 AddSwaggerGen(builder.Services);
 builder.Services.AddSwaggerDocument();
 
+builder.Services.AddApplicationInsightsTelemetry();
+//builder.Services.AddApplicationInsightsTelemetryWorkerService();
+
 var app = builder.Build();
 
-builder.Services.AddApplicationInsightsTelemetry();
 //problemSourceModule.Configure(app.Services);
 ServiceConfiguration.ConfigurePlugins(app.Services, plugins);
 
@@ -73,6 +75,7 @@ app.UseCookiePolicy(new CookiePolicyOptions
     MinimumSameSitePolicy = app.Environment.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.None : Microsoft.AspNetCore.Http.SameSiteMode.Lax
 });
 
+ServiceConfiguration.ConfigureApplicationInsights(app.Services, app.Configuration, app.Environment.IsDevelopment());
 
 app.UseEndpoints(oldDbStartup.ConfigureGraphQL); //app.UseEndpoints(x => x.MapGraphQL()); app.Map(/graphql", )
 

@@ -6,11 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using PluginModuleBase;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Common.Web
 {
@@ -79,16 +75,14 @@ namespace Common.Web
             }
             else
             {
-                try
+                var telemetryConfig = serviceProvider.GetService<TelemetryConfiguration>();
+                if (telemetryConfig != null)
                 {
-                    var telemetryConfig = serviceProvider.GetRequiredService<TelemetryConfiguration>();
                     telemetryConfig.ConnectionString = aiConn;
                     var telemetry = new TelemetryClient(telemetryConfig);
                     telemetry.TrackEvent("Application start");
                     telemetry.TrackTrace("Trace Application start");
                 }
-                catch
-                { }
             }
         }
     }
