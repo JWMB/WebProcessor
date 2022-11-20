@@ -39,9 +39,6 @@
   };
 </script>
 
-<h1>Hello! Log in!</h1>
-
-
 <style>
 	form {
 	  background: #fff;

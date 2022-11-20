@@ -30,6 +30,7 @@ builder.Services.AddSwaggerDocument();
 
 var app = builder.Build();
 
+builder.Services.AddApplicationInsightsTelemetry();
 //problemSourceModule.Configure(app.Services);
 ServiceConfiguration.ConfigurePlugins(app.Services, plugins);
 
