@@ -6,12 +6,8 @@ namespace Common.Web.Controllers
     [Route("api/[controller]/[action]")]
     public class HealthController : ControllerBase
     {
-        private readonly Uri[] syncUrls;
-        public HealthController(AppSettings appSettings)
+        public HealthController()
         {
-            syncUrls = string.IsNullOrEmpty(appSettings.SyncUrls)
-                ? new Uri[0]
-                : appSettings.SyncUrls.Split(',').Select(o => Uri.TryCreate(o.Trim(), UriKind.Absolute, out var uri) ? uri : null).OfType<Uri>().ToArray();
         }
 
         [HttpGet]

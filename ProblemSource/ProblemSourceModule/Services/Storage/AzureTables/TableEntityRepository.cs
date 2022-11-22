@@ -58,7 +58,7 @@ namespace ProblemSource.Services.Storage.AzureTables
             var invalidEntries = tableEntities.Where(o => InvalidKeyRegex.IsMatch(o.RowKey) || InvalidKeyRegex.IsMatch(o.PartitionKey));
             if (invalidEntries.Any())
             {
-                throw new Exception($"Invalid key(s) for {string.Join(",", tableEntities.Select(o => $"{o.PartitionKey}/{o.RowKey}"))}");
+                throw new Exception($"{typeof(T).Name}: Invalid key(s) for {string.Join(",", tableEntities.Select(o => $"{o.PartitionKey}/{o.RowKey}"))}");
             }
 
             try

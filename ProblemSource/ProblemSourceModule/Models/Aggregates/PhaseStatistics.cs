@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Common;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProblemSource.Models.Aggregates
 {
@@ -32,7 +33,7 @@ namespace ProblemSource.Models.Aggregates
         public bool? completed_planet { get; set; }
 
         //Score,Target score,Planet target score
-        public static string UniqueIdWithinUser(PhaseStatistics p) => $"{p.training_day}_{p.exercise}_{p.timestamp}";
+        public static string UniqueIdWithinUser(PhaseStatistics p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{p.timestamp.ToUnixTimestamp()}";
 
         public static List<PhaseStatistics> Create(int accountId, IEnumerable<Phase> phases)
         {

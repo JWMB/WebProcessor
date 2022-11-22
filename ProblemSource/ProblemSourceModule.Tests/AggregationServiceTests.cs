@@ -71,11 +71,11 @@ namespace ProblemSource.Tests
             // Arrange
             var logItems = new List<LogItem> {
                     new SyncLogStateLogItem { type = "NOT_SYNCED" },
-                    new NewPhaseLogItem { time = 5, exercise = "A" },
+                    new NewPhaseLogItem { time = 5, exercise = "A#1" },
                     new NewProblemLogItem { time = 6 },
                     new AnswerLogItem { time = 7 },
                     new PhaseEndLogItem { time = 8 },
-                    new NewPhaseLogItem { time = 9, exercise = "B" },
+                    new NewPhaseLogItem { time = 9, exercise = "B#2" },
                     new NewProblemLogItem { time = 10 },
                     new AnswerLogItem { time = 11 },
                     new PhaseEndLogItem { time = 12 },
