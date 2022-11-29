@@ -56,7 +56,13 @@ namespace ProblemSource
                 {
                     var dehashedUuid = usernameHashing.Dehash(root.Uuid);
                     if (dehashedUuid == null)
-                        return new SyncResult { error = $"Username not found ({root.Uuid}/deh)" };
+                    {
+                        if (!root.Uuid.Contains(" ")) // allow for forgotten space
+                            dehashedUuid = usernameHashing.Dehash(root.Uuid.Insert(4, " "));
+
+                        if (dehashedUuid == null)
+                            return new SyncResult { error = $"Username not found ({root.Uuid}/deh)" };
+                    }
                     return new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" };
                 }
 
