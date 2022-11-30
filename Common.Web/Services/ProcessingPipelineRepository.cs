@@ -3,11 +3,11 @@ using System.Collections.Concurrent;
 
 namespace Common.Web.Services
 {
-    public class ProcessingPipelineRepository : IProcessingPipelineRepository
+    public class ProcessingPipelineRepository : IProcessingMiddlewarePipelineRepository
     {
-        private static readonly ConcurrentDictionary<string, IProcessingPipeline> _pipelineMap = new();
+        private static readonly ConcurrentDictionary<string, IProcessingMiddleware> _pipelineMap = new();
 
-        public Task<IProcessingPipeline?> Get(string? key)
+        public Task<IProcessingMiddleware?> Get(string? key)
         {
             return Task.FromResult(
                 key == null ? null :
@@ -15,7 +15,7 @@ namespace Common.Web.Services
                 );
         }
 
-        public void Register(string key, IProcessingPipeline pipeline)
+        public void Register(string key, IProcessingMiddleware pipeline)
         {
             _pipelineMap.TryAdd(key.ToLower(), pipeline);
             //_pipelineMap[key.ToLower()] = pipeline;

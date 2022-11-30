@@ -16,8 +16,8 @@ namespace Common.Web
         {
             services.AddSingleton<ITableClientFactory, TableClientFactory>();
             services.AddSingleton<IDataSink, AzureTableLogSink>();
-            services.AddSingleton<IProcessingPipelineRepository, ProcessingPipelineRepository>();
-            services.AddSingleton<SinkOnlyProcessingPipeline>();
+            services.AddSingleton<IProcessingMiddlewarePipelineRepository, ProcessingPipelineRepository>();
+            services.AddSingleton<SinkProcessingMiddleware>();
 
             foreach (var plugin in pluginModules)
                 plugin.ConfigureServices(services);
@@ -25,7 +25,7 @@ namespace Common.Web
 
         public static void ConfigurePlugins(IServiceProvider serviceProvider, IEnumerable<IPluginModule> pluginModules)
         {
-            serviceProvider.GetRequiredService<IProcessingPipelineRepository>().Register("default", serviceProvider.GetRequiredService<SinkOnlyProcessingPipeline>());
+            serviceProvider.GetRequiredService<IProcessingMiddlewarePipelineRepository>().Register("default", serviceProvider.GetRequiredService<SinkProcessingMiddleware>());
 
             foreach (var plugin in pluginModules)
                 plugin.Configure(serviceProvider);

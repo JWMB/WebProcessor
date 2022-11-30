@@ -23,22 +23,24 @@ namespace WebApi.Tests
         [Fact]
         public async Task Sync_Auth_WrongSigningKey()
         {
-            var response = await Post("/api/sync/sync", "{ \"a\": 1 }", GenerateToken(signingKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+            var response = await Post("/api/sync/sync", """{ "a": 1 }""", GenerateToken(signingKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
             response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
         }
 
         [Fact]
         public async Task Sync_Auth_WrongAudience()
         {
-            var response = await Post("/api/sync/sync", "{ \"a\": 1 }", GenerateToken(audience: "aa"));
+            var response = await Post("/api/sync/sync", """{ "a": 1 }""", GenerateToken(audience: "aa"));
             response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
         }
 
         [Fact]
-        public async Task Sync_ProblemSource_MissingApiKey()
+        public async Task Sync_ProblemSource_MissingUserName()
         {
-            var response = await Post("/api/sync/sync", "{ \"a\": 1 }");
+            var response = await Post("/api/sync/sync", """{ "a": 1 }""");
             response.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+            var content = await response.Content.ReadAsStringAsync();
+            content.ShouldBe("Value cannot be null. (Parameter 'Uuid')");
         }
 
         [Fact]
@@ -46,7 +48,6 @@ namespace WebApi.Tests
         {
             var response = await Post("/api/sync/sync", new
             {
-                //ApiKey = "abc",
                 Uuid = "abc"
             });
             response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK);
@@ -57,7 +58,7 @@ namespace WebApi.Tests
         {
             var request = new HttpRequestMessage(HttpMethod.Post, uri)
             {
-                Content = new StringContent(content is string str ? str : System.Text.Json.JsonSerializer.Serialize(content)),
+                Content = new StringContent(content is string str ? str : System.Text.Json.JsonSerializer.Serialize(content), System.Text.Encoding.UTF8, "application/json"),
             };
             
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", bearerToken ?? GenerateToken());

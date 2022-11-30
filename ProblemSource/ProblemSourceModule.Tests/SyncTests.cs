@@ -27,7 +27,7 @@ namespace ProblemSource.Tests
         private readonly IFixture fixture;
         private readonly IDataSink dataSink;
         private readonly IUserStateRepository userStateRepository;
-        private readonly ProblemSourceProcessingPipeline pipeline;
+        private readonly ProblemSourceProcessingMiddleware pipeline;
 
         public SyncTests()
         {
@@ -35,11 +35,11 @@ namespace ProblemSource.Tests
 
             dataSink = fixture.Create<IDataSink>();
             userStateRepository = fixture.Create<IUserStateRepository>();
-            pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(),
+            pipeline = new ProblemSourceProcessingMiddleware(userStateRepository, new TrainingPlanRepository(),
                 fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), 
                 fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>(), new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
                 fixture.Create<ITrainingRepository>(),
-                fixture.Create<ILogger<ProblemSourceProcessingPipeline>>());
+                fixture.Create<ILogger<ProblemSourceProcessingMiddleware>>());
         }
 
         [Fact]

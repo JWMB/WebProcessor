@@ -36,7 +36,7 @@ namespace ProblemSource
         public void ConfigurePipeline(IServiceCollection services)
         {
             services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
-            services.AddSingleton<ProblemSourceProcessingPipeline>();
+            services.AddSingleton<ProblemSourceProcessingMiddleware>();
             services.AddSingleton<IEventDispatcher>(sp =>
                 new QueueEventDispatcher(sp.GetRequiredService<IConfiguration>()["AppSettings:AzureQueue:ConnectionString"], sp.GetRequiredService<ILogger<QueueEventDispatcher>>()));
             //QueueEventDispatcher NullEventDispatcher
@@ -67,8 +67,8 @@ namespace ProblemSource
 
         public void Configure(IServiceProvider serviceProvider)
         {
-            serviceProvider.GetService<IProcessingPipelineRepository>()?
-                .Register("problemsource", serviceProvider.GetRequiredService<ProblemSourceProcessingPipeline>());
+            serviceProvider.GetService<IProcessingMiddlewarePipelineRepository>()?
+                .Register("problemsource", serviceProvider.GetRequiredService<ProblemSourceProcessingMiddleware>());
 
             // Initializing TableClientFactory on startup, in order to get an early error:
             var tableClientFactory = serviceProvider.GetService<ITypedTableClientFactory>() as TypedTableClientFactory;

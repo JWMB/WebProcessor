@@ -1,16 +1,20 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Common.Web;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using PluginModuleBase;
 using ProblemSource.Models;
 using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
-using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.Storage;
+using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace ProblemSource
 {
-    public class ProblemSourceProcessingPipeline : IProcessingPipeline
+    public class ProblemSourceProcessingMiddleware : IProcessingMiddleware
     {
         private readonly IUserStateRepository userStateRepository;
         private readonly ITrainingPlanRepository trainingPlanRepository;
@@ -22,13 +26,15 @@ namespace ProblemSource
         private readonly UsernameHashing usernameHashing;
         private readonly MnemoJapanese mnemoJapanese;
         private readonly ITrainingRepository trainingRepository;
-        private readonly ILogger<ProblemSourceProcessingPipeline> log;
+        private readonly ILogger<ProblemSourceProcessingMiddleware> log;
 
-        public ProblemSourceProcessingPipeline(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
+        //public bool SupportsMiddlewarePattern => throw new NotImplementedException();
+
+        public ProblemSourceProcessingMiddleware(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
             IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, UsernameHashing usernameHashing, MnemoJapanese mnemoJapanese,
             ITrainingRepository trainingRepository,
-            ILogger<ProblemSourceProcessingPipeline> log)
+            ILogger<ProblemSourceProcessingMiddleware> log)
         {
             this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;
@@ -43,44 +49,66 @@ namespace ProblemSource
             this.log = log;
         }
 
-        public async Task<object?> Process(object input, System.Security.Claims.ClaimsPrincipal? user)
+        public async Task Invoke(HttpContext context, RequestDelegate next)
         {
-            if (input is string jsonString)
+            SyncInput? root;
+            if (context.Request.Headers.ContentType.Any(o => o.ToLower().Contains("application/json")))
             {
-                var root = ParseJson(jsonString);
-                if (root == null)
-                    throw new ArgumentException("input: incorrect format"); // TODO: some HttpException with status code
-
-                if (user?.Claims.Any() == false  // anonymous access for "validate" request
-                    && root.SessionToken == "validate") // TODO: co-opting SessionToken for now
-                {
-                    var dehashedUuid = usernameHashing.Dehash(root.Uuid);
-                    if (dehashedUuid == null)
-                    {
-                        if (!root.Uuid.Contains(" ")) // allow for forgotten space
-                            dehashedUuid = usernameHashing.Dehash(root.Uuid.Insert(4, " "));
-
-                        if (dehashedUuid == null)
-                            return new SyncResult { error = $"Username not found ({root.Uuid}/deh)" };
-                    }
-                    return new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" };
-                }
-
-                // TODO: client has already dehashed (but should not, let server handle ui)
-                var id = mnemoJapanese.ToIntWithRandom(root.Uuid);
-                if (id == null)
-                    return new SyncResult { error = $"Username not found ({root.Uuid}/dec)" };
-
-                if (user == null) // For actual sync, we require an authenticated user
-                    throw new Exception("Unauthenticated"); // TODO: some HttpException with status code
-
-                var training = await trainingRepository.Get(id.Value);
-                if (training == null)
-                    return new SyncResult { error = $"Username not found ({root.Uuid}/{id.Value})" };
-
-                return await Sync(root);
+                root = await context.Request.ReadFromJsonAsync<SyncInput>();
             }
-            return null;
+            else
+            {
+                var body = await context.Request.ReadBodyAsStringAsync();
+                if (string.IsNullOrEmpty(body))
+                    throw new ArgumentNullException($"Request.Body");
+                root = System.Text.Json.JsonSerializer.Deserialize<SyncInput?>(body);
+            }
+            
+            if (root == null)
+                throw new ArgumentException("input: incorrect format");
+
+            var result = await Process(root, context.User);
+
+            await next.Invoke(context);
+
+            await context.Response.WriteAsJsonAsync(result);
+        }
+
+        private async Task<SyncResult> Process(SyncInput root, System.Security.Claims.ClaimsPrincipal? user)
+        {
+            // TODO: use regular model validation
+            if (string.IsNullOrEmpty(root.Uuid))
+            {
+                throw new ArgumentNullException($"{nameof(root.Uuid)}");
+            }
+            if (user?.Claims.Any() == false  // anonymous access for "validate" request
+    && root.SessionToken == "validate") // TODO: co-opting SessionToken for now
+            {
+                var dehashedUuid = usernameHashing.Dehash(root.Uuid);
+                if (dehashedUuid == null)
+                {
+                    if (!root.Uuid.Contains(" ")) // allow for forgotten space
+                        dehashedUuid = usernameHashing.Dehash(root.Uuid.Insert(4, " "));
+
+                    if (dehashedUuid == null)
+                        return new SyncResult { error = $"Username not found ({root.Uuid}/deh)" };
+                }
+                return new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" };
+            }
+
+            // TODO: client has already dehashed (but should not, let server handle ui)
+            var id = mnemoJapanese.ToIntWithRandom(root.Uuid);
+            if (id == null)
+                return new SyncResult { error = $"Username not found ({root.Uuid})" };
+
+            if (user == null) // For actual sync, we require an authenticated user
+                throw new Exception("Unauthenticated"); // TODO: some HttpException with status code
+
+            var training = await trainingRepository.Get(id.Value);
+            if (training == null)
+                return new SyncResult { error = $"Username not found ({root.Uuid}/{id.Value})" };
+
+            return await Sync(root);
         }
 
         public async Task<SyncResult> Sync(SyncInput root)
