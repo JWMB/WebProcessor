@@ -10,6 +10,8 @@ using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Services.Storage;
+using System;
+using System.ComponentModel;
 using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace ProblemSource
@@ -115,6 +117,23 @@ namespace ProblemSource
         {
             var result = new SyncResult();
 
+            if (string.IsNullOrEmpty(root.Uuid))
+                return new SyncResult { error = $"Username empty" };
+
+            var trainingId = mnemoJapanese.ToIntWithRandom(root.Uuid);
+            if (trainingId == null)
+            {
+                var dehashedUuid = usernameHashing.Dehash(root.Uuid);
+                if (dehashedUuid != null)
+                    trainingId = mnemoJapanese.ToIntWithRandom(dehashedUuid);
+                if (trainingId == null)
+                    return new SyncResult { error = $"Username not found ({root.Uuid})" };
+            }
+
+            var training = await trainingRepository.Get(trainingId.Value);
+            if (training == null)
+                return new SyncResult { error = $"Username not found ({root.Uuid}/{trainingId.Value})" };
+
             var sessionInfo = sessionManager.GetOrOpenSession(root.Uuid, root.SessionToken);
             if (sessionInfo.Error != GetOrCreateSessionResult.ErrorTypes.OK)
                 result.error = sessionInfo.Error.ToString();
@@ -125,7 +144,7 @@ namespace ProblemSource
             if (root.RequestState)
             {
                 // client wants TrainingPlan, stats for trained exercises, training day number etc
-                result.state = await CreateClientState(root);
+                result.state = await CreateClientState(root, training);
             }
 
             if (root.Events?.Any() == true)
@@ -173,9 +192,9 @@ namespace ProblemSource
             return root;
         }
 
-        private async Task<string> CreateClientState(SyncInput root)
+        private async Task<string> CreateClientState(SyncInput root, Training training)
         {
-            var trainingPlanName = "2017 HT template Default"; // "testplan";
+            var trainingPlanName = string.IsNullOrEmpty(training.TrainingPlanName) ? "2017 HT template Default" : training.TrainingPlanName; // "testplan";
             var trainingPlan = await trainingPlanRepository.Get(trainingPlanName);
             if (trainingPlan == null)
                 throw new Exception($"Training plan '{trainingPlanName}' does not exist");
@@ -184,7 +203,7 @@ namespace ProblemSource
             {
                 uuid = root.Uuid,
                 training_plan = trainingPlan,
-                training_settings = new TrainingSettings
+                training_settings = training.Settings ?? new TrainingSettings
                 {
                     timeLimits = new List<decimal> { 33 },
                     customData = new CustomData { unlockAllPlanets = false }

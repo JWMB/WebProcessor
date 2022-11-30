@@ -15,11 +15,13 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
             var staticPartitionKey = "none";
 
             tableClient = tableClientFactory.Trainings;
-            converter = new ExpandableTableEntityConverter<Training>(t => (staticPartitionKey, t.Id.ToString()));
+            converter = new ExpandableTableEntityConverter<Training>(t => (staticPartitionKey, IdToRowKey(t.Id)));
             repo = new TableEntityRepository<Training, TableEntity>(tableClient, converter.ToPoco, converter.FromPoco, staticPartitionKey);
         }
 
-        public async Task<Training?> Get(int id) => await repo.Get(id.ToString());
+        private string IdToRowKey(int id) => id.ToString().PadLeft(6, '0');
+
+        public async Task<Training?> Get(int id) => await repo.Get(IdToRowKey(id));
 
         private object _lock = new object();
         public Task<int> Add(Training item)
