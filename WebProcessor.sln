@@ -3,11 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32602.215
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApi", "WebApi\WebApi.csproj", "{9586A85B-3046-4111-A85F-C3ED8F9ECD97}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PluginModuleBase", "PluginModuleBase\PluginModuleBase.csproj", "{2CF60B58-6227-48DF-B2BF-F675A6348BEF}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApi.Tests", "WebApi.Tests\WebApi.Tests.csproj", "{32ABA757-CB98-4BA1-B3A6-E9259229A197}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csproj", "{775149F0-36AD-4387-8F00-9EE90B13C20E}"
 EndProject
@@ -29,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrainingApiTests", "Problem
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OldDb", "ProblemSource\OldDb\OldDb.csproj", "{D8D3E0FE-5627-4643-9004-3A28F6324EAF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common.Web", "Common.Web\Common.Web.csproj", "{45F91071-97FD-45AD-8A38-861F78ADEB95}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common.Web", "Common.Web\Common.Web.csproj", "{45F91071-97FD-45AD-8A38-861F78ADEB95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,18 +33,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9586A85B-3046-4111-A85F-C3ED8F9ECD97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9586A85B-3046-4111-A85F-C3ED8F9ECD97}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9586A85B-3046-4111-A85F-C3ED8F9ECD97}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9586A85B-3046-4111-A85F-C3ED8F9ECD97}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2CF60B58-6227-48DF-B2BF-F675A6348BEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2CF60B58-6227-48DF-B2BF-F675A6348BEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2CF60B58-6227-48DF-B2BF-F675A6348BEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CF60B58-6227-48DF-B2BF-F675A6348BEF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{32ABA757-CB98-4BA1-B3A6-E9259229A197}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{32ABA757-CB98-4BA1-B3A6-E9259229A197}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{32ABA757-CB98-4BA1-B3A6-E9259229A197}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{32ABA757-CB98-4BA1-B3A6-E9259229A197}.Release|Any CPU.Build.0 = Release|Any CPU
 		{775149F0-36AD-4387-8F00-9EE90B13C20E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{775149F0-36AD-4387-8F00-9EE90B13C20E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{775149F0-36AD-4387-8F00-9EE90B13C20E}.Release|Any CPU.ActiveCfg = Release|Any CPU

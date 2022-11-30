@@ -1,7 +1,6 @@
 ﻿using Common;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Shouldly;
-using Xunit;
 
 namespace WebApi.Tests
 {
@@ -11,7 +10,7 @@ namespace WebApi.Tests
 
         public Class1()
         {
-            var application = new WebApplicationFactory<WebApi.Program>()
+            var application = new WebApplicationFactory<TrainingApi.Startup>()
                 .WithWebHostBuilder(builder =>
                 {
                     // ... Configure test services
