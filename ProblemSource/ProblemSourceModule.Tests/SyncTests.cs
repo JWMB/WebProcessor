@@ -35,10 +35,14 @@ namespace ProblemSource.Tests
 
             dataSink = fixture.Create<IDataSink>();
             userStateRepository = fixture.Create<IUserStateRepository>();
+
+            var mockTrainingRepo = new Mock<ITrainingRepository>();
+            mockTrainingRepo.Setup(o => o.Get(It.IsAny<int>())).ReturnsAsync(() => new Training { TrainingPlanName = "2017 HT template Default" });
+
             pipeline = new ProblemSourceProcessingPipeline(userStateRepository, new TrainingPlanRepository(),
                 fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), 
                 fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>(), new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
-                fixture.Create<ITrainingRepository>(),
+                mockTrainingRepo.Object,
                 fixture.Create<ILogger<ProblemSourceProcessingPipeline>>());
         }
 
@@ -97,7 +101,7 @@ namespace ProblemSource.Tests
 
             // Assert
             var state = JsonConvert.DeserializeObject<UserFullState>(result.state);
-            //state!.training_plan.metaphor.ShouldBe("Magical");
+
             ((JObject)state!.training_plan)["metaphor"].Value<string>().ShouldBe("Magical");
             state!.training_settings.customData?.unlockAllPlanets.ShouldBe(false);
         }
