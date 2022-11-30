@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 using PluginModuleBase;
 using System.Net;
 using System.Security.Claims;
@@ -39,6 +40,11 @@ namespace Common.Web.Controllers
 
         private async Task RunPipeline(string? pipelineName)
         {
+            if (HttpContext.Request.Headers.TryGetValue(HeaderNames.UserAgent, out var ua))
+            {
+                log.LogInformation($"Request UserAgent", ua.ToString());
+            }
+
             try
             {
                 if (pipelineName == null)

@@ -87,11 +87,11 @@ namespace ProblemSource
                 var dehashedUuid = usernameHashing.Dehash(root.Uuid);
                 if (dehashedUuid == null)
                 {
-                    if (!root.Uuid.Contains(" ")) // allow for forgotten space
+                    if (!root.Uuid.Contains(" ") && root.Uuid.Length > 4) // allow for forgotten space
                         dehashedUuid = usernameHashing.Dehash(root.Uuid.Insert(4, " "));
 
                     if (dehashedUuid == null)
-                        return new SyncResult { error = $"Username not found ({root.Uuid}/deh)" };
+                        return new SyncResult { error = $"Username not found: '{root.Uuid}'" };
                 }
                 return new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" };
             }
