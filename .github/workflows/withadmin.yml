@@ -9,6 +9,7 @@ env:
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 7.0.x
   WORKING_DIRECTORY: ProblemSource\TrainingApi
+  ADMINAPP_DIRECTORY: ProblemSource\AdminApp
 jobs:
   build:
     runs-on: windows-latest
@@ -19,9 +20,9 @@ jobs:
       with:
         node-version: '18.x'
     - run: npm install
-      working-directory: ..\AdminApp
+      working-directory: ProblemSource\AdminApp
     - run: npm run build
-      working-directory: ..\AdminApp
+      working-directory: ${{ADMINAPP_DIRECTORY}}
     # - name: Setup .NET Core
     #   uses: actions/setup-dotnet@v1
     #   with:
