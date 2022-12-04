@@ -19,9 +19,9 @@ jobs:
       with:
         node-version: '18.x'
       run: npm install
-        working-directory: ..\AdminApp
+      working-directory: ..\AdminApp
       run: npm run build
-        working-directory: ..\AdminApp
+      working-directory: ..\AdminApp
     # - name: Setup .NET Core
     #   uses: actions/setup-dotnet@v1
     #   with:
