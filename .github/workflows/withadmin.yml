@@ -3,6 +3,7 @@ on:
   push:
     branches:
     - middleware-style
+  workflow_dispatch:
 env:
   AZURE_WEBAPP_NAME: kistudysync
   AZURE_WEBAPP_PACKAGE_PATH: ProblemSource\TrainingApi\publish
@@ -31,12 +32,12 @@ jobs:
       run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
     - name: Build
       run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
-    - name: Copy admin
-      run: mv -v AdminApp/build/* TrainingApi/
-      shell: bash
-      working-directory: ProblemSource
     # - name: Test ################ On github, getting "No connection could be made because the target machine actively refused it. (127.0.0.1:10002)""
     #   run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build
+    - name: Copy admin
+      run: mv -v AdminApp/build/* TrainingApi/publish
+      shell: bash
+      working-directory: ProblemSource
     - name: Publish
       run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
     - name: Deploy to Azure WebApp
