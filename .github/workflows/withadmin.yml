@@ -22,7 +22,7 @@ jobs:
     - run: npm install
       working-directory: ProblemSource\AdminApp
     - run: npm run build
-      working-directory: ${{ADMINAPP_DIRECTORY}}
+      working-directory: "${{ADMINAPP_DIRECTORY}}"
     # - name: Setup .NET Core
     #   uses: actions/setup-dotnet@v1
     #   with:
