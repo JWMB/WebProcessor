@@ -7,16 +7,17 @@ namespace WebApi.Tests
     public class Class1
     {
         private readonly HttpClient client;
+        private readonly WebApplicationFactory<TrainingApi.Startup> factory;
 
         public Class1()
         {
-            var application = new WebApplicationFactory<TrainingApi.Startup>()
+            factory = new WebApplicationFactory<TrainingApi.Startup>()
                 .WithWebHostBuilder(builder =>
                 {
                     // ... Configure test services
                 });
 
-            client = application.CreateClient();
+            client = factory.CreateClient();
         }
 
         [Fact]
