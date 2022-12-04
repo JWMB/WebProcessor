@@ -37,6 +37,12 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                 {
                     val = entity[prop.Name];
                 }
+
+                if (val == null)
+                {
+                    continue;
+                }
+
                 if (IsNativelySupportedType(prop.PropertyType) == false)
                 {
                     if (val is string str)
