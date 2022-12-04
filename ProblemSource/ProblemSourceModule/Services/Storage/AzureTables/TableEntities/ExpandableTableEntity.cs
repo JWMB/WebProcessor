@@ -58,7 +58,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                     }
                     else
                     {
-                        throw new Exception($"Unhandled type: {val?.GetType().Name}");
+                        throw new Exception($"Unhandled type ({prop.Name}/{prop.PropertyType.Name}): {val?.GetType().Name}");
                     }
                 }
                 
