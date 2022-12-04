@@ -1,4 +1,4 @@
-name: Build and deploy .NET Core application to Web App kistudysync
+name: API + FrontEnd kistudysync
 on:
   push:
     branches:
@@ -20,21 +20,25 @@ jobs:
       with:
         node-version: '18.x'
     - run: npm install
-      working-directory: ProblemSource\AdminApp
+      working-directory: ProblemSource\AdminApp # TODO: how to use ADMINAPP_DIRECTORY?
     - run: npm run build
       working-directory: ProblemSource\AdminApp
-    # - name: Setup .NET Core
-    #   uses: actions/setup-dotnet@v1
-    #   with:
-    #     dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
-    # - name: Restore
-    #   run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
-    # - name: Build
-    #   run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
-    # - name: Test
-    #   run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build
-    # - name: Publish
-    #   run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
+    - name: Restore
+      run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
+    - name: Build
+      run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
+    - name: Copy admin
+      run: mv -v AdminApp/build/* TrainingApi/
+      shell: bash
+      working-directory: ProblemSource
+    - name: Test
+      run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build
+    - name: Publish
+      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
     # - name: Deploy to Azure WebApp
     #   uses: azure/webapps-deploy@v2
     #   with:
