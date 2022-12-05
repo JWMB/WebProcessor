@@ -3,6 +3,7 @@
     import { get } from 'svelte/store';
 	// import type { Account } from 'src/apiClient';
 	import { onMount } from 'svelte';
+    import { base } from '$app/paths';
 	import type { Training } from 'src/apiClient';
 
     const apiFacade = get(apiFacadeStore);
@@ -17,7 +18,7 @@
 <div>
     {#each trainings as training}
     <div>
-      <a href="/?id={training.id}">{training.id}</a>&nbsp;{training.trainingPlanName}&nbsp;
+      <a href="{base}/?id={training.id}">{training.id}</a>&nbsp;{training.trainingPlanName}&nbsp;
     </div>
 	{/each}
 </div>

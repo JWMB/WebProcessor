@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { ApiException } from '../apiClient';
 	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 
 	console.log("init layout");
     const apiBaseUrl = "https://localhost:7173";
@@ -18,8 +19,8 @@
 		  if (e.reason instanceof ApiException) {
 			const apiEx = <ApiException>e.reason;
 			if (apiEx.status === 401) {
-				console.warn("Not logged in!");
-				goto("/login");
+				console.warn("Not logged in!!", base);
+				goto(`${base}/login`);
 				return;
 			} else if (apiEx.status === 404) {
 				console.log("404!");
@@ -43,8 +44,8 @@
 </script>
 
 <nav>
-	<a href="./">Home</a>
-	<a href="./teacher">Teacher</a>
+	<a href="{base}/">Home</a>
+	<a href="{base}/teacher">Teacher</a>
 </nav>
 <div class="page-container">
 	<slot />

@@ -13,7 +13,7 @@ const config = {
 		adapter: adapter({ fallback: 'index.html' }),
 		prerender: { entries: [] },
 		paths: {
-			// base: "/admin",
+			base: "/admin",
 			// Not working:
 			// https://github.com/sveltejs/kit/issues/2958
 			// https://github.com/sveltejs/kit/pull/7543
