@@ -1,6 +1,7 @@
 ﻿using Common.Web;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
@@ -61,6 +62,19 @@ namespace TrainingApi
 
             if (app is WebApplication webApp)
                 webApp.MapControllers();
+
+            // static files
+            var cacheMaxAgeOneWeek = (60 * 60 * 24 * 7).ToString();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "StaticFiles", "Admin")),
+                RequestPath = "/admin",
+                OnPrepareResponse = ctx =>
+                {
+                    ctx.Context.Response.Headers.Append(
+                         "Cache-Control", $"public, max-age={cacheMaxAgeOneWeek}");
+                }
+            });
 
             app.UseAuthentication();
             app.UseRouting(); // Needed for GraphQL
