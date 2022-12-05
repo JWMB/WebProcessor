@@ -9,7 +9,8 @@
 	import { base } from '$app/paths';
 
 	console.log("init layout");
-    const apiBaseUrl = "https://localhost:7173";
+    const apiBaseUrl = window.location.host.indexOf("localhost") >= 0 || window.location.host.indexOf(":8080") > 0
+		? "https://localhost:7173" : window.location.origin;
     // const apiBaseUrl = "";
     const apiFacadeInstance = new ApiFacade(apiBaseUrl);
     apiFacade.set(apiFacadeInstance);
