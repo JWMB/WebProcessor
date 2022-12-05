@@ -22,7 +22,7 @@ namespace TrainingApi
             // Add services to the container.
             services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trainingdb;Trusted_Connection=True;"));
             services.AddScoped<TrainingDbContext>();
-            services.AddScoped<IStatisticsProvider, RecreatedStatisticsProvider>();
+            services.AddScoped<IStatisticsProvider, StatisticsProvider>(); // RecreatedStatisticsProvider
 
             plugins = ConfigureProblemSource(services, configurationManager, env);
 
