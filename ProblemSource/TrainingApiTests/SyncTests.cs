@@ -11,7 +11,7 @@ namespace WebApi.Tests
 
         public SyncTests()
         {
-            Skip.If(System.Diagnostics.Debugger.IsAttached);
+            Skip.If(!System.Diagnostics.Debugger.IsAttached);
 
             // TODO: for some reason, this fails on github action but not locally
             factory = new WebApplicationFactory<TrainingApi.Startup>()
