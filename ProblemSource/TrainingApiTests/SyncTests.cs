@@ -4,13 +4,16 @@ using Shouldly;
 
 namespace WebApi.Tests
 {
-    public class Class1
+    public class SyncTests
     {
         private readonly HttpClient client;
         private readonly WebApplicationFactory<TrainingApi.Startup> factory;
 
-        public Class1()
+        public SyncTests()
         {
+            Skip.If(System.Diagnostics.Debugger.IsAttached);
+
+            // TODO: for some reason, this fails on github action but not locally
             factory = new WebApplicationFactory<TrainingApi.Startup>()
                 .WithWebHostBuilder(builder =>
                 {
@@ -20,21 +23,21 @@ namespace WebApi.Tests
             client = factory.CreateClient();
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task Sync_Auth_WrongSigningKey()
         {
             var response = await Post("/api/sync/sync", """{ "a": 1 }""", GenerateToken(signingKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
             response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task Sync_Auth_WrongAudience()
         {
             var response = await Post("/api/sync/sync", """{ "a": 1 }""", GenerateToken(audience: "aa"));
             response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task Sync_ProblemSource_MissingUserName()
         {
             var response = await Post("/api/sync/sync", """{ "a": 1 }""");
@@ -43,7 +46,7 @@ namespace WebApi.Tests
             content.ShouldBe("Value cannot be null. (Parameter 'Uuid')");
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task Sync_ProblemSource_Minimal_OK()
         {
             var response = await Post("/api/sync/sync", new

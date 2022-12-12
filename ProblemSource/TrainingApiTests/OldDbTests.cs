@@ -10,9 +10,9 @@ using TrainingApi.Services;
 
 namespace TrainingApiTests
 {
-    public class UnitTest1
+    public class OldDbTests
     {
-        public UnitTest1()
+        public OldDbTests()
         {
             Skip.If(!System.Diagnostics.Debugger.IsAttached);
         }
