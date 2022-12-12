@@ -21,6 +21,8 @@ venv
 **/npm-debug.log
 
 Web.Test.config.secret
+**/TrainingApi/StaticFiles/Admin/
+
 node_modules
 .curl/
 
