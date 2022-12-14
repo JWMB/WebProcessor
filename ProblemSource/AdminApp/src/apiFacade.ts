@@ -1,5 +1,5 @@
 import { AccountsClient, AggregatesClient, TrainingsClient } from "./apiClient";
-// import { RequestAdapter } from "./RequestAdapter";
+import { RequestAdapter } from "./RequestAdapter";
 
 export class ApiFacade {
     private aggregatesClient: AggregatesClient;
@@ -8,8 +8,8 @@ export class ApiFacade {
 
     constructor(baseUrl: string) {
         const http = 
-            { fetch: fetch };
-            // { fetch: (r: Request, init?: RequestInit) => fetch(RequestAdapter.createFetchArguments(r, init))}
+            // { fetch: fetch };
+            { fetch: (r: Request, init?: RequestInit) => fetch(RequestAdapter.createFetchArguments(r, init))}
         this.aggregatesClient = new AggregatesClient(baseUrl, http);
         this.accountsClient = new AccountsClient(baseUrl, http);
         this.trainingsClient = new TrainingsClient(baseUrl, http);

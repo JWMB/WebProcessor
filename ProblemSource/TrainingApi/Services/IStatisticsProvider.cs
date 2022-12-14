@@ -1,8 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OldDb.Models;
+using ProblemSource;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
+using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Services.Storage;
 using TrainingApi.Controllers;
 using Phase = ProblemSource.Models.Aggregates.Phase;
 
@@ -41,14 +44,36 @@ namespace TrainingApi.Services
     public class StatisticsProvider : IStatisticsProvider
     {
         private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory;
+        private readonly MnemoJapanese mnemoJapanese;
+        private readonly IUserStateRepository userStateRepository;
 
-        public StatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory)
+        public StatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory, MnemoJapanese mnemoJapanese, IUserStateRepository userStateRepository)
         {
             this.userGeneratedDataRepositoryProviderFactory = userGeneratedDataRepositoryProviderFactory;
+            this.mnemoJapanese = mnemoJapanese;
+            this.userStateRepository = userStateRepository;
         }
 
-        private IUserGeneratedDataRepositoryProvider GetDataProvider(int accountId) =>
-            userGeneratedDataRepositoryProviderFactory.Create("7af76409-a7ee-44e9-9b4a-526b164de5f0");
+        // TODO: we should use int accountId as rowKey...
+        private static Dictionary<int, string> idToHashed = new Dictionary<int, string>();
+
+        private IUserGeneratedDataRepositoryProvider GetDataProvider(int accountId)
+        {
+            // TODO: we should use int accountId as rowKey
+            var uuid = "";
+            if (userStateRepository is AzureTableUserStateRepository azureTableStateRepo)
+            {
+                if (!idToHashed.TryGetValue(accountId, out uuid))
+                {
+                    var uuids = azureTableStateRepo.GetUuids().Result;
+                    idToHashed = uuids.Select(o => new { Key = o, Value = mnemoJapanese.ToIntWithRandom(o) })
+                        .Where(o => o.Value.HasValue)
+                        .ToDictionary(o => o.Value ?? 0, o => o.Key);
+                    uuid = idToHashed.GetValueOrDefault(accountId, "");
+                }
+            }
+            return userGeneratedDataRepositoryProviderFactory.Create(uuid);
+        }
 
         public async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int accountId) =>
             await GetDataProvider(accountId).PhaseStatistics.GetAll();

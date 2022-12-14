@@ -9,13 +9,21 @@
 	import { base } from '$app/paths';
 
 	console.log("init layout");
-    const apiBaseUrl = window.location.host.indexOf("localhost") >= 0 || window.location.host.indexOf(":8080") > 0
-		? "https://localhost:7173" : window.location.origin;
-    // const apiBaseUrl = "";
-    const apiFacadeInstance = new ApiFacade(apiBaseUrl);
-    apiFacade.set(apiFacadeInstance);
+    // const apiBaseUrl = window.location.host.indexOf("localhost") >= 0 || window.location.host.indexOf(":8080") > 0
+	// 	? "https://localhost:7173" : window.location.origin;
+    // // const apiBaseUrl = "";
+    // const apiFacadeInstance = new ApiFacade(apiBaseUrl);
+    // apiFacade.set(apiFacadeInstance);
 
 	onMount(() => {
+		console.log("window", window);
+
+		const apiBaseUrl = window.location.host.indexOf("localhost") >= 0 || window.location.host.indexOf(":8080") > 0
+			? "https://localhost:7173" : window.location.origin;
+		// const apiBaseUrl = "";
+		const apiFacadeInstance = new ApiFacade(apiBaseUrl);
+		apiFacade.set(apiFacadeInstance);
+
 		window.onunhandledrejection = (e) => {
 		  if (e.reason instanceof ApiException) {
 			const apiEx = <ApiException>e.reason;

@@ -1,7 +1,5 @@
 ﻿using Azure.Data.Tables;
 using Common.Web;
-using ProblemSource.Services.Storage.AzureTables.TableEntities;
-using ProblemSourceModule.Services.Storage;
 using System;
 
 namespace ProblemSource.Services.Storage.AzureTables
@@ -19,6 +17,19 @@ namespace ProblemSource.Services.Storage.AzureTables
 
             //converter = new ExpandableTableEntityConverter<Training>(t => (staticPartitionKey, t.Id.ToString()));
             //repo = new TableEntityRepository<Training, TableEntity>(tableClientFactory.UserStates, converter.ToPoco, converter.FromPoco, staticPartitionKey);
+        }
+
+        public async Task<List<string>> GetUuids()
+        {
+            // TODO: only needed until we switch to accountId as rowKeys
+            var tableClient = tableClientFactory.UserStates;
+            var queryResultsFilter = tableClient.QueryAsync<TableEntity>(filter: $"PartitionKey eq '{staticPartitionKey}'");
+            var uuids = new List<string>();
+            await foreach (var entity in queryResultsFilter)
+            {
+                uuids.Add(entity.RowKey);
+            }
+            return uuids;
         }
 
         public async Task<object?> Get(string uuid)

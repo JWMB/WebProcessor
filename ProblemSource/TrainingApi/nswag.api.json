@@ -129,6 +129,53 @@
         }
       }
     },
+    "/api/Testing/exception": {
+      "post": {
+        "tags": [
+          "Testing"
+        ],
+        "operationId": "Testing_ThrowException",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/Testing/log": {
+      "post": {
+        "tags": [
+          "Testing"
+        ],
+        "operationId": "Testing_Log",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "level",
+            "in": "query",
+            "x-schema": {
+              "$ref": "#/definitions/LogLevel"
+            },
+            "default": 4,
+            "x-nullable": false,
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/Trainings": {
       "post": {
         "tags": [
@@ -258,6 +305,48 @@
         }
       }
     },
+    "/api/Trainings/summaries": {
+      "get": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_GetSummaries",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TrainingSummary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Health/Heartbeat": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "operationId": "Health_Heartbeat",
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
     "/api/Relay/GetSyncUrls": {
       "get": {
         "tags": [
@@ -291,11 +380,7 @@
         "operationId": "Sync_SyncUnauthorized",
         "responses": {
           "200": {
-            "x-nullable": true,
-            "description": "",
-            "schema": {
-              "type": "file"
-            }
+            "description": ""
           }
         }
       }
@@ -308,11 +393,7 @@
         "operationId": "Sync_Sync",
         "responses": {
           "200": {
-            "x-nullable": true,
-            "description": "",
-            "schema": {
-              "type": "file"
-            }
+            "description": ""
           }
         }
       }
@@ -495,6 +576,28 @@
           "type": "boolean"
         }
       }
+    },
+    "LogLevel": {
+      "type": "integer",
+      "description": "Defines logging severity levels.",
+      "x-enumNames": [
+        "Trace",
+        "Debug",
+        "Information",
+        "Warning",
+        "Error",
+        "Critical",
+        "None"
+      ],
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
     },
     "TrainingCreateDTO": {
       "type": "object",
@@ -700,6 +803,28 @@
         },
         "trainingPlanName": {
           "type": "string"
+        },
+        "settings": {
+          "$ref": "#/definitions/TrainingSettings"
+        }
+      }
+    },
+    "TrainingSummary": {
+      "type": "object",
+      "required": [
+        "id",
+        "days"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TrainingDayAccount"
+          }
         }
       }
     }
