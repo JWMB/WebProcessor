@@ -86,7 +86,8 @@ namespace TrainingApi.Controllers
                 .Where(o => o.First().AccountId > 0)
                 .ToDictionary(o => o.First().AccountId, o => o.ToList());
 
-            return trainings.Select(o => new TrainingSummary { Id = o.Id, Days = tdDict.GetValueOrDefault(o.Id, new List<TrainingDayAccount>()) }).ToList();
+            return tdDict.Select(kv => new TrainingSummary { Id = kv.Key, Days = kv.Value }).ToList();
+            //return trainings.Select(o => new TrainingSummary { Id = o.Id, Days = tdDict.GetValueOrDefault(o.Id, new List<TrainingDayAccount>()) }).ToList();
         }
 
         public class TrainingSummary
