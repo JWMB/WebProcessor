@@ -26,8 +26,11 @@ namespace TrainingApi
 
             plugins = ConfigureProblemSource(services, configurationManager, env);
 
-            oldDbStartup = new OldDb.Startup();
-            oldDbStartup.ConfigureServices(services);
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                oldDbStartup = new OldDb.Startup();
+                oldDbStartup.ConfigureServices(services);
+            }
 
             services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -101,7 +104,6 @@ namespace TrainingApi
 
             if (oldDbStartup != null)
                 app.UseEndpoints(oldDbStartup.ConfigureGraphQL); //app.UseEndpoints(x => x.MapGraphQL()); app.Map(/graphql", )
-
         }
 
         IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
