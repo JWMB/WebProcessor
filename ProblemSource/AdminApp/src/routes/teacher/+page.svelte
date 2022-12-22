@@ -74,7 +74,7 @@
           </td>
           {#each training.daysArray as day}
             <td>
-                {Math.round(100 * (day?.numQuestions || 0) / (day?.numCorrectAnswers || 1))}%
+                {day == null || day.numQuestions == 0 ? "" : `${Math.round(100 * (day?.numQuestions || 0) / (day?.numCorrectAnswers || 1))}%`}
             </td>
           {/each}
           <!-- <div style="width: 10px; height: 10px">
@@ -85,7 +85,7 @@
             <td></td>
             {#each training.daysArray as day}
               <td>
-                {Math.round((day?.responseMinutes || 0) + (day?.remainingMinutes || 0))}
+                {day == null || day.responseMinutes == 0 ? "" : Math.round((day?.responseMinutes || 0) + (day?.remainingMinutes || 0))}
               </td>
             {/each}
             <!-- <div style="width: 10px; height: 10px">
