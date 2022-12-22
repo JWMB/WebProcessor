@@ -20,7 +20,6 @@ namespace TrainingApi
         public void ConfigureServices(IServiceCollection services, ConfigurationManager configurationManager, IWebHostEnvironment env)
         {
             // Add services to the container.
-            services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trainingdb;Trusted_Connection=True;"));
             services.AddScoped<TrainingDbContext>();
             services.AddScoped<IStatisticsProvider, StatisticsProvider>(); // RecreatedStatisticsProvider
 
@@ -28,6 +27,7 @@ namespace TrainingApi
 
             if (System.Diagnostics.Debugger.IsAttached)
             {
+                services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trainingdb;Trusted_Connection=True;"));
                 oldDbStartup = new OldDb.Startup();
                 oldDbStartup.ConfigureServices(services);
             }
@@ -94,6 +94,7 @@ namespace TrainingApi
             );
 
             app.UseAuthorization();
+
             app.UseCookiePolicy(new CookiePolicyOptions
             {
                 // TODO: is this needed? We also have it in AddCookie() below.
@@ -106,7 +107,7 @@ namespace TrainingApi
                 app.UseEndpoints(oldDbStartup.ConfigureGraphQL); //app.UseEndpoints(x => x.MapGraphQL()); app.Map(/graphql", )
         }
 
-        IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
+        private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
         {
             TypedConfiguration.ConfigureTypedConfiguration(services, config);
             ConfigureAuth(services, config, env);
@@ -116,7 +117,7 @@ namespace TrainingApi
             return plugins;
         }
 
-        void AddSwaggerGen(IServiceCollection services)
+        private void AddSwaggerGen(IServiceCollection services)
         {
             // services.AddSwaggerGen();
             services.AddSwaggerGen(c =>
@@ -146,7 +147,7 @@ namespace TrainingApi
             });
         }
 
-        void ConfigureAuth(IServiceCollection services, IConfiguration config, IHostEnvironment env)
+        private void ConfigureAuth(IServiceCollection services, IConfiguration config, IHostEnvironment env)
         {
             var combinedScheme = "JWT_OR_COOKIE";
             services.AddAuthentication(options =>

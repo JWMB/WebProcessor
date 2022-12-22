@@ -34,8 +34,14 @@ namespace TrainingApi.Controllers
         public async Task<ActionResult> Login([FromBody] LoginCredentials credentials)
         {
             // TODO: just until real auth is implemented
-            if (!users.TryGetValue(credentials.Username, out var storedPwd) || storedPwd != credentials.Password)
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                credentials = new LoginCredentials { Username = "dev user" };
+            }
+            else if (!users.TryGetValue(credentials.Username, out var storedPwd) || storedPwd != credentials.Password)
+            {
                 return Unauthorized();
+            }
 
             var claims = new List<Claim>
             {
