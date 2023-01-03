@@ -1,12 +1,9 @@
 ﻿using Common.Web.Services;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using PluginModuleBase;
-using System.Text;
 
 namespace Common.Web
 {
@@ -14,7 +11,7 @@ namespace Common.Web
     {
         public static void ConfigureProcessingPipelineServices(IServiceCollection services, IEnumerable<IPluginModule> pluginModules)
         {
-            services.AddSingleton<ITableClientFactory, TableClientFactory>();
+            services.AddSingleton<ITableClientFactory, TableClientFactory>(); //(sp => new TableClientFactory("vektor")
             services.AddSingleton<IDataSink, AzureTableLogSink>();
             services.AddSingleton<IProcessingMiddlewarePipelineRepository, ProcessingPipelineRepository>();
             services.AddSingleton<SinkProcessingMiddleware>();
@@ -29,40 +26,6 @@ namespace Common.Web
 
             foreach (var plugin in pluginModules)
                 plugin.Configure(serviceProvider);
-        }
-
-        public static void ConfigureDefaultJwtAuth(IServiceCollection services, IConfiguration config)
-        {
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme,
-                   cfg =>
-                   {
-                       // This is a way to invalidate older tokens in case of exposure
-                       var issuedAfter = new DateTime(2022, 6, 15, 0, 0, 0, DateTimeKind.Utc); //DateTime.Parse(Configuration["Token:IssuedAfter"], System.Globalization.CultureInfo.InvariantCulture);
-                       var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("somereallylongkeygoeshere")); //Configuration["Token:TokenSigningKey"]
-
-                       cfg.TokenValidationParameters = new TokenValidationParameters
-                       {
-                           ValidIssuer = "jwmb", //Configuration["Token:ValidIssuer"],
-                           ValidAudiences = new List<string>
-                            {
-                                "logsink_client", //Configuration["Token:ValidAudience"],
-                            },
-
-                           ValidateIssuerSigningKey = true,
-                           IssuerSigningKey = securityKey,
-
-                           ValidateLifetime = true,
-                           LifetimeValidator = (_, _, securityToken, validationParameters) =>
-                               securityToken.ValidFrom > issuedAfter &&
-                               securityToken.ValidTo > DateTime.UtcNow
-                       };
-
-                       //cfg.Events = new JwtBearerEvents();
-                       //cfg.Events.OnAuthenticationFailed = async (cc) =>
-                       //{
-                       //};
-                   });
         }
 
         public static void ConfigureApplicationInsights(IServiceProvider serviceProvider, IConfiguration config, bool isDevelopment)

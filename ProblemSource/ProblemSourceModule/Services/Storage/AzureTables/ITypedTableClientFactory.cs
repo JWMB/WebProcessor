@@ -17,8 +17,9 @@ namespace ProblemSource.Services.Storage.AzureTables
         private readonly string prefix = "vektor";
         private readonly string connectionString;
         private readonly TableClientOptions tableClientOptions;
-        public TypedTableClientFactory(string? connectionString)
+        public TypedTableClientFactory(string prefix = "vektor", string? connectionString = null)
         {
+            this.prefix = prefix;
             this.connectionString = string.IsNullOrEmpty(connectionString) ? "UseDevelopmentStorage=true" : connectionString;
             tableClientOptions = new TableClientOptions();
             tableClientOptions.Retry.MaxRetries = 1;

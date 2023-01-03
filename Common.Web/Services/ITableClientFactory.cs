@@ -10,17 +10,19 @@ namespace Common.Web.Services
 
     public class TableClientFactory : ITableClientFactory
     {
-        private readonly string prefix = "vektor";
         private readonly string connectionString;
         private readonly TableClientOptions tableClientOptions;
-        public TableClientFactory(string? connectionString)
+        private readonly string tablePrefix;
+
+        public TableClientFactory(string tablePrefix = "vektor", string? connectionString = null)
         {
             this.connectionString = string.IsNullOrEmpty(connectionString) ? "UseDevelopmentStorage=true" : connectionString;
             tableClientOptions = new TableClientOptions();
             tableClientOptions.Retry.MaxRetries = 1;
+            this.tablePrefix = tablePrefix;
         }
 
-        public TableClient CreateClient(string name) => new TableClient(connectionString, $"{prefix}{name}", tableClientOptions);
+        public TableClient CreateClient(string name) => new TableClient(connectionString, $"{tablePrefix}{name}", tableClientOptions);
 
         public async Task<TableClient> CreateClientAndInit(string name)
         {

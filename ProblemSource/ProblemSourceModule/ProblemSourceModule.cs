@@ -46,7 +46,8 @@ namespace ProblemSource
         {
             services.AddSingleton<IUserStateRepository, AzureTableUserStateRepository>(); //AzureTableUserStateRepository InMemoryUserStateRepository
 
-            services.AddSingleton<ITypedTableClientFactory>(sp => new TypedTableClientFactory(sp.GetRequiredService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
+            services.AddSingleton<ITypedTableClientFactory>(sp => 
+                new TypedTableClientFactory(sp.GetRequiredService<AzureTableConfig>().TablePrefix, sp.GetRequiredService<IConfiguration>()["AppSettings:AzureTable:ConnectionString"]));
             RemoveService<ITableClientFactory>(services);
             //var serviceDescriptor = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(ITableClientFactory));
             //if (serviceDescriptor != null)
