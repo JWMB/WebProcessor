@@ -15,12 +15,12 @@
             return;
         }
         console.log("Cmon");
-        apiFacade.trainings.getSummaries().then(r => {
-             trainingSummaries = r;
-             console.log("OK", trainingSummaries.length);
-         });
-        // trainingSummaries = await apiFacade.trainings.getSummaries();
-        // console.log("OK");
+        // apiFacade.trainings.getSummaries().then(r => {
+        //      trainingSummaries = r;
+        //      console.log("OK", trainingSummaries.length);
+        //  });
+        trainingSummaries = await apiFacade.trainings.getSummaries();
+        console.log("OK", trainingSummaries.length); // why is TrainingsTable not always updated?
     }
 
     onMount(() => getTrainings())
