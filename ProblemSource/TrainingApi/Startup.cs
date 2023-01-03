@@ -130,7 +130,7 @@ namespace TrainingApi
             ConfigureAuth(services, config, env);
 
             var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
-            services.AddSingleton<ITableClientFactory>(sp => new TableClientFactory(sp.GetRequiredService<ProblemSource.Services.Storage.AzureTables.AzureTableConfig>().TablePrefix));
+            services.AddSingleton<ITableClientFactory, TableClientFactory>();
             ServiceConfiguration.ConfigureProcessingPipelineServices(services, plugins);
             return plugins;
         }

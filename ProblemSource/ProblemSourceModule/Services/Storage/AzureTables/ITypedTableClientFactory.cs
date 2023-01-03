@@ -17,10 +17,10 @@ namespace ProblemSource.Services.Storage.AzureTables
         private readonly string prefix = "vektor";
         private readonly string connectionString;
         private readonly TableClientOptions tableClientOptions;
-        public TypedTableClientFactory(string prefix = "vektor", string? connectionString = null)
+        public TypedTableClientFactory(AzureTableConfig config)
         {
-            this.prefix = prefix;
-            this.connectionString = string.IsNullOrEmpty(connectionString) ? "UseDevelopmentStorage=true" : connectionString;
+            prefix = config.TablePrefix;
+            connectionString = string.IsNullOrEmpty(config.ConnectionString) ? "UseDevelopmentStorage=true" : config.ConnectionString;
             tableClientOptions = new TableClientOptions();
             tableClientOptions.Retry.MaxRetries = 1;
         }
@@ -49,9 +49,9 @@ namespace ProblemSource.Services.Storage.AzureTables
             return client;
         }
 
-        public static async Task<TypedTableClientFactory> Create(string? connectionString)
+        public static async Task<TypedTableClientFactory> Create(AzureTableConfig config)
         {
-            var tableFactory = new TypedTableClientFactory(connectionString);
+            var tableFactory = new TypedTableClientFactory(config);
             try
             {
                 await tableFactory.Init();

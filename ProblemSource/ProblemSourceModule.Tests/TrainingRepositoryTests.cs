@@ -1,12 +1,7 @@
 ﻿using Shouldly;
-using ProblemSource.Models.Aggregates;
-using ProblemSource.Services.Storage.AzureTables.TableEntities;
-using Common;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
-using AutoFixture.AutoMoq;
-using AutoFixture;
 
 namespace ProblemSourceModule.Tests
 {
@@ -20,7 +15,7 @@ namespace ProblemSourceModule.Tests
         [SkippableFact]
         public async Task AzureTableTrainingRepository_Add_Increment()
         {
-            var tableFactory = await TypedTableClientFactory.Create(null);
+            var tableFactory = await TypedTableClientFactory.Create(new AzureTableConfig { ConnectionString = "" });
 
             ITrainingRepository repo = new AzureTableTrainingRepository(tableFactory);
 
