@@ -8,7 +8,7 @@
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 
-	console.log("init layout");
+	// console.log("init layout");
     // const apiBaseUrl = window.location.host.indexOf("localhost") >= 0 || window.location.host.indexOf(":8080") > 0
 	// 	? "https://localhost:7173" : window.location.origin;
     // // const apiBaseUrl = "";
