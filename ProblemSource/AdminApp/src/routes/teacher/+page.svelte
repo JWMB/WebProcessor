@@ -10,7 +10,17 @@
     const apiFacade = get(apiFacadeStore);
 
     async function getTrainings() {
-        trainingSummaries = await apiFacade.trainings.getSummaries();
+        if (apiFacade == null) {
+            console.error("apiFacade null");
+            return;
+        }
+        console.log("Cmon");
+        apiFacade.trainings.getSummaries().then(r => {
+             trainingSummaries = r;
+             console.log("OK", trainingSummaries.length);
+         });
+        // trainingSummaries = await apiFacade.trainings.getSummaries();
+        // console.log("OK");
     }
 
     onMount(() => getTrainings())
@@ -19,5 +29,9 @@
 <div>
     <h1>Trainings</h1>
 
-    <TrainingsTable trainingSummaries={trainingSummaries} numDaysBack={5}></TrainingsTable>
+    <TrainingsTable trainingSummaries={trainingSummaries} numDays={5}></TrainingsTable>
+
+    <!-- {#await trainingsPromise then number}
+	    <p>the number is {number}</p>
+    {/await} -->
 </div>

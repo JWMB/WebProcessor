@@ -2,14 +2,15 @@
 	import type { TrainingSummary } from "src/apiClient";
     import { base } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { Grid } from 'ag-grid-community';
+	import { Grid, type GridOptions } from 'ag-grid-community';
 
     import 'ag-grid-community/styles/ag-grid.css';
 	import 'ag-grid-community/styles/ag-theme-alpine.css';
+	import { max } from "../arrayUtils";
 
     export let trainingSummaries: TrainingSummary[] = [];
-    export let numDaysBack = 10;
-
+    export let numDays = 10;
+    
     function getDateString(date: Date) {
         const str = date.toISOString();
         const index = str.indexOf("T");
@@ -23,6 +24,9 @@
         const diff = dateEnd.valueOf() - dateStart.valueOf();
         return Math.floor(diff / 1000 / 60 / 60 / 24);
     }
+    function addDays(date: Date, days: number) {
+        return new Date(date.valueOf() + days * 24 * 60 * 60 * 1000);
+    }
 
     function getDateHeader(date: Date) {
         const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -31,7 +35,10 @@
         // return `<span>${days[weekday].substring(0, 1)}</span>`;
     }
 
-    let fromDate = new Date(getDatePart(new Date(Date.now())).valueOf() - numDaysBack * 1000 * 60 * 60 * 24);
+    console.log("trainingSummaries", trainingSummaries.length, numDays);
+    const latestTimestamp = max(trainingSummaries.map(ts => max(ts.days.map(d => new Date(d.startTime).valueOf()))));
+
+    let fromDate = new Date(getDatePart(addDays(new Date(latestTimestamp), -numDays)));
 
     const formatTraining = (training: TrainingSummary) => {
         const targetTime = 20;
@@ -46,8 +53,10 @@
                 }));
                 
         const firstDay = training.days[0] || { accountUuid: "N/A", startTime: new Date() };
+        // const lastDay = training.days[training.days.length - 1] || firstDay;
         const uuid = firstDay.accountUuid;
-        const daysSinceStart = getDaysBetween(new Date(Date.now()), firstDay.startTime);
+        const daysSinceStart = getDaysBetween(new Date(firstDay.startTime), new Date(latestTimestamp));
+        // console.log(uuid, training.days.length, daysSinceStart);
         return {
             uuid: uuid,
             startDate: firstDay.startTime,
@@ -103,10 +112,10 @@
 	<rect x="0" width="${dayData.correct * rectSize.x}" height="${rectSize.y}" rx="2" fill="${green}" />
 </g>
 `.trim();
-		return `<svg>${time}${correct}</svg>`;
+		return `<svg viewBox="0 0 60 30">${time}${correct}</svg>`;
 	};
 
-	const dayColumns = new Array(numDaysBack + 1).fill(0).map((_, i) => {
+	const dayColumns = new Array(numDays + 1).fill(0).map((_, i) => {
         const d = new Date(fromDate.valueOf() + i * 24 * 60 * 60 * 1000);
         return {
             headerName: getDateHeader(d),
@@ -117,7 +126,7 @@
             cellRenderer: dayRenderer
 		}});
 
-    const gridOptions = {
+    const gridOptions: GridOptions<any> = {
 		defaultColDef: {
 			sortable: true,
 			unSortIcon: true,
@@ -132,10 +141,10 @@
 					cellRenderer: (params: any) => { return `<a href="${base}/?id=${params.data.id}">${params.value}</a>`; }
 				 },
 				{ headerName: 'Days', headerTooltip: "Days trained", field: 'totalDays' },
-				{ headerName: 'Per week', headerTooltip: "Average days trained per week", field: 'daysPerWeek' }
+				{ headerName: 'Per week', headerTooltip: "Average days trained per week", field: 'daysPerWeek', cellRenderer: (params: any) => params.value.toFixed(1) }
 			  ]
 			},
-			{ headerName: `Latest ${numDaysBack + 1} days`, children: dayColumns }
+			{ headerName: `Sessions ${getDateString(fromDate)} - ${getDateString(addDays(fromDate, numDays))}`, children: dayColumns }
 		],
 		rowData: trainings
 	};
@@ -144,11 +153,14 @@
 		const eGridDiv = document.getElementById("myGrid");
 		if (eGridDiv != null) {
 			const grid = new Grid(eGridDiv, gridOptions);
+            if (gridOptions.columnApi != null) {
+                gridOptions.columnApi.autoSizeAllColumns(); //sizeColumnsToFit();
+            }
 		}
 	});
 
 </script>
 
 <div >
-	<div id="myGrid" style="height: 500px; width: 1200px" class="ag-theme-alpine"></div>
+	<div id="myGrid" style="height: 500px;" class="ag-theme-alpine"></div>
 </div>
