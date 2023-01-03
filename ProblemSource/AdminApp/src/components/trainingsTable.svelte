@@ -7,45 +7,17 @@
     import 'ag-grid-community/styles/ag-grid.css';
 	import 'ag-grid-community/styles/ag-theme-alpine.css';
 
-    const numDaysBack = 10;
-    let fromDate = new Date(Date.now() - numDaysBack * 1000 * 60 * 60 * 24);
+    export let trainingSummaries: TrainingSummary[] = [];
+    export let numDaysBack = 10;
 
-    const formatTraining = (training: TrainingSummary) => {
-        const targetTime = 20;
-
-        const withDayIndex = training.days.filter(d => new Date(d.startTime) >= fromDate)
-                .map(d => ({
-                    dayIndex: getDaysBetween(fromDate, new Date(d.startTime)),
-                    ss: d.remainingMinutes,
-                    timeTarget: targetTime,
-                    timeActive: d.responseMinutes,
-                    timeTotal: d.remainingMinutes + d.responseMinutes,
-                    info: d
-                }));
-                
-        const firstDay = training.days[0] || { accountUuid: "N/A", startTime: new Date() };
-        const uuid = firstDay.accountUuid;
-        const daysSinceStart = (Date.now().valueOf() - firstDay.startTime.valueOf()) / 1000 / 60 / 60 / 24;
-        return {
-            uuid: uuid,
-            startDate: firstDay.startTime,
-            totalDays: training.days.length,
-            daysPerWeek: training.days.length / (daysSinceStart / 7),
-            days: withDayIndex
-        };
-    };
-    let trainingSummaries: TrainingSummary[] = [
-        { id: 1, days: [
-            { accountId: 1, accountUuid: "aa", trainingDay: 1, startTime: new Date("2023-01-01"), endTimeStamp: new Date(), 
-            numRacesWon: 1, numRaces: 1, numPlanetsWon: 1, numCorrectAnswers: 1, numQuestions: 1, responseMinutes:8, remainingMinutes:4 }] }
-    ];
-    let trainings = trainingSummaries.map(formatTraining);
-
-    function getDateOnly(date: Date) {
+    function getDateString(date: Date) {
         const str = date.toISOString();
         const index = str.indexOf("T");
         return str.substring(0, index);
-        // const msOfTime = date.getHours() * 60 * 60 * 1000 + date.getMinutes() * 60 * 1000 + date.getSeconds() * 1000 + date.getMilliseconds();
+    }
+    function getDatePart(date: Date) {
+        const msOfTime = date.getHours() * 60 * 60 * 1000 + date.getMinutes() * 60 * 1000 + date.getSeconds() * 1000 + date.getMilliseconds();
+        return new Date(date.valueOf() - msOfTime);
     }
     function getDaysBetween(dateStart: Date, dateEnd: Date) {
         const diff = dateEnd.valueOf() - dateStart.valueOf();
@@ -54,8 +26,38 @@
 
     function getDateHeader(date: Date) {
         const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        return days[date.getDay()].substring(0, 1);
+        const weekday = date.getDay();
+        return days[weekday].substring(0, 1);
+        // return `<span>${days[weekday].substring(0, 1)}</span>`;
     }
+
+    let fromDate = new Date(getDatePart(new Date(Date.now())).valueOf() - numDaysBack * 1000 * 60 * 60 * 24);
+
+    const formatTraining = (training: TrainingSummary) => {
+        const targetTime = 20;
+
+        const withDayIndex = training.days.filter(d => new Date(d.startTime) >= fromDate)
+                .map(d => ({
+                    dayIndex: getDaysBetween(fromDate, getDatePart(new Date(d.startTime))),
+                    timeTarget: targetTime,
+                    timeActive: d.responseMinutes,
+                    timeTotal: d.remainingMinutes + d.responseMinutes,
+                    correct: d.numCorrectAnswers / d.numQuestions
+                }));
+                
+        const firstDay = training.days[0] || { accountUuid: "N/A", startTime: new Date() };
+        const uuid = firstDay.accountUuid;
+        const daysSinceStart = getDaysBetween(new Date(Date.now()), firstDay.startTime);
+        return {
+            uuid: uuid,
+            startDate: firstDay.startTime,
+            totalDays: training.days.length,
+            daysPerWeek: training.days.length / (daysSinceStart / 7),
+            days: withDayIndex
+        };
+    };
+
+    const trainings = trainingSummaries.map(formatTraining);
 
 	const dayRenderer = (params: any) => {
         function describeArc(x: number, y: number, radius: number, startAngle: number, endAngle: number){
@@ -76,8 +78,7 @@
             return d;       
         }
 
-        // console.log(params.data.days, params.colDef.dayIndex);
-		const dayData = params.data.days[params.colDef.dayIndex];
+        const dayData = params.data.days.filter((d: any) => d.dayIndex === params.colDef.dayIndex)[0];
 		if (dayData == null) {
 			return "";
 		}
@@ -105,11 +106,11 @@
 		return `<svg>${time}${correct}</svg>`;
 	};
 
-	const dayColumns = new Array(numDaysBack).fill(0).map((v, i) => {
+	const dayColumns = new Array(numDaysBack + 1).fill(0).map((_, i) => {
         const d = new Date(fromDate.valueOf() + i * 24 * 60 * 60 * 1000);
         return {
             headerName: getDateHeader(d),
-            headerTooltip: getDateOnly(d),
+            headerTooltip: getDateString(d),
             dayIndex: i,
             sortable: false,
             resizable: false,
@@ -134,7 +135,7 @@
 				{ headerName: 'Per week', headerTooltip: "Average days trained per week", field: 'daysPerWeek' }
 			  ]
 			},
-			{ headerName: "Latest days", children: dayColumns }
+			{ headerName: `Latest ${numDaysBack + 1} days`, children: dayColumns }
 		],
 		rowData: trainings
 	};
