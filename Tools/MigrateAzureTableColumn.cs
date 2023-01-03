@@ -25,9 +25,30 @@ namespace Tools
             mnemoJapanese = new MnemoJapanese(2);
         }
 
+        public async Task MigrateAll()
+        {
+            var tables = "vektor vektorPhases vektorPhaseStatistics vektorTrainingDays vektorUserLogs".Split(' ');
+            //var tables = "vektorTrainingDays".Split(' ');
+            foreach (var table in tables)
+            {
+                await ModifyPartitionKeyUuidToId(table);
+            }
+
+            tables = "vektorUserStates vektorTrainings".Split(' ');
+            foreach (var table in tables)
+            {
+                await ModifyRowKeyUuidToId(table);
+            }
+        }
+
         private string UuidToIdKey(string uuid)
         {
-            var val = mnemoJapanese.ToIntWithRandom(uuid);
+            int? val;
+            if (int.TryParse(uuid.TrimStart('0'), out var parsed))
+                val = parsed;
+            else
+                val = mnemoJapanese.ToIntWithRandom(uuid);
+
             if (val == null) throw new NullReferenceException($"uuid {uuid}");
             return val.Value.ToString().PadLeft(6, '0');
         }
@@ -70,6 +91,8 @@ namespace Tools
 
         private async Task ModifyEntities(TableClient src, TableClient? dst, Func<TableEntity, TableEntity> modify)
         {
+            Console.WriteLine($"Start {src.Name}");
+
             var rows = src.QueryAsync<TableEntity>("", 100);
             await foreach (var page in rows.AsPages())
             {
