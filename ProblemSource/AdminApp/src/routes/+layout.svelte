@@ -7,6 +7,7 @@
 	import { ApiException } from '../apiClient';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
+	import { TableDef } from '../services/table.js';
 
 	console.log("init layout");
     // const apiBaseUrl = window.location.host.indexOf("localhost") >= 0 || window.location.host.indexOf(":8080") > 0
@@ -14,6 +15,9 @@
     // // const apiBaseUrl = "";
     // const apiFacadeInstance = new ApiFacade(apiBaseUrl);
     // apiFacade.set(apiFacadeInstance);
+
+
+	TableDef.create([], { common: { uuid: 11, sub: [123,234,345]}});
 
 	onMount(() => {
 		const apiBaseUrl = window.location.host.indexOf("localhost") >= 0 || window.location.host.indexOf(":8080") > 0

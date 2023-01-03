@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte';
     import { base } from '$app/paths';
 	import type { Training, TrainingDayAccount, TrainingSummary } from 'src/apiClient';
-	import CirclePercentage from '../../components/circlePercentage.svelte';
+	// import { TableDef } from 'src/services/table';
 
     const apiFacade = get(apiFacadeStore);
 
@@ -28,6 +28,7 @@
         return days[date.getDay()].substring(0, 1);
     }
 
+    // [ totalTrainedDays started timePerDay ]
     let dateHeaders: {text:string, tooltip:string}[] = [];
     let dayArraysPerTraining: { trainingId: number, uuid: string, daysArray: (TrainingDayAccount | null)[] }[] = [];
     const numDaysBack = 10;
@@ -52,6 +53,24 @@
             const result = { trainingId: t.id, uuid: t.days[0]?.accountUuid || "N/A", daysArray: inArray.map(o => o == null || o.length == 0 ? null : o[0].info)};
             return result;
         });
+
+        const ooo = trainings.map(t => {
+            const withDayIndex = t.days.filter(d => new Date(d.startTime) >= fromDate)
+                .map(d => ({ dayIndex: getDaysBetween(fromDate, new Date(d.startTime)), info: d}));
+                
+            const firstDay = t.days[0] || { accountUuid: "N/A", startTime: new Date() };
+            const uuid = firstDay.accountUuid;
+            return {
+                common: { 
+                    uuid: `<a href='${base}/?id=${uuid}'>${uuid}</a>`,
+                    startDate: firstDay.startTime,
+                    totalDays: t.days.length,
+                    daysPerWeek: t.days.length / ((Date.now().valueOf() - firstDay.startTime.valueOf()) / 1000 / 60 / 60 / 24 / 7)
+                },
+                days: withDayIndex
+            };
+        });
+        //const oop = { common: { uuid: { text: ""}}};
     };
     onMount(() => getTrainings())
 </script>
