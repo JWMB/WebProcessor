@@ -4,6 +4,6 @@ namespace ProblemSource.Services.Storage
 {
     public interface IUserGeneratedDataRepositoryProviderFactory
     {
-        IUserGeneratedDataRepositoryProvider Create(string userId);
+        IUserGeneratedDataRepositoryProvider Create(int userId);
     }
 }

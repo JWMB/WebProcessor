@@ -26,7 +26,7 @@ namespace ProblemSource.Models.Aggregates
             return $"{TrainingDay} {StartTime} rTime:{ResponseMinutes} #corr:{NumCorrectAnswers} #q:{NumQuestions} #racewon:{NumRacesWon}";
         }
 
-        public static List<TrainingDayAccount> Create(string uuid, int accountId, IEnumerable<Phase> multiDayPhases)
+        public static List<TrainingDayAccount> Create(int accountId, IEnumerable<Phase> multiDayPhases)
         {
             return multiDayPhases.GroupBy(o => o.training_day).Select(dayAndPhases =>
             {
@@ -63,7 +63,7 @@ namespace ProblemSource.Models.Aggregates
                 return new TrainingDayAccount
                 {
                     AccountId = accountId,
-                    AccountUuid = uuid,
+                    AccountUuid = "",
                     TrainingDay = dayAndPhases.Key,
                     StartTime = new DateTime(1970, 1, 1).AddMilliseconds(phases.Any() ? phases.Min(o => o.time) : 0),
                     EndTimeStamp = new DateTime(1970, 1, 1).AddMilliseconds(lastTime),
@@ -78,7 +78,7 @@ namespace ProblemSource.Models.Aggregates
             }).ToList();
         }
 
-        public static List<TrainingDayAccount> Create(string uuid, int accountId, IEnumerable<PhaseStatistics> multiDayPhases)
+        public static List<TrainingDayAccount> Create(int accountId, IEnumerable<PhaseStatistics> multiDayPhases)
         {
             return multiDayPhases.GroupBy(o => o.training_day).Select(dayAndPhases =>
             {
@@ -96,7 +96,7 @@ namespace ProblemSource.Models.Aggregates
                 var result = new TrainingDayAccount
                 {
                     AccountId = accountId,
-                    AccountUuid = uuid,
+                    AccountUuid = "",
                     TrainingDay = dayAndPhases.Key,
                     StartTime = phases.MinOrDefault(o => o.timestamp, new DateTime(1970, 1, 1)),
                     EndTimeStamp = phases.OrderBy(o => o.timestamp).LastOrDefault()?.end_timestamp ?? new DateTime(1970, 1, 1),

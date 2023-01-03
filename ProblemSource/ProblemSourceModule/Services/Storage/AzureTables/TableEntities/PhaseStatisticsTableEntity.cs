@@ -69,7 +69,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             };
         }
 
-        public static PhaseStatisticsTableEntity FromBusinessObject(PhaseStatistics p, string userId) => new PhaseStatisticsTableEntity
+        public static PhaseStatisticsTableEntity FromBusinessObject(PhaseStatistics p, int userId) => new PhaseStatisticsTableEntity
         {
             //id
             // phase_id
@@ -96,7 +96,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             won_race = p.won_race,
             completed_planet = p.completed_planet,
 
-            PartitionKey = userId,
+            PartitionKey = AzureTableConfig.IdToRowKey(userId),
             RowKey = PhaseStatistics.UniqueIdWithinUser(p),
         };
     }

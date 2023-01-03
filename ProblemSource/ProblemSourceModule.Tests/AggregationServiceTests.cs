@@ -9,7 +9,6 @@ using Moq;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage.AzureTables;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace ProblemSource.Tests
 {
@@ -28,20 +27,21 @@ namespace ProblemSource.Tests
         public async Task Aggregates_IndividualAggregators()
         {
             EnableNonDebugSkip();
-            var userId = "test name";
+            var uuid = "test name";
+            var id = 1;
 
             var phases = Enumerable.Range(0, 10).Select(pi => Phase.CreateForTest(pi));
 
             var tableFactory = new TypedTableClientFactory(null);
             await tableFactory.Init();
-            var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableFactory, userId);
+            var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableFactory, id);
 
             await userRepos.Phases.AddOrUpdate(phases);
 
             var phaseStats = PhaseStatistics.Create(0, phases);
             await userRepos.PhaseStatistics.AddOrUpdate(phaseStats);
 
-            var trainingDays = TrainingDayAccount.Create(userId, 0, await userRepos.PhaseStatistics.GetAll());
+            var trainingDays = TrainingDayAccount.Create(id, await userRepos.PhaseStatistics.GetAll());
             await userRepos.TrainingDays.AddOrUpdate(trainingDays);
         }
 
@@ -50,7 +50,7 @@ namespace ProblemSource.Tests
         {
             EnableNonDebugSkip();
 
-            var userId = "test";
+            var userId = 1;
             var phases = new[] {
                 new Phase { exercise = "a#" },
                 //new Phase { exercise = "a?" } // TODO
@@ -81,7 +81,7 @@ namespace ProblemSource.Tests
                     new PhaseEndLogItem { time = 12 },
                 }.Prepare().ToList();
 
-            var userId = fixture.Create<string>();
+            var userId = fixture.Create<int>();
 
             var tableFactory = new TypedTableClientFactory(null);
             await tableFactory.Init();
@@ -109,7 +109,7 @@ namespace ProblemSource.Tests
                     new PhaseEndLogItem { time = 12 },
                 }.Prepare().ToList();
 
-            var userId = fixture.Create<string>();
+            var userId = fixture.Create<int>();
 
             var repoProvider = fixture.Create<IUserGeneratedDataRepositoryProvider>();
             Mock.Get(repoProvider).Setup(o => o.Phases).Returns(new InMemoryBatchRepository<Phase>(Phase.UniqueIdWithinUser));

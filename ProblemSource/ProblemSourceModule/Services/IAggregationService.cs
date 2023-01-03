@@ -7,12 +7,12 @@ namespace ProblemSource.Services
 {
     public interface IAggregationService
     {
-        Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, string userId);
+        Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, int userId);
     }
 
     public class NullAggregationService : IAggregationService
     {
-        public Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, string userId) => Task.CompletedTask;
+        public Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, int userId) => Task.CompletedTask;
     }
 
     public class AggregationService : IAggregationService
@@ -23,7 +23,7 @@ namespace ProblemSource.Services
         {
             this.log = log;
         }
-        public async Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, string userId)
+        public async Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, int userId)
         {
             // TODO: Move to async service (Azure (Durable) Functions maybe)?
             // But if we want to adapt response depending on some analysis... Then it's easier to handle it right here (instead of waiting for separate service)
@@ -43,7 +43,7 @@ namespace ProblemSource.Services
                 var phaseStats = PhaseStatistics.Create(0, await phaseRepo.GetAll());
                 await repos.PhaseStatistics.AddOrUpdate(phaseStats);
 
-                var trainingDays = TrainingDayAccount.Create(userId, 0, await repos.PhaseStatistics.GetAll()); // await phaseRepo.GetAll());
+                var trainingDays = TrainingDayAccount.Create(userId, await repos.PhaseStatistics.GetAll()); // await phaseRepo.GetAll());
                 await repos.TrainingDays.AddOrUpdate(trainingDays);
             }
             catch (Azure.Data.Tables.TableTransactionFailedException ex) // FullName = "Azure.Data.Tables.TableTransactionFailedException"}

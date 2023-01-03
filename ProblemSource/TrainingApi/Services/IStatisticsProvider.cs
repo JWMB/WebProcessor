@@ -59,20 +59,19 @@ namespace TrainingApi.Services
 
         private IUserGeneratedDataRepositoryProvider GetDataProvider(int accountId)
         {
-            // TODO: we should use int accountId as rowKey
-            var uuid = "";
-            if (userStateRepository is AzureTableUserStateRepository azureTableStateRepo)
-            {
-                if (!idToHashed.TryGetValue(accountId, out uuid))
-                {
-                    var uuids = azureTableStateRepo.GetUuids().Result;
-                    idToHashed = uuids.Select(o => new { Key = o, Value = mnemoJapanese.ToIntWithRandom(o) })
-                        .Where(o => o.Value.HasValue)
-                        .ToDictionary(o => o.Value ?? 0, o => o.Key);
-                    uuid = idToHashed.GetValueOrDefault(accountId, "");
-                }
-            }
-            return userGeneratedDataRepositoryProviderFactory.Create(uuid);
+            //// TODO: we should use int accountId as rowKey
+            //if (userStateRepository is AzureTableUserStateRepository azureTableStateRepo)
+            //{
+            //    if (!idToHashed.TryGetValue(accountId, out uuid))
+            //    {
+            //        var uuids = azureTableStateRepo.GetUuids().Result;
+            //        idToHashed = uuids.Select(o => new { Key = o, Value = mnemoJapanese.ToIntWithRandom(o) })
+            //            .Where(o => o.Value.HasValue)
+            //            .ToDictionary(o => o.Value ?? 0, o => o.Key);
+            //        uuid = idToHashed.GetValueOrDefault(accountId, "");
+            //    }
+            //}
+            return userGeneratedDataRepositoryProviderFactory.Create(accountId);
         }
 
         public async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int accountId) =>
@@ -93,7 +92,7 @@ namespace TrainingApi.Services
 
         public async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int accountId) => PhaseStatistics.Create(accountId, await RecreatePhases(accountId));
 
-        public async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int accountId) => TrainingDayAccount.Create("", 0, await RecreatePhases(accountId));
+        public async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int accountId) => TrainingDayAccount.Create(0, await RecreatePhases(accountId));
 
         private async Task<List<Phase>> RecreatePhases(int accountId)
         {

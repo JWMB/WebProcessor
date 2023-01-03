@@ -8,7 +8,7 @@
         {
             this.tableClientFactory = tableClientFactory;
         }
-        public IUserGeneratedDataRepositoryProvider Create(string userId)
+        public IUserGeneratedDataRepositoryProvider Create(int userId)
         {
             return new AzureTableUserGeneratedDataRepositoryProvider(tableClientFactory, userId);
         }

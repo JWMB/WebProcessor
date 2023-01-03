@@ -37,7 +37,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             };
         }
 
-        public static PhaseTableEntity FromBusinessObject(Phase p, string userId) => new PhaseTableEntity
+        public static PhaseTableEntity FromBusinessObject(Phase p, int userId) => new PhaseTableEntity
         {
             exercise = p.exercise,
             phase_type = p.phase_type,
@@ -47,7 +47,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             problemsSerialized = JsonConvert.SerializeObject(p.problems),
             userTestSerialized = JsonConvert.SerializeObject(p.user_test),
 
-            PartitionKey = userId,
+            PartitionKey = AzureTableConfig.IdToRowKey(userId),
             RowKey = Phase.UniqueIdWithinUser(p),
         };
     }

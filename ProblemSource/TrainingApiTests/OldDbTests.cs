@@ -101,7 +101,7 @@ namespace TrainingApiTests
             recreatedPhasesResult.Errors.ShouldBeEmpty();
             recreatedPhasesResult.PhasesCreated.Count.ShouldBe(phases.Count);
 
-            var trainingDays = TrainingDayAccount.Create("", 0, recreatedPhasesResult.PhasesCreated); // await phaseRepo.GetAll());
+            var trainingDays = TrainingDayAccount.Create(0, recreatedPhasesResult.PhasesCreated); // await phaseRepo.GetAll());
 
             var oldTrainingDayRows = (await db.AggregatedData
                 .Where(o => o.AggregatorId == 2 && o.AccountId == accountId)

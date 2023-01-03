@@ -81,7 +81,7 @@ namespace TrainingApi
 
             app.UseAuthentication();
 
-            if (env.IsDevelopment())
+            if (false && env.IsDevelopment())
             {
                 app.Use(async (context, next) =>
                 {

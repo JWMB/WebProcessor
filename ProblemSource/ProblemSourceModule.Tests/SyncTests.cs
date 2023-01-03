@@ -109,7 +109,7 @@ namespace ProblemSource.Tests
         [Fact]
         public async Task TableClient_StorePhase()
         {
-            var userId = "_test";
+            var userId = 1;
             //var phaseData = """{ "id":0,"training_day":3,"exercise":"tangram01#0","phase_type":"TEST","time":1666182070947,"sequence":0,"problems":[{ "id":0,"phase_id":0,"level":1.5,"time":1666182072961,"problem_type":"ProblemTangram","problem_string":"triangles","answers":[]}],"user_test":{ "score":0,"target_score":3,"planet_target_score":3,"won_race":false,"completed_planet":false,"ended":true}}""";
             //var phase = JsonConvert.DeserializeObject<Phase>(phaseData);
             //if (phase == null)

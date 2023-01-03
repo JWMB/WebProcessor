@@ -166,11 +166,11 @@ namespace ProblemSource
 
                 if (sessionInfo.Session.UserRepositories == null)
                 {
-                    sessionInfo.Session.UserRepositories = userGeneratedRepositoriesFactory.Create(root.Uuid);
+                    sessionInfo.Session.UserRepositories = userGeneratedRepositoriesFactory.Create(trainingId.Value);
                 }
                 try
                 {
-                    await aggregationService.UpdateAggregates(sessionInfo.Session.UserRepositories, logItems, root.Uuid);
+                    await aggregationService.UpdateAggregates(sessionInfo.Session.UserRepositories, logItems, trainingId.Value);
                 }
                 catch (Exception ex)
                 {
