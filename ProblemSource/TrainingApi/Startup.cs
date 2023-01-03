@@ -7,6 +7,7 @@ using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using OldDb.Models;
 using PluginModuleBase;
+using System.Security.Claims;
 using System.Text;
 using TrainingApi.Services;
 
@@ -74,12 +75,27 @@ namespace TrainingApi
                 RequestPath = "/admin",
                 OnPrepareResponse = ctx =>
                 {
-                    ctx.Context.Response.Headers.Append(
-                         "Cache-Control", $"public, max-age={cacheMaxAgeOneWeek}");
+                    ctx.Context.Response.Headers.Append("Cache-Control", $"public, max-age={cacheMaxAgeOneWeek}");
                 }
             });
 
             app.UseAuthentication();
+
+            if (env.IsDevelopment())
+            {
+                app.Use(async (context, next) =>
+                {
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, "dev"),
+                        new Claim(ClaimTypes.Role, Roles.Admin)
+                    };
+                    context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+                    await next.Invoke();
+                });
+            }
+
+
             app.UseRouting(); // Needed for GraphQL
 
             var config = app.ApplicationServices.GetRequiredService<IConfiguration>();
