@@ -5,22 +5,22 @@ namespace Common.Web
 {
     public class TypedConfiguration
     {
-        public static void ConfigureTypedConfiguration(IServiceCollection services, IConfiguration config)
+        public static void ConfigureTypedConfiguration<T>(IServiceCollection services, IConfiguration config, string sectionKey) where T : new()
         {
             // TODO: (low) continue investigation - how to avoid reflection and get validation errors immediately
 
             // Note: This does NOT cause validation on startup...: services.AddOptions<AceKnowledgeConfiguration>().Bind(config.GetSection("AceKnowledge")).ValidateDataAnnotations().ValidateOnStart();
 
-
             // https://referbruv.com/blog/posts/working-with-options-pattern-in-aspnet-core-the-complete-guide
-            var appSettings = new AppSettings();
+            var appSettings = new T();
 
-            config.GetSection("AppSettings").Bind(appSettings);
+            config.GetSection(sectionKey).Bind(appSettings);
             services.AddSingleton(appSettings.GetType(), appSettings!);
 
             var props = appSettings.GetType()
                 .GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
                 .Where(o => !o.PropertyType.IsSealed); // TODO: (low) better check than IsSealed (also unit test)
+
             foreach (var prop in props)
             {
                 var instance = prop.GetValue(appSettings);
@@ -54,15 +54,5 @@ namespace Common.Web
             // If we want to inject IOptions<Type> instead of just Type, this is needed: https://stackoverflow.com/a/61157181 services.ConfigureOptions(instance)
             //services.Configure<AceKnowledgeOptions>(config.GetSection("AceKnowledge"));
         }
-        //static void ConfigureAppConfiguration(IConfigurationBuilder configBuilder, IHostEnvironment env)
-        //{
-        //    // CreateDefaultBuilder messes up providers, doing it manually: https://github.com/dotnet/aspnetcore/issues/19924
-        //    configBuilder.Sources.Clear();
-        //    configBuilder.SetBasePath(Directory.GetCurrentDirectory());
-        //    configBuilder.AddJsonFile("appsettings.json");
-        //    configBuilder.AddJsonFile($"appsettings.{env.EnvironmentName}.json", true);
-        //    configBuilder.AddUserSecrets<Program>();
-        //    configBuilder.AddEnvironmentVariables();
-        //}
     }
 }

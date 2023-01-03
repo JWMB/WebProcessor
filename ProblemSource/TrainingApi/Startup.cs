@@ -1,4 +1,5 @@
 ﻿using Common.Web;
+using Common.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
@@ -125,10 +126,11 @@ namespace TrainingApi
 
         private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
         {
-            TypedConfiguration.ConfigureTypedConfiguration(services, config);
+            TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, config, "AppSettings");
             ConfigureAuth(services, config, env);
 
             var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
+            services.AddSingleton<ITableClientFactory>(sp => new TableClientFactory(sp.GetRequiredService<ProblemSource.Services.Storage.AzureTables.AzureTableConfig>().TablePrefix));
             ServiceConfiguration.ConfigureProcessingPipelineServices(services, plugins);
             return plugins;
         }
