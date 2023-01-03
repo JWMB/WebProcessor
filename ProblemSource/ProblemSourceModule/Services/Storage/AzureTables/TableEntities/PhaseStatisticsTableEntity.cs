@@ -1,6 +1,5 @@
 ﻿using Azure;
 using Azure.Data.Tables;
-using Newtonsoft.Json;
 using ProblemSource.Models.Aggregates;
 
 namespace ProblemSource.Services.Storage.AzureTables.TableEntities
@@ -44,7 +43,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             {
                 //id
                 // phase_id
-                account_id = 0,
+                account_id = account_id,
                 training_day = training_day,
                 exercise = exercise,
                 phase_type = phase_type,
@@ -96,7 +95,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             won_race = p.won_race,
             completed_planet = p.completed_planet,
 
-            PartitionKey = AzureTableConfig.IdToRowKey(userId),
+            PartitionKey = AzureTableConfig.IdToKey(userId),
             RowKey = PhaseStatistics.UniqueIdWithinUser(p),
         };
     }

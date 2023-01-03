@@ -47,7 +47,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             problemsSerialized = JsonConvert.SerializeObject(p.problems),
             userTestSerialized = JsonConvert.SerializeObject(p.user_test),
 
-            PartitionKey = AzureTableConfig.IdToRowKey(userId),
+            PartitionKey = AzureTableConfig.IdToKey(userId),
             RowKey = Phase.UniqueIdWithinUser(p),
         };
     }

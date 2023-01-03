@@ -74,25 +74,23 @@ namespace TrainingApi.Controllers
 
             var results = await Task.WhenAll(trainingDayTasks);
 
-            var raw = results.Where(o => o.Any()).ToList();
-            foreach (var perTraining in raw)
-            {
-                foreach (var row in perTraining)
-                {
-                    row.AccountId = mnemoJapanese.ToIntWithRandom(row.AccountUuid) ?? 0;
-                }
-            }
-            var tdDict = raw
+            var tdDict = results
+                .Where(o => o.Any())
                 .Where(o => o.First().AccountId > 0)
                 .ToDictionary(o => o.First().AccountId, o => o.ToList());
 
-            return tdDict.Select(kv => new TrainingSummary { Id = kv.Key, Days = kv.Value }).ToList();
-            //return trainings.Select(o => new TrainingSummary { Id = o.Id, Days = tdDict.GetValueOrDefault(o.Id, new List<TrainingDayAccount>()) }).ToList();
+            return tdDict.Select(kv => new TrainingSummary
+            {
+                Id = kv.Key,
+                Uuid = kv.Value.FirstOrDefault()?.AccountUuid ?? "N/A", // TODO: if no days trained, Uuid will be missing - should be part of Training
+                Days = kv.Value
+            }).ToList();
         }
 
         public class TrainingSummary
         {
             public int Id { get; set; }
+            public string Uuid { get; set; } = string.Empty;
             public List<TrainingDayAccount> Days { get; set; } = new();
         }
 

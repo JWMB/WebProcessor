@@ -18,6 +18,9 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
         {
             var result = JsonConvert.DeserializeObject<TrainingDayAccount>(Data);
             if (result == null) throw new Exception($"Couldn't deserialize {nameof(TrainingDayAccount)}: {PartitionKey}/{RowKey}");
+            if (result.AccountId == 0)
+                result.AccountId = AzureTableConfig.KeyToId(PartitionKey);
+
             return result;
         }
 
@@ -25,7 +28,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
         {
             Data = JsonConvert.SerializeObject(p),
 
-            PartitionKey = p.AccountUuid,
+            PartitionKey = AzureTableConfig.IdToKey(p.AccountId),
             RowKey = $"{p.TrainingDay}"
         };
     }
