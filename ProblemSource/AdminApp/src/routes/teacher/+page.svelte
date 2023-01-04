@@ -5,22 +5,20 @@
 	import type { TrainingSummary } from 'src/apiClient';
 	import TrainingsTable from '../../components/trainingsTable.svelte';
 
-    let trainingSummaries: TrainingSummary[] = [];
+    // let trainingSummaries: TrainingSummary[] = [];
 
     const apiFacade = get(apiFacadeStore);
+
+    let trainingsPromise: Promise<TrainingSummary[]>;
 
     async function getTrainings() {
         if (apiFacade == null) {
             console.error("apiFacade null");
             return;
         }
-        console.log("Cmon");
-        // apiFacade.trainings.getSummaries().then(r => {
-        //      trainingSummaries = r;
-        //      console.log("OK", trainingSummaries.length);
-        //  });
-        trainingSummaries = await apiFacade.trainings.getSummaries();
-        console.log("OK", trainingSummaries.length); // why is TrainingsTable not always updated?
+        trainingsPromise = apiFacade.trainings.getSummaries();
+        //trainingSummaries = await apiFacade.trainings.getSummaries();
+        //console.log("OK", trainingSummaries.length); // why is TrainingsTable not always updated?
     }
 
     onMount(() => getTrainings())
@@ -29,9 +27,8 @@
 <div>
     <h1>Trainings</h1>
 
-    <TrainingsTable trainingSummaries={trainingSummaries} numDays={5}></TrainingsTable>
-
-    <!-- {#await trainingsPromise then number}
-	    <p>the number is {number}</p>
-    {/await} -->
+    <!-- <TrainingsTable trainingSummaries={trainingSummaries} numDays={5}></TrainingsTable> -->
+    {#await trainingsPromise then trainings}
+        <TrainingsTable trainingSummaries={trainings} numDays={5}></TrainingsTable>
+    {/await}
 </div>

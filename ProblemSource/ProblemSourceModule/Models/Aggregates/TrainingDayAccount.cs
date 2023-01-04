@@ -99,10 +99,13 @@ namespace ProblemSource.Models.Aggregates
                     TrainingDay = dayAndPhases.Key,
                     StartTime = phases.MinOrDefault(o => o.timestamp, new DateTime(1970, 1, 1)),
                     EndTimeStamp = phases.OrderBy(o => o.timestamp).LastOrDefault()?.end_timestamp ?? new DateTime(1970, 1, 1),
+                    //NumPhases = phases.Count(),
                     NumRacesWon = phases.Count(o => o.won_race == true),
                     NumRaces = phases.Count(o => o.won_race != null),
                     NumPlanetsWon = phases.Count(o => o.completed_planet == true),
                     NumCorrectAnswers = phases.SumOrDefault(o => o.num_correct_answers),
+                    //NumCorrectFirstTry = phases.Sum(o => o.num_correct_first_try),
+                    //NumIncorrectAnswers = phases.Sum(o => o.num_incorrect_answers),
                     NumQuestions = phases.SumOrDefault(o => o.num_questions),
                     ResponseMinutes = responseTime / 1000 / 60,
                 };
