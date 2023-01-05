@@ -33,14 +33,14 @@ namespace TrainingApi.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task Post()
+        public async Task Post([FromBody] LoginCredentials credentials)
         {
             await userRepository.Add(new ProblemSourceModule.Services.Storage.User
             {
-                Email = "",
+                Email = credentials.Username,
                 Role = Roles.Admin,
                 Trainings = new List<int>(),
-                HashedPassword = ProblemSourceModule.Services.Storage.User.HashPassword("pwd")
+                HashedPassword = ProblemSourceModule.Services.Storage.User.HashPassword(credentials.Username, credentials.Password)
             });
         }
 

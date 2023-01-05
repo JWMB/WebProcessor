@@ -54,7 +54,7 @@ namespace ProblemSource
         public async Task Invoke(HttpContext context, RequestDelegate next)
         {
             SyncInput? root;
-            if (context.Request.Headers.ContentType.Any(o => o.ToLower().Contains("application/json")))
+            if (context.Request.Headers.ContentType.Any(o => o?.ToLower().Contains("application/json") == true))
             {
                 root = await context.Request.ReadFromJsonAsync<SyncInput>();
             }
@@ -141,12 +141,6 @@ namespace ProblemSource
 
             await eventDispatcher.Dispatch(root.Events); // E.g. for real-time teacher view
 
-            if (root.RequestState)
-            {
-                // client wants TrainingPlan, stats for trained exercises, training day number etc
-                result.state = await CreateClientState(root, training);
-            }
-
             if (root.Events?.Any() == true)
             {
                 var logItems = DeserializeEvents(root.Events);
@@ -176,6 +170,12 @@ namespace ProblemSource
                 {
                     log.LogError(ex, $"UpdateAggregates");
                 }
+            }
+
+            if (root.RequestState)
+            {
+                // client wants TrainingPlan, stats for trained exercises, training day number etc
+                result.state = await CreateClientState(root, training);
             }
 
             return result;
@@ -234,8 +234,33 @@ namespace ProblemSource
                     }
                 }
             }
+
+            // TODO: apply rules engine - should e.g. training plan be modified?
+
             return JsonConvert.SerializeObject(fullState);
         }
+
+        //interface ITrainingModifierEngine
+        //{
+        //    void Run(Training training);
+        //}
+        //class TrainingModifierEngine : ITrainingModifierEngine
+        //{
+        //    public void Run(Training training)
+        //    {
+        //    }
+        //    class Day5Switcher
+        //    {
+        //        public void Run(Training training)
+        //        {
+        //            var trainingDay = 5;
+        //            if (trainingDay == 5)
+        //            {
+        //                //training.Settings.trainingPlanOverrides
+        //            }
+        //        }
+        //    }
+        //}
 
         private async Task HandleUserState(string uuid, UserStatePushLogItem lastItem)
         {

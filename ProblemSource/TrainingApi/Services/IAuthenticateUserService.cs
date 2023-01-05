@@ -32,7 +32,7 @@ namespace TrainingApi.Services
                 return null;
             }
 
-            if (User.HashPassword(password) != user.HashedPassword)
+            if (User.HashPassword(username, password) != user.HashedPassword)
             {
                 return null;
             }

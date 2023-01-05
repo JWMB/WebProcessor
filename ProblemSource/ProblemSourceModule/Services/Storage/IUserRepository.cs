@@ -12,9 +12,10 @@
 
         public List<int> Trainings { get; set; } = new();
 
-        public static string HashPassword(string password)
+        public static string HashPassword(string saltBase, string password)
         {
-            var salt = System.Security.Cryptography.RandomNumberGenerator.GetBytes(128 / 8); // divide by 8 to convert bits to bytes
+            //var salt = System.Security.Cryptography.RandomNumberGenerator.GetBytes(128 / 8); // divide by 8 to convert bits to bytes
+            var salt = System.Text.Encoding.UTF8.GetBytes(saltBase.PadLeft(128 / 8, '0'));
 
             // derive a 256-bit subkey (use HMACSHA256 with 100,000 iterations)
             return Convert.ToBase64String(

@@ -26,6 +26,7 @@ namespace TrainingApi
             // Add services to the container.
             services.AddScoped<TrainingDbContext>();
             services.AddScoped<IStatisticsProvider, StatisticsProvider>(); // RecreatedStatisticsProvider
+            services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
 
             plugins = ConfigureProblemSource(services, configurationManager, env);
 
@@ -88,12 +89,19 @@ namespace TrainingApi
             {
                 app.Use(async (context, next) =>
                 {
-                    // For lazy developer - swagger and test client are automatically authenticated
-                    if (context.Request.GetTypedHeaders().Referer?.AbsolutePath.Contains("/swagger/") == true
-                        || context.Request.GetTypedHeaders().Referer?.AbsoluteUri.StartsWith("http://localhost:") == true)
+                    if (context.User?.Claims.Any() == false)
                     {
-                        context.User = AccountsController.CreatePrincipal(new ProblemSourceModule.Services.Storage.User { Email = "dev", Role = Roles.Admin });
+                        // For the lazy developer - swagger and test client are automatically authenticated
+                        var autologin = context.Request.GetTypedHeaders().Referer?.AbsolutePath.Contains("/swagger/") == true
+                            || context.Request.GetTypedHeaders().Referer?.AbsoluteUri.StartsWith("http://localhost:") == true;
+
+                        if (autologin && context.Request.Cookies.Any(o => o.Key == "autologin" && o.Value == "0"))
+                            autologin = false;
+
+                        if (autologin)
+                            context.User = AccountsController.CreatePrincipal(new ProblemSourceModule.Services.Storage.User { Email = "dev", Role = Roles.Admin });
                     }
+
                     await next.Invoke();
                 });
             }
@@ -138,7 +146,6 @@ namespace TrainingApi
 
         private void AddSwaggerGen(IServiceCollection services)
         {
-            // services.AddSwaggerGen();
             services.AddSwaggerGen(c =>
             {
                 c.AddSecurityDefinition("jwt_auth", new OpenApiSecurityScheme()
