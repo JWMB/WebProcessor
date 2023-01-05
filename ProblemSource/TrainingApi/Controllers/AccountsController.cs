@@ -45,6 +45,13 @@ namespace TrainingApi.Controllers
         }
 
         [HttpPost]
+        [Route("logout")]
+        public async Task Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        }
+
+        [HttpPost]
         [Route("login")]
         public async Task<ActionResult> Login([FromBody] LoginCredentials credentials)
         {

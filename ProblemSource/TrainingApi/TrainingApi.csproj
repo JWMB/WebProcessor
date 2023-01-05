@@ -32,7 +32,7 @@
   <ApplicationInsightsResourceId>/subscriptions/e5d4ca12-e670-4255-84a4-78223ece667a/resourceGroups/KIStudy/providers/microsoft.insights/components/kistudysync</ApplicationInsightsResourceId>
 </PropertyGroup>
 
-<Target Name="NSwag" AfterTargets="PostBuildEvent" Condition=" '$(Configuration)' == 'DebugX' ">
+<Target Name="NSwag" AfterTargets="PostBuildEvent" Condition=" '$(Configuration)' == 'Debug' ">
   <Exec WorkingDirectory="$(ProjectDir)" EnvironmentVariables="ASPNETCORE_ENVIRONMENT=Development" Command="$(NSwagExe_Net60) run nswag.json /variables:Configuration=$(Configuration)" />
 </Target>
 	

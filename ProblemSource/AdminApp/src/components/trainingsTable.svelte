@@ -35,7 +35,7 @@
         // return `<span>${days[weekday].substring(0, 1)}</span>`;
     }
 
-    console.log("trainingSummaries", trainingSummaries.length, numDays);
+    //console.log("trainingSummaries", trainingSummaries.length, numDays);
     const latestTimestamp = max(trainingSummaries.map(ts => max(ts.days.map(d => new Date(d.startTime).valueOf()))));
 
     let fromDate = new Date(getDatePart(addDays(new Date(latestTimestamp), -numDays)));
@@ -49,7 +49,8 @@
                     timeTarget: targetTime,
                     timeActive: d.responseMinutes,
                     timeTotal: d.remainingMinutes + d.responseMinutes,
-                    correct: d.numCorrectAnswers / d.numQuestions
+                    correct: d.numCorrectAnswers / d.numQuestions,
+                    winRate: d.numRacesWon / d.numRaces,
                 }));
                 
         const firstDay = training.days[0] || { accountUuid: "N/A", startTime: new Date() };
@@ -109,7 +110,7 @@
 		const correct = `
 <g transform="translate(30,13)">
 	<rect x="0" width="${rectSize.x}" height="${rectSize.y}" rx="2" fill="${gray}" stroke="black" stroke-width="0.5" />
-	<rect x="0" width="${dayData.correct * rectSize.x}" height="${rectSize.y}" rx="2" fill="${green}" />
+	<rect x="0" width="${dayData.winRate * rectSize.x}" height="${rectSize.y}" rx="2" fill="${green}" />
 </g>
 `.trim();
 		return `<svg viewBox="0 0 60 30">${time}${correct}</svg>`;

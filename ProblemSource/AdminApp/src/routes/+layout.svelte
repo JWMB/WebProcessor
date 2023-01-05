@@ -3,26 +3,25 @@
 
     import { apiFacade } from '../globalStore.js';
     import { ApiFacade } from '../apiFacade';
-	import { onMount } from 'svelte';
 	import { ApiException } from '../apiClient';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 
-	// console.log("init layout");
-    // const apiBaseUrl = window.location.host.indexOf("localhost") >= 0 || window.location.host.indexOf(":8080") > 0
-	// 	? "https://localhost:7173" : window.location.origin;
-    // // const apiBaseUrl = "";
-    // const apiFacadeInstance = new ApiFacade(apiBaseUrl);
-    // apiFacade.set(apiFacadeInstance);
+	let apiFacadeInstance: ApiFacade;
+	async function logout() {
+		await apiFacadeInstance.accounts.logout();
+		console.log("logout");
+	}
 
-	onMount(() => {
+	function initApi(location: Location) {
 		const apiBaseUrl = window.location.host.indexOf("localhost") >= 0 || window.location.host.indexOf(":8080") > 0
 			? "https://localhost:7173" : window.location.origin;
-		// const apiBaseUrl = "";
-		const apiFacadeInstance = new ApiFacade(apiBaseUrl);
+		apiFacadeInstance = new ApiFacade(apiBaseUrl);
 		apiFacade.set(apiFacadeInstance);
+	}
 
-		window.onunhandledrejection = (e) => {
+	function setupTopLevelErrorHandling(root: typeof globalThis | Window) {
+		root.onunhandledrejection = (e) => {
 		  if (e.reason instanceof ApiException) {
 			const apiEx = <ApiException>e.reason;
 			if (apiEx.status === 401) {
@@ -47,12 +46,17 @@
 			// uncomment to reload page:
 			// window.location = "/oi-oi-oi";
 		}
-	});
+	}
+
+	initApi(globalThis.location);
+	setupTopLevelErrorHandling(globalThis);
 </script>
 
 <nav>
 	<a href="{base}/">Home</a>
 	<a href="{base}/teacher">Teacher</a>
+	<a href="{base}/" on:click={logout}>Log out</a>
+	<a href="{base}/login">Log in</a>
 </nav>
 <div class="page-container">
 	<slot />

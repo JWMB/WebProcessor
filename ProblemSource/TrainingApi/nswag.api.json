@@ -26,6 +26,46 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "Accounts_Post",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "name": "credentials",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LoginCredentials"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/Accounts/logout": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "Accounts_Logout",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
       }
     },
     "/api/Accounts/login": {
@@ -813,12 +853,16 @@
       "type": "object",
       "required": [
         "id",
+        "uuid",
         "days"
       ],
       "properties": {
         "id": {
           "type": "integer",
           "format": "int32"
+        },
+        "uuid": {
+          "type": "string"
         },
         "days": {
           "type": "array",
