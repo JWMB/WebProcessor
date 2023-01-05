@@ -1,18 +1,12 @@
-﻿using AutoFixture;
-using Newtonsoft.Json;
-using PluginModuleBase;
-using ProblemSource.Models.LogItems;
-using ProblemSource.Models;
-using ProblemSource.Services;
-using AutoFixture.AutoMoq;
-using Shouldly;
-using ProblemSource.Services.Storage;
-using Moq;
+﻿using Shouldly;
 using ProblemSource.Models.Aggregates;
-using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using Common;
+using ProblemSource.Services.Storage.AzureTables.TableEntities;
+using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Services.Storage;
+using System;
 
-namespace ProblemSourceModule.Tests
+namespace ProblemSourceModule.Tests.AzureTable
 {
     public class ExpandableTableEntityTests
     {
@@ -23,7 +17,6 @@ namespace ProblemSourceModule.Tests
             var split = longString.SplitByLength(10);
             string.Join("", split).Length.ShouldBe(longString.Length);
         }
-
 
         [Fact]
         public void ExpandableTableEntity_Conversion()
@@ -36,16 +29,22 @@ namespace ProblemSourceModule.Tests
                     {
                         problem_string = $"problem",
                         answers = Enumerable.Range(0, 10)
-                            .Select(o => new Answer 
+                            .Select(o => new Answer
                             {
                             }).ToList()
                     }).ToList()
             };
-            
-            //var tableEntity = ExpandableTableEntityConverter<Phase>.FromPoco(phase);
-            //var recreatedPhase = ExpandableTableEntityConverter<Phase>.ToPoco(tableEntity);
 
-            //recreatedPhase.ShouldBeEquivalentTo(phase);
+            var converter = new ExpandableTableEntityConverter<Phase>(o => ("none", AzureTableConfig.IdToKey(o.id)));
+
+            var tableEntity = converter.FromPoco(phase);
+            // problems is too large to fit in one column - should be exploded into several
+            var expandedColumns = (Dictionary<string, int>)tableEntity["__ExpandedColumns"];
+            expandedColumns["problems"].ShouldBe(4);
+
+            var recreatedPhase = converter.ToPoco(tableEntity);
+
+            recreatedPhase.ShouldBeEquivalentTo(phase);
         }
     }
 }

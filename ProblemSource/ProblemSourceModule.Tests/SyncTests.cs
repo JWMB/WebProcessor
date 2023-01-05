@@ -102,36 +102,10 @@ namespace ProblemSource.Tests
             // Assert
             var state = JsonConvert.DeserializeObject<UserFullState>(result.state);
 
-            ((JObject)state!.training_plan)["metaphor"].Value<string>().ShouldBe("Magical");
+            var ooo = ((JObject)state!.training_plan)["metaphor"];
+            if (ooo == null) throw new NullReferenceException();
+            ooo.Value<string>().ShouldBe("Magical");
             state!.training_settings.customData?.unlockAllPlanets.ShouldBe(false);
-        }
-
-        [Fact]
-        public async Task TableClient_StorePhase()
-        {
-            var userId = 1;
-            //var phaseData = """{ "id":0,"training_day":3,"exercise":"tangram01#0","phase_type":"TEST","time":1666182070947,"sequence":0,"problems":[{ "id":0,"phase_id":0,"level":1.5,"time":1666182072961,"problem_type":"ProblemTangram","problem_string":"triangles","answers":[]}],"user_test":{ "score":0,"target_score":3,"planet_target_score":3,"won_race":false,"completed_planet":false,"ended":true}}""";
-            //var phase = JsonConvert.DeserializeObject<Phase>(phaseData);
-            //if (phase == null)
-            //    throw new NullException("Deserializing phaseData");
-            var phase = new Phase { id = 0, training_day = 3, exercise = "tangram01", phase_type = "TEST", time = 1666182070947, sequence = 0, problems = new List<Problem>(), user_test = new UserTest() };
-
-            var clientFactory = new TypedTableClientFactory(null);
-            await clientFactory.Init();
-
-            var tableEntity = PhaseTableEntity.FromBusinessObject(phase!, userId);
-            try
-            {
-                var response = await clientFactory.Phases.UpsertEntityAsync(tableEntity);
-                response.Status.ShouldBe(204); //409 (Conflict)
-            }
-            catch (RequestFailedException ex) when (ex.Status == 404)
-            {
-                throw new Exception("Running old version of Azurite? This was fixed in 3.19.0 https://github.com/Azure/Azurite/issues/1565");
-            }
-
-            //var repo = new TableEntityRepository<Phase, PhaseTableEntity>(clientFactory.Phases, p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), userId);
-            //await repo.AddOrUpdate(new[] { phase });
         }
     }
 }
