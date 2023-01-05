@@ -10,7 +10,9 @@ using OldDb.Models;
 using PluginModuleBase;
 using System.Security.Claims;
 using System.Text;
+using TrainingApi.Controllers;
 using TrainingApi.Services;
+using static System.Net.WebRequestMethods;
 
 namespace TrainingApi
 {
@@ -82,20 +84,19 @@ namespace TrainingApi
 
             app.UseAuthentication();
 
-            if (false && env.IsDevelopment())
+            if (env.IsDevelopment())
             {
                 app.Use(async (context, next) =>
                 {
-                    var claims = new List<Claim>
+                    // For lazy developer - swagger and test client are automatically authenticated
+                    if (context.Request.GetTypedHeaders().Referer?.AbsolutePath.Contains("/swagger/") == true
+                        || context.Request.GetTypedHeaders().Referer?.AbsoluteUri.StartsWith("http://localhost:") == true)
                     {
-                        new Claim(ClaimTypes.Name, "dev"),
-                        new Claim(ClaimTypes.Role, Roles.Admin)
-                    };
-                    context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+                        context.User = AccountsController.CreatePrincipal(new ProblemSourceModule.Services.Storage.User { Email = "dev", Role = Roles.Admin });
+                    }
                     await next.Invoke();
                 });
             }
-
 
             app.UseRouting(); // Needed for GraphQL
 

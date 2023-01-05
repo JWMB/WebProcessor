@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using ProblemSourceModule.Services.Storage;
+using TrainingApi.Services;
 
 namespace TrainingApi.Controllers
 {
@@ -10,18 +12,18 @@ namespace TrainingApi.Controllers
     [Route("api/[controller]")]
     public class AccountsController : ControllerBase
     {
+        private readonly IUserRepository userRepository;
+        private readonly IAuthenticateUserService authenticateUserService;
         private readonly ILogger<AccountsController> log;
-        private readonly Dictionary<string, string> users;
 
-        public AccountsController(IConfiguration configuration, ILogger<AccountsController> logger)
+        public AccountsController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ILogger<AccountsController> logger)
         {
+            this.userRepository = userRepository;
+            this.authenticateUserService = authenticateUserService;
             log = logger;
-
-            var section = configuration.GetSection("Users");
-            users = section?.GetChildren().ToDictionary(o => o.Key, o => o.Value ?? "") ?? new();
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<string> Get()
         {
@@ -29,28 +31,30 @@ namespace TrainingApi.Controllers
             return "Hello!";
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task Post()
+        {
+            await userRepository.Add(new ProblemSourceModule.Services.Storage.User
+            {
+                Email = "",
+                Role = Roles.Admin,
+                Trainings = new List<int>(),
+                HashedPassword = ProblemSourceModule.Services.Storage.User.HashPassword("pwd")
+            });
+        }
+
         [HttpPost]
         [Route("login")]
         public async Task<ActionResult> Login([FromBody] LoginCredentials credentials)
         {
-            // TODO: just until real auth is implemented
-            if (System.Diagnostics.Debugger.IsAttached)
-            {
-                credentials = new LoginCredentials { Username = "dev user" };
-            }
-            else if (!users.TryGetValue(credentials.Username, out var storedPwd) || storedPwd != credentials.Password)
+            var user = await authenticateUserService.GetUser(credentials.Username, credentials.Password);
+            if (user == null)
             {
                 return Unauthorized();
             }
 
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, credentials.Username),
-                new Claim(ClaimTypes.Role, Roles.Admin)
-            };
-
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
+            var principal = CreatePrincipal(user);
             var authProperties = new AuthenticationProperties
             {
                 //AllowRefresh = <bool>, // Refreshing the authentication session should be allowed.
@@ -64,9 +68,19 @@ namespace TrainingApi.Controllers
                 //RedirectUri = <string> // The full path or absolute URI to be used as an http redirect response value.
             };
 
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
+            
+            return Ok();
+        }
 
-            return Ok("logggg");
+        public static ClaimsPrincipal CreatePrincipal(User user)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Email),
+                new Claim(ClaimTypes.Role, user.Role)
+            };
+            return new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
         }
     }
 
