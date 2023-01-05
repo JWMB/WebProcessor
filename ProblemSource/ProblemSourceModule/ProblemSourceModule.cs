@@ -1,4 +1,5 @@
-﻿using Common.Web.Services;
+﻿using Common;
+using Common.Web.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -38,7 +39,7 @@ namespace ProblemSource
             services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
             services.AddSingleton<ProblemSourceProcessingMiddleware>();
             services.AddSingleton<IEventDispatcher>(sp =>
-                new QueueEventDispatcher(sp.GetRequiredService<IConfiguration>()["AppSettings:AzureQueue:ConnectionString"], sp.GetRequiredService<ILogger<QueueEventDispatcher>>()));
+                new QueueEventDispatcher(sp.GetRequiredService<IConfiguration>().GetOrThrow<string>("AppSettings:AzureQueue:ConnectionString"), sp.GetRequiredService<ILogger<QueueEventDispatcher>>()));
             //QueueEventDispatcher NullEventDispatcher
         }
 
@@ -54,7 +55,6 @@ namespace ProblemSource
 
             services.AddSingleton<ITrainingRepository, AzureTableTrainingRepository>();
         }
-
 
         public void ConfigureUsernameHashing(IServiceCollection services)
         {
