@@ -1,4 +1,5 @@
 ﻿
+using Common;
 using Microsoft.Extensions.Configuration;
 using Tools;
 
@@ -9,7 +10,15 @@ var builder = new ConfigurationBuilder()
 
 var config = builder.Build();
 
-var connStr = config["AppSettings:AzureTable:ConnectionString"];
+
+Console.WriteLine("Migrate Azure tables?");
+if (Console.ReadKey().Key != ConsoleKey.Y)
+{
+    Console.WriteLine("kbye");
+    return;
+}
+
+var connStr = config.GetOrThrow<string>("AppSettings:AzureTable:ConnectionString");
 var migrator = new MigrateAzureTableColumn(connStr, "UseDevelopmentStorage=true");
 
 await migrator.MigrateAll();

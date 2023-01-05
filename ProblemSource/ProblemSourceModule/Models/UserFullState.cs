@@ -60,7 +60,7 @@ namespace ProblemSource.Models
         public List<TriggerData>? triggers { get; set; }
         public decimal? pacifistRatio { get; set; } = 0.1M; //TODO: add to a metaphorSettings structure instead
 
-        public object? trainingPlanOverrides { get; set; }
+        public object? trainingPlanOverrides { get; set; } //testData [{"id":"WM_grid#\\d+","phases":[{"lvlMgr":{"phaseChange":{"change":-0.8}}}]}]
         public TrainingSyncSettings? syncSettings { get; set; }
         //erase_local_data?: boolean;
         public bool? alarmClockInvisible { get; set; }

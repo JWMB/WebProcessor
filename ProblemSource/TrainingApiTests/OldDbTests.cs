@@ -26,7 +26,9 @@ namespace TrainingApiTests
                 .Include(o => o.Group)
                 .Where(o => o.Group != null && o.Group.Name != null && o.Group.Name.StartsWith("_school"))
                 .ToListAsync();
+#pragma warning disable CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
             var dict = schoolAccountsGroups.GroupBy(o => o.Group.Name).Where(o => o.Count() > 100).ToDictionary(o => o.Key, o => o.ToList());
+#pragma warning restore CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
 
             var info = new List<string>();
             // 236944 
@@ -58,11 +60,13 @@ namespace TrainingApiTests
                     }
                     else
                     {
+#pragma warning disable CS8601 // Possible null reference assignment.
                         var userState = new UserGeneratedState
                         {
                             exercise_stats = JsonConvert.DeserializeObject<ExerciseStats>(account.ExerciseStats),
                             user_data = JToken.Parse(account.UserData),
                         };
+#pragma warning restore CS8601 // Possible null reference assignment.
                     }
                     var trainingSettings = string.IsNullOrEmpty(account.TrainingSettings) ? null : JsonConvert.DeserializeObject<TrainingSettings>(account.TrainingSettings);
                 }
