@@ -1,6 +1,8 @@
 ﻿using Azure;
 using Azure.Data.Tables;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ProblemSourceModule.Services.Storage;
 using System.Text.RegularExpressions;
 
@@ -87,9 +89,28 @@ namespace ProblemSource.Services.Storage.AzureTables
             }
         }
 
+        public async Task<Dictionary<string, T?>> GetByRowKeys(IEnumerable<string> rowKeys, string? partitionKey = null)
+        {
+            var results = new List<KeyValuePair<string, T?>>();
+            var result = new Dictionary<string, T?>();
+            foreach (var chunk in rowKeys.Chunk(50))
+            {
+                var tasks = chunk.Select(o => tableClient.GetEntityIfExistsAsync<TTableEntity>(partitionKey ?? partitionKeyForFilter, o));
+                var partial = await Task.WhenAll(tasks);
+                var kvs = partial.Select((o, i) => new KeyValuePair<string, T?>(chunk[i], o.HasValue ? toBusinessObject(o.Value) : default(T)));  //KeyValuePair<string, T?>.Create(i, o.HasValue ? toBusinessObject(o.Value) : null));
+                results.AddRange(kvs);
+            }
+            return results.ToDictionary(o => o.Key, o => o.Value);
+        }
+
         public async Task<IEnumerable<T>> GetAll()
         {
             var filter = $"{nameof(ITableEntity.PartitionKey)} eq '{partitionKeyForFilter}'";
+            return await GetWithFilter(filter);
+        }
+
+        private async Task<IEnumerable<T>> GetWithFilter(string filter)
+        {
             var query = tableClient.QueryAsync<TTableEntity>(filter);
             var result = new List<T>();
             await foreach (var entity in query)
@@ -125,6 +146,15 @@ namespace ProblemSource.Services.Storage.AzureTables
         {
             var entity = toTableEntity(item);
             await tableClient.DeleteEntityAsync(entity.PartitionKey, entity.RowKey);
+        }
+
+        public static Exception ReduceException(Exception exception)
+        {
+            if (exception is AggregateException aEx && aEx.InnerExceptions.Count == 1)
+            {
+                return aEx.InnerExceptions.First();
+            }
+            return exception;
         }
 
         //public class TableEntityId

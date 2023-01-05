@@ -5,6 +5,7 @@ namespace ProblemSourceModule.Services.Storage
 
     public interface ITrainingRepository : IRepository<Training, int>
     {
+        Task<IEnumerable<Training>> GetByIds(IEnumerable<int> ids);
     }
 
     public class Training
