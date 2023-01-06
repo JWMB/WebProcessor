@@ -1,21 +1,31 @@
 <script lang="ts">
 	export const prerender = true;
 
-    import { apiFacade } from '../globalStore.js';
+    import { apiFacade, loggedInUser } from '../globalStore.js';
     import { ApiFacade } from '../apiFacade';
 	import { ApiException } from '../apiClient';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
+	import { get } from 'svelte/store';
+	import type { CurrentUserInfo } from 'src/currentUserInfo.js';
 
+	let loggedInUserInfo: CurrentUserInfo | null; // = get(loggedInUser);
 	let apiFacadeInstance: ApiFacade;
+
+	loggedInUser.subscribe(value => {
+		loggedInUserInfo = value;
+	});
+
 	async function logout() {
 		await apiFacadeInstance.accounts.logout();
+		loggedInUserInfo = { username: "", loggedIn: false };
+		loggedInUser.set(loggedInUserInfo);
 		console.log("logout");
 	}
 
 	function initApi(location: Location) {
-		const apiBaseUrl = window.location.host.indexOf("localhost") >= 0 || window.location.host.indexOf(":8080") > 0
-			? "https://localhost:7173" : window.location.origin;
+		const apiBaseUrl = location.host.indexOf("localhost") >= 0 || location.host.indexOf(":8080") > 0
+			? "https://localhost:7173" : location.origin;
 		apiFacadeInstance = new ApiFacade(apiBaseUrl);
 		apiFacade.set(apiFacadeInstance);
 	}
@@ -25,7 +35,6 @@
 		  if (e.reason instanceof ApiException) {
 			const apiEx = <ApiException>e.reason;
 			if (apiEx.status === 401) {
-				console.warn("Not logged in!!", base);
 				goto(`${base}/login`);
 				return;
 			} else if (apiEx.status === 404) {
@@ -33,7 +42,7 @@
 				return;
 			}
 		  } else if (!!e.reason?.message) {
-			console.log(e.reason.message, e.reason.stack);
+			console.log(e.reason.message, { stack: e.reason.stack });
 			return;
 		  }
 		  console.log('we got exception, but the app has crashed', e);
@@ -48,15 +57,24 @@
 		}
 	}
 
-	initApi(globalThis.location);
-	setupTopLevelErrorHandling(globalThis);
+	if (globalThis == null) {
+		console.error("No globalThis", globalThis);
+	} else if (globalThis.location == null) {
+		console.error("No globalThis.location", globalThis.location);
+	} else {
+		initApi(globalThis.location);
+		setupTopLevelErrorHandling(globalThis);
+	}
 </script>
 
 <nav>
 	<a href="{base}/">Home</a>
 	<a href="{base}/teacher">Teacher</a>
-	<a href="{base}/" on:click={logout}>Log out</a>
+	{#if loggedInUserInfo?.loggedIn}
+	<a href="{base}/" on:click={logout}>Log out {loggedInUserInfo?.username}</a>
+	{:else}
 	<a href="{base}/login">Log in</a>
+	{/if}
 </nav>
 <div class="page-container">
 	<slot />

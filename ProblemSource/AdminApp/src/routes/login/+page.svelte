@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { get } from "svelte/store";
-    import { apiFacade as apiFacadeStore } from '../../globalStore';
+    import { apiFacade as apiFacadeStore, loggedInUser } from '../../globalStore';
 
 
   let email = "";
@@ -30,6 +30,7 @@
         .then(() => {
           isSuccess = true;
           isLoading = false;
+		  loggedInUser.set({ username: email, loggedIn: true });
         })
         .catch(err => {
           errors.server = err;

@@ -28,7 +28,11 @@
     <h1>Trainings</h1>
 
     <!-- <TrainingsTable trainingSummaries={trainingSummaries} numDays={5}></TrainingsTable> -->
-    {#await trainingsPromise then trainings}
-        <TrainingsTable trainingSummaries={trainings} numDays={5}></TrainingsTable>
+    {#await trainingsPromise}
+        <div>Loading...</div>
+    {:then trainings}
+        <TrainingsTable trainingSummaries={trainings} numDays={14}></TrainingsTable>
+    {:catch error}
+        {error}
     {/await}
 </div>
