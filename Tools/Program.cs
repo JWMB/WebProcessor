@@ -19,6 +19,8 @@ if (Console.ReadKey().Key != ConsoleKey.Y)
 }
 
 var connStr = config.GetOrThrow<string>("AppSettings:AzureTable:ConnectionString");
-var migrator = new MigrateAzureTableColumn(connStr, "UseDevelopmentStorage=true");
-
+//var migrator = new MigrateAzureTableColumn(connStr, "UseDevelopmentStorage=true");
+var migrator = new MigrateAzureTableColumn(connStr);
 await migrator.MigrateAll();
+
+//await MigrateAzureTableColumn.RenameAll("UseDevelopmentStorage=true", MigrateAzureTableColumn.RekeyedPrefix, "aaa");

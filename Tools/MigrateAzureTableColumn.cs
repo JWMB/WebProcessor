@@ -1,4 +1,5 @@
 ﻿using Azure.Data.Tables;
+using Microsoft.Extensions.Primitives;
 using ProblemSource;
 using System;
 using System.Collections.Generic;
@@ -25,19 +26,36 @@ namespace Tools
             mnemoJapanese = new MnemoJapanese(2);
         }
 
+        private static readonly string[] tablesWithUuidInPartitionKey = "vektor vektorPhases vektorPhaseStatistics vektorTrainingDays vektorUserLogs".Split(' ');
+        private static readonly string[] tablesWithUuidInRowKey = "vektorUserStates vektorTrainings".Split(' ');
+        private static readonly string[] tablesOthers = "vektorUsers".Split(' ');
+        public static readonly string RekeyedPrefix = "rekeyed";
+
+        public static async Task RenameAll(string connectionString, string srcPrefix, string dstPrefix = "")
+        {
+            var allTables = tablesWithUuidInPartitionKey.Concat(tablesWithUuidInRowKey).Concat(tablesOthers);
+            foreach (var table in allTables)
+            {
+                await RenameTable(connectionString, $"{srcPrefix}{table}", $"{dstPrefix}{table}");
+            }
+        }
+
         public async Task MigrateAll()
         {
-            var tables = "vektor vektorPhases vektorPhaseStatistics vektorTrainingDays vektorUserLogs".Split(' ');
-            //var tables = "vektorTrainingDays".Split(' ');
-            foreach (var table in tables)
-            {
-                await ModifyPartitionKeyUuidToId(table);
-            }
+            foreach (var table in tablesWithUuidInPartitionKey)
+                await Copy(table, ModifyPartitionKey);
 
-            tables = "vektorUserStates vektorTrainings".Split(' ');
-            foreach (var table in tables)
+            foreach (var table in tablesWithUuidInRowKey)
+                await Copy(table, ModifyRowKey);
+
+            foreach (var table in tablesOthers)
+                await Copy(table);
+
+            async Task Copy(string table, Func<TableEntity, TableEntity>? modify = null)
             {
-                await ModifyRowKeyUuidToId(table);
+                var src = new TableClient(connectionString, table);
+                if (await TableExists(src))
+                    await CopyEntities(new TableClient(connectionString, table), await CreateDestTable(table), modify);
             }
         }
 
@@ -53,50 +71,75 @@ namespace Tools
             return val.Value.ToString().PadLeft(6, '0');
         }
 
-        public async Task ModifyPartitionKeyUuidToId(string tableName)
+        private TableEntity ModifyPartitionKey(TableEntity row)
         {
-            Func<TableEntity, TableEntity> func = row => {
-                //Console.WriteLine($"{row.PartitionKey} -> {UuidToIdKey(row.PartitionKey)}");
-                row.PartitionKey = UuidToIdKey(row.PartitionKey);
-                return row;
-            };
-
-            await ModifyEntities(new TableClient(connectionString, tableName), await CreateDestTable(tableName), func);
+            //Console.WriteLine($"{row.PartitionKey} -> {UuidToIdKey(row.PartitionKey)}");
+            row.PartitionKey = UuidToIdKey(row.PartitionKey);
+            return row;
+        }
+        private TableEntity ModifyRowKey(TableEntity row)
+        {
+            row.RowKey = UuidToIdKey(row.RowKey);
+            return row;
         }
 
-        public async Task ModifyRowKeyUuidToId(string tableName)
+        public static async Task RenameTable(string connectionString, string nameSrc, string nameDst)
         {
-            Func<TableEntity, TableEntity> func = row => {
-                row.RowKey = UuidToIdKey(row.RowKey);
-                return row;
-            };
+            if (nameSrc == nameDst) throw new Exception("dst same as src");
 
-            await ModifyEntities(new TableClient(connectionString, tableName), await CreateDestTable(tableName), func);
+            var clientSrc = new TableClient(connectionString, nameSrc);
+            if (await TableExists(clientSrc))
+            {
+                var clientDst = await RecreateTable(connectionString, nameDst);
+                await CopyEntities(clientSrc, clientDst);
+
+                await clientSrc.DeleteAsync();
+            }
+        }
+
+        private static async Task<bool> TableExists(TableClient client)
+        {
+            try
+            {
+                await client.GetAccessPoliciesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static async Task<TableClient> RecreateTable(string connectionString, string tableName)
+        {
+            var client = new TableClient(connectionString, tableName);
+            try
+            {
+                await client.DeleteAsync();
+            }
+            catch { }
+            await client.CreateAsync();
+            return client;
         }
 
         private async Task<TableClient?> CreateDestTable(string tableName)
         {
             if (connectionStringDst == null)
                 return null;
-            var tableNameDst = $"rekeyed{tableName}";
-            var clientDst = new TableClient(connectionStringDst, tableNameDst);
-            try
-            {
-                await clientDst.DeleteAsync();
-            }
-            catch { }
-            await clientDst.CreateIfNotExistsAsync();
+            var tableNameDst = $"{RekeyedPrefix}{tableName}";
+            var clientDst = await RecreateTable(connectionStringDst, tableNameDst);
             return clientDst;
         }
 
-        private async Task ModifyEntities(TableClient src, TableClient? dst, Func<TableEntity, TableEntity> modify)
+        private static async Task CopyEntities(TableClient src, TableClient? dst, Func<TableEntity, TableEntity>? modify = null)
         {
             Console.WriteLine($"Start {src.Name}");
 
             var rows = src.QueryAsync<TableEntity>("", 100);
+            var cnt = 0;
             await foreach (var page in rows.AsPages())
             {
-                var transactions = page.Values.Select(row => new TableTransactionAction(TableTransactionActionType.Add, modify(row))).ToList();
+                var transactions = page.Values.Select(row => new TableTransactionAction(TableTransactionActionType.Add, modify == null ? row : modify(row))).ToList();
                 var byPartition = transactions.GroupBy(o => o.Entity.PartitionKey);
                 foreach (var grp in byPartition)
                 {
@@ -105,6 +148,10 @@ namespace Tools
                         await dst.SubmitTransactionAsync(grp.ToList());
                     }
                 }
+                var lastCnt = cnt;
+                cnt += page.Values.Count;
+                if (Math.Floor(1.0 * lastCnt / 1000) < Math.Floor(1.0 * cnt / 1000))
+                    Console.WriteLine($"{cnt}");
             }
         }
     }
