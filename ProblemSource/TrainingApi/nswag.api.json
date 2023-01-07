@@ -239,6 +239,31 @@
         }
       }
     },
+    "/api/Relay/GetSyncUrls": {
+      "get": {
+        "tags": [
+          "Relay"
+        ],
+        "operationId": "Relay_GetSyncUrls",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "uuid",
+            "in": "query",
+            "x-nullable": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
     "/api/Testing/exception": {
       "post": {
         "tags": [
@@ -446,31 +471,6 @@
           "Health"
         ],
         "operationId": "Health_Heartbeat",
-        "responses": {
-          "200": {
-            "x-nullable": true,
-            "description": "",
-            "schema": {
-              "type": "file"
-            }
-          }
-        }
-      }
-    },
-    "/api/Relay/GetSyncUrls": {
-      "get": {
-        "tags": [
-          "Relay"
-        ],
-        "operationId": "Relay_GetSyncUrls",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "uuid",
-            "in": "query",
-            "x-nullable": true
-          }
-        ],
         "responses": {
           "200": {
             "x-nullable": true,

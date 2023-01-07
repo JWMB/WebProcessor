@@ -149,7 +149,7 @@ namespace ProblemSource
                 {
                     // Log incoming data - but remove large State items
                     // Warning: modifying incoming data instead of making a copy
-                    root.Events = root.Events.Where(o => ((dynamic)o).className != "UserStatePushLogItem").ToArray();
+                    root.Events = root.Events.Where(o => GetEventClassName(o) != "UserStatePushLogItem").ToArray();
 
                     await dataSink.Log(root.Uuid, root);
                 }
@@ -175,17 +175,6 @@ namespace ProblemSource
             }
 
             return result;
-        }
-
-        private static SyncInput ParseJson(string jsonString)
-        {
-            var root = JsonConvert.DeserializeObject<SyncInput>(jsonString);
-
-            if (root == null)
-                throw new ArgumentException("Cannot deserialize", nameof(jsonString));
-            if (string.IsNullOrEmpty(root.Uuid))
-                throw new ArgumentNullException(nameof(root.Uuid));
-            return root;
         }
 
         private async Task<string> CreateClientState(SyncInput root, Training training)
@@ -285,38 +274,40 @@ namespace ProblemSource
             }
         }
 
+        private static string? GetEventClassName(object item)
+        {
+            // what the hell? Suddenly the deserialized items are JsonElement instead of dynamic object
+            if (item is System.Text.Json.JsonElement jEl)
+                return jEl.GetProperty("className").GetString();
+            else
+                return ExceptionTools.TryOrDefault(() => (string)((dynamic)item).className, null);
+        }
+
         private static List<LogItem> DeserializeEvents(object[] events, ILogger? log = null)
         {
             var nameToType = typeof(LogItem).Assembly.GetTypes().Where(o => typeof(LogItem).IsAssignableFrom(o)).ToDictionary(o => o.Name, o => o);
             var unhandledItems = new List<object>();
             var result = events.Select(item =>
             {
-                var className = ExceptionTools.TryOrDefault(() => (string)((dynamic)item).className, null);
-                if (className == null)
+                var className = GetEventClassName(item);
+                if (className != null && nameToType.TryGetValue(className, out var type))
                 {
-                    unhandledItems.Add(item);
-                }
-                else
-                {
-                    if (!nameToType.TryGetValue(className, out var type))
+                    try
                     {
-                        unhandledItems.Add(item);
-                    }
-                    else
-                    {
-                        try
-                        {
-                            var asJson = JsonConvert.SerializeObject(item);
-                            var typed = JsonConvert.DeserializeObject(asJson, type);
+                        var asJson = item is System.Text.Json.JsonElement jEl ? jEl.ToString() : JsonConvert.SerializeObject(item);
+                        var typed = JsonConvert.DeserializeObject(asJson!, type);
+                        if (typed is LogItem li)
                             return typed as LogItem;
-                        }
-                        catch (Exception ex)
-                        {
-                            unhandledItems.Add(new { Exception = ex, Item = item });
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        unhandledItems.Add(new { Exception = ex, Item = item });
+                        return null;
                     }
                 }
+                unhandledItems.Add(item);
                 return null;
+
             }).OfType<LogItem>()
             .ToList();
 
