@@ -1,8 +1,8 @@
 name: Build and deploy .NET Core application to Web App kistudysync
 on:
-  push:
-    branches:
-    - main
+  #push:
+  #  branches:
+  #  - main
   workflow_dispatch:
 env:
   AZURE_WEBAPP_NAME: kistudysync
