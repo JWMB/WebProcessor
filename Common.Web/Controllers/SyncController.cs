@@ -1,13 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using PluginModuleBase;
 using System.Net;
-using System.Security.Claims;
-using System.Text.Json;
 
 namespace Common.Web.Controllers
 {
@@ -58,9 +55,10 @@ namespace Common.Web.Controllers
             }
             catch (Exception ex)
             {
-                // log.LogError(aEx, $"Name:{User?.Identity?.Name} Authenticated:{User?.Identity?.IsAuthenticated}");
+                log.LogError(ex, $"Name:{User?.Identity?.Name} Authenticated:{User?.Identity?.IsAuthenticated}");
                 HttpContext.Response.StatusCode = (int)(ex is ArgumentException ? HttpStatusCode.BadRequest : HttpStatusCode.InternalServerError);
-                await HttpContext.Response.WriteAsync(ex.Message);
+                await HttpContext.Response.WriteAsync(System.Diagnostics.Debugger.IsAttached ? ex.Message : "Exception in sync pipeline");
+                throw;
             }
         }
 

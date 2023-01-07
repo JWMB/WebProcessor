@@ -1,8 +1,7 @@
-﻿using Common.Web;
+﻿using Common;
+using Common.Web;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using PluginModuleBase;
 using ProblemSource.Models;
@@ -10,9 +9,6 @@ using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Services.Storage;
-using System;
-using System.ComponentModel;
-using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace ProblemSource
 {
@@ -143,7 +139,7 @@ namespace ProblemSource
 
             if (root.Events?.Any() == true)
             {
-                var logItems = DeserializeEvents(root.Events);
+                var logItems = DeserializeEvents(root.Events, log);
                 var userStates = logItems.OfType<UserStatePushLogItem>();
                 if (userStates.Any())
                 {
@@ -289,21 +285,49 @@ namespace ProblemSource
             }
         }
 
-        private static List<LogItem> DeserializeEvents(object[] events)
+        private static List<LogItem> DeserializeEvents(object[] events, ILogger? log = null)
         {
             var nameToType = typeof(LogItem).Assembly.GetTypes().Where(o => typeof(LogItem).IsAssignableFrom(o)).ToDictionary(o => o.Name, o => o);
-            return events.Select(item =>
+            var unhandledItems = new List<object>();
+            var result = events.Select(item =>
             {
-                var className = (string)((dynamic)item).className;
-                if (nameToType.TryGetValue(className, out var type))
+                var className = ExceptionTools.TryOrDefault(() => (string)((dynamic)item).className, null);
+                if (className == null)
                 {
-                    var asJson = JsonConvert.SerializeObject(item);
-                    var typed = JsonConvert.DeserializeObject(asJson, type);
-                    return typed as LogItem;
+                    unhandledItems.Add(item);
+                }
+                else
+                {
+                    if (!nameToType.TryGetValue(className, out var type))
+                    {
+                        unhandledItems.Add(item);
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var asJson = JsonConvert.SerializeObject(item);
+                            var typed = JsonConvert.DeserializeObject(asJson, type);
+                            return typed as LogItem;
+                        }
+                        catch (Exception ex)
+                        {
+                            unhandledItems.Add(new { Exception = ex, Item = item });
+                        }
+                    }
                 }
                 return null;
             }).OfType<LogItem>()
             .ToList();
+
+            if (unhandledItems.Any())
+            {
+                if (log != null)
+                    log.LogError($"Deserializing problems:\n{JsonConvert.SerializeObject(unhandledItems)}");
+                throw new Exception($"Deserializing problems:\n{JsonConvert.SerializeObject(unhandledItems)}");
+            }
+
+            return result;
         }
 
         private static List<int> GetUserStatePushLogItemIndices(SyncInput root)

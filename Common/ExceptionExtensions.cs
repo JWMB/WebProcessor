@@ -15,4 +15,20 @@ namespace Common
             return found != null;
         }
     }
+
+    public static class ExceptionTools
+    {
+        public static T TryOrDefault<T>(Func<T> func, T defaultValue, Action<Exception>? onException = null)
+        {
+            try
+            {
+                return func();
+            }
+            catch (Exception ex)
+            {
+                onException?.Invoke(ex);
+                return defaultValue;
+            }
+        }
+    }
 }
