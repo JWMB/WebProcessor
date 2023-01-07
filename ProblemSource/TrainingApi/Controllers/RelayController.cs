@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Common.Web;
 
-namespace Common.Web.Controllers
+namespace TrainingApi.Controllers
 {
     // TODO (low): for backwards compatibility. This was used for load-balancing, but now, we'd do scalable multi-instance services with ARRAffinity instead
 
