@@ -11,7 +11,7 @@
         "tags": [
           "Accounts"
         ],
-        "operationId": "Accounts_Get",
+        "operationId": "Accounts_GetAll",
         "produces": [
           "text/plain",
           "application/json",
@@ -22,7 +22,10 @@
             "x-nullable": false,
             "description": "",
             "schema": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GetUserDto"
+              }
             }
           }
         }
@@ -39,11 +42,11 @@
         ],
         "parameters": [
           {
-            "name": "credentials",
+            "name": "dto",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/LoginCredentials"
+              "$ref": "#/definitions/CreateUserDto"
             },
             "x-nullable": false
           }
@@ -51,6 +54,73 @@
         "responses": {
           "200": {
             "description": ""
+          }
+        }
+      }
+    },
+    "/api/Accounts/id": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "Accounts_Get",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "id",
+            "in": "query",
+            "x-nullable": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GetUserDto"
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "Accounts_Patch",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "id",
+            "in": "query",
+            "x-nullable": true
+          },
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PatchUserDto"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
           }
         }
       }
@@ -440,6 +510,65 @@
     }
   },
   "definitions": {
+    "GetUserDto": {
+      "type": "object",
+      "required": [
+        "username",
+        "role",
+        "trainings"
+      ],
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "trainings": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    },
+    "CreateUserDto": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/GetUserDto"
+        },
+        {
+          "type": "object",
+          "required": [
+            "password"
+          ],
+          "properties": {
+            "password": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "PatchUserDto": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "trainings": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    },
     "LoginCredentials": {
       "type": "object",
       "required": [

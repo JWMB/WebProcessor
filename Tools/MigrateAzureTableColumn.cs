@@ -131,11 +131,11 @@ namespace Tools
                 }
                 catch (Azure.RequestFailedException rfEx) when(rfEx.ErrorCode == "TableBeingDeleted")
                 {
-                    Console.WriteLine($"{tableName} is being deleted ({i}"); // when this happens, it often succeeds when i = 8
+                    Console.WriteLine($"{tableName} is being deleted ({i})"); // when this happens, it often succeeds when i = 8
                 }
                 catch (Azure.RequestFailedException rfEx) when (rfEx.ErrorCode == "TableAlreadyExists")
                 {
-                    Console.WriteLine($"{tableName} already exists ({i}");
+                    Console.WriteLine($"{tableName} already exists ({i})");
                     break;
                 }
             }

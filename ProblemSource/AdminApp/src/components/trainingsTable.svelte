@@ -62,6 +62,8 @@
             uuid: uuid,
             startDate: firstDay.startTime,
             totalDays: training.days.length,
+            firstDate: getDateString(new Date(training.days[0].startTime)),
+            latestDate: getDateString(new Date(training.days[training.days.length - 1].startTime)),
             daysPerWeek: training.days.length / (daysSinceStart / 7),
             days: withDayIndex
         };
@@ -142,7 +144,9 @@
 					cellRenderer: (params: any) => { return `<a href="${base}/?id=${params.data.id}">${params.value}</a>`; }
 				 },
 				{ headerName: 'Days', headerTooltip: "Days trained", field: 'totalDays' },
-				{ headerName: 'Per week', headerTooltip: "Average days trained per week", field: 'daysPerWeek', cellRenderer: (params: any) => params.value.toFixed(1) }
+				{ headerName: 'Per week', headerTooltip: "Average days trained per week", field: 'daysPerWeek', cellRenderer: (params: any) => params.value.toFixed(1) },
+				{ headerName: 'First', headerTooltip: "First training", field: 'firstDate' },
+				{ headerName: 'Latest', headerTooltip: "Latest training", field: 'latestDate' },
 			  ]
 			},
 			{ headerName: `Sessions ${getDateString(fromDate)} - ${getDateString(addDays(fromDate, numDays))}`, children: dayColumns }

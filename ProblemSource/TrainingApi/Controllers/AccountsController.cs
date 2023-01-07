@@ -25,23 +25,50 @@ namespace TrainingApi.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpGet]
-        public async Task<string> Get()
+        public async Task<IEnumerable<GetUserDto>> GetAll()
         {
-            await Task.Delay(1);
-            return "Hello!";
+            return (await userRepository.GetAll()).Select(GetUserDto.FromUser);
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpPost]
-        public async Task Post([FromBody] LoginCredentials credentials)
+        [HttpGet]
+        [Route("id")]
+        public async Task<ActionResult<GetUserDto>> Get(string id)
         {
-            await userRepository.Add(new ProblemSourceModule.Services.Storage.User
+            var user = await userRepository.Get(id);
+            if (user == null)
+                return NotFound();
+            return Ok(GetUserDto.FromUser(user));
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task Post([FromBody] CreateUserDto dto)
+        {
+            await userRepository.Add(new User
             {
-                Email = credentials.Username,
-                Role = Roles.Admin,
+                Email = dto.Username,
+                Role = dto.Role,
                 Trainings = new List<int>(),
-                HashedPassword = ProblemSourceModule.Services.Storage.User.HashPassword(credentials.Username, credentials.Password)
+                HashedPassword = ProblemSourceModule.Services.Storage.User.HashPassword(dto.Username, dto.Password)
             });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPatch]
+        [Route("id")]
+        public async Task<ActionResult> Patch([FromQuery] string id, [FromBody] PatchUserDto dto)
+        {
+            var user = await userRepository.Get(id);
+            if (user == null)
+                return NotFound();
+            if (dto.Role != null) user.Role = dto.Role;
+            if (dto.Password != null) user.HashedPassword = ProblemSourceModule.Services.Storage.User.HashPassword(id, dto.Password);
+            if (dto.Trainings != null) user.Trainings = dto.Trainings;
+
+            await userRepository.Update(user);
+            return Ok();
         }
 
         [HttpPost]
@@ -95,5 +122,29 @@ namespace TrainingApi.Controllers
     {
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+    }
+
+    public class GetUserDto
+    {
+        public string Username { get; set; } = string.Empty;
+
+        public string Role { get; set; } = "";
+        public List<int> Trainings { get; set; } = new();
+
+        public static GetUserDto FromUser(User user)
+        {
+            return new GetUserDto { Role = user.Role, Username = user.Email, Trainings = user.Trainings };
+        }
+    }
+
+    public class CreateUserDto : GetUserDto
+    {
+        public string Password { get; set; } = "";
+    }
+    public class PatchUserDto
+    {
+        public string? Role { get; set; }
+        public string? Password { get; set; }
+        public List<int>? Trainings { get; set; }
     }
 }
