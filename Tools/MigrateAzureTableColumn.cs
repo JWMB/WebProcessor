@@ -1,4 +1,5 @@
 ﻿using Azure.Data.Tables;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Primitives;
 using ProblemSource;
 using System;
@@ -118,7 +119,26 @@ namespace Tools
                 await client.DeleteAsync();
             }
             catch { }
-            await client.CreateAsync();
+
+            // Delete operation may not be completed although task is complete...
+            for(int i = 0; i < 10; i++)
+            {
+                try
+                {
+                    await Task.Delay(500 + (int)Math.Pow(1.3, i) * 1000);
+                    await client.CreateAsync();
+                    break;
+                }
+                catch (Azure.RequestFailedException rfEx) when(rfEx.ErrorCode == "TableBeingDeleted")
+                {
+                    Console.WriteLine($"{tableName} is being deleted ({i}"); // when this happens, it often succeeds when i = 8
+                }
+                catch (Azure.RequestFailedException rfEx) when (rfEx.ErrorCode == "TableAlreadyExists")
+                {
+                    Console.WriteLine($"{tableName} already exists ({i}");
+                    break;
+                }
+            }
             return client;
         }
 
