@@ -49,12 +49,14 @@ namespace WebApi.Tests
         [SkippableFact]
         public async Task Sync_ProblemSource_Minimal_OK()
         {
+            var uuid = "abc";
             var response = await Post("/api/sync/sync", new
             {
-                Uuid = "abc"
+                Uuid = uuid
             });
             response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK);
             var doc = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            doc.RootElement.GetProperty("error").GetString().ShouldBe($"Username not found ({uuid})");
         }
 
         private async Task<HttpResponseMessage> Post(string uri, object content, string? bearerToken = null)
