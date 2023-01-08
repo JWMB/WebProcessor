@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProblemSource;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
+using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
@@ -24,12 +25,15 @@ namespace TrainingApi.Controllers
         private readonly IUserRepository userRepository;
         private readonly MnemoJapanese mnemoJapanese;
         private readonly UsernameHashing usernameHashing;
+        private readonly IAggregationService aggregationService;
+        private readonly IUserGeneratedDataRepositoryProviderFactory dataRepoFactory;
 
         //private readonly IUserStateRepository userStateRepository;
         private readonly ILogger<AggregatesController> _logger;
 
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
-            IUserRepository userRepository, MnemoJapanese mnemoJapanese, UsernameHashing usernameHashing,
+            IUserRepository userRepository, MnemoJapanese mnemoJapanese, UsernameHashing usernameHashing, 
+            IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
             ILogger<AggregatesController> logger)
         {
             this.trainingPlanRepository = trainingPlanRepository;
@@ -38,6 +42,8 @@ namespace TrainingApi.Controllers
             this.userRepository = userRepository;
             this.mnemoJapanese = mnemoJapanese;
             this.usernameHashing = usernameHashing;
+            this.aggregationService = aggregationService;
+            this.dataRepoFactory = dataRepoFactory;
             _logger = logger;
         }
 
@@ -92,12 +98,15 @@ namespace TrainingApi.Controllers
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [Route("refresh")]
-        public async Task<int> RefreshStatistics(IEnumerable<int> trainingIds)
+        public async Task<int> RefreshStatistics([FromBody] IEnumerable<int> trainingIds)
         {
-            await Task.Delay(100);
+            foreach (var id in trainingIds)
+            {
+                var repo = dataRepoFactory.Create(id);
+                await aggregationService.UpdateAggregates(repo, new List<LogItem>(), id);
+            }
             return trainingIds.Any() ? trainingIds.FirstOrDefault() : 0;
         }
-
 
         [HttpGet]
         [Route("summaries")]

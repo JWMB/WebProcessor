@@ -47,11 +47,17 @@ namespace ProblemSource.Services.Storage.AzureTables
         {
             var batch = new List<TableTransactionAction>(entities.Select(f => new TableTransactionAction(TableTransactionActionType.UpsertMerge, f)));
 
-            var response = await tableClient.SubmitTransactionAsync(batch);
-            if (response.Value.Any(o => o.IsError))
-                throw new Exception($"SubmitTransaction errors: {string.Join("\n", response.Value.Where(o => o.IsError).Select(o => o.ReasonPhrase))}");
+            // TODO: the 100 limit makes it no longer a transaction >:(
+            var result = new List<Response>();
+            foreach (var chunk in batch.Chunk(100))
+            {
+                var response = await tableClient.SubmitTransactionAsync(chunk);
+                if (response.Value.Any(o => o.IsError))
+                    throw new Exception($"SubmitTransaction errors: {string.Join("\n", response.Value.Where(o => o.IsError).Select(o => o.ReasonPhrase))}");
+                result.AddRange(result);
+            }
 
-            return response.Value.ToList();
+            return result;
         }
 
         // https://learn.microsoft.com/en-us/rest/api/storageservices/Understanding-the-Table-Service-Data-Model#characters-disallowed-in-key-fields
