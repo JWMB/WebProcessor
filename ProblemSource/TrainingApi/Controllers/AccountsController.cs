@@ -32,9 +32,16 @@ namespace TrainingApi.Controllers
 
         [Authorize(Policy = "AdminOrTeacher")]
         [HttpGet]
-        [Route("id")]
-        public async Task<ActionResult<GetUserDto>> Get(string id)
+        [Route("GetOne")] // TODO: For some reason, we need an explicit path for unit/integration tests
+        [Route("{id}")]
+        public async Task<ActionResult<GetUserDto>> Get([FromQuery]string id)
         {
+            if (User.FindFirstValue(ClaimTypes.Role) != Roles.Admin)
+            {
+                if (User.FindFirstValue(ClaimTypes.Name) != id)
+                    return Forbid();
+            }
+
             var user = await userRepository.Get(id);
             if (user == null)
                 return NotFound();

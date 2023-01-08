@@ -326,7 +326,7 @@ namespace ProblemSource
             if (root.Events?.Any() == true)
             {
                 return root.Events.Select((o, i) => new { Item = o, Index = i })
-                    .Where(o => TryOrDefault(() => ((dynamic)o.Item).className == "UserStatePushLogItem", false))
+                    .Where(o => TryOrDefault(() => GetEventClassName(o.Item) == "UserStatePushLogItem", false))
                     .Select(o => o.Index).ToList();
             }
             return new List<int>();

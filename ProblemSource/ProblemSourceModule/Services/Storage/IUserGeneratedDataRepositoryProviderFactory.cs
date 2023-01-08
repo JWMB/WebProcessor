@@ -1,6 +1,4 @@
-﻿using ProblemSource.Models.Aggregates;
-
-namespace ProblemSource.Services.Storage
+﻿namespace ProblemSource.Services.Storage
 {
     public interface IUserGeneratedDataRepositoryProviderFactory
     {

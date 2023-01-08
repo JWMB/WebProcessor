@@ -111,7 +111,7 @@ namespace TrainingApi
                 });
             }
 
-            app.UseRouting(); // Needed for GraphQL
+            //app.UseRouting(); // Needed for GraphQL?
 
             var config = app.ApplicationServices.GetRequiredService<IConfiguration>();
             // With endpoint routing, the CORS middleware must be configured to execute between the calls to UseRouting and UseEndpoints.
