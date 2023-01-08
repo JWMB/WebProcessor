@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PluginModuleBase;
-using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
@@ -25,9 +24,7 @@ namespace ProblemSource
             if (configureForPipeline)
                 ConfigurePipeline(services);
 
-            //services.AddSingleton<ITrainingPlanRepository>(sp => new TrainingPlanRepository(new DirectoryInfo(sp.GetRequiredService<IHostEnvironment>().ContentRootPath)));
-            services.AddSingleton<ITrainingPlanRepository, TrainingPlanRepository>();
-
+            services.AddSingleton<ITrainingPlanRepository, EmbeddedTrainingPlanRepository>();
             services.AddSingleton<IAggregationService, AggregationService>(); // AggregationService NullAggregationService
 
             ConfigureForAzureTables(services);

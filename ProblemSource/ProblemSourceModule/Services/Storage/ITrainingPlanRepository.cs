@@ -8,7 +8,7 @@ namespace ProblemSource.Services.Storage
         Task<object?> Get(string name);
     }
 
-    public class TrainingPlanRepository : ITrainingPlanRepository
+    public class EmbeddedTrainingPlanRepository : ITrainingPlanRepository
     {
         public async Task<object?> Get(string name)
         {

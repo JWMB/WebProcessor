@@ -39,7 +39,7 @@ namespace ProblemSource.Tests
             var mockTrainingRepo = new Mock<ITrainingRepository>();
             mockTrainingRepo.Setup(o => o.Get(It.IsAny<int>())).ReturnsAsync(() => new Training { TrainingPlanName = "2017 HT template Default" });
 
-            pipeline = new ProblemSourceProcessingMiddleware(userStateRepository, new TrainingPlanRepository(),
+            pipeline = new ProblemSourceProcessingMiddleware(userStateRepository, new EmbeddedTrainingPlanRepository(),
                 fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), 
                 fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>(), new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
                 mockTrainingRepo.Object,
