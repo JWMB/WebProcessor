@@ -315,7 +315,7 @@ namespace ProblemSource
             {
                 if (log != null)
                     log.LogError($"Deserializing problems:\n{JsonConvert.SerializeObject(unhandledItems)}");
-                throw new Exception($"Deserializing problems:\n{JsonConvert.SerializeObject(unhandledItems)}");
+                //throw new Exception($"Deserializing problems:\n{JsonConvert.SerializeObject(unhandledItems)}");
             }
 
             return result;

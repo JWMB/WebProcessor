@@ -2,6 +2,7 @@
 using ProblemSource.Models;
 using ProblemSource.Services.Storage;
 using Microsoft.Extensions.Logging;
+using ProblemSourceModule.Models.Aggregates;
 
 namespace ProblemSource.Services
 {
@@ -37,14 +38,17 @@ namespace ProblemSource.Services
 
             try
             {
-                await phaseRepo.AddOrUpdate(phasesResult.AllPhases);
+                await phaseRepo.Upsert(phasesResult.AllPhases);
 
                 // later we could look into optimizing, (as in don't re-run aggregation from scratch each time)
                 var phaseStats = PhaseStatistics.Create(0, await phaseRepo.GetAll());
-                await repos.PhaseStatistics.AddOrUpdate(phaseStats);
+                await repos.PhaseStatistics.Upsert(phaseStats);
 
                 var trainingDays = TrainingDayAccount.Create(userId, await repos.PhaseStatistics.GetAll()); // await phaseRepo.GetAll());
-                await repos.TrainingDays.AddOrUpdate(trainingDays);
+                await repos.TrainingDays.Upsert(trainingDays);
+
+                var trainingSummary = TrainingSummary.Create(userId, await repos.TrainingDays.GetAll());
+                await repos.TrainingSummaries.Upsert(new[] { trainingSummary });
             }
             catch (Azure.Data.Tables.TableTransactionFailedException ex) // FullName = "Azure.Data.Tables.TableTransactionFailedException"}
             {

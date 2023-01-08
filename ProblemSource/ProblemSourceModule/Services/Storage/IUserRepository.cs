@@ -10,7 +10,7 @@
         public string HashedPassword { get; set; } = string.Empty;
         public string Role { get; set; } = "Admin";
 
-        public List<int> Trainings { get; set; } = new();
+        public Dictionary<string, List<int>> Trainings { get; set; } = new();
 
         public static string HashPassword(string saltBase, string password)
         {

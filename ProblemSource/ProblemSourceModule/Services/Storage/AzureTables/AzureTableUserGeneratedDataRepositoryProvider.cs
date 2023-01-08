@@ -1,5 +1,6 @@
 ﻿using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
+using ProblemSourceModule.Models.Aggregates;
 
 namespace ProblemSource.Services.Storage.AzureTables
 {
@@ -8,15 +9,21 @@ namespace ProblemSource.Services.Storage.AzureTables
         public AzureTableUserGeneratedDataRepositoryProvider(ITypedTableClientFactory tableClientFactory, int userId)
         {
             var partitionKey = AzureTableConfig.IdToKey(userId);
-            Phases = new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases, p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), partitionKey);
-            TrainingDays = new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays, p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), partitionKey);
-            PhaseStatistics = new TableEntityRepository<PhaseStatistics, PhaseStatisticsTableEntity>(tableClientFactory.PhaseStatistics, p => p.ToBusinessObject(), p => PhaseStatisticsTableEntity.FromBusinessObject(p, userId), partitionKey);
+
+            Phases = new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases,
+                p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), partitionKey);
+            TrainingDays = new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays,
+                p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), partitionKey);
+            PhaseStatistics = new TableEntityRepository<PhaseStatistics, PhaseStatisticsTableEntity>(tableClientFactory.PhaseStatistics, 
+                p => p.ToBusinessObject(), p => PhaseStatisticsTableEntity.FromBusinessObject(p, userId), partitionKey);
+
+            TrainingSummaries = new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
+                new ExpandableTableEntityConverter<TrainingSummary>(t => (partitionKey, "none")), partitionKey);
         }
 
         public IBatchRepository<Phase> Phases { get; }
-
         public IBatchRepository<TrainingDayAccount> TrainingDays { get; }
-
         public IBatchRepository<PhaseStatistics> PhaseStatistics { get; }
+        public IBatchRepository<TrainingSummary> TrainingSummaries { get; }
     }
 }

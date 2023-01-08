@@ -28,7 +28,7 @@ namespace ProblemSourceModule.Tests.AzureTable
         public async Task UserRepository_AddConflict()
         {
             var repo = await InitRepo();
-            var user1 = new Services.Storage.User { Email = fixedEmail, Role = "Admin", Trainings = new List<int> { 1, 2, 3 } };
+            var user1 = new Services.Storage.User { Email = fixedEmail, Role = "Admin", Trainings = new Dictionary<string, List<int>> { { "", new List<int> { 1, 2, 3 } } } };
 
             await repo.Add(user1);
             Should.Throw<RequestFailedException>(() => repo.Add(user1));
@@ -41,7 +41,7 @@ namespace ProblemSourceModule.Tests.AzureTable
         {
             var repo = await InitRepo();
 
-            var user1 = new Services.Storage.User { Email = fixedEmail, Role = "Admin", Trainings = new List<int> { 1, 2, 3 } };
+            var user1 = new Services.Storage.User { Email = fixedEmail, Role = "Admin", Trainings = new Dictionary<string, List<int>> { { "", new List<int> { 1, 2, 3 } } } };
             await repo.Add(user1);
 
             var retrieved = await repo.Get(user1.Email);

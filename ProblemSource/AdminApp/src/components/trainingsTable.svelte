@@ -166,6 +166,6 @@
 
 </script>
 
-<div >
+<div>
 	<div id="myGrid" style="height: 500px;" class="ag-theme-alpine"></div>
 </div>

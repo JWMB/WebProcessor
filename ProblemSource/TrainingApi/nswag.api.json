@@ -333,43 +333,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/TrainingCreateDTO"
-            },
-            "x-nullable": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "x-nullable": false,
-            "description": "",
-            "schema": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Trainings"
-        ],
-        "operationId": "Trainings_Put",
-        "consumes": [
-          "application/json",
-          "text/json",
-          "application/*+json"
-        ],
-        "produces": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "parameters": [
-          {
-            "name": "dto",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/TrainingCreateDTO"
+              "$ref": "#/definitions/TrainingCreateDto"
             },
             "x-nullable": false
           }
@@ -440,6 +404,34 @@
         }
       }
     },
+    "/api/Trainings/groups": {
+      "get": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_GetGroups",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/TrainingSummaryDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Trainings/summaries": {
       "get": {
         "tags": [
@@ -458,7 +450,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/TrainingSummary"
+                "$ref": "#/definitions/TrainingSummaryWithDaysDto"
               }
             }
           }
@@ -525,10 +517,13 @@
           "type": "string"
         },
         "trainings": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "format": "int32"
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
           }
         }
       }
@@ -561,10 +556,13 @@
           "type": "string"
         },
         "trainings": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "format": "int32"
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
           }
         }
       }
@@ -768,7 +766,7 @@
         6
       ]
     },
-    "TrainingCreateDTO": {
+    "TrainingCreateDto": {
       "type": "object",
       "required": [
         "trainingPlan",
@@ -978,7 +976,56 @@
         }
       }
     },
-    "TrainingSummary": {
+    "TrainingSummaryDto": {
+      "type": "object",
+      "required": [
+        "id",
+        "username",
+        "created",
+        "trainedDays",
+        "avgResponseMinutes",
+        "avgRemainingMinutes",
+        "avgAccuracy"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "username": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "trainedDays": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "avgResponseMinutes": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "avgRemainingMinutes": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "avgAccuracy": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "firstLogin": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastLogin": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "TrainingSummaryWithDaysDto": {
       "type": "object",
       "required": [
         "id",

@@ -1,20 +1,19 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OldDb.Models;
-using ProblemSource;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
-using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
-using TrainingApi.Controllers;
 using Phase = ProblemSource.Models.Aggregates.Phase;
 
 namespace TrainingApi.Services
 {
     public interface IStatisticsProvider
     {
-        Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int accountId);
-        Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int accountId);
+        Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int trainingId);
+        Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int trainingId);
+        Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds);
     }
 
     public class OldDbStatisticsProvider : IStatisticsProvider
@@ -26,59 +25,52 @@ namespace TrainingApi.Services
             this.dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int accountId)
+        public async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int trainingId)
         {
-            var rows = await dbContext.AggregatedData.Where(o => o.AggregatorId == 1 && o.AccountId == accountId)
+            var rows = await dbContext.AggregatedData.Where(o => o.AggregatorId == 1 && o.AccountId == trainingId)
                 .ToListAsync();
             return rows.Select(o => o.ToPhaseStatistics()).OfType<PhaseStatistics>();
         }
 
-        public async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int accountId)
+        public async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int trainingId)
         {
-            var rows = await dbContext.AggregatedData.Where(o => o.AggregatorId == 2 && o.AccountId == accountId)
+            var rows = await dbContext.AggregatedData.Where(o => o.AggregatorId == 2 && o.AccountId == trainingId)
                 .ToListAsync();
             return rows.Select(o => o.ToTyped()).OfType<TrainingDayAccount>();
         }
+
+        public Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds) => throw new NotImplementedException();
     }
 
     public class StatisticsProvider : IStatisticsProvider
     {
         private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory;
-        private readonly MnemoJapanese mnemoJapanese;
-        private readonly IUserStateRepository userStateRepository;
 
-        public StatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory, MnemoJapanese mnemoJapanese, IUserStateRepository userStateRepository)
+        public StatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory)
         {
             this.userGeneratedDataRepositoryProviderFactory = userGeneratedDataRepositoryProviderFactory;
-            this.mnemoJapanese = mnemoJapanese;
-            this.userStateRepository = userStateRepository;
         }
 
-        // TODO: we should use int accountId as rowKey...
-        private static Dictionary<int, string> idToHashed = new Dictionary<int, string>();
+        private IUserGeneratedDataRepositoryProvider GetDataProvider(int trainingId) =>
+            userGeneratedDataRepositoryProviderFactory.Create(trainingId);
 
-        private IUserGeneratedDataRepositoryProvider GetDataProvider(int accountId)
+        public async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int trainingId) =>
+            await GetDataProvider(trainingId).PhaseStatistics.GetAll();
+
+        public async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int trainingId) =>
+            await GetDataProvider(trainingId).TrainingDays.GetAll();
+
+        public async Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds)
         {
-            //// TODO: we should use int accountId as rowKey
-            //if (userStateRepository is AzureTableUserStateRepository azureTableStateRepo)
-            //{
-            //    if (!idToHashed.TryGetValue(accountId, out uuid))
-            //    {
-            //        var uuids = azureTableStateRepo.GetUuids().Result;
-            //        idToHashed = uuids.Select(o => new { Key = o, Value = mnemoJapanese.ToIntWithRandom(o) })
-            //            .Where(o => o.Value.HasValue)
-            //            .ToDictionary(o => o.Value ?? 0, o => o.Key);
-            //        uuid = idToHashed.GetValueOrDefault(accountId, "");
-            //    }
-            //}
-            return userGeneratedDataRepositoryProviderFactory.Create(accountId);
+            var result = new List<TrainingSummary?>();
+            foreach (var chunk in trainingIds.Chunk(10))
+            {
+                var tasks = chunk.Select(o => GetDataProvider(o).TrainingSummaries.GetAll());
+                var resolved = await Task.WhenAll(tasks);
+                result.AddRange(resolved.SelectMany(o => o));
+            }
+            return result;
         }
-
-        public async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int accountId) =>
-            await GetDataProvider(accountId).PhaseStatistics.GetAll();
-
-        public async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int accountId) =>
-            await GetDataProvider(accountId).TrainingDays.GetAll();
     }
 
     public class RecreatedStatisticsProvider : IStatisticsProvider
@@ -100,6 +92,8 @@ namespace TrainingApi.Services
             var log = RecreateLogFromOldDb.ToLogItems(phases);
             return LogEventsToPhases.Create(log, null).PhasesCreated;
         }
+
+        public Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds) => throw new NotImplementedException();
     }
 
     public static class OldAggregatesExtensions

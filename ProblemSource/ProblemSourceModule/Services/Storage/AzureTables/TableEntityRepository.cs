@@ -1,16 +1,23 @@
 ﻿using Azure;
 using Azure.Data.Tables;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Services.Storage;
 using System.Text.RegularExpressions;
 
 namespace ProblemSource.Services.Storage.AzureTables
 {
+    public class AutoConvertTableEntityRepository<T> : TableEntityRepository<T, TableEntity> where T : class, new()
+    {
+        public AutoConvertTableEntityRepository(TableClient tableClient, ExpandableTableEntityConverter<T> converter, string partitionKeyForFilter)
+            : base(tableClient, converter.ToPoco, converter.FromPoco, partitionKeyForFilter)
+        {
+        }
+    }
+
     public class TableEntityRepository<T, TTableEntity> : IRepository<T, string>, IBatchRepository<T> where TTableEntity : class, ITableEntity, new()
     {
-        private readonly TableClient tableClient;
+        protected readonly TableClient tableClient;
         private readonly Func<TTableEntity, T> toBusinessObject;
         private readonly Func<T, TTableEntity> toTableEntity;
         private readonly string partitionKeyForFilter; // userId
@@ -23,18 +30,18 @@ namespace ProblemSource.Services.Storage.AzureTables
             this.partitionKeyForFilter = partitionKeyForFilter;
         }
 
-        private async Task<List<Response>> Upsert(IEnumerable<ITableEntity> entities)
-        {
-            var result = new List<Response>();
-            foreach (var item in entities)
-            {
-                var response = await tableClient.UpsertEntityAsync(item, TableUpdateMode.Replace);
-                if (response.IsError)
-                    throw new Exception($"{response.ReasonPhrase}");
-                result.Add(response);
-            }
-            return result;
-        }
+        //private async Task<List<Response>> Upsert(IEnumerable<ITableEntity> entities)
+        //{
+        //    var result = new List<Response>();
+        //    foreach (var item in entities)
+        //    {
+        //        var response = await tableClient.UpsertEntityAsync(item, TableUpdateMode.Replace);
+        //        if (response.IsError)
+        //            throw new Exception($"{response.ReasonPhrase}");
+        //        result.Add(response);
+        //    }
+        //    return result;
+        //}
 
         private async Task<List<Response>> UpsertBatch(IEnumerable<ITableEntity> entities)
         {
@@ -50,7 +57,7 @@ namespace ProblemSource.Services.Storage.AzureTables
         // https://learn.microsoft.com/en-us/rest/api/storageservices/Understanding-the-Table-Service-Data-Model#characters-disallowed-in-key-fields
         public static Regex InvalidKeyRegex = new Regex(@"\/|\\|#|\?");
 
-        public async Task<(IEnumerable<T> Added, IEnumerable<T> Updated)> AddOrUpdate(IEnumerable<T> items)
+        public async Task<(IEnumerable<T> Added, IEnumerable<T> Updated)> Upsert(IEnumerable<T> items)
         {
             if (!items.Any())
                 return (new List<T>(), new List<T>());

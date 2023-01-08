@@ -1,4 +1,5 @@
 ﻿using ProblemSource.Models.Aggregates;
+using ProblemSourceModule.Models.Aggregates;
 
 namespace ProblemSource.Services.Storage
 {
@@ -7,5 +8,6 @@ namespace ProblemSource.Services.Storage
         IBatchRepository<Phase> Phases { get; }
         IBatchRepository<TrainingDayAccount> TrainingDays { get; }
         IBatchRepository<PhaseStatistics> PhaseStatistics { get; }
+        IBatchRepository<TrainingSummary> TrainingSummaries { get; }
     }
 }

@@ -5,6 +5,7 @@ using ProblemSource;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -153,6 +154,7 @@ namespace Tools
 
         private static async Task CopyEntities(TableClient src, TableClient? dst, Func<TableEntity, TableEntity>? modify = null)
         {
+            // TODO: use IterateOverRows
             Console.WriteLine($"Start {src.Name}");
 
             var rows = src.QueryAsync<TableEntity>("", 100);

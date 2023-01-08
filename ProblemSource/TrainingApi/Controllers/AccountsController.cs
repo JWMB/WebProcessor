@@ -41,7 +41,6 @@ namespace TrainingApi.Controllers
             return Ok(GetUserDto.FromUser(user));
         }
 
-
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task Post([FromBody] CreateUserDto dto)
@@ -50,7 +49,7 @@ namespace TrainingApi.Controllers
             {
                 Email = dto.Username,
                 Role = dto.Role,
-                Trainings = new List<int>(),
+                Trainings = new(),
                 HashedPassword = ProblemSourceModule.Services.Storage.User.HashPassword(dto.Username, dto.Password)
             });
         }
@@ -129,7 +128,7 @@ namespace TrainingApi.Controllers
         public string Username { get; set; } = string.Empty;
 
         public string Role { get; set; } = "";
-        public List<int> Trainings { get; set; } = new();
+        public Dictionary<string, List<int>> Trainings { get; set; } = new();
 
         public static GetUserDto FromUser(User user)
         {
@@ -145,6 +144,6 @@ namespace TrainingApi.Controllers
     {
         public string? Role { get; set; }
         public string? Password { get; set; }
-        public List<int>? Trainings { get; set; }
+        public Dictionary<string, List<int>>? Trainings { get; set; }
     }
 }

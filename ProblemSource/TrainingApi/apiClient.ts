@@ -458,7 +458,7 @@ export class TrainingsClient {
         this.baseUrl = baseUrl !== undefined && baseUrl !== null ? baseUrl : "";
     }
 
-    post(dto: TrainingCreateDTO): Promise<string> {
+    post(dto: TrainingCreateDto): Promise<string> {
         let url_ = this.baseUrl + "/api/Trainings";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -479,43 +479,6 @@ export class TrainingsClient {
     }
 
     protected processPost(response: Response): Promise<string> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<string>(null as any);
-    }
-
-    put(dto: TrainingCreateDTO): Promise<string> {
-        let url_ = this.baseUrl + "/api/Trainings";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(dto);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processPut(_response);
-        });
-    }
-
-    protected processPut(response: Response): Promise<string> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -601,7 +564,40 @@ export class TrainingsClient {
         return Promise.resolve<Training>(null as any);
     }
 
-    getSummaries(): Promise<TrainingSummary[]> {
+    getGroups(): Promise<{ [key: string]: TrainingSummaryDto[]; }> {
+        let url_ = this.baseUrl + "/api/Trainings/groups";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetGroups(_response);
+        });
+    }
+
+    protected processGetGroups(response: Response): Promise<{ [key: string]: TrainingSummaryDto[]; }> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as { [key: string]: TrainingSummaryDto[]; };
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<{ [key: string]: TrainingSummaryDto[]; }>(null as any);
+    }
+
+    getSummaries(): Promise<TrainingSummaryWithDaysDto[]> {
         let url_ = this.baseUrl + "/api/Trainings/summaries";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -617,13 +613,13 @@ export class TrainingsClient {
         });
     }
 
-    protected processGetSummaries(response: Response): Promise<TrainingSummary[]> {
+    protected processGetSummaries(response: Response): Promise<TrainingSummaryWithDaysDto[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TrainingSummary[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TrainingSummaryWithDaysDto[];
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -631,7 +627,7 @@ export class TrainingsClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<TrainingSummary[]>(null as any);
+        return Promise.resolve<TrainingSummaryWithDaysDto[]>(null as any);
     }
 }
 
@@ -758,7 +754,7 @@ export class SyncClient {
 export interface GetUserDto {
     username: string;
     role: string;
-    trainings: number[];
+    trainings: { [key: string]: number[]; };
 }
 
 export interface CreateUserDto extends GetUserDto {
@@ -768,7 +764,7 @@ export interface CreateUserDto extends GetUserDto {
 export interface PatchUserDto {
     role?: string | undefined;
     password?: string | undefined;
-    trainings?: number[] | undefined;
+    trainings?: { [key: string]: number[]; } | undefined;
 }
 
 export interface LoginCredentials {
@@ -824,7 +820,7 @@ export enum LogLevel {
     None = 6,
 }
 
-export interface TrainingCreateDTO {
+export interface TrainingCreateDto {
     trainingPlan: string;
     trainingSettings: TrainingSettings;
 }
@@ -898,7 +894,19 @@ export interface Training {
     settings?: TrainingSettings | undefined;
 }
 
-export interface TrainingSummary {
+export interface TrainingSummaryDto {
+    id: number;
+    username: string;
+    created: Date;
+    trainedDays: number;
+    avgResponseMinutes: number;
+    avgRemainingMinutes: number;
+    avgAccuracy: number;
+    firstLogin?: Date | undefined;
+    lastLogin?: Date | undefined;
+}
+
+export interface TrainingSummaryWithDaysDto {
     id: number;
     uuid: string;
     days: TrainingDayAccount[];

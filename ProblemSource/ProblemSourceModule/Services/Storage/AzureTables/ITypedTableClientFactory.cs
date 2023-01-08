@@ -8,6 +8,7 @@ namespace ProblemSource.Services.Storage.AzureTables
         TableClient Phases { get; }
         TableClient TrainingDays { get; }
         TableClient PhaseStatistics { get; }
+        TableClient TrainingSummaries { get; }
         TableClient Trainings { get; }
         TableClient UserStates { get; }
         TableClient Users { get; }
@@ -26,7 +27,7 @@ namespace ProblemSource.Services.Storage.AzureTables
             tableClientOptions.Retry.MaxRetries = 1;
         }
 
-        public async Task Init()
+        public IEnumerable<TableClient> AllClients()
         {
             var props = GetType().GetProperties()
                 .Where(o => o.CanRead && !o.CanWrite)
@@ -39,18 +40,23 @@ namespace ProblemSource.Services.Storage.AzureTables
                 {
                     throw new NullReferenceException($"TableClient for '{prop.Name}' is null");
                 }
-                else
+                yield return client;
+            }
+        }
+
+        public async Task Init()
+        {
+            foreach (var client in AllClients())
+            {
+                try
                 {
-                    try
-                    {
-                        await client.CreateIfNotExistsAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        if (ex.ToString().Contains("127.0.0.1:"))
-                            throw new Exception("Could not connect to Storage Emulator - have you started it? See Azurite, https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio");
-                        throw;
-                    }
+                    await client.CreateIfNotExistsAsync();
+                }
+                catch (Exception ex)
+                {
+                    if (ex.ToString().Contains("127.0.0.1:"))
+                        throw new Exception("Could not connect to Storage Emulator - have you started it? See Azurite, https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio");
+                    throw;
                 }
             }
         }
@@ -58,6 +64,7 @@ namespace ProblemSource.Services.Storage.AzureTables
         public TableClient Phases => CreateClient(nameof(Phases));
         public TableClient TrainingDays => CreateClient(nameof(TrainingDays));
         public TableClient PhaseStatistics => CreateClient(nameof(PhaseStatistics));
+        public TableClient TrainingSummaries => CreateClient(nameof(TrainingSummaries));
         public TableClient Trainings => CreateClient(nameof(Trainings));
         public TableClient UserStates => CreateClient(nameof(UserStates));
         public TableClient Users => CreateClient(nameof(Users));
@@ -70,21 +77,5 @@ namespace ProblemSource.Services.Storage.AzureTables
             await client.CreateIfNotExistsAsync();
             return client;
         }
-
-        //public static async Task<TypedTableClientFactory> Create(AzureTableConfig config)
-        //{
-        //    var tableFactory = new TypedTableClientFactory(config);
-        //    try
-        //    {
-        //        await tableFactory.Init();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        if (ex.ToString().Contains("127.0.0.1:"))
-        //            throw new Exception("Could not connect to Storage Emulator - have you started it? See Azurite, https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio");
-        //        throw;
-        //    }
-        //    return tableFactory;
-        //}
     }
 }

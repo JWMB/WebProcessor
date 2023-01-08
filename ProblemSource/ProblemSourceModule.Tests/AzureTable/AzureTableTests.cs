@@ -32,7 +32,7 @@ namespace ProblemSourceModule.Tests.AzureTable
 
             var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableClientFactory, userId);
 
-            await Should.NotThrowAsync(async () => await userRepos.Phases.AddOrUpdate(phases));
+            await Should.NotThrowAsync(async () => await userRepos.Phases.Upsert(phases));
         }
 
         [SkippableFact]

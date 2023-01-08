@@ -12,6 +12,12 @@ namespace ProblemSourceModule.Tests.AzureTable
 {
     public class AzureAggregatesTests : AzureTableTestBase
     {
+        protected override async Task Init()
+        {
+            await base.Init();
+            await RemoveAllRows();
+        }
+
         [SkippableFact]
         public async Task Aggregates_IndividualAggregators()
         {
@@ -23,13 +29,13 @@ namespace ProblemSourceModule.Tests.AzureTable
 
             var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableClientFactory, id);
 
-            await userRepos.Phases.AddOrUpdate(phases);
+            await userRepos.Phases.Upsert(phases);
 
             var phaseStats = PhaseStatistics.Create(0, phases);
-            await userRepos.PhaseStatistics.AddOrUpdate(phaseStats);
+            await userRepos.PhaseStatistics.Upsert(phaseStats);
 
             var trainingDays = TrainingDayAccount.Create(id, await userRepos.PhaseStatistics.GetAll());
-            await userRepos.TrainingDays.AddOrUpdate(trainingDays);
+            await userRepos.TrainingDays.Upsert(trainingDays);
         }
 
         [SkippableFact]
@@ -50,14 +56,20 @@ namespace ProblemSourceModule.Tests.AzureTable
                     new PhaseEndLogItem { time = 12 },
                 }.Prepare().ToList();
 
-            var userId = fixture.Create<int>();
+            var userId = 1;
 
             var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableClientFactory, userId);
 
             var aggS = new AggregationService(fixture.Create<ILogger<AggregationService>>());
+
+            // Act
             await aggS.UpdateAggregates(userRepos, logItems, userId);
 
+            // Assert
             (await userRepos.Phases.GetAll()).Count().ShouldBe(2);
+
+            var summaries = await userRepos.TrainingSummaries.GetAll();
+            summaries.Count().ShouldBe(1);
         }
     }
 }

@@ -7,7 +7,6 @@ using Shouldly;
 using ProblemSource.Services.Storage;
 using Moq;
 using ProblemSource.Models.Aggregates;
-using ProblemSource.Services.Storage.AzureTables;
 using Microsoft.Extensions.Logging;
 
 namespace ProblemSource.Tests
@@ -43,8 +42,11 @@ namespace ProblemSource.Tests
             Mock.Get(repoProvider).Setup(o => o.Phases).Returns(new InMemoryBatchRepository<Phase>(Phase.UniqueIdWithinUser));
 
             var aggS = new AggregationService(fixture.Create<ILogger<AggregationService>>());
+           
+            // Act
             await aggS.UpdateAggregates(repoProvider, logItems, userId);
 
+            // Assert
             (await repoProvider.Phases.GetAll()).Count().ShouldBe(2);
         }
     }

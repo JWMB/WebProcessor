@@ -1,6 +1,9 @@
 ﻿using AutoFixture.AutoMoq;
 using AutoFixture;
 using ProblemSource.Services.Storage.AzureTables;
+using Azure.Data.Tables;
+using Common.Web.Services;
+using Common.Web;
 
 namespace ProblemSourceModule.Tests.AzureTable
 {
@@ -16,10 +19,20 @@ namespace ProblemSourceModule.Tests.AzureTable
             tableClientFactory = new TypedTableClientFactory(new AzureTableConfig { ConnectionString = "UseDevelopmentStorage=true", TablePrefix = "vektorTEST" });
         }
 
-        protected async Task Init()
+        protected virtual async Task Init()
         {
             Skip.If(!System.Diagnostics.Debugger.IsAttached);
             await tableClientFactory.Init();
+        }
+
+        protected async Task RemoveAllRows()
+        {
+            foreach (var client in tableClientFactory.AllClients())
+            {
+                await Services.Storage.AzureTables.AzureTableHelpers.IterateOverRows(client, "", 
+                    row => new TableTransactionAction(TableTransactionActionType.Delete, row), 
+                    async (_, tx) => await client.SubmitTransactionAsync(tx));
+            }
         }
 
         public void EnableNonDebugSkip() => Skip.If(!System.Diagnostics.Debugger.IsAttached);
