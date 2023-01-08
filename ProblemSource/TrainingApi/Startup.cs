@@ -30,8 +30,8 @@ namespace TrainingApi
             plugins = ConfigureProblemSource(services, configurationManager, env);
 
             services.AddAuthorization(options => {
-                options.AddPolicy("Admin", policy => policy.Requirements.Add(new RolesRequirement(new[] { Roles.Admin })));
-                options.AddPolicy("AdminOrTeacher", policy => policy.Requirements.Add(new RolesRequirement(new[] { Roles.Admin, Roles.Teacher })));
+                options.AddPolicy(RolesRequirement.Admin, policy => policy.Requirements.Add(new RolesRequirement(RolesRequirement.Admin)));
+                options.AddPolicy(RolesRequirement.AdminOrTeacher, policy => policy.Requirements.Add(new RolesRequirement(RolesRequirement.AdminOrTeacher)));
             });
 
             var oldDbEnabled = configurationManager.GetValue<bool>("OldDbEnabled");

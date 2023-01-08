@@ -5,7 +5,7 @@ using TrainingApi.Services;
 
 namespace TrainingApi.Controllers
 {
-    [Authorize(Roles = Roles.Admin)]
+    [Authorize(Policy = RolesRequirement.Admin)]
     [ApiController]
     [Route("api/[controller]/[action]")]
     public class AggregatesController : ControllerBase

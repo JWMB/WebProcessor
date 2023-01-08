@@ -23,14 +23,14 @@ namespace TrainingApi.Controllers
             log = logger;
         }
 
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = RolesRequirement.Admin)]
         [HttpGet]
         public async Task<IEnumerable<GetUserDto>> GetAll()
         {
             return (await userRepository.GetAll()).Select(GetUserDto.FromUser);
         }
 
-        [Authorize(Policy = "AdminOrTeacher")]
+        [Authorize(Policy = RolesRequirement.AdminOrTeacher)]
         [HttpGet]
         [Route("GetOne")] // TODO: For some reason, we need an explicit path for unit/integration tests
         [Route("{id}")]
@@ -48,7 +48,7 @@ namespace TrainingApi.Controllers
             return Ok(GetUserDto.FromUser(user));
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = RolesRequirement.Admin)]
         [HttpPost]
         public async Task Post([FromBody] CreateUserDto dto)
         {
@@ -61,7 +61,7 @@ namespace TrainingApi.Controllers
             });
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = RolesRequirement.Admin)]
         [HttpPatch]
         [Route("id")]
         public async Task<ActionResult> Patch([FromQuery] string id, [FromBody] PatchUserDto dto)

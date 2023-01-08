@@ -55,6 +55,8 @@ namespace TrainingApi.Controllers
                 throw new Exception($"Training plan not found: {dto.TrainingPlan}");
             var id = await trainingRepository.Add(new Training { TrainingPlanName = dto.TrainingPlan });
 
+            // TODO: add to User.Trainings - needs a group name
+
             return usernameHashing.Hash(mnemoJapanese.FromIntWithRandom(id));
         }
 
@@ -73,9 +75,9 @@ namespace TrainingApi.Controllers
         }
 
         [HttpGet]
-        public async Task<List<Training>> Get()
+        public async Task<IEnumerable<Training>> Get()
         {
-            return (await trainingRepository.GetAll()).ToList();
+            return await GetUsersTrainings();
         }
 
         [HttpGet]
@@ -96,7 +98,7 @@ namespace TrainingApi.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = RolesRequirement.Admin)]
         [Route("refresh")]
         public async Task<int> RefreshStatistics([FromBody] IEnumerable<int> trainingIds)
         {
@@ -186,31 +188,6 @@ namespace TrainingApi.Controllers
                 };
             }
         }
-
-        //public class GroupTrainingSummary
-        //{
-        //    public int NumTrainings { get; set; }
-        //    public int NumTrainingsStarted { get; set; }
-        //    public decimal AverageNumTrainingDays { get; set; }
-        //    public DateTimeOffset FirstLogin { get; set; }
-        //    public DateTimeOffset LastLogin { get; set; }
-        //    public decimal NumTrainingsLoggedInWeekToLastLogin { get; set; }
-
-        //    public static GroupTrainingSummary Create(IEnumerable<TrainingSummary> items)
-        //    {
-        //        var lastLogin = items.Max(o => o.LastLogin);
-        //        var checkFrom = lastLogin.AddDays(-7);
-        //        return new GroupTrainingSummary
-        //        {
-        //            NumTrainings = items.Count(),
-        //            NumTrainingsStarted = items.Count(o => o.TrainedDays > 0),
-        //            AverageNumTrainingDays = items.Average(o => 1M * o.TrainedDays),
-        //            FirstLogin = items.Min(o => o.FirstLogin),
-        //            LastLogin = lastLogin,
-        //            NumTrainingsLoggedInWeekToLastLogin = items.Count(o => o.LastLogin >= checkFrom)
-        //        };
-        //    }
-        //}
 
         public class TrainingSummaryWithDaysDto
         {
