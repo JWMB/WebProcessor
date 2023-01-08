@@ -89,6 +89,16 @@ namespace TrainingApi.Controllers
                 ).ToList());
         }
 
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [Route("refresh")]
+        public async Task<int> RefreshStatistics(IEnumerable<int> trainingIds)
+        {
+            await Task.Delay(100);
+            return trainingIds.Any() ? trainingIds.FirstOrDefault() : 0;
+        }
+
+
         [HttpGet]
         [Route("summaries")]
         public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries()

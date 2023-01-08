@@ -8,11 +8,10 @@ using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using OldDb.Models;
 using PluginModuleBase;
-using System.Security.Claims;
+using System.Data;
 using System.Text;
 using TrainingApi.Controllers;
 using TrainingApi.Services;
-using static System.Net.WebRequestMethods;
 
 namespace TrainingApi
 {
@@ -23,15 +22,22 @@ namespace TrainingApi
 
         public void ConfigureServices(IServiceCollection services, ConfigurationManager configurationManager, IWebHostEnvironment env)
         {
-            // Add services to the container.
-            services.AddScoped<TrainingDbContext>();
             services.AddScoped<IStatisticsProvider, StatisticsProvider>(); // RecreatedStatisticsProvider
             services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
 
+            //services.AddDefaultIdentity<IdentityUser>().AddRoles<IdentityRole>()
+
             plugins = ConfigureProblemSource(services, configurationManager, env);
 
-            if (System.Diagnostics.Debugger.IsAttached)
+            services.AddAuthorization(options => {
+                options.AddPolicy("Admin", policy => policy.Requirements.Add(new RolesRequirement(new[] { Roles.Admin })));
+                options.AddPolicy("AdminOrTeacher", policy => policy.Requirements.Add(new RolesRequirement(new[] { Roles.Admin, Roles.Teacher })));
+            });
+
+            var oldDbEnabled = configurationManager.GetValue<bool>("OldDbEnabled");
+            if (oldDbEnabled && System.Diagnostics.Debugger.IsAttached)
             {
+                services.AddScoped<TrainingDbContext>();
                 services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trainingdb;Trusted_Connection=True;"));
                 oldDbStartup = new OldDb.Startup();
                 oldDbStartup.ConfigureServices(services);
@@ -49,7 +55,6 @@ namespace TrainingApi
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            //problemSourceModule.Configure(app.Services);
             ServiceConfiguration.ConfigurePlugins(app.ApplicationServices, plugins);
 
             // Configure the HTTP request pipeline.
@@ -136,7 +141,7 @@ namespace TrainingApi
         private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
         {
             TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, config, "AppSettings");
-            ConfigureAuth(services, config, env);
+            ConfigureAuthentication(services, config, env);
 
             var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
             services.AddSingleton<ITableClientFactory, TableClientFactory>();
@@ -173,7 +178,7 @@ namespace TrainingApi
             });
         }
 
-        private void ConfigureAuth(IServiceCollection services, IConfiguration config, IHostEnvironment env)
+        private void ConfigureAuthentication(IServiceCollection services, IConfiguration config, IHostEnvironment env)
         {
             var combinedScheme = "JWT_OR_COOKIE";
             services.AddAuthentication(options =>

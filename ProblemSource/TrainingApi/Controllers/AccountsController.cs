@@ -23,14 +23,14 @@ namespace TrainingApi.Controllers
             log = logger;
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = "Admin")]
         [HttpGet]
         public async Task<IEnumerable<GetUserDto>> GetAll()
         {
             return (await userRepository.GetAll()).Select(GetUserDto.FromUser);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = "AdminOrTeacher")]
         [HttpGet]
         [Route("id")]
         public async Task<ActionResult<GetUserDto>> Get(string id)
