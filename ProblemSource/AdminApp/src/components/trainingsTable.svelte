@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TrainingSummary } from "src/apiClient";
+	import type { TrainingSummaryWithDaysDto } from "src/apiClient";
     import { base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { Grid, type GridOptions } from 'ag-grid-community';
@@ -8,7 +8,7 @@
 	import 'ag-grid-community/styles/ag-theme-alpine.css';
 	import { max } from "../arrayUtils";
 
-    export let trainingSummaries: TrainingSummary[] = [];
+    export let trainingSummaries: TrainingSummaryWithDaysDto[] = [];
     export let numDays = 10;
     
     function getDateString(date: Date) {
@@ -40,7 +40,7 @@
 
     let fromDate = new Date(getDatePart(addDays(new Date(latestTimestamp), -numDays)));
 
-    const formatTraining = (training: TrainingSummary) => {
+    const formatTraining = (training: TrainingSummaryWithDaysDto) => {
         const targetTime = 20;
 
         const withDayIndex = training.days.filter(d => new Date(d.startTime) >= fromDate)

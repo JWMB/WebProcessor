@@ -2,14 +2,19 @@
     import { apiFacade as apiFacadeStore } from '../../globalStore';
     import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
-	import type { TrainingSummary } from 'src/apiClient';
+	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto } from 'src/apiClient';
 	import TrainingsTable from '../../components/trainingsTable.svelte';
+	import TrainingGroupsTable from '../../components/trainingGroupsTable.svelte';
 
     // let trainingSummaries: TrainingSummary[] = [];
 
     const apiFacade = get(apiFacadeStore);
 
-    let trainingsPromise: Promise<TrainingSummary[]>;
+    let trainingsPromise: Promise<TrainingSummaryWithDaysDto[]>;
+    let trainingGroupsPromise: Promise<{[key: string]: TrainingSummaryDto[] }>;
+    let trainingGroupsPromise2: Promise<{ group: string, summaries: TrainingSummaryDto[]}[]>;
+
+    let trainingGroups: { group: string, summaries: TrainingSummaryDto[]}[] = [];
 
     async function getTrainings() {
         if (apiFacade == null) {
@@ -17,6 +22,15 @@
             return;
         }
         trainingsPromise = apiFacade.trainings.getSummaries();
+
+        trainingGroupsPromise2 = new Promise(res => {
+            apiFacade.trainings.getGroups().then(r => {
+                const asList = Object.entries(r).map(o => ({ group: o[0], summaries: o[1]}));
+                trainingGroups = asList;
+                res(asList);
+            });
+        });
+        trainingGroupsPromise = apiFacade.trainings.getGroups();
         //trainingSummaries = await apiFacade.trainings.getSummaries();
         //console.log("OK", trainingSummaries.length); // why is TrainingsTable not always updated?
     }
@@ -26,6 +40,53 @@
 
 <div>
     <h1>Trainings</h1>
+
+    <!-- {#await trainingGroupsPromise}
+        <div>Loading...</div>
+    {:then grouped}
+        {JSON.stringify(grouped)}
+        {#each Object.entries(grouped) as [grp, summaries]}
+            {grp}:
+            {#each val as v}
+                {v}
+            {/each}
+        {/each}
+    {:catch error}
+        {error}
+    {/await} -->
+    <!-- {#await trainingGroupsPromise2}
+    <div>Loading...</div>
+    {:then groups}
+        {#each groups as item}
+            {item.summaries.length}
+            {item.group}
+        {/each}
+    {:catch error}
+        {error}
+    {/await} -->
+
+    <!-- {#await trainingGroups}
+    aaa
+    {:then groups}
+        {#each groups as item}
+        {item.group}:
+            {#each item.summaries as s}
+                {s.id}
+            {/each}
+        {/each}
+    {:catch error}
+        {error}
+    {/await} -->
+
+    {#await trainingGroupsPromise2}
+    <div>Loading...</div>
+    {:then trainings}
+        <TrainingGroupsTable trainingSummaries={trainings}></TrainingGroupsTable>
+    {:catch error}
+        {error}
+    {/await}
+    
+
 
     <!-- <TrainingsTable trainingSummaries={trainingSummaries} numDays={5}></TrainingsTable> -->
     {#await trainingsPromise}
