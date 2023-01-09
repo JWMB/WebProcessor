@@ -48,7 +48,7 @@ namespace OldDb.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("Server=localhost;Database=trainingdb;Trusted_Connection=True;");
+                optionsBuilder.UseSqlServer("Server=localhost;Database=trainingdb;Trusted_Connection=True;TrustServerCertificate=True");
             }
         }
 
