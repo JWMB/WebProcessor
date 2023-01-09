@@ -2,13 +2,13 @@
 using System.Data.SqlClient;
 using System.Data;
 
-namespace TrainingApi.Services
+namespace OldDbAdapter
 {
-    public class OldDbRaw
+    public class DbSql
     {
         private readonly string connectionString;
 
-        public OldDbRaw(string connectionString)
+        public DbSql(string connectionString)
         {
             this.connectionString = connectionString;
         }
@@ -19,10 +19,17 @@ namespace TrainingApi.Services
             await connection.OpenAsync();
 
             using var command = new SqlCommand(query, connection);
-            using var reader = await command.ExecuteReaderAsync();
-            var columns = await reader.GetColumnSchemaAsync();
-            while (await reader.ReadAsync())
-                result.Add(create(reader, columns));
+            try
+            {
+                using var reader = await command.ExecuteReaderAsync();
+                var columns = await reader.GetColumnSchemaAsync();
+                while (await reader.ReadAsync())
+                    result.Add(create(reader, columns));
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Query='{query}'", ex);
+            }
             return result;
         }
     }

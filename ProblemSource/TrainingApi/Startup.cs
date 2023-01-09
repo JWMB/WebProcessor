@@ -34,14 +34,14 @@ namespace TrainingApi
                 options.AddPolicy(RolesRequirement.AdminOrTeacher, policy => policy.Requirements.Add(new RolesRequirement(RolesRequirement.AdminOrTeacher)));
             });
 
-            var oldDbEnabled = configurationManager.GetValue<bool>("OldDbEnabled");
-            if (oldDbEnabled && System.Diagnostics.Debugger.IsAttached)
-            {
-                services.AddScoped<TrainingDbContext>();
-                services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trainingdb;Trusted_Connection=True;"));
-                oldDbStartup = new OldDb.Startup();
-                oldDbStartup.ConfigureServices(services);
-            }
+            //var oldDbEnabled = configurationManager.GetValue<bool>("OldDbEnabled");
+            //if (oldDbEnabled && System.Diagnostics.Debugger.IsAttached)
+            //{
+            //    services.AddScoped<TrainingDbContext>();
+            //    services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trainingdb;Trusted_Connection=True;"));
+            //    oldDbStartup = new OldDb.Startup();
+            //    oldDbStartup.ConfigureServices(services);
+            //}
 
             services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

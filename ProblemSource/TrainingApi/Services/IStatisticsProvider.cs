@@ -73,29 +73,6 @@ namespace TrainingApi.Services
         }
     }
 
-    public class RecreatedStatisticsProvider : IStatisticsProvider
-    {
-        private readonly TrainingDbContext dbContext;
-
-        public RecreatedStatisticsProvider(TrainingDbContext dbContext)
-        {
-            this.dbContext = dbContext;
-        }
-
-        public async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int accountId) => PhaseStatistics.Create(accountId, await RecreatePhases(accountId));
-
-        public async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int accountId) => TrainingDayAccount.Create(0, await RecreatePhases(accountId));
-
-        private async Task<List<Phase>> RecreatePhases(int accountId)
-        {
-            var phases = await RecreateLogFromOldDb.GetFullPhases(dbContext, accountId);
-            var log = RecreateLogFromOldDb.ToLogItems(phases);
-            return LogEventsToPhases.Create(log, null).PhasesCreated;
-        }
-
-        public Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds) => throw new NotImplementedException();
-    }
-
     public static class OldAggregatesExtensions
     {
         public static PhaseStatistics? ToPhaseStatistics(this AggregatedDatum? row)

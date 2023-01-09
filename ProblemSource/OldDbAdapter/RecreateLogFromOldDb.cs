@@ -3,10 +3,16 @@ using OldDb.Models;
 using ProblemSource.Models;
 using ProblemSource.Models.LogItems;
 
-namespace TrainingApi.Services
+namespace OldDbAdapter
 {
     public class RecreateLogFromOldDb
     {
+        public async static Task<List<LogItem>> GetAsLogItems(TrainingDbContext db, int accountId)
+        {
+            var phases = await GetFullPhases(db, accountId);
+            return ToLogItems(phases);
+        }
+
         public async static Task<List<Phase>> GetFullPhases(TrainingDbContext db, int accountId)
         {
             return await db.Phases
@@ -18,7 +24,6 @@ namespace TrainingApi.Services
 
         public static List<LogItem> ToLogItems(IEnumerable<Phase> phasesWithIncludes)
         {
-            
             var result = new List<LogItem>();
             foreach (var phase in phasesWithIncludes.OrderBy(o => o.Time))
             {
@@ -31,7 +36,8 @@ namespace TrainingApi.Services
         {
             var result = new List<LogItem>();
 
-            result.Add(CreateLogItem(phase.Time, new NewPhaseLogItem {
+            result.Add(CreateLogItem(phase.Time, new NewPhaseLogItem
+            {
                 exercise = phase.Exercise ?? "",
                 phase_type = phase.PhaseType ?? "",
                 sequence = phase.Sequence ?? 0,
@@ -40,10 +46,11 @@ namespace TrainingApi.Services
 
             foreach (var prob in phase.Problems)
             {
-                result.Add(CreateLogItem(prob.Time, new NewProblemLogItem {
+                result.Add(CreateLogItem(prob.Time, new NewProblemLogItem
+                {
                     level = prob.Level,
                     problem_string = prob.ProblemString ?? "",
-                    problem_type = prob.ProblemType ?? "" ,
+                    problem_type = prob.ProblemType ?? "",
                 }));
 
                 foreach (var answ in prob.Answers)

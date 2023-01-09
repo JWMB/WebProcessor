@@ -24,6 +24,7 @@ namespace ProblemSource.Services
         {
             this.log = log;
         }
+
         public async Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, int userId)
         {
             // TODO: Move to async service (Azure (Durable) Functions maybe)?
