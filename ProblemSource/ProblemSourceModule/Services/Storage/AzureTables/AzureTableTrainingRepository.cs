@@ -34,6 +34,8 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
         }
 
         public async Task Update(Training item) => await repo.Update(item);
+        public async Task<int> Upsert(Training item) => int.Parse(await repo.Upsert(item));
+
         public async Task Remove(Training item) => await repo.Remove(item);
 
         public async Task<IEnumerable<Training>> GetAll() => await repo.GetAll();

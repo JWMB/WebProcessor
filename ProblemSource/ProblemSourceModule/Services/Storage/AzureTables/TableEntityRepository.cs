@@ -70,10 +70,16 @@ namespace ProblemSource.Services.Storage.AzureTables
 
             var tableEntities = items.Select(toTableEntity).ToList();
 
+            var duplicates = tableEntities.GroupBy(o => $"{o.PartitionKey}__{o.RowKey}").Where(o => o.Count() > 1).ToList();
+            if (duplicates.Any())
+            {
+                throw new Exception($"{typeof(T).Name}: Duplicate entries: {string.Join(",", duplicates.Select(o => $"{o.First().PartitionKey}/{o.First().RowKey}"))}");
+            }
+
             var invalidEntries = tableEntities.Where(o => InvalidKeyRegex.IsMatch(o.RowKey) || InvalidKeyRegex.IsMatch(o.PartitionKey));
             if (invalidEntries.Any())
             {
-                throw new Exception($"{typeof(T).Name}: Invalid key(s) for {string.Join(",", tableEntities.Select(o => $"{o.PartitionKey}/{o.RowKey}"))}");
+                throw new Exception($"{typeof(T).Name}: Invalid key(s) for {string.Join(",", invalidEntries.Select(o => $"{o.PartitionKey}/{o.RowKey}"))}");
             }
 
             try
@@ -146,6 +152,13 @@ namespace ProblemSource.Services.Storage.AzureTables
             var entity = toTableEntity(item);
             await tableClient.AddEntityAsync(entity);
             //return new TableEntityId { PartitionKey = entity.PartitionKey, RowKey = entity.RowKey };
+            return entity.RowKey;
+        }
+
+        public async Task<string> Upsert(T item)
+        {
+            var entity = toTableEntity(item);
+            await tableClient.UpsertEntityAsync(entity);
             return entity.RowKey;
         }
 

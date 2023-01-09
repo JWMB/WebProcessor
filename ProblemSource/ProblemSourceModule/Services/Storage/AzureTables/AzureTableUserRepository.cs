@@ -51,6 +51,8 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
             }
         }
 
+        public async Task<string> Upsert(User item) => await repo.Upsert(item);
+
         public async Task Update(User item) => await repo.Update(item);
         public async Task Remove(User item) => await repo.Remove(item);
 
