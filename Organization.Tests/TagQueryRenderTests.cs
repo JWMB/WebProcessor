@@ -1,6 +1,5 @@
 using Shouldly;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Organization.Tests
 {

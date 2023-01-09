@@ -5,6 +5,13 @@ namespace Common.Web
 {
     public class TypedConfiguration
     {
+        public static T Bind<T>(IConfigurationSection section) where T : new()
+        {
+            var instance = new T();
+            section.Bind(instance);
+            return instance;
+        }
+
         public static void ConfigureTypedConfiguration<T>(IServiceCollection services, IConfiguration config, string sectionKey) where T : new()
         {
             // TODO: (low) continue investigation - how to avoid reflection and get validation errors immediately
