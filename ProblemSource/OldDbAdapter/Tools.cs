@@ -55,7 +55,7 @@ WHERE groups.name LIKE 'Teacher %'";
             return byGroupName;
         }
 
-        public async Task MoveTeacherAndTrainingsToAzureTables(int adminId)
+        public async Task MoveTeacherAndTrainingsToAzureTables(int adminId, bool actuallyWrite = false)
         {
             var login = await dbContext.Admins.FirstOrDefaultAsync(o => o.Id == adminId);
             if (login == null)
@@ -76,16 +76,19 @@ WHERE groups.name LIKE 'Teacher %'";
 
             var idsByClass = classes.GroupBy(o => o.Class).ToDictionary(o => o.Key.Replace("_class ", ""), o => o.Select(o => o.Id).ToList());
 
-            IUserRepository userRepo = new AzureTableUserRepository(tableClientFactory);
-            //await userRepo.Add(new User { Email = login.Email, Role = "Teacher", Trainings = idsByClass });
-            //dbContext.Accounts.Where(o => trainingIds.Contains(o.Id)).ToListAsync();
+            if (actuallyWrite)
+            {
+                IUserRepository userRepo = new AzureTableUserRepository(tableClientFactory);
+                await userRepo.Upsert(new User { Email = login.Email, Role = "Teacher", Trainings = idsByClass });
+            }
+
             var allTrainingIds = idsByClass.SelectMany(o => o.Value).ToList();
 
             Console.WriteLine($"move {allTrainingIds.Count} trainings");
-            await MoveToAzureTables(allTrainingIds); // idsByClass.First().Value);
+            await MoveToAzureTables(allTrainingIds, actuallyWrite); // idsByClass.First().Value);
         }
 
-        public async Task MoveToAzureTables(IEnumerable<int> trainingIds)
+        public async Task MoveToAzureTables(IEnumerable<int> trainingIds, bool actuallyWrite = false)
         {
             var accounts = await dbContext.Accounts.Where(o => trainingIds.Contains(o.Id)).ToListAsync();
 
@@ -104,14 +107,16 @@ WHERE groups.name LIKE 'Teacher %'";
                     settings = System.Text.Json.JsonSerializer.Deserialize<TrainingSettings>(acc.TrainingSettings);
                     if (settings == null)
                     {
-
                     }
                 }
                 var repos = new AzureTableUserGeneratedDataRepositoryProvider(tableClientFactory, trainingId);
                 var logItems = await RecreateLogFromOldDb.GetAsLogItems(dbContext, trainingId);
 
-                //await trainingRepo.Add(new Training { Id = trainingId, Settings = settings, TrainingPlanName = $"Id_{acc.TrainingPlanId}" });
-                //await aggregationService.UpdateAggregates(repos, logItems, trainingId);
+                if (actuallyWrite)
+                {
+                    await trainingRepo.Upsert(new Training { Id = trainingId, Settings = settings, TrainingPlanName = $"Id_{acc.TrainingPlanId}" });
+                    await aggregationService.UpdateAggregates(repos, logItems, trainingId);
+                }
             }
         }
 

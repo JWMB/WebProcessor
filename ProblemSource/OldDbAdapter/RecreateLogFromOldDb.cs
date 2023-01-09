@@ -22,14 +22,39 @@ namespace OldDbAdapter
                 .Where(o => o.AccountId == accountId).ToListAsync();
         }
 
-        public static List<LogItem> ToLogItems(IEnumerable<Phase> phasesWithIncludes)
+        public static List<LogItem> ToLogItems(List<Phase> phasesWithIncludes)
         {
             var result = new List<LogItem>();
+
+
+
+            // Identify duplicates
+            var groupedByKey = phasesWithIncludes.GroupBy(GetRowKey).ToList();
+            var withSameKey = groupedByKey.Where(o => o.Count() > 1);
+            if (withSameKey.Any())
+            {
+                var otherProps = withSameKey.Select(o => new { o.Key, Values = o.Select(p => 
+                    new { p.Sequence, p.PhaseType, UserTestCount = p.UserTests.Count, ProblemCount = p.Problems.Count(), AnswerCount = p.Problems.Sum(q => q.Answers.Count) }).Distinct().ToList() });
+                var withDiffering = otherProps.Where(o => o.Values.Count > 1);
+                if (withDiffering.Any())
+                {
+                    //throw new Exception($"Same key but different items: {System.Text.Json.JsonSerializer.Serialize(withDiffering)}");
+                }
+                foreach (var grp in withSameKey)
+                {
+                    var duplicates = phasesWithIncludes.Where(o => GetRowKey(o) == grp.Key).ToList();
+                    foreach (var item in duplicates.OrderByDescending(o => o.UserTests.Count + o.Problems.Sum(q => q.Answers.Count)).Skip(1))
+                        phasesWithIncludes.Remove(item);
+                }
+            }
+
             foreach (var phase in phasesWithIncludes.OrderBy(o => o.Time))
             {
                 result.AddRange(PhaseToLogItems(phase));
             }
             return result;
+
+            string GetRowKey(Phase p) => $"{p.TrainingDay}_{(p.Exercise ?? "").Replace("#", "")}_{p.Time}"; // ProblemSource.Models.Aggregates.Phase.UniqueIdWithinUser()
         }
 
         public static List<LogItem> PhaseToLogItems(Phase phase)
