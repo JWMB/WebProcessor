@@ -31,9 +31,9 @@ namespace ProblemSource.Models.Aggregates
         {
             return new Phase
             {
-                exercise = "N/A",
+                exercise = "undef",
                 time = time,
-                phase_type = "N/A",
+                phase_type = "undef",
                 training_day = trainingDay,
             };
         }

@@ -26,9 +26,7 @@ namespace OldDbAdapter
         {
             var result = new List<LogItem>();
 
-
-
-            // Identify duplicates
+            // Identify and remove duplicates:
             var groupedByKey = phasesWithIncludes.GroupBy(GetRowKey).ToList();
             var withSameKey = groupedByKey.Where(o => o.Count() > 1);
             if (withSameKey.Any())
@@ -46,6 +44,11 @@ namespace OldDbAdapter
                     foreach (var item in duplicates.OrderByDescending(o => o.UserTests.Count + o.Problems.Sum(q => q.Answers.Count)).Skip(1))
                         phasesWithIncludes.Remove(item);
                 }
+            }
+
+            foreach (var p in phasesWithIncludes.Where(o => o.Exercise?.Contains("N/A") == true))
+            {
+                p.Exercise = "undef";
             }
 
             foreach (var phase in phasesWithIncludes.OrderBy(o => o.Time))
