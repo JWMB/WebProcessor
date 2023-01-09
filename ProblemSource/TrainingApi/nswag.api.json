@@ -525,6 +525,14 @@
           "application/json",
           "text/json"
         ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "group",
+            "in": "query",
+            "x-nullable": true
+          }
+        ],
         "responses": {
           "200": {
             "x-nullable": false,

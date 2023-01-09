@@ -4,10 +4,12 @@
 
     import 'ag-grid-community/styles/ag-grid.css';
 	import 'ag-grid-community/styles/ag-theme-alpine.css';
-	import { onMount } from "svelte";
+	import { createEventDispatcher, onMount } from "svelte";
 	import { min, max, sum } from "../arrayUtils";
 
     export let trainingSummaries: { group: string, summaries: TrainingSummaryDto[]}[] = [];
+    
+    const dispatch = createEventDispatcher<{clickedRow: {group: string}}>();
 
     const xxx = (params: any, func: (data: TrainingSummaryDto[]) => any) => {
         const typed = <TrainingSummaryDto[]>params.value;
@@ -34,7 +36,8 @@
             { headerName: "Latest", field: "summaries", cellRenderer: (params: any) => 
                 xxx(params, ts => max(ts.filter(t => t.lastLogin != null).map(t => t.lastLogin!.valueOf()))) },
 		],
-		rowData: trainingSummaries
+		rowData: trainingSummaries,
+        onRowClicked: e => dispatch('clickedRow', { group: e.data.group})
 	};
 
     onMount(() => {

@@ -18,7 +18,7 @@
     let trainingDays: TrainingDayAccount[];
     let singleTrainingDays: TrainingDayAccount[];
   
-    let accountId: number;
+    export let accountId: number;
     const loadData = async () => {
       [trainingDays, phaseStatistics] = await Promise.all([
         apiFacade.aggregates.trainingDayAccount(accountId),
@@ -48,7 +48,7 @@
     };
   
     onMount(() => {
-      accountId = parseFloat(new URLSearchParams(window.location.search).get("id") ?? "715955")
+      if (accountId == null) accountId = parseFloat(new URLSearchParams(window.location.search).get("id") ?? "715955")
       loadData();
     });
   </script>

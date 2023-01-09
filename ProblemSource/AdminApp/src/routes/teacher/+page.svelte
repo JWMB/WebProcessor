@@ -5,23 +5,33 @@
 	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto } from 'src/apiClient';
 	import TrainingsTable from '../../components/trainingsTable.svelte';
 	import TrainingGroupsTable from '../../components/trainingGroupsTable.svelte';
+	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 
     // let trainingSummaries: TrainingSummary[] = [];
 
     const apiFacade = get(apiFacadeStore);
 
     let trainingsPromise: Promise<TrainingSummaryWithDaysDto[]>;
-    let trainingGroupsPromise: Promise<{[key: string]: TrainingSummaryDto[] }>;
+    // let trainingGroupsPromise: Promise<{[key: string]: TrainingSummaryDto[] }>;
     let trainingGroupsPromise2: Promise<{ group: string, summaries: TrainingSummaryDto[]}[]>;
 
     let trainingGroups: { group: string, summaries: TrainingSummaryDto[]}[] = [];
+
+    const clickedGroupRow = (e: CustomEvent<any>) => {
+        trainingsPromise = apiFacade.trainings.getSummaries(e.detail.group);
+    };
+    const clickedTrainingRow = (e: CustomEvent<any>) => {
+        console.log("training", e.detail.id);
+        goto(`${base}/training?id=${e.detail.id}`);
+    };
 
     async function getTrainings() {
         if (apiFacade == null) {
             console.error("apiFacade null");
             return;
         }
-        trainingsPromise = apiFacade.trainings.getSummaries();
+        //trainingsPromise = apiFacade.trainings.getSummaries();
 
         trainingGroupsPromise2 = new Promise(res => {
             apiFacade.trainings.getGroups().then(r => {
@@ -30,7 +40,7 @@
                 res(asList);
             });
         });
-        trainingGroupsPromise = apiFacade.trainings.getGroups();
+        // trainingGroupsPromise = apiFacade.trainings.getGroups();
         //trainingSummaries = await apiFacade.trainings.getSummaries();
         //console.log("OK", trainingSummaries.length); // why is TrainingsTable not always updated?
     }
@@ -39,8 +49,7 @@
 </script>
 
 <div>
-    <h1>Trainings</h1>
-
+    <h2>Classes</h2>
     <!-- {#await trainingGroupsPromise}
         <div>Loading...</div>
     {:then grouped}
@@ -81,18 +90,18 @@
     {#await trainingGroupsPromise2}
     <div>Loading...</div>
     {:then trainings}
-        <TrainingGroupsTable trainingSummaries={trainings}></TrainingGroupsTable>
+        <TrainingGroupsTable trainingSummaries={trainings} on:clickedRow={clickedGroupRow}></TrainingGroupsTable>
     {:catch error}
         {error}
     {/await}
     
 
-
+    <h2>Trainings</h2>
     <!-- <TrainingsTable trainingSummaries={trainingSummaries} numDays={5}></TrainingsTable> -->
     {#await trainingsPromise}
         <div>Loading...</div>
     {:then trainings}
-        <TrainingsTable trainingSummaries={trainings} numDays={14}></TrainingsTable>
+        <TrainingsTable trainingSummaries={trainings} numDays={14} on:clickedRow={clickedTrainingRow}></TrainingsTable>
     {:catch error}
         {error}
     {/await}

@@ -81,6 +81,7 @@ WHERE groups.name LIKE 'Teacher %'";
                 IUserRepository userRepo = new AzureTableUserRepository(tableClientFactory);
                 await userRepo.Upsert(new User { Email = login.Email, Role = "Teacher", Trainings = idsByClass });
             }
+            return;
 
             var allTrainingIds = idsByClass.SelectMany(o => o.Value).ToList();
 

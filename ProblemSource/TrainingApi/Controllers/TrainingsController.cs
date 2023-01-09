@@ -112,9 +112,9 @@ namespace TrainingApi.Controllers
 
         [HttpGet]
         [Route("summaries")]
-        public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries()
+        public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery]string? group = null)
         {
-            var trainings = await GetUsersTrainings();
+            var trainings = await GetUsersTrainings(group);
             var trainingDayTasks = trainings.Select(o => statisticsProvider.GetTrainingDays(o.Id)).ToList();
 
             var results = await Task.WhenAll(trainingDayTasks);
@@ -132,7 +132,7 @@ namespace TrainingApi.Controllers
             }).ToList();
         }
 
-        private async Task<Dictionary<string, List<Training>>> GetUserGroups()
+        private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null)
         {
             var nameClaim = User.Claims.First(o => o.Type == ClaimTypes.Name).Value;
             var user = await userRepository.Get(nameClaim);
@@ -149,15 +149,21 @@ namespace TrainingApi.Controllers
                 groupToIds.Add("", (await trainingRepository.GetAll()).ToList());
             else
             {
-                var trainings = await trainingRepository.GetByIds(user.Trainings.SelectMany(o => o.Value).Distinct());
+                List<int> fetchIds;
+                if (group != null && user.Trainings.TryGetValue(group, out var ids))
+                    fetchIds = ids;
+                else
+                    fetchIds = user.Trainings.SelectMany(o => o.Value).Distinct().ToList();
+
+                var trainings = await trainingRepository.GetByIds(fetchIds);
                 groupToIds = user.Trainings.ToDictionary(o => o.Key, o => trainings.Where(t => o.Value.Contains(t.Id)).ToList());
             }
             return groupToIds;
         }
 
-        private async Task<IEnumerable<Training>> GetUsersTrainings()
+        private async Task<IEnumerable<Training>> GetUsersTrainings(string? group = null)
         {
-            return (await GetUserGroups()).SelectMany(o => o.Value).DistinctBy(o => o.Id);
+            return (await GetUserGroups(group)).SelectMany(o => o.Value).DistinctBy(o => o.Id);
         }
 
         public class TrainingSummaryDto

@@ -1,16 +1,19 @@
 <script lang="ts">
 	import type { TrainingSummaryWithDaysDto } from "src/apiClient";
     import { base } from '$app/paths';
-	import { onMount } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import { Grid, type GridOptions } from 'ag-grid-community';
 
     import 'ag-grid-community/styles/ag-grid.css';
 	import 'ag-grid-community/styles/ag-theme-alpine.css';
 	import { max } from "../arrayUtils";
+	import { identity } from "svelte/internal";
 
     export let trainingSummaries: TrainingSummaryWithDaysDto[] = [];
     export let numDays = 10;
     
+    const dispatch = createEventDispatcher<{clickedRow: {id: number}}>();
+
     function getDateString(date: Date) {
         const str = date.toISOString();
         const index = str.indexOf("T");
@@ -59,6 +62,7 @@
         const daysSinceStart = getDaysBetween(new Date(firstDay.startTime), new Date(latestTimestamp));
         // console.log(uuid, training.days.length, daysSinceStart);
         return {
+            id: training.id,
             uuid: uuid,
             startDate: firstDay.startTime,
             totalDays: training.days.length,
@@ -151,7 +155,8 @@
 			},
 			{ headerName: `Sessions ${getDateString(fromDate)} - ${getDateString(addDays(fromDate, numDays))}`, children: dayColumns }
 		],
-		rowData: trainings
+		rowData: trainings,
+        onRowClicked: e => dispatch('clickedRow', { id: e.data.id })
 	};
 
     onMount(() => {

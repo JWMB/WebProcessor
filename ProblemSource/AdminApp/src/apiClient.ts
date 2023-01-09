@@ -672,8 +672,10 @@ export class TrainingsClient {
         return Promise.resolve<number>(null as any);
     }
 
-    getSummaries(): Promise<TrainingSummaryWithDaysDto[]> {
-        let url_ = this.baseUrl + "/api/Trainings/summaries";
+    getSummaries(group: string | null | undefined): Promise<TrainingSummaryWithDaysDto[]> {
+        let url_ = this.baseUrl + "/api/Trainings/summaries?";
+        if (group !== undefined && group !== null)
+            url_ += "group=" + encodeURIComponent("" + group) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
