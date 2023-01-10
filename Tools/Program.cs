@@ -17,14 +17,15 @@ if (Console.ReadKey().Key != ConsoleKey.Y)
 
 var section = config.GetRequiredSection("AppSettings:AzureTable");
 var tableConfig = TypedConfiguration.Bind<ProblemSource.Services.Storage.AzureTables.AzureTableConfig>(section);
-var dbTools = new OldDbAdapter.Tools(tableConfig);
-//var byGroupName = await dbTools.GetTeachersWithTrainings(20, 15);
-//var withMostTrainings = byGroupName.OrderByDescending(o => o.Value.Count()).First();
-//await dbTools.MoveTeacherAndTrainingsToAzureTables(29158, true);
-var items = await dbTools.CreateLogFromOldTraining(1054598);
-var goodJson = "[" + string.Join(",\n  ", items.Select(o => $"{Newtonsoft.Json.JsonConvert.SerializeObject(o)}")) + "]";
 
-//var connStr = config.GetOrThrow<string>("AppSettings:AzureTable:ConnectionString");
+//var dbTools = new OldDbAdapter.Tools(tableConfig);
+////var byGroupName = await dbTools.GetTeachersWithTrainings(20, 15);
+////var withMostTrainings = byGroupName.OrderByDescending(o => o.Value.Count()).First();
+////await dbTools.MoveTeacherAndTrainingsToAzureTables(29158, true);
+//var items = await dbTools.CreateLogFromOldTraining(1054598);
+//var goodJson = "[" + string.Join(",\n  ", items.Select(o => $"{Newtonsoft.Json.JsonConvert.SerializeObject(o)}")) + "]";
+
+//var connStr = tableConfig.ConnectionString; // config.GetOrThrow<string>("AppSettings:AzureTable:ConnectionString");
 ////var migrator = new MigrateAzureTableColumn(connStr, "UseDevelopmentStorage=true");
 //var migrator = new MigrateAzureTableColumn(connStr, connStr);
 //await migrator.MigrateAll();

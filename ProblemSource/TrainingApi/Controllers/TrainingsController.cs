@@ -5,6 +5,7 @@ using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
+using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
 using System.Linq;

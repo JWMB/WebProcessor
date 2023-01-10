@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ProblemSourceModule.Services.Storage;
 using TrainingApi.Services;
+using ProblemSourceModule.Models;
 
 namespace TrainingApi.Controllers
 {
@@ -57,7 +58,7 @@ namespace TrainingApi.Controllers
                 Email = dto.Username,
                 Role = dto.Role,
                 Trainings = new(),
-                HashedPassword = ProblemSourceModule.Services.Storage.User.HashPassword(dto.Username, dto.Password)
+                HashedPassword = ProblemSourceModule.Models.User.HashPassword(dto.Username, dto.Password)
             });
         }
 
@@ -70,7 +71,7 @@ namespace TrainingApi.Controllers
             if (user == null)
                 return NotFound();
             if (dto.Role != null) user.Role = dto.Role;
-            if (dto.Password != null) user.HashedPassword = ProblemSourceModule.Services.Storage.User.HashPassword(id, dto.Password);
+            if (dto.Password != null) user.HashedPassword = ProblemSourceModule.Models.User.HashPassword(id, dto.Password);
             if (dto.Trainings != null) user.Trainings = dto.Trainings;
 
             await userRepository.Update(user);

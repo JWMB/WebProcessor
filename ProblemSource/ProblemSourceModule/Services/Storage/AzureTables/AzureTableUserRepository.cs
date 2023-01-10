@@ -3,6 +3,7 @@ using Azure.Data.Tables;
 using Common;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
+using ProblemSourceModule.Models;
 
 namespace ProblemSourceModule.Services.Storage.AzureTables
 {

@@ -1,4 +1,5 @@
-﻿using ProblemSourceModule.Services.Storage;
+﻿using ProblemSourceModule.Models;
+using ProblemSourceModule.Services.Storage;
 
 namespace TrainingApi.Services
 {

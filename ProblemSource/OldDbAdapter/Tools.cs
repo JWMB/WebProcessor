@@ -6,6 +6,7 @@ using Organization;
 using ProblemSource.Models;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
 

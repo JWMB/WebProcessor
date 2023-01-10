@@ -9,6 +9,7 @@ using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSource.Tests;
+using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
 

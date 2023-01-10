@@ -9,6 +9,7 @@ using ProblemSource.Models;
 using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
+using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
 

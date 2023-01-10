@@ -101,7 +101,7 @@ namespace TrainingApi
                             autologin = false;
 
                         if (autologin)
-                            context.User = AccountsController.CreatePrincipal(new ProblemSourceModule.Services.Storage.User { Email = "dev", Role = Roles.Admin });
+                            context.User = AccountsController.CreatePrincipal(new ProblemSourceModule.Models.User { Email = "dev", Role = Roles.Admin });
                     }
 
                     await next.Invoke();

@@ -19,7 +19,7 @@ namespace TrainingApiTests
         {
             var requestedId = "somename";
             var ts = new MyTestServer();
-            var client = ts.CreateClient(role == null ? null : new User { Email = userIdSameAsRequested ? requestedId : "", Role = role });
+            var client = ts.CreateClient(role == null ? null : new ProblemSourceModule.Models.User { Email = userIdSameAsRequested ? requestedId : "", Role = role });
 
             //var response = await client.GetAsync($"/api/accounts/jonas"); // Doesn't even reach AccountsController...
             var response = await client.GetAsync($"/api/accounts/getone?id={requestedId}");
@@ -33,7 +33,7 @@ namespace TrainingApiTests
         public async Task Accounts_Authorize_AdminOnly(string? role, HttpStatusCode expected)
         {
             var ts = new MyTestServer();
-            var client = ts.CreateClient(role == null ? null : new User { Role = role });
+            var client = ts.CreateClient(role == null ? null : new ProblemSourceModule.Models.User { Role = role });
 
             //var responseX = await client.PostAsJsonAsync($"/api/trainings/refresh", new List<int> { 1,2,3 });
 

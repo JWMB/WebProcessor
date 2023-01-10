@@ -1,6 +1,6 @@
-﻿using ProblemSourceModule.Services.Storage;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using TrainingApi.Controllers;
+using ProblemSourceModule.Models;
 
 namespace TrainingApiTests.IntegrationHelpers
 {

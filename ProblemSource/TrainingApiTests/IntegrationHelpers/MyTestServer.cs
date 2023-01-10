@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Services.Storage;
 using System.Net.Http.Headers;
+using ProblemSourceModule.Models;
 
 namespace TrainingApiTests.IntegrationHelpers
 {

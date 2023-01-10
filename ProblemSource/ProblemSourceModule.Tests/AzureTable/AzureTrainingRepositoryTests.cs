@@ -3,6 +3,7 @@ using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
 using System.Linq;
+using ProblemSourceModule.Models;
 
 namespace ProblemSourceModule.Tests.AzureTable
 {
