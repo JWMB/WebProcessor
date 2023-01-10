@@ -9,7 +9,6 @@ namespace ProblemSourceModule.Tests.AzureTable
     {
         private readonly string fixedEmail = "unittester";
 
-
         private async Task<AzureTableUserRepository> InitRepo()
         {
             await Init();
@@ -46,9 +45,25 @@ namespace ProblemSourceModule.Tests.AzureTable
 
             var retrieved = await repo.Get(user1.Email);
 
-            retrieved.ShouldBeEquivalentTo(user1);
+            if (retrieved == null) throw new NullReferenceException(nameof(retrieved));
+            // https://github.com/shouldly/shouldly/issues/767 - nested Dictiotionary not comparable
+            // TODO: retrieved.ShouldBeEquivalentTo(user1);
+            retrieved!.Trainings.ShouldBeEquivalentTo(user1.Trainings);
+            new { retrieved.Email, retrieved.HashedPassword, retrieved.Role }.ShouldBeEquivalentTo(new { user1.Email, user1.HashedPassword, user1.Role });
 
             await repo.Remove(user1);
+        }
+    }
+
+    public static class ShouldlyLikeExtensions
+    {
+        public static void ShouldBeEquivalentTo<TKey, TValue>(this IDictionary<TKey, TValue> a, IDictionary<TKey, TValue> b)
+        {
+            a.Keys.ShouldBe(b.Keys, ignoreOrder: true);
+            foreach (var kv in a)
+            {
+                kv.Value.ShouldBeEquivalentTo(b[kv.Key]);
+            }
         }
     }
 }

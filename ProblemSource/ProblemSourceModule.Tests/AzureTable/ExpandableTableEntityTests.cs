@@ -3,8 +3,6 @@ using ProblemSource.Models.Aggregates;
 using Common;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSource.Services.Storage.AzureTables;
-using ProblemSourceModule.Services.Storage;
-using System;
 
 namespace ProblemSourceModule.Tests.AzureTable
 {
@@ -35,7 +33,7 @@ namespace ProblemSourceModule.Tests.AzureTable
                     }).ToList()
             };
 
-            var converter = new ExpandableTableEntityConverter<Phase>(o => ("none", AzureTableConfig.IdToKey(o.id)));
+            var converter = new ExpandableTableEntityConverter<Phase>(o => new TableFilter("none", AzureTableConfig.IdToKey(o.id)));
 
             var tableEntity = converter.FromPoco(phase);
             // problems is too large to fit in one column - should be exploded into several

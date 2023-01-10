@@ -9,10 +9,29 @@ namespace ProblemSource.Services.Storage.AzureTables
 {
     public class AutoConvertTableEntityRepository<T> : TableEntityRepository<T, TableEntity> where T : class, new()
     {
-        public AutoConvertTableEntityRepository(TableClient tableClient, ExpandableTableEntityConverter<T> converter, string partitionKeyForFilter)
-            : base(tableClient, converter.ToPoco, converter.FromPoco, partitionKeyForFilter)
+        public AutoConvertTableEntityRepository(TableClient tableClient, ExpandableTableEntityConverter<T> converter, TableFilter keyFilter)
+            : base(tableClient, converter.ToPoco, converter.FromPoco, keyFilter)
         {
         }
+    }
+
+
+    public class TableFilter
+    {
+        public TableFilter(string partition, string? row = null)
+        {
+            Partition = partition;
+            Row = row;
+        }
+
+        public string Partition { get; private set; }
+        public string? Row { get; private set; }
+
+        public string Render() => 
+            RenderPartitionOnly()
+            + (string.IsNullOrEmpty(Row) ? "" : $" and {nameof(ITableEntity.RowKey)} eq '{Row}'");
+
+        public string RenderPartitionOnly() => $"{nameof(ITableEntity.PartitionKey)} eq '{Partition}'";
     }
 
     public class TableEntityRepository<T, TTableEntity> : IRepository<T, string>, IBatchRepository<T> where TTableEntity : class, ITableEntity, new()
@@ -20,14 +39,14 @@ namespace ProblemSource.Services.Storage.AzureTables
         protected readonly TableClient tableClient;
         private readonly Func<TTableEntity, T> toBusinessObject;
         private readonly Func<T, TTableEntity> toTableEntity;
-        private readonly string partitionKeyForFilter; // userId
+        private readonly TableFilter keyForFilter;
 
-        public TableEntityRepository(TableClient tableClient, Func<TTableEntity, T> toBusinessObject, Func<T, TTableEntity> toTableEntity, string partitionKeyForFilter)
+        public TableEntityRepository(TableClient tableClient, Func<TTableEntity, T> toBusinessObject, Func<T, TTableEntity> toTableEntity, TableFilter keyForFilter)
         {
             this.tableClient = tableClient;
             this.toBusinessObject = toBusinessObject;
             this.toTableEntity = toTableEntity;
-            this.partitionKeyForFilter = partitionKeyForFilter;
+            this.keyForFilter = keyForFilter;
         }
 
         private async Task<List<Response>> UpsertBatch(IEnumerable<ITableEntity> entities)
@@ -101,7 +120,7 @@ namespace ProblemSource.Services.Storage.AzureTables
             var result = new Dictionary<string, T?>();
             foreach (var chunk in rowKeys.Chunk(50))
             {
-                var tasks = chunk.Select(o => tableClient.GetEntityIfExistsAsync<TTableEntity>(partitionKey ?? partitionKeyForFilter, o));
+                var tasks = chunk.Select(o => tableClient.GetEntityIfExistsAsync<TTableEntity>(partitionKey ?? keyForFilter.Partition, o));
                 var partial = await Task.WhenAll(tasks);
                 var kvs = partial.Select((o, i) => new KeyValuePair<string, T?>(chunk[i], o.HasValue ? toBusinessObject(o.Value) : default(T)));  //KeyValuePair<string, T?>.Create(i, o.HasValue ? toBusinessObject(o.Value) : null));
                 results.AddRange(kvs);
@@ -111,8 +130,7 @@ namespace ProblemSource.Services.Storage.AzureTables
 
         public async Task<IEnumerable<T>> GetAll()
         {
-            var filter = $"{nameof(ITableEntity.PartitionKey)} eq '{partitionKeyForFilter}'";
-            return await GetWithFilter(filter);
+            return await GetWithFilter(keyForFilter.Render());
         }
 
         private async Task<IEnumerable<T>> GetWithFilter(string filter)
@@ -129,8 +147,7 @@ namespace ProblemSource.Services.Storage.AzureTables
 
         public async Task<T?> Get(string id)
         {
-            //var response = await tableClient.GetEntityIfExistsAsync<TTableEntity>(id.PartitionKey, id.RowKey);
-            var response = await tableClient.GetEntityIfExistsAsync<TTableEntity>(partitionKeyForFilter, id);
+            var response = await tableClient.GetEntityIfExistsAsync<TTableEntity>(keyForFilter.Partition, id);
             return response.HasValue ? toBusinessObject(response.Value) : default;
         }
 
@@ -138,7 +155,6 @@ namespace ProblemSource.Services.Storage.AzureTables
         {
             var entity = toTableEntity(item);
             await tableClient.AddEntityAsync(entity);
-            //return new TableEntityId { PartitionKey = entity.PartitionKey, RowKey = entity.RowKey };
             return entity.RowKey;
         }
 

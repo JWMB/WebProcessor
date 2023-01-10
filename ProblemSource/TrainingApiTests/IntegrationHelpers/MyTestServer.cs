@@ -24,13 +24,24 @@ namespace TrainingApiTests.IntegrationHelpers
             return client;
         }
 
-        public MyTestServer()
+        public MyTestServer(Dictionary<string, string>? config = null, Action<IServiceCollection>? configureTestServices = null)
         {
             fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
-            Server = X();
+
+            if (configureTestServices == null)
+            {
+                configureTestServices = services =>
+                {
+                    services.AddSingleton(sp => fixture.Create<IUserRepository>());
+                    services.AddSingleton(sp => fixture.Create<IUserGeneratedDataRepositoryProviderFactory>());
+                    services.AddSingleton(sp => fixture.Create<ITrainingRepository>());
+                };
+            }
+
+            Server = CreateServer(config, configureTestServices);
         }
 
-        private TestServer X()
+        private TestServer CreateServer(Dictionary<string, string>? config = null, Action<IServiceCollection>? configureTestServices = null)
         {
             var factory = new WebApplicationFactory<TrainingApi.Startup>()
                 .WithWebHostBuilder(builder =>
@@ -38,7 +49,8 @@ namespace TrainingApiTests.IntegrationHelpers
                     builder.ConfigureAppConfiguration((context, configBuilder) =>
                     {
                         configBuilder.AddJsonFile("appsettings.json");
-                        //configBuilder.AddInMemoryCollection(new Dictionary<string, string?> { { "RawConfigProperty", "OverriddenValue" } });
+                        if (config != null)
+                            configBuilder.AddInMemoryCollection(config!);
                     });
 
                     builder.ConfigureTestServices(services =>
@@ -51,16 +63,14 @@ namespace TrainingApiTests.IntegrationHelpers
 
                         services.AddTransient<IStartupFilter, TestStartupFilter>();
 
-                        services.AddSingleton(sp => fixture.Create<IUserRepository>());
-                        services.AddSingleton(sp => fixture.Create<IUserGeneratedDataRepositoryProviderFactory>());
-                        services.AddSingleton(sp => fixture.Create<ITrainingRepository>());
+                        configureTestServices?.Invoke(services);
                     });
                 });
 
             return factory.Server;
         }
 
-        //private TestServer Y()
+        //private TestServer CreateServer()
         //{
         //    var testServer = new TestServer(new WebHostBuilder()
         //        .ConfigureAppConfiguration((context, builder) =>

@@ -10,9 +10,9 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
         private static readonly int maxLength = 32 * 1024;
         private static readonly string expandedColumnListPropertyName = "__ExpandedColumns";
 
-        private readonly Func<T, (string partitionKey, string rowKey)> idFunc;
+        private readonly Func<T, TableFilter> idFunc;
 
-        public ExpandableTableEntityConverter(Func<T, (string partitionKey, string rowKey)> idFunc)
+        public ExpandableTableEntityConverter(Func<T, TableFilter> idFunc)
         {
             this.idFunc = idFunc;
         }
@@ -68,7 +68,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             return poco;
         }
 
-        public static TableEntity FromPoco(T obj, Func<T, (string partitionKey, string rowKey)> idFunc)
+        public static TableEntity FromPoco(T obj, Func<T, TableFilter> idFunc)
         {
             var entity = new TableEntity();
 
@@ -99,8 +99,8 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                 entity[expandedColumnListPropertyName] = expandedProps;
 
             var id = idFunc(obj);
-            entity.RowKey = id.rowKey;
-            entity.PartitionKey = id.partitionKey;
+            entity.RowKey = id.Row;
+            entity.PartitionKey = id.Partition;
 
             return entity;
         }

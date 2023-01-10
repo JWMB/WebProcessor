@@ -15,8 +15,8 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
         public AzureTableTrainingRepository(ITypedTableClientFactory tableClientFactory)
         {
             tableClient = tableClientFactory.Trainings;
-            converter = new ExpandableTableEntityConverter<Training>(t => (staticPartitionKey, AzureTableConfig.IdToKey(t.Id)));
-            repo = new TableEntityRepository<Training, TableEntity>(tableClient, converter.ToPoco, converter.FromPoco, staticPartitionKey);
+            converter = new ExpandableTableEntityConverter<Training>(t => new TableFilter(staticPartitionKey, AzureTableConfig.IdToKey(t.Id)));
+            repo = new TableEntityRepository<Training, TableEntity>(tableClient, converter.ToPoco, converter.FromPoco, new TableFilter(staticPartitionKey));
         }
 
         public async Task<Training?> Get(int id) => await repo.Get(AzureTableConfig.IdToKey(id));

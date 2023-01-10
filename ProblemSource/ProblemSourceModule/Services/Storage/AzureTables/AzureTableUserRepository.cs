@@ -16,8 +16,8 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
         {
             var staticPartitionKey = "none";
             tableClient = tableClientFactory.Users;
-            converter = new ExpandableTableEntityConverter<User>(t => (staticPartitionKey, ConvertToKey(t.Email)));
-            repo = new TableEntityRepository<User, TableEntity>(tableClient, converter.ToPoco, converter.FromPoco, staticPartitionKey);
+            converter = new ExpandableTableEntityConverter<User>(t => new TableFilter(staticPartitionKey, ConvertToKey(t.Email)));
+            repo = new TableEntityRepository<User, TableEntity>(tableClient, converter.ToPoco, converter.FromPoco, new TableFilter(staticPartitionKey));
         }
 
         private string ConvertToKey(string email) => TableKeyEncoding.Encode(email);

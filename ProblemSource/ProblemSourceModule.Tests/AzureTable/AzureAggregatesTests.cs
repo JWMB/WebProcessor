@@ -59,6 +59,8 @@ namespace ProblemSourceModule.Tests.AzureTable
             var userId = 1;
 
             var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableClientFactory, userId);
+            // Pre-assert
+            (await userRepos.Phases.GetAll()).Count().ShouldBe(0);
 
             var aggS = new AggregationService(fixture.Create<ILogger<AggregationService>>());
 
