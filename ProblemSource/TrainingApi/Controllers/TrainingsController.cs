@@ -112,12 +112,20 @@ namespace TrainingApi.Controllers
 
         [HttpGet]
         [Route("summaries")]
-        public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery]string? group = null)
+        public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery] string? group = null)
         {
             var trainings = await GetUsersTrainings(group);
             var trainingDayTasks = trainings.Select(o => statisticsProvider.GetTrainingDays(o.Id)).ToList();
 
-            var results = await Task.WhenAll(trainingDayTasks);
+            IEnumerable<TrainingDayAccount>[] results;
+            try
+            {
+                results = await Task.WhenAll(trainingDayTasks);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
 
             var tdDict = results
                 .Where(o => o.Any())

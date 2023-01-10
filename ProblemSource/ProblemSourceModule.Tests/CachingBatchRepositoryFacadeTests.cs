@@ -10,7 +10,6 @@ namespace ProblemSourceModule.Tests
         public async Task CachingBatchRepository_Added_Updated()
         {
             var memoryCache = new MemoryCache(Microsoft.Extensions.Options.Options.Create(new MemoryCacheOptions { }));
-
             var repo = new InMemoryBatchRepository<Item>(o => $"id={o}");
             var cachingRepo = new CachingBatchRepositoryFacade<Item>(memoryCache, repo, "prefix", o => $"{o.Id}");
 
@@ -24,6 +23,27 @@ namespace ProblemSourceModule.Tests
 
             var all = await cachingRepo.GetAll();
             all.Count().ShouldBe(3);
+        }
+
+        [Fact]
+        public async Task CachingBatchRepository_Seeding()
+        {
+            var memoryCache = new MemoryCache(Microsoft.Extensions.Options.Options.Create(new MemoryCacheOptions { }));
+
+            var repo = new InMemoryBatchRepository<Item>(o => $"id={o}");
+            var cachingRepo = new CachingBatchRepositoryFacade<Item>(memoryCache, repo, "prefix", o => $"{o.Id}");
+
+            await repo.Upsert(new[] { new Item { Id = 1, Name = "a" }, new Item { Id = 2, Name = "b" } });
+
+            var all = await cachingRepo.GetAll();
+            all.Count().ShouldBe(2);
+
+            // Instantiate again, same cache is used so same result
+            repo = new InMemoryBatchRepository<Item>(o => $"id={o}");
+            cachingRepo = new CachingBatchRepositoryFacade<Item>(memoryCache, repo, "prefix", o => $"{o.Id}");
+
+            all = await cachingRepo.GetAll();
+            all.Count().ShouldBe(2);
         }
 
         public class Item

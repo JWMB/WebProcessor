@@ -13,9 +13,8 @@ namespace ProblemSource.Services.Storage
         private readonly IBatchRepository<T> repo;
         private readonly Func<T, string> createKeySuffix;
         private readonly string cacheKeyPrefix;
-
-        //private readonly ConcurrentDictionary<string, T> cached = new();
         private readonly IMemoryCache cache;
+        private bool isSeeded = false;
 
         public CachingBatchRepositoryFacade(IMemoryCache cache, IBatchRepository<T> repo, string cacheKeyPrefix, Func<T, string> createKeySuffix)
         {
@@ -31,9 +30,24 @@ namespace ProblemSource.Services.Storage
         //public async Task Update(T item) => await repo.Update(item);
         //public Task<TKey> Upsert(T item) => throw new NotImplementedException();
 
-        public Task<IEnumerable<T>> GetAll()
+        private async Task SeedCache()
         {
-            return Task.FromResult(GetCachedByKeys(GetCachedKeys()));
+            if (isSeeded)
+                return;
+            var isSeededKey = $"_{cacheKeyPrefix}_seeded";
+            if (cache.Get<bool?>(isSeededKey) == true)
+                return;
+            var all = await repo.GetAll();
+            foreach (var item in all)
+                cache.Set(CreateKey(item), item);
+            isSeeded = true;
+            cache.Set(isSeededKey, true);
+        }
+
+        public async Task<IEnumerable<T>> GetAll()
+        {
+            await SeedCache();
+            return GetCachedByKeys(GetCachedKeys());
         }
 
         private IEnumerable<T> GetCachedByKeys(IEnumerable<string> keys)
@@ -50,6 +64,8 @@ namespace ProblemSource.Services.Storage
 
         public async Task<(IEnumerable<T> Added, IEnumerable<T> Updated)> Upsert(IEnumerable<T> items)
         {
+            await SeedCache();
+
             var cachedKeys = GetCachedKeys();
             var lookupByKey = items.ToDictionary(CreateKey, o => o);
             //var result = await repo.Upsert(items);
