@@ -45,13 +45,13 @@ namespace ProblemSource.Services
                 var phaseStats = PhaseStatistics.Create(0, await phaseRepo.GetAll());
                 await repos.PhaseStatistics.Upsert(phaseStats);
 
-                var trainingDays = TrainingDayAccount.Create(userId, await repos.PhaseStatistics.GetAll()); // await phaseRepo.GetAll());
+                var trainingDays = TrainingDayAccount.Create(userId, await repos.PhaseStatistics.GetAll());
                 await repos.TrainingDays.Upsert(trainingDays);
 
                 var trainingSummary = TrainingSummary.Create(userId, await repos.TrainingDays.GetAll());
                 await repos.TrainingSummaries.Upsert(new[] { trainingSummary });
             }
-            catch (Azure.Data.Tables.TableTransactionFailedException ex) // FullName = "Azure.Data.Tables.TableTransactionFailedException"}
+            catch (Azure.Data.Tables.TableTransactionFailedException ex)
             {
                 log.LogError($"UpdateAggregates", ex);
             }

@@ -81,12 +81,11 @@ WHERE groups.name LIKE 'Teacher %'";
                 IUserRepository userRepo = new AzureTableUserRepository(tableClientFactory);
                 await userRepo.Upsert(new User { Email = login.Email, Role = "Teacher", Trainings = idsByClass });
             }
-            return;
 
             var allTrainingIds = idsByClass.SelectMany(o => o.Value).ToList();
 
             Console.WriteLine($"move {allTrainingIds.Count} trainings");
-            await MoveToAzureTables(allTrainingIds, actuallyWrite); // idsByClass.First().Value);
+            await MoveToAzureTables(allTrainingIds, actuallyWrite);
         }
 
         public async Task MoveToAzureTables(IEnumerable<int> trainingIds, bool actuallyWrite = false)

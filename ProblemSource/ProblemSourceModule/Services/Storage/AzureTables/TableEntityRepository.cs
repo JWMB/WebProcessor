@@ -30,19 +30,6 @@ namespace ProblemSource.Services.Storage.AzureTables
             this.partitionKeyForFilter = partitionKeyForFilter;
         }
 
-        //private async Task<List<Response>> Upsert(IEnumerable<ITableEntity> entities)
-        //{
-        //    var result = new List<Response>();
-        //    foreach (var item in entities)
-        //    {
-        //        var response = await tableClient.UpsertEntityAsync(item, TableUpdateMode.Replace);
-        //        if (response.IsError)
-        //            throw new Exception($"{response.ReasonPhrase}");
-        //        result.Add(response);
-        //    }
-        //    return result;
-        //}
-
         private async Task<List<Response>> UpsertBatch(IEnumerable<ITableEntity> entities)
         {
             var batch = new List<TableTransactionAction>(entities.Select(f => new TableTransactionAction(TableTransactionActionType.UpsertMerge, f)));
