@@ -14,13 +14,19 @@ namespace ProblemSourceModule.Tests.AzureTable
         {
             fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
 
-            tableClientFactory = new TypedTableClientFactory(new AzureTableConfig { ConnectionString = "UseDevelopmentStorage=true", TablePrefix = "vektorTEST" });
+            tableClientFactory = CreateTypedTableClientFactory();
         }
 
-        protected virtual async Task Init()
+        public static TypedTableClientFactory CreateTypedTableClientFactory() =>
+            new TypedTableClientFactory(new AzureTableConfig { ConnectionString = "UseDevelopmentStorage=true", TablePrefix = "vektorTEST" });
+
+        protected virtual async Task Init(bool removeAllRows = false)
         {
             Skip.If(!System.Diagnostics.Debugger.IsAttached);
             await tableClientFactory.Init();
+
+            if (removeAllRows)
+                await RemoveAllRows();
         }
 
         protected async Task RemoveAllRows()

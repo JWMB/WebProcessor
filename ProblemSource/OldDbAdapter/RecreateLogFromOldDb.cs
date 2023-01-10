@@ -58,7 +58,10 @@ namespace OldDbAdapter
             foreach (var phase in ordered)
             {
                 if (phase.TrainingDay > previous.TrainingDay)
+                {
+                    // TODO: construct UserStatePushLogItem:s..?
                     result.Add(CreateLogItem(previous.Time, new EndOfDayLogItem { training_day = previous.TrainingDay }));
+                }
 
                 result.AddRange(PhaseToLogItems(phase));
 

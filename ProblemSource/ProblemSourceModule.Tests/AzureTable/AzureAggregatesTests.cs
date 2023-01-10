@@ -12,16 +12,10 @@ namespace ProblemSourceModule.Tests.AzureTable
 {
     public class AzureAggregatesTests : AzureTableTestBase
     {
-        protected override async Task Init()
-        {
-            await base.Init();
-            await RemoveAllRows();
-        }
-
         [SkippableFact]
         public async Task Aggregates_IndividualAggregators()
         {
-            await Init();
+            await Init(removeAllRows: true);
 
             var id = 1;
 

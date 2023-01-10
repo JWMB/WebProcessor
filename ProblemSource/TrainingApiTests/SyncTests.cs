@@ -13,8 +13,10 @@ namespace WebApi.Tests
         {
             Skip.If(!System.Diagnostics.Debugger.IsAttached);
 
-            client = new MyTestServer(services => { })
-                .CreateClient();
+            client = new MyTestServer(
+                services => { },
+                config: new Dictionary<string, string> { { "AppSettings:AzureTables:TablePrefix", "vektorTEST" } }
+                ).CreateClient();
         }
 
         [SkippableFact]

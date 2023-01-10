@@ -10,11 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="AzureTable\training1054598.json" />
+    <None Remove="AzureTable\training1054598.txt" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="AzureTable\training1054598.json">
+    <Content Include="AzureTable\training1054598.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

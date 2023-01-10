@@ -37,6 +37,10 @@
                         current = new List<T> { item };
                     }
                 }
+                else
+                {
+                    current.Add(item);
+                }
             }
             yield return current;
         }

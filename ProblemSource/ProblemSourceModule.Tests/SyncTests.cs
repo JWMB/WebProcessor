@@ -31,12 +31,11 @@ namespace ProblemSource.Tests
             var mockUserStateRepo = new Mock<IBatchRepository<UserGeneratedState>>();
             userStateRepository = mockUserStateRepo.Object;
 
-            var mockRepoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
-            mockRepoProvider.Setup(o => o.UserStates).Returns(mockUserStateRepo.Object);
-            //var mockRepoProvider = new XX();
+            //var mockRepoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
+            //mockRepoProvider.Setup(o => o.UserStates).Returns(mockUserStateRepo.Object);
 
-            var mockRepoProviderFactory = new Mock<IUserGeneratedDataRepositoryProviderFactory>();
-            mockRepoProviderFactory.Setup(o => o.Create(It.IsAny<int>())).Returns(mockRepoProvider.Object);
+            //var mockRepoProviderFactory = new Mock<IUserGeneratedDataRepositoryProviderFactory>();
+            //mockRepoProviderFactory.Setup(o => o.Create(It.IsAny<int>())).Returns(mockRepoProvider.Object);
 
             var mockTrainingRepo = new Mock<ITrainingRepository>();
             mockTrainingRepo.Setup(o => o.Get(It.IsAny<int>())).ReturnsAsync(() => new Training { TrainingPlanName = "2017 HT template Default" });
@@ -46,7 +45,8 @@ namespace ProblemSource.Tests
 
             pipeline = new ProblemSourceProcessingMiddleware(new EmbeddedTrainingPlanRepository(),
                 mockClientSessionManager.Object, dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(),
-                mockRepoProviderFactory.Object, new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
+                TestHelpers.MockDataRepositoryProviderFactory(userStateRepo: userStateRepository),
+                new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
                 mockTrainingRepo.Object,
                 fixture.Create<ILogger<ProblemSourceProcessingMiddleware>>());
         }
@@ -72,8 +72,6 @@ namespace ProblemSource.Tests
                 Uuid = "musa tadube",
                 Events = originalEvents.ToArray()
             };
-
-            Mock.Get(userStateRepository).Setup(o => o.GetAll()).Returns(Task.FromResult<IEnumerable<UserGeneratedState>>(new List<UserGeneratedState>()));
 
             // Act
             var _ = await pipeline.Sync(input);
