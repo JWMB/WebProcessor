@@ -1051,12 +1051,16 @@
       "type": "object",
       "required": [
         "id",
+        "username",
         "trainingPlanName"
       ],
       "properties": {
         "id": {
           "type": "integer",
           "format": "int32"
+        },
+        "username": {
+          "type": "string"
         },
         "trainingPlanName": {
           "type": "string"
@@ -1119,7 +1123,7 @@
       "type": "object",
       "required": [
         "id",
-        "uuid",
+        "username",
         "days"
       ],
       "properties": {
@@ -1127,7 +1131,7 @@
           "type": "integer",
           "format": "int32"
         },
-        "uuid": {
+        "username": {
           "type": "string"
         },
         "days": {

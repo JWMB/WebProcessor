@@ -1,5 +1,7 @@
 ﻿using Common.Web;
 using Microsoft.Extensions.Configuration;
+using ProblemSource.Services.Storage.AzureTables;
+using Tools;
 
 var builder = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -16,7 +18,10 @@ if (Console.ReadKey().Key != ConsoleKey.Y)
 }
 
 var section = config.GetRequiredSection("AppSettings:AzureTable");
-var tableConfig = TypedConfiguration.Bind<ProblemSource.Services.Storage.AzureTables.AzureTableConfig>(section);
+var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
+
+// update Trainings table
+await AddTrainingUsername.Run(tableConfig);
 
 //var dbTools = new OldDbAdapter.Tools(tableConfig);
 ////var byGroupName = await dbTools.GetTeachersWithTrainings(20, 15);

@@ -58,7 +58,7 @@
                 
         const firstDay = training.days[0] || { accountUuid: "N/A", startTime: new Date() };
         // const lastDay = training.days[training.days.length - 1] || firstDay;
-        const uuid = firstDay.accountUuid;
+        const uuid = training.username; // firstDay.accountUuid;
         const daysSinceStart = getDaysBetween(new Date(firstDay.startTime), new Date(latestTimestamp));
         // console.log(uuid, training.days.length, daysSinceStart);
         return {

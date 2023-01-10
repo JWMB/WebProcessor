@@ -967,6 +967,7 @@ export interface TrainingSyncSettings {
 
 export interface Training {
     id: number;
+    username: string;
     trainingPlanName: string;
     settings?: TrainingSettings | undefined;
 }
@@ -985,7 +986,7 @@ export interface TrainingSummaryDto {
 
 export interface TrainingSummaryWithDaysDto {
     id: number;
-    uuid: string;
+    username: string;
     days: TrainingDayAccount[];
 }
 

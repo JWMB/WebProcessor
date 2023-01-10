@@ -51,14 +51,19 @@ namespace TrainingApi.Controllers
         [HttpPost]
         public async Task<string> Post(TrainingCreateDto dto)
         {
+            // {"timeLimits":[33.0],"uniqueGroupWeights":null,"manuallyUnlockedExercises":null,"idleTimeout":null,"cultureCode":"sv-SE","customData":null,"triggers":null,"pacifistRatio":0.1,"trainingPlanOverrides":null,"syncSettings":null,"alarmClockInvisible":null}
             var tp = await trainingPlanRepository.Get(dto.TrainingPlan);
             if (tp == null)
                 throw new Exception($"Training plan not found: {dto.TrainingPlan}");
-            var id = await trainingRepository.Add(new Training { TrainingPlanName = dto.TrainingPlan });
+            var training = new Training { TrainingPlanName = dto.TrainingPlan };
+            var id = await trainingRepository.Add(training);
+
+            training.Username = usernameHashing.Hash(mnemoJapanese.FromIntWithRandom(id));
+            await trainingRepository.Update(training);
 
             // TODO: add to User.Trainings - needs a group name
 
-            return usernameHashing.Hash(mnemoJapanese.FromIntWithRandom(id));
+            return training.Username;
         }
 
         //[HttpPut]
@@ -136,7 +141,7 @@ namespace TrainingApi.Controllers
             return tdDict.Select(kv => new TrainingSummaryWithDaysDto
             {
                 Id = kv.Key,
-                Uuid = kv.Value.FirstOrDefault()?.AccountUuid ?? "N/A", // TODO: if no days trained, Uuid will be missing - should be part of Training
+                Username = trainings.FirstOrDefault(o => o.Id == kv.Key)?.Username ?? "", // kv.Value.FirstOrDefault()?.AccountUuid ?? "N/A", // TODO: if no days trained, Uuid will be missing - should be part of Training
                 Days = kv.Value
             }).ToList();
         }
@@ -192,7 +197,7 @@ namespace TrainingApi.Controllers
                 return new TrainingSummaryDto
                 {
                     Id = training.Id,
-                    Username = "N/A",
+                    Username = training.Username,
                     Created = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero), // training.CreatedAt
                     TrainedDays = summary?.TrainedDays ?? 0,
                     AvgResponseMinutes = summary?.AvgResponseMinutes ?? 0,
@@ -207,7 +212,7 @@ namespace TrainingApi.Controllers
         public class TrainingSummaryWithDaysDto
         {
             public int Id { get; set; }
-            public string Uuid { get; set; } = string.Empty;
+            public string Username { get; set; } = string.Empty;
             public List<TrainingDayAccount> Days { get; set; } = new();
         }
 
