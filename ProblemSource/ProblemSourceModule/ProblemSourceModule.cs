@@ -26,6 +26,7 @@ namespace ProblemSource
 
             services.AddSingleton<ITrainingPlanRepository, EmbeddedTrainingPlanRepository>();
             services.AddSingleton<IAggregationService, AggregationService>(); // AggregationService NullAggregationService
+            services.AddMemoryCache();
 
             ConfigureForAzureTables(services);
             ConfigureUsernameHashing(services);
@@ -42,13 +43,13 @@ namespace ProblemSource
 
         public void ConfigureForAzureTables(IServiceCollection services)
         {
-            //services.AddSingleton<IUserStateRepository, AzureTableUserStateRepository>(); //InMemoryUserStateRepository
             services.AddSingleton<IUserRepository, AzureTableUserRepository>();
             services.AddSingleton<ITypedTableClientFactory, TypedTableClientFactory>();
             RemoveService<ITableClientFactory>(services);
             services.AddSingleton<ITableClientFactory>(sp => sp.GetRequiredService<ITypedTableClientFactory>());
 
-            services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
+            //services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
+            services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, CachingAzureTableUserGeneratedDataRepositoriesProviderFactory>();
 
             services.AddSingleton<ITrainingRepository, AzureTableTrainingRepository>();
         }

@@ -13,8 +13,6 @@ namespace ProblemSource.Services
             public List<Phase> PhasesUpdated { get; } = new();
             public List<string> Errors { get; } = new();
             public List<LogItem> Unprocessed { get; } = new();
-
-            public List<Phase> AllPhases => PhasesUpdated.Concat(PhasesCreated).ToList();
         }
 
         public static Result Create(IEnumerable<LogItem> logItems, IEnumerable<Phase>? preexisting = null)

@@ -35,7 +35,7 @@ namespace ProblemSourceModule.Tests.AzureTable
         [SkippableFact]
         public async Task AggregatesUpdated_Table()
         {
-            await Init();
+            await Init(removeAllRows: true);
 
             // Arrange
             var logItems = new List<LogItem> {

@@ -11,11 +11,6 @@ namespace ProblemSource.Services
         Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, int userId);
     }
 
-    //public class NullAggregationService : IAggregationService
-    //{
-    //    public Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, int userId) => Task.CompletedTask;
-    //}
-
     public class AggregationService : IAggregationService
     {
         private readonly ILogger<AggregationService> log;
@@ -39,7 +34,7 @@ namespace ProblemSource.Services
 
             try
             {
-                await phaseRepo.Upsert(phasesResult.AllPhases);
+                await phaseRepo.Upsert(phasesResult.PhasesUpdated.Concat(phasesResult.PhasesCreated));
 
                 // later we could look into optimizing, (as in don't re-run aggregation from scratch each time)
                 var phaseStats = PhaseStatistics.Create(0, await phaseRepo.GetAll());

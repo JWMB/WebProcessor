@@ -60,7 +60,7 @@ namespace ProblemSource.Services.Storage.AzureTables
                 var response = await tableClient.SubmitTransactionAsync(chunk);
                 if (response.Value.Any(o => o.IsError))
                     throw new Exception($"SubmitTransaction errors: {string.Join("\n", response.Value.Where(o => o.IsError).Select(o => o.ReasonPhrase))}");
-                result.AddRange(result);
+                result.AddRange(response.Value);
             }
 
             return result;
@@ -92,6 +92,8 @@ namespace ProblemSource.Services.Storage.AzureTables
             {
                 var responses = await UpsertBatch(tableEntities);
 
+                // TODO: do we always get 204 with TableTransactionActionType.UpsertMerge ?
+                // would UpsertReplace always get 201? Goddamn azure tables...
                 var itemAndStatus = items.Select((o, i) => new { Item = o, responses[i].Status });
                 return (itemAndStatus.Where(o => o.Status == 201).Select(o => o.Item), itemAndStatus.Where(o => o.Status != 201).Select(o => o.Item));
             }

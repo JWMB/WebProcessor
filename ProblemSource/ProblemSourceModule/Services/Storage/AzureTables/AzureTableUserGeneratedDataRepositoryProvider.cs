@@ -3,44 +3,79 @@ using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models.Aggregates;
+using System.Collections.Concurrent;
 
 namespace ProblemSource.Services.Storage.AzureTables
 {
     public class AzureTableUserGeneratedDataRepositoryProvider : IUserGeneratedDataRepositoryProvider
     {
+        private readonly ITypedTableClientFactory tableClientFactory;
+        private readonly int userId;
+
         public AzureTableUserGeneratedDataRepositoryProvider(ITypedTableClientFactory tableClientFactory, int userId)
         {
+            this.tableClientFactory = tableClientFactory;
+            this.userId = userId;
+
             var partitionKey = AzureTableConfig.IdToKey(userId);
 
-            Phases = Create(new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases,
+            phases = new Lazy<IBatchRepository<Phase>>(() =>
+                Create(new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases,
                 p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), new TableFilter(partitionKey)),
-                Phase.UniqueIdWithinUser);
-            TrainingDays = Create(new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays,
+                Phase.UniqueIdWithinUser));
+            //Phases = Create(new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases,
+            //    p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), new TableFilter(partitionKey)),
+            //    Phase.UniqueIdWithinUser);
+            trainingDays = new Lazy<IBatchRepository<TrainingDayAccount>>(() =>
+                Create(new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays,
                 p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), new TableFilter(partitionKey)),
-                o => o.TrainingDay.ToString());
-            PhaseStatistics = Create(new TableEntityRepository<PhaseStatistics, PhaseStatisticsTableEntity>(tableClientFactory.PhaseStatistics, 
+                o => o.TrainingDay.ToString()));
+            //TrainingDays = Create(new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays,
+            //    p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), new TableFilter(partitionKey)),
+            //    o => o.TrainingDay.ToString());
+            phaseStatistics = new Lazy<IBatchRepository<PhaseStatistics>>(() =>
+                Create(new TableEntityRepository<PhaseStatistics, PhaseStatisticsTableEntity>(tableClientFactory.PhaseStatistics,
                 p => p.ToBusinessObject(), p => PhaseStatisticsTableEntity.FromBusinessObject(p, userId), new TableFilter(partitionKey)),
-                Models.Aggregates.PhaseStatistics.UniqueIdWithinUser);
+                Models.Aggregates.PhaseStatistics.UniqueIdWithinUser));
+            //PhaseStatistics = Create(new TableEntityRepository<PhaseStatistics, PhaseStatisticsTableEntity>(tableClientFactory.PhaseStatistics, 
+            //    p => p.ToBusinessObject(), p => PhaseStatisticsTableEntity.FromBusinessObject(p, userId), new TableFilter(partitionKey)),
+            //    Models.Aggregates.PhaseStatistics.UniqueIdWithinUser);
 
-            TrainingSummaries = Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
+            trainingSummaries = new Lazy<IBatchRepository<TrainingSummary>>(() =>
+                Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
                 new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
-                t => partitionKey);
-            UserStates = Create(new AutoConvertTableEntityRepository<UserGeneratedState>(tableClientFactory.UserStates,
+                t => partitionKey));
+            //TrainingSummaries = Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
+            //    new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
+            //    t => partitionKey);
+            userStates = new Lazy<IBatchRepository<UserGeneratedState>>(() => Create(new AutoConvertTableEntityRepository<UserGeneratedState>(tableClientFactory.UserStates,
                 new ExpandableTableEntityConverter<UserGeneratedState>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
-                t => partitionKey);
+                t => partitionKey));
+            //UserStates = Create(new AutoConvertTableEntityRepository<UserGeneratedState>(tableClientFactory.UserStates,
+            //    new ExpandableTableEntityConverter<UserGeneratedState>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
+            //    t => partitionKey);
         }
 
-        private IBatchRepository<T> Create<T>(IBatchRepository<T> inner, Func<T, string> createKey)
-        {
-            return inner;
-            //return new CachingBatchRepositoryFacade<T>(inner, createKey);
-        }
+        protected virtual IBatchRepository<T> Create<T>(IBatchRepository<T> inner, Func<T, string> createKey) => inner;
 
-        public IBatchRepository<Phase> Phases { get; }
-        public IBatchRepository<TrainingDayAccount> TrainingDays { get; }
-        public IBatchRepository<PhaseStatistics> PhaseStatistics { get; }
-        public IBatchRepository<TrainingSummary> TrainingSummaries { get; }
-        //public IRepository<UserGeneratedState, string> UserStates { get; }
-        public IBatchRepository<UserGeneratedState> UserStates { get; }
+        //public IBatchRepository<Phase> Phases { get; }
+        //public IBatchRepository<TrainingDayAccount> TrainingDays { get; }
+        //public IBatchRepository<PhaseStatistics> PhaseStatistics { get; }
+        //public IBatchRepository<TrainingSummary> TrainingSummaries { get; }
+        //public IBatchRepository<UserGeneratedState> UserStates { get; }
+
+        private Lazy<IBatchRepository<Phase>> phases;
+        public IBatchRepository<Phase> Phases => phases.Value;
+
+        private Lazy<IBatchRepository<TrainingDayAccount>> trainingDays;
+        public IBatchRepository<TrainingDayAccount> TrainingDays => trainingDays.Value;
+
+        private Lazy<IBatchRepository<PhaseStatistics>> phaseStatistics;
+        public IBatchRepository<PhaseStatistics> PhaseStatistics => phaseStatistics.Value;
+
+        private Lazy<IBatchRepository<TrainingSummary>> trainingSummaries;
+        public IBatchRepository<TrainingSummary> TrainingSummaries => trainingSummaries.Value;
+        private Lazy<IBatchRepository<UserGeneratedState>> userStates;
+        public IBatchRepository<UserGeneratedState> UserStates => userStates.Value;
     }
 }

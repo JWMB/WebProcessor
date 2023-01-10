@@ -1,5 +1,6 @@
 ﻿using AutoFixture;
 using Common;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProblemSource;
@@ -33,7 +34,9 @@ namespace ProblemSourceModule.Tests.AzureTable
             var mockClientSessionManager = new Mock<IClientSessionManager>();
             mockClientSessionManager.Setup(o => o.GetOrOpenSession(It.IsAny<string>(), It.IsAny<string?>())).Returns(new GetOrCreateSessionResult(new Session("")));
 
-            var repoProviderFactory = new AzureTableUserGeneratedDataRepositoriesProviderFactory(AzureTableTestBase.CreateTypedTableClientFactory());
+            //var repoProviderFactory = new AzureTableUserGeneratedDataRepositoriesProviderFactory(CreateTypedTableClientFactory());
+            var memoryCache = new MemoryCache(Microsoft.Extensions.Options.Options.Create(new MemoryCacheOptions { }));
+            var repoProviderFactory = new CachingAzureTableUserGeneratedDataRepositoriesProviderFactory(memoryCache, CreateTypedTableClientFactory());
 
             var training = new Training { Id = 1 };
 
@@ -69,7 +72,7 @@ namespace ProblemSourceModule.Tests.AzureTable
             (await repoProvider.PhaseStatistics.GetAll()).Count().ShouldBe(logItems.OfType<NewPhaseLogItem>().Count());
 
             var total = times.Select(o => o.TotalSeconds).Sum();
-            //201 seconds
+            //201 no cache, 160 simple cache, 7-8 no update
         }
     }
 }

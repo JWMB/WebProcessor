@@ -6,7 +6,6 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
-using OldDb.Models;
 using PluginModuleBase;
 using System.Data;
 using System.Text;
@@ -24,8 +23,6 @@ namespace TrainingApi
         {
             services.AddScoped<IStatisticsProvider, StatisticsProvider>(); // RecreatedStatisticsProvider
             services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
-
-            //services.AddDefaultIdentity<IdentityUser>().AddRoles<IdentityRole>()
 
             plugins = ConfigureProblemSource(services, configurationManager, env);
 
