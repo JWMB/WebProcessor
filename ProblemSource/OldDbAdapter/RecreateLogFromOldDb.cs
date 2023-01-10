@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using OldDb.Models;
 using ProblemSource.Models;
 using ProblemSource.Models.LogItems;
@@ -26,6 +27,9 @@ namespace OldDbAdapter
         {
             var result = new List<LogItem>();
 
+            if (!phasesWithIncludes.Any())
+                return result;
+
             // Identify and remove duplicates:
             var groupedByKey = phasesWithIncludes.GroupBy(GetRowKey).ToList();
             var withSameKey = groupedByKey.Where(o => o.Count() > 1);
@@ -47,13 +51,18 @@ namespace OldDbAdapter
             }
 
             foreach (var p in phasesWithIncludes.Where(o => o.Exercise?.Contains("N/A") == true))
-            {
                 p.Exercise = "undef";
-            }
 
-            foreach (var phase in phasesWithIncludes.OrderBy(o => o.Time))
+            var ordered = phasesWithIncludes.OrderBy(o => o.TrainingDay).ThenBy(o => o.Time);
+            var previous = ordered.First();
+            foreach (var phase in ordered)
             {
+                if (phase.TrainingDay > previous.TrainingDay)
+                    result.Add(CreateLogItem(previous.Time, new EndOfDayLogItem { training_day = previous.TrainingDay }));
+
                 result.AddRange(PhaseToLogItems(phase));
+
+                previous = phase;
             }
             return result;
 

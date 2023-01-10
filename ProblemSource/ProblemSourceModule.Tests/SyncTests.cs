@@ -1,24 +1,16 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
-using Azure;
-using Azure.Data.Tables;
-using Castle.Core.Logging;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PluginModuleBase;
 using ProblemSource.Models;
-using ProblemSource.Models.Aggregates;
 using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
-using ProblemSource.Services.Storage.AzureTables;
-using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
-using System;
-using Xunit.Sdk;
 
 namespace ProblemSource.Tests
 {
@@ -26,7 +18,8 @@ namespace ProblemSource.Tests
     {
         private readonly IFixture fixture;
         private readonly IDataSink dataSink;
-        private readonly IUserStateRepository userStateRepository;
+        //private readonly IUserStateRepository userStateRepository;
+        private readonly IBatchRepository<UserGeneratedState> userStateRepository;
         private readonly ProblemSourceProcessingMiddleware pipeline;
 
         public SyncTests()
@@ -34,14 +27,26 @@ namespace ProblemSource.Tests
             fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
 
             dataSink = fixture.Create<IDataSink>();
-            userStateRepository = fixture.Create<IUserStateRepository>();
+
+            var mockUserStateRepo = new Mock<IBatchRepository<UserGeneratedState>>();
+            userStateRepository = mockUserStateRepo.Object;
+
+            var mockRepoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
+            mockRepoProvider.Setup(o => o.UserStates).Returns(mockUserStateRepo.Object);
+            //var mockRepoProvider = new XX();
+
+            var mockRepoProviderFactory = new Mock<IUserGeneratedDataRepositoryProviderFactory>();
+            mockRepoProviderFactory.Setup(o => o.Create(It.IsAny<int>())).Returns(mockRepoProvider.Object);
 
             var mockTrainingRepo = new Mock<ITrainingRepository>();
             mockTrainingRepo.Setup(o => o.Get(It.IsAny<int>())).ReturnsAsync(() => new Training { TrainingPlanName = "2017 HT template Default" });
 
-            pipeline = new ProblemSourceProcessingMiddleware(userStateRepository, new EmbeddedTrainingPlanRepository(),
-                fixture.Create<IClientSessionManager>(), dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(), 
-                fixture.Create<AzureTableUserGeneratedDataRepositoriesProviderFactory>(), new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
+            var mockClientSessionManager = new Mock<IClientSessionManager>();
+            mockClientSessionManager.Setup(o => o.GetOrOpenSession(It.IsAny<string>(), It.IsAny<string?>())).Returns(new GetOrCreateSessionResult(new Session("")));
+
+            pipeline = new ProblemSourceProcessingMiddleware(new EmbeddedTrainingPlanRepository(),
+                mockClientSessionManager.Object, dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(),
+                mockRepoProviderFactory.Object, new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
                 mockTrainingRepo.Object,
                 fixture.Create<ILogger<ProblemSourceProcessingMiddleware>>());
         }
@@ -68,17 +73,14 @@ namespace ProblemSource.Tests
                 Events = originalEvents.ToArray()
             };
 
+            Mock.Get(userStateRepository).Setup(o => o.GetAll()).Returns(Task.FromResult<IEnumerable<UserGeneratedState>>(new List<UserGeneratedState>()));
+
             // Act
             var _ = await pipeline.Sync(input);
 
             // Assert
-
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-#pragma warning disable CS8604 // Possible null reference argument.
             Mock.Get(userStateRepository).Verify(x =>
-                x.Set(It.IsAny<string>(), It.Is<object>(o => JObject.Parse(JsonConvert.SerializeObject(o))["exercise_stats"]["device"]["uuid"].Value<string?>() == userStatePushLogItem.exercise_stats.device.uuid)), Times.Once);
-#pragma warning restore CS8604 // Possible null reference argument.
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                x.Upsert(It.Is<IEnumerable<UserGeneratedState>>(o => o.Single().exercise_stats.device.uuid == userStatePushLogItem.exercise_stats.device.uuid)), Times.Once);
 
             //DataSink: the UserStatePushLogItem entry is removed
             Mock.Get(dataSink).Verify(x =>
@@ -101,11 +103,14 @@ namespace ProblemSource.Tests
 
             // Assert
             var state = JsonConvert.DeserializeObject<UserFullState>(result.state);
+            if (state == null) throw new NullReferenceException(nameof(state));
 
-            var ooo = ((JObject)state!.training_plan)["metaphor"];
-            if (ooo == null) throw new NullReferenceException();
-            ooo.Value<string>().ShouldBe("Magical");
-            state!.training_settings.customData?.unlockAllPlanets.ShouldBe(false);
+            var trainingPlan = (JObject)state.training_plan;
+            var metaphor = trainingPlan["metaphor"];
+            if (metaphor == null) throw new NullReferenceException();
+            
+            metaphor.Value<string>().ShouldBe("Magical");
+            state.training_settings.customData?.unlockAllPlanets.ShouldBe(false);
         }
     }
 }

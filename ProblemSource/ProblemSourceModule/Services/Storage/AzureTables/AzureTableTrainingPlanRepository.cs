@@ -1,6 +1,5 @@
 ﻿using Azure.Data.Tables;
 using Common.Web;
-using ProblemSource.Models;
 
 namespace ProblemSource.Services.Storage.AzureTables
 {

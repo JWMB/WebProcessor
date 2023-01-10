@@ -2,8 +2,6 @@
 using AutoFixture;
 using ProblemSource.Services.Storage.AzureTables;
 using Azure.Data.Tables;
-using Common.Web.Services;
-using Common.Web;
 
 namespace ProblemSourceModule.Tests.AzureTable
 {

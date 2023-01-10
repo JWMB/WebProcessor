@@ -14,7 +14,6 @@ namespace ProblemSource
 {
     public class ProblemSourceProcessingMiddleware : IProcessingMiddleware
     {
-        private readonly IUserStateRepository userStateRepository;
         private readonly ITrainingPlanRepository trainingPlanRepository;
         private readonly IClientSessionManager sessionManager;
         private readonly IDataSink dataSink;
@@ -28,13 +27,12 @@ namespace ProblemSource
 
         //public bool SupportsMiddlewarePattern => throw new NotImplementedException();
 
-        public ProblemSourceProcessingMiddleware(IUserStateRepository userStateRepository, ITrainingPlanRepository trainingPlanRepository,
+        public ProblemSourceProcessingMiddleware(ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
             IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, UsernameHashing usernameHashing, MnemoJapanese mnemoJapanese,
             ITrainingRepository trainingRepository,
             ILogger<ProblemSourceProcessingMiddleware> log)
         {
-            this.userStateRepository = userStateRepository;
             this.trainingPlanRepository = trainingPlanRepository;
             this.sessionManager = sessionManager;
             this.dataSink = dataSink;
@@ -109,12 +107,10 @@ namespace ProblemSource
             return await Sync(root);
         }
 
-        public async Task<SyncResult> Sync(SyncInput root)
+        private async Task<(Training? training, string? error)> GetTrainingFromInput(SyncInput root)
         {
-            var result = new SyncResult();
-
             if (string.IsNullOrEmpty(root.Uuid))
-                return new SyncResult { error = $"Username empty" };
+                return (null, $"Username empty");
 
             var trainingId = mnemoJapanese.ToIntWithRandom(root.Uuid);
             if (trainingId == null)
@@ -123,61 +119,84 @@ namespace ProblemSource
                 if (dehashedUuid != null)
                     trainingId = mnemoJapanese.ToIntWithRandom(dehashedUuid);
                 if (trainingId == null)
-                    return new SyncResult { error = $"Username not found ({root.Uuid})" };
+                    return (null, $"Username not found ({root.Uuid})");
             }
 
             var training = await trainingRepository.Get(trainingId.Value);
+            return (training, training == null ? $"Username not found ({root.Uuid}/{trainingId.Value})" : null);
+        }
+
+        public async Task<SyncResult> Sync(SyncInput root)
+        {
+            var result = new SyncResult();
+
+            var (training, error) = await GetTrainingFromInput(root);
             if (training == null)
-                return new SyncResult { error = $"Username not found ({root.Uuid}/{trainingId.Value})" };
+            {
+                return new SyncResult { error = error };
+            }
 
             var sessionInfo = sessionManager.GetOrOpenSession(root.Uuid, root.SessionToken);
             if (sessionInfo.Error != GetOrCreateSessionResult.ErrorTypes.OK)
                 result.error = sessionInfo.Error.ToString();
             result.sessionToken = sessionInfo.Session.SessionToken;
 
+            if (sessionInfo.Session.UserRepositories == null)
+            {
+                sessionInfo.Session.UserRepositories = userGeneratedRepositoriesFactory.Create(training.Id);
+            }
+
             await eventDispatcher.Dispatch(root.Events); // E.g. for real-time teacher view
+
+            var currentStoredState = (await sessionInfo.Session.UserRepositories.UserStates.GetAll()).SingleOrDefault();
 
             if (root.Events?.Any() == true)
             {
                 var logItems = DeserializeEvents(root.Events, log);
                 var userStates = logItems.OfType<UserStatePushLogItem>();
+
                 if (userStates.Any())
                 {
-                    await HandleUserState(root.Uuid, userStates.Last());
+                    var pushedStateItem = userStates.Last();
+                    if (currentStoredState != null && pushedStateItem.exercise_stats.trainingDay < currentStoredState.exercise_stats.trainingDay)
+                        log.LogWarning($"({training.Id}) Latest trainingDay in stored data: {currentStoredState.exercise_stats.trainingDay}, incoming: {pushedStateItem.exercise_stats.trainingDay}");
+                    else
+                    {
+                        currentStoredState = new UserGeneratedState { exercise_stats = pushedStateItem.exercise_stats, user_data = pushedStateItem.user_data };
+                        await sessionInfo.Session.UserRepositories.UserStates.Upsert(new[] { currentStoredState });
+                    }
                 }
 
                 {
                     // Log incoming data - but remove large State items
                     // Warning: modifying incoming data instead of making a copy
-                    root.Events = root.Events.Where(o => GetEventClassName(o) != "UserStatePushLogItem").ToArray();
+                    root.Events = root.Events.Where(o => LogItem.GetEventClassName(o) != "UserStatePushLogItem").ToArray();
 
                     await dataSink.Log(root.Uuid, root);
                 }
 
-                if (sessionInfo.Session.UserRepositories == null)
-                {
-                    sessionInfo.Session.UserRepositories = userGeneratedRepositoriesFactory.Create(trainingId.Value);
-                }
                 try
                 {
-                    await aggregationService.UpdateAggregates(sessionInfo.Session.UserRepositories, logItems, trainingId.Value);
+                    await aggregationService.UpdateAggregates(sessionInfo.Session.UserRepositories, logItems, training.Id);
                 }
                 catch (Exception ex)
                 {
                     log.LogError(ex, $"UpdateAggregates");
                 }
+
+                // TODO: check for EndOfDayLogItem (or if TrainingDay has changed) to trigger 
             }
 
             if (root.RequestState)
             {
                 // client wants TrainingPlan, stats for trained exercises, training day number etc
-                result.state = await CreateClientState(root, training);
+                result.state = await CreateClientState(root, training, currentStoredState);
             }
 
             return result;
         }
 
-        private async Task<string> CreateClientState(SyncInput root, Training training)
+        private async Task<string> CreateClientState(SyncInput root, Training training, UserGeneratedState? currentStoredState)
         {
             var trainingPlanName = string.IsNullOrEmpty(training.TrainingPlanName) ? "2017 HT template Default" : training.TrainingPlanName; // "testplan";
             var trainingPlan = await trainingPlanRepository.Get(trainingPlanName);
@@ -202,22 +221,10 @@ namespace ProblemSource
                 SemVerHelper.AssertClientVersion(root.ClientVersion?.Split(',')[^1], clientRequirements.Version.Min, clientRequirements.Version.Max);
             }
 
-            var storedUserState = await userStateRepository.Get(root.Uuid);
-            if (storedUserState != null)
+            if (currentStoredState != null)
             {
-                var d = storedUserState as dynamic;
-                if (d != null)
-                {
-                    try
-                    {
-                        fullState["exercise_stats"] = d.exercise_stats;
-                        fullState["user_data"] = d.user_data;
-                    }
-                    catch (Exception ex)
-                    {
-                        log.LogError(ex, "Why do we think there'll be an exception here?");
-                    }
-                }
+                fullState["exercise_stats"] = JsonConvert.SerializeObject(currentStoredState.exercise_stats);
+                fullState["user_data"] = JsonConvert.SerializeObject(currentStoredState.user_data);
             }
 
             // TODO: apply rules engine - should e.g. training plan be modified?
@@ -247,67 +254,15 @@ namespace ProblemSource
         //    }
         //}
 
-        private async Task HandleUserState(string uuid, UserStatePushLogItem lastItem)
-        {
-            // TODO: What? Why serialize/deserialize?
-            //var asJson = JsonConvert.SerializeObject(lastItem);
-            //var pushedStateItem = JsonConvert.DeserializeObject<UserStatePushLogItem>(asJson);
-            var pushedStateItem = lastItem;
-
-            if (pushedStateItem == null)
-            {
-                log.LogWarning($"({uuid}) Couldn't deserialize pushedStateItem");
-            }
-            else
-            {
-                var state = await userStateRepository.Get<UserGeneratedState>(uuid);
-                if (state != null && pushedStateItem.exercise_stats.trainingDay < state.exercise_stats.trainingDay)
-                {
-                    log.LogWarning($"({uuid}) Latest trainingDay in stored data: {state.exercise_stats.trainingDay}, incoming: {pushedStateItem.exercise_stats.trainingDay}");
-                }
-                else
-                {
-                    //var asDynamic = JsonConvert.DeserializeObject<dynamic>(asJson); // so as to keep any non-typed properties/data
-                    //await userStateRepository.Set(uuid, new { exercise_stats = asDynamic!.exercise_stats, user_data = asDynamic.user_data });
-                    await userStateRepository.Set(uuid, new { exercise_stats = lastItem.exercise_stats, user_data = lastItem.user_data });
-                }
-            }
-        }
-
-        private static string? GetEventClassName(object item)
-        {
-            // what the hell? Suddenly the deserialized items are JsonElement instead of dynamic object
-            if (item is System.Text.Json.JsonElement jEl)
-                return jEl.GetProperty("className").GetString();
-            else
-                return ExceptionTools.TryOrDefault(() => (string)((dynamic)item).className, null);
-        }
-
         private static List<LogItem> DeserializeEvents(object[] events, ILogger? log = null)
         {
-            var nameToType = typeof(LogItem).Assembly.GetTypes().Where(o => typeof(LogItem).IsAssignableFrom(o)).ToDictionary(o => o.Name, o => o);
             var unhandledItems = new List<object>();
             var result = events.Select(item =>
             {
-                var className = GetEventClassName(item);
-                if (className != null && nameToType.TryGetValue(className, out var type))
-                {
-                    try
-                    {
-                        var asJson = item is System.Text.Json.JsonElement jEl ? jEl.ToString() : JsonConvert.SerializeObject(item);
-                        var typed = JsonConvert.DeserializeObject(asJson!, type);
-                        if (typed is LogItem li)
-                            return typed as LogItem;
-                    }
-                    catch (Exception ex)
-                    {
-                        unhandledItems.Add(new { Exception = ex, Item = item });
-                        return null;
-                    }
-                }
-                unhandledItems.Add(item);
-                return null;
-
+                var (logItem, error) = LogItem.TryDeserialize(item);
+                if (error is not null)
+                    unhandledItems.Add(new { Exception = error, Item = item });
+                return logItem;
             }).OfType<LogItem>()
             .ToList();
 
@@ -326,7 +281,7 @@ namespace ProblemSource
             if (root.Events?.Any() == true)
             {
                 return root.Events.Select((o, i) => new { Item = o, Index = i })
-                    .Where(o => TryOrDefault(() => GetEventClassName(o.Item) == "UserStatePushLogItem", false))
+                    .Where(o => TryOrDefault(() => LogItem.GetEventClassName(o.Item) == "UserStatePushLogItem", false))
                     .Select(o => o.Index).ToList();
             }
             return new List<int>();

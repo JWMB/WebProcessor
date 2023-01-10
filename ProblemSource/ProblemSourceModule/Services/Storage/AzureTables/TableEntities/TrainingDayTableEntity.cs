@@ -5,13 +5,8 @@ using ProblemSource.Models.Aggregates;
 
 namespace ProblemSource.Services.Storage.AzureTables.TableEntities
 {
-    public class TrainingDayTableEntity : ITableEntity
+    public class TrainingDayTableEntity : TableEntityBase
     {
-        public string PartitionKey { get; set; } = string.Empty;
-        public string RowKey { get; set; } = string.Empty;
-        public DateTimeOffset? Timestamp { get; set; }
-        public ETag ETag { get; set; }
-
         public string Data { get; set; } = string.Empty;
 
         public TrainingDayAccount ToBusinessObject()

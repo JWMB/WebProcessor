@@ -17,5 +17,28 @@
         public static DateTime MinOrDefault<T>(this IEnumerable<T> values, Func<T, DateTime> selector, DateTime defaultValue)
     => values.Any() ? values.Min(selector) : defaultValue;
 
+
+        public static IEnumerable<IEnumerable<T>> SplitBy<T>(this IEnumerable<T> values, Func<T, bool> splitOn, bool splitItemAsLast = true)
+        {
+            var current = new List<T>();
+            foreach (var item in values)
+            {
+                if (splitOn(item))
+                {
+                    if (splitItemAsLast)
+                    {
+                        current.Add(item);
+                        yield return current;
+                        current = new List<T>();
+                    }
+                    else
+                    {
+                        yield return current;
+                        current = new List<T> { item };
+                    }
+                }
+            }
+            yield return current;
+        }
     }
 }

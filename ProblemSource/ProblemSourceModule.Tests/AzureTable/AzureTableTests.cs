@@ -1,19 +1,8 @@
-﻿using AutoFixture;
-using AutoFixture.AutoMoq;
-using Azure;
-using Microsoft.Extensions.Logging;
-using ProblemSource.Models;
+﻿using Azure;
 using ProblemSource.Models.Aggregates;
-using ProblemSource.Models.LogItems;
-using ProblemSource.Services;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProblemSourceModule.Tests.AzureTable
 {

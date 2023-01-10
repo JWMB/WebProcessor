@@ -88,6 +88,12 @@ WHERE groups.name LIKE 'Teacher %'";
             await MoveToAzureTables(allTrainingIds, actuallyWrite);
         }
 
+        public async Task<List<LogItem>> CreateLogFromOldTraining(int trainingId)
+        {
+            var logItems = await RecreateLogFromOldDb.GetAsLogItems(dbContext, trainingId);
+            return logItems;
+        }
+
         public async Task MoveToAzureTables(IEnumerable<int> trainingIds, bool actuallyWrite = false)
         {
             var accounts = await dbContext.Accounts.Where(o => trainingIds.Contains(o.Id)).ToListAsync();

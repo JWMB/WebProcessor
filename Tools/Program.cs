@@ -20,7 +20,9 @@ var tableConfig = TypedConfiguration.Bind<ProblemSource.Services.Storage.AzureTa
 var dbTools = new OldDbAdapter.Tools(tableConfig);
 //var byGroupName = await dbTools.GetTeachersWithTrainings(20, 15);
 //var withMostTrainings = byGroupName.OrderByDescending(o => o.Value.Count()).First();
-await dbTools.MoveTeacherAndTrainingsToAzureTables(29158, true);
+//await dbTools.MoveTeacherAndTrainingsToAzureTables(29158, true);
+var tmp = System.Text.Json.JsonSerializer.Serialize(await dbTools.CreateLogFromOldTraining(1054598));
+
 
 //var connStr = config.GetOrThrow<string>("AppSettings:AzureTable:ConnectionString");
 ////var migrator = new MigrateAzureTableColumn(connStr, "UseDevelopmentStorage=true");

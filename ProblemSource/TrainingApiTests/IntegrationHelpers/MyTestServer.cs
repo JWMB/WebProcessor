@@ -51,7 +51,6 @@ namespace TrainingApiTests.IntegrationHelpers
 
                         services.AddTransient<IStartupFilter, TestStartupFilter>();
 
-                        services.AddSingleton(sp => fixture.Create<IUserStateRepository>());
                         services.AddSingleton(sp => fixture.Create<IUserRepository>());
                         services.AddSingleton(sp => fixture.Create<IUserGeneratedDataRepositoryProviderFactory>());
                         services.AddSingleton(sp => fixture.Create<ITrainingRepository>());

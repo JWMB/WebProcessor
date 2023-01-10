@@ -4,13 +4,8 @@ using ProblemSource.Models.Aggregates;
 
 namespace ProblemSource.Services.Storage.AzureTables.TableEntities
 {
-    internal class PhaseStatisticsTableEntity : ITableEntity
+    internal class PhaseStatisticsTableEntity : TableEntityBase
     {
-        public string PartitionKey { get; set; } = string.Empty;
-        public string RowKey { get; set; } = string.Empty;
-        public DateTimeOffset? Timestamp { get; set; }
-        public ETag ETag { get; set; }
-
         public int id { get; set; }
         public int phase_id { get; set; }
         public int account_id { get; set; }

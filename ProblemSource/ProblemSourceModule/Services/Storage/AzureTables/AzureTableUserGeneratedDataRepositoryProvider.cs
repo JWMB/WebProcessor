@@ -1,4 +1,5 @@
-﻿using ProblemSource.Models.Aggregates;
+﻿using ProblemSource.Models;
+using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models.Aggregates;
 
@@ -18,12 +19,16 @@ namespace ProblemSource.Services.Storage.AzureTables
                 p => p.ToBusinessObject(), p => PhaseStatisticsTableEntity.FromBusinessObject(p, userId), partitionKey);
 
             TrainingSummaries = new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
-                new ExpandableTableEntityConverter<TrainingSummary>(t => (partitionKey, "none")), partitionKey);
+                new ExpandableTableEntityConverter<TrainingSummary>(t => ("none", partitionKey)), partitionKey);
+            UserStates = new AutoConvertTableEntityRepository<UserGeneratedState>(tableClientFactory.UserStates,
+                new ExpandableTableEntityConverter<UserGeneratedState>(t => ("none", partitionKey)), partitionKey);
         }
 
         public IBatchRepository<Phase> Phases { get; }
         public IBatchRepository<TrainingDayAccount> TrainingDays { get; }
         public IBatchRepository<PhaseStatistics> PhaseStatistics { get; }
         public IBatchRepository<TrainingSummary> TrainingSummaries { get; }
+        //public IRepository<UserGeneratedState, string> UserStates { get; }
+        public IBatchRepository<UserGeneratedState> UserStates { get; }
     }
 }

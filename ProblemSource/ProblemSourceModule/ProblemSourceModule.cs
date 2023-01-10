@@ -42,7 +42,7 @@ namespace ProblemSource
 
         public void ConfigureForAzureTables(IServiceCollection services)
         {
-            services.AddSingleton<IUserStateRepository, AzureTableUserStateRepository>(); //InMemoryUserStateRepository
+            //services.AddSingleton<IUserStateRepository, AzureTableUserStateRepository>(); //InMemoryUserStateRepository
             services.AddSingleton<IUserRepository, AzureTableUserRepository>();
             services.AddSingleton<ITypedTableClientFactory, TypedTableClientFactory>();
             RemoveService<ITableClientFactory>(services);

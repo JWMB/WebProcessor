@@ -5,13 +5,9 @@ using ProblemSource.Models.Aggregates;
 
 namespace ProblemSource.Services.Storage.AzureTables.TableEntities
 {
-    public class PhaseTableEntity : ITableEntity
-    {
-        public string PartitionKey { get; set; } = string.Empty;
-        public string RowKey { get; set; } = string.Empty;
-        public DateTimeOffset? Timestamp { get; set; }
-        public ETag ETag { get; set; }
 
+    public class PhaseTableEntity : TableEntityBase
+    {
         public int id { get; set; }
         public int training_day { get; set; }
         public string exercise { get; set; } = string.Empty;

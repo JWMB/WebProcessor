@@ -58,7 +58,7 @@ namespace Common.Web.Controllers
                 log.LogError(ex, $"Name:{User?.Identity?.Name} Authenticated:{User?.Identity?.IsAuthenticated}");
                 HttpContext.Response.StatusCode = (int)(ex is ArgumentException ? HttpStatusCode.BadRequest : HttpStatusCode.InternalServerError);
                 await HttpContext.Response.WriteAsync(System.Diagnostics.Debugger.IsAttached ? ex.Message : "Exception in sync pipeline");
-                throw;
+                //throw;
             }
         }
 
