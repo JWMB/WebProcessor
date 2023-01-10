@@ -11,10 +11,10 @@ namespace ProblemSource.Services
         Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, int userId);
     }
 
-    public class NullAggregationService : IAggregationService
-    {
-        public Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, int userId) => Task.CompletedTask;
-    }
+    //public class NullAggregationService : IAggregationService
+    //{
+    //    public Task UpdateAggregates(IUserGeneratedDataRepositoryProvider repos, List<LogItem> logItems, int userId) => Task.CompletedTask;
+    //}
 
     public class AggregationService : IAggregationService
     {

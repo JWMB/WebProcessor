@@ -1,5 +1,4 @@
 ﻿using AutoFixture;
-using Castle.Core.Logging;
 using Common;
 using Microsoft.Extensions.Logging;
 using Moq;
