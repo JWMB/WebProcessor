@@ -21,10 +21,10 @@ namespace TrainingApiTests.IntegrationHelpers
             var client = Server.CreateClient();
             if (user != null)
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AddUserMiddleware.AuthenticationScheme, System.Text.Json.JsonSerializer.Serialize(user));
-            return client;
+           return client;
         }
 
-        public MyTestServer(Dictionary<string, string>? config = null, Action<IServiceCollection>? configureTestServices = null)
+        public MyTestServer(Action<IServiceCollection>? configureTestServices = null, Dictionary<string, string>? config = null)
         {
             fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
 
@@ -32,6 +32,8 @@ namespace TrainingApiTests.IntegrationHelpers
             {
                 configureTestServices = services =>
                 {
+                    services.AddTransient<IStartupFilter, TestStartupFilter>();
+
                     services.AddSingleton(sp => fixture.Create<IUserRepository>());
                     services.AddSingleton(sp => fixture.Create<IUserGeneratedDataRepositoryProviderFactory>());
                     services.AddSingleton(sp => fixture.Create<ITrainingRepository>());
@@ -60,8 +62,6 @@ namespace TrainingApiTests.IntegrationHelpers
                         //services.AddAuthentication(TestAuthHandler.AuthenticationScheme)
                         //    .AddScheme<TestAuthHandlerOptions, TestAuthHandler>(TestAuthHandler.AuthenticationScheme, options => { });
                         // ... client.DefaultRequestHeaders.Add(TestAuthHandler.AuthenticationScheme, "1");
-
-                        services.AddTransient<IStartupFilter, TestStartupFilter>();
 
                         configureTestServices?.Invoke(services);
                     });

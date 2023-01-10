@@ -1,26 +1,20 @@
 ﻿using Common;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Shouldly;
+using TrainingApiTests.IntegrationHelpers;
 
 namespace WebApi.Tests
 {
     public class SyncTests
     {
         private readonly HttpClient client;
-        private readonly WebApplicationFactory<TrainingApi.Startup> factory;
-
+        
         public SyncTests()
         {
             Skip.If(!System.Diagnostics.Debugger.IsAttached);
 
-            // TODO: for some reason, this fails on github action but not locally
-            factory = new WebApplicationFactory<TrainingApi.Startup>()
-                .WithWebHostBuilder(builder =>
-                {
-                    // ... Configure test services
-                });
-
-            client = factory.CreateClient();
+            client = new MyTestServer(services => { })
+                .CreateClient();
         }
 
         [SkippableFact]
