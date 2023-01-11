@@ -23,7 +23,7 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 // update Trainings table
 //await AddTrainingUsername.Run(tableConfig);
 
-await MigrateUserStatesTable.Run(tableConfig);
+//await MigrateUserStatesTable.Run(tableConfig);
 
 //var dbTools = new OldDbAdapter.Tools(tableConfig);
 ////var byGroupName = await dbTools.GetTeachersWithTrainings(20, 15);
