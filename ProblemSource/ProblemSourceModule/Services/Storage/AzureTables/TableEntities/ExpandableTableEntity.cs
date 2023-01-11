@@ -24,7 +24,8 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
         public static T ToPocoStatic(TableEntity entity)
         {
             var poco = new T();
-            var expanded = entity[expandedColumnListPropertyName] as Dictionary<string, int>;
+            var expandedRaw = entity[expandedColumnListPropertyName];
+            var expanded = expandedRaw == null ? null : JsonConvert.DeserializeObject<Dictionary<string, int>>(expandedRaw.ToString() ?? "");
 
             foreach (var prop in GetProps())
             {
@@ -96,7 +97,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             }
 
             if (expandedProps.Any())
-                entity[expandedColumnListPropertyName] = expandedProps;
+                entity[expandedColumnListPropertyName] = JsonConvert.SerializeObject(expandedProps);
 
             var id = idFunc(obj);
             entity.RowKey = id.Row;

@@ -3,6 +3,7 @@ using ProblemSource.Models.Aggregates;
 using Common;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSource.Services.Storage.AzureTables;
+using Azure.Data.Tables;
 
 namespace ProblemSourceModule.Tests.AzureTable
 {
@@ -19,7 +20,23 @@ namespace ProblemSourceModule.Tests.AzureTable
         [Fact]
         public void ExpandableTableEntity_Conversion()
         {
-            var phase = new Phase
+            var phase = CreateLargePhase();
+
+            var converter = new ExpandableTableEntityConverter<Phase>(o => new TableFilter("none", AzureTableConfig.IdToKey(o.id)));
+
+            var tableEntity = converter.FromPoco(phase);
+            // problems is too large to fit in one column - should be exploded into several
+            var expandedColumns = (Dictionary<string, int>)tableEntity["__ExpandedColumns"];
+            expandedColumns["problems"].ShouldBe(4);
+
+            var recreatedPhase = converter.ToPoco(tableEntity);
+
+            recreatedPhase.ShouldBeEquivalentTo(phase);
+        }
+
+        private Phase CreateLargePhase()
+        {
+            return new Phase
             {
                 exercise = "exercise",
                 problems = Enumerable.Range(0, 100)
@@ -32,17 +49,24 @@ namespace ProblemSourceModule.Tests.AzureTable
                             }).ToList()
                     }).ToList()
             };
+        }
+
+        [SkippableFact]
+        public async Task ExpandableTableEntity_ExpandedInAzureTable()
+        {
+            Skip.If(!System.Diagnostics.Debugger.IsAttached);
 
             var converter = new ExpandableTableEntityConverter<Phase>(o => new TableFilter("none", AzureTableConfig.IdToKey(o.id)));
+            var item = CreateLargePhase();
+            var tableEntity = converter.FromPoco(item);
 
-            var tableEntity = converter.FromPoco(phase);
-            // problems is too large to fit in one column - should be exploded into several
-            var expandedColumns = (Dictionary<string, int>)tableEntity["__ExpandedColumns"];
-            expandedColumns["problems"].ShouldBe(4);
+            var clientFactory = AzureTableTestBase.CreateTypedTableClientFactory();
+            var client = await clientFactory.CreateClientAndInit("expandabletest");
+            await client.UpsertEntityAsync(tableEntity, Azure.Data.Tables.TableUpdateMode.Replace);
 
-            var recreatedPhase = converter.ToPoco(tableEntity);
-
-            recreatedPhase.ShouldBeEquivalentTo(phase);
+            var retrieved = await client.GetEntityAsync<TableEntity>(tableEntity.PartitionKey, tableEntity.RowKey);
+            var converted = converter.ToPoco(retrieved);
+            converted.problems.Count().ShouldBe(item.problems.Count);
         }
     }
 }
