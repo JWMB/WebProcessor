@@ -37,7 +37,7 @@ namespace ProblemSource.Tests
         [Fact]
         public void Hash_Dehash()
         {
-            var id = 5; // 1:beje gi  2:bibi gi  3:bojo du  5:daha du  10:gaba jobe
+            var id = 7; // 1:beje gi  2:bibi gi  3:bojo du  5:daha du  7:diki da  10:gaba jobe
             var username = mnemoJapanese.FromIntWithRandom(id);
             var hashed = hashedUsername.Hash(username);
 
