@@ -4,6 +4,7 @@ using Common;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSource.Services.Storage.AzureTables;
 using Azure.Data.Tables;
+using Newtonsoft.Json;
 
 namespace ProblemSourceModule.Tests.AzureTable
 {
@@ -26,7 +27,7 @@ namespace ProblemSourceModule.Tests.AzureTable
 
             var tableEntity = converter.FromPoco(phase);
             // problems is too large to fit in one column - should be exploded into several
-            var expandedColumns = (Dictionary<string, int>)tableEntity["__ExpandedColumns"];
+            var expandedColumns = JsonConvert.DeserializeObject<Dictionary<string, int>>(tableEntity.GetString("__ExpandedColumns"));
             expandedColumns["problems"].ShouldBe(4);
 
             var recreatedPhase = converter.ToPoco(tableEntity);

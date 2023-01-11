@@ -32,16 +32,23 @@ namespace ProblemSource.Services.Storage
 
         private async Task SeedCache()
         {
-            if (isSeeded)
-                return;
+            // Don't return early - let sliding expiration be updated
+            //if (isSeeded)
+            //    return;
             var isSeededKey = $"_{cacheKeyPrefix}_seeded";
             if (cache.Get<bool?>(isSeededKey) == true)
                 return;
             var all = await repo.GetAll();
             foreach (var item in all)
-                cache.Set(CreateKey(item), item);
-            isSeeded = true;
-            cache.Set(isSeededKey, true);
+                cache.Set(CreateKey(item), item, CreateCacheOptions());
+            //isSeeded = true;
+            cache.Set(isSeededKey, true, CreateCacheOptions(decreasedExpiration: true));
+
+        }
+
+        private MemoryCacheEntryOptions CreateCacheOptions(bool decreasedExpiration = false)
+        {
+            return new MemoryCacheEntryOptions { SlidingExpiration = TimeSpan.FromMinutes(10 - (decreasedExpiration ? 1 : 0)) };
         }
 
         public async Task<IEnumerable<T>> GetAll()
@@ -78,7 +85,7 @@ namespace ProblemSource.Services.Storage
             // TODO: this is a workaround for Azure table upsert not responding with updated or inserted
 
             foreach (var kv in lookupByKey)
-                cache.Set(kv.Key, kv.Value);
+                cache.Set(kv.Key, kv.Value, CreateCacheOptions());
 
             var added = lookupByKey.ExceptBy(cachedKeys, o => o.Key);
             await repo.Upsert(added.Select(o => o.Value));
