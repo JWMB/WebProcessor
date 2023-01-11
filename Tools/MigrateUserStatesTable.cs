@@ -25,6 +25,8 @@ namespace Tools
                 var deserialized = Newtonsoft.Json.JsonConvert.DeserializeObject<UserGeneratedState>(str);
                 if (deserialized == null)
                     throw new Exception("null!");
+                if (deserialized.exercise_stats.gameRuns.Any() == false)
+                    throw new Exception("no game runs!");
                 currentRows.Add(entity.RowKey, deserialized);
             }
 

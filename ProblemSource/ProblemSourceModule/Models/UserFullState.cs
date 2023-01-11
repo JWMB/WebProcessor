@@ -126,7 +126,7 @@ namespace ProblemSource.Models
 
     public class TriggerActionData
     {
-        public string? type { get; set; }// TODO: currently instanciates by string, possibly other solution (register classes)
+        public string? type { get; set; }// TODO: currently instantiates by string, possibly other solution (register classes)
         public string id { get; set; } = "";
         public object? properties { get; set; }
     }
