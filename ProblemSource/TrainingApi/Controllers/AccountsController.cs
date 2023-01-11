@@ -53,6 +53,12 @@ namespace TrainingApi.Controllers
         [HttpPost]
         public async Task Post([FromBody] CreateUserDto dto)
         {
+            // TODO: use regular model validation
+            if (string.IsNullOrEmpty(dto.Username))
+                throw new ArgumentNullException(nameof(dto.Username));
+            if (string.IsNullOrEmpty(dto.Password))
+                throw new ArgumentNullException(nameof(dto.Password));
+
             await userRepository.Add(new User
             {
                 Email = dto.Username,

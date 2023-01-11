@@ -6,8 +6,8 @@
 
     const apiFacade = get(apiFacadeStore);
 
-    async function createUser(email: string, password: string) {
-        await apiFacade.accounts.post(<CreateUserDto>{ username: email, password: password });
+    function createUser(email: string, password: string) {
+        apiFacade.accounts.post(<CreateUserDto>{ username: email, password: password }).then(() => console.log("user created"));
     }
 
     const getElementValue = (id: string) => (<HTMLInputElement>document.getElementById(id)).value;
@@ -22,8 +22,7 @@
     <h2>Create user</h2>
     Email: <input id="email" type="text" value="">
     Password: <input id="password" style="width:40px;" type="text">
-    <input type="button" value="Create"
-        on:click={() => createUser(getElementValue("numTrainings"), getElementValue("password"))}>
+    <input type="button" value="Create" on:click={() => createUser(getElementValue("email"), getElementValue("password"))}>
 </div>
 
 {#each users as user}

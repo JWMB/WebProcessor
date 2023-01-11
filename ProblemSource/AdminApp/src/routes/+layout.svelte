@@ -11,6 +11,7 @@
 	let loggedInUserInfo: CurrentUserInfo | null; // = get(loggedInUser);
 	let apiFacadeInstance: ApiFacade;
 
+	// TODO: some cookie
 	loggedInUser.subscribe(value => {
 		loggedInUserInfo = value;
 	});

@@ -25,7 +25,6 @@
         trainingsPromise = apiFacade.trainings.getSummaries(e.detail.group);
     };
     const clickedTrainingRow = (e: CustomEvent<any>) => {
-        console.log("training", e.detail.id);
         goto(`${base}/training?id=${e.detail.id}`);
     };
 
@@ -88,7 +87,7 @@
         {#if createdTrainingUsernames}
         Created users:
         {#each createdTrainingUsernames as username}
-            <li>username</li>
+            <li>{username}</li>
         {/each}
         {/if}
     </div>
