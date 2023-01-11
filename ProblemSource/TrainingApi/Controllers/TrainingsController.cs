@@ -59,7 +59,11 @@ namespace TrainingApi.Controllers
             var tp = await trainingPlanRepository.Get(dto.TrainingPlan);
             if (tp == null)
                 throw new Exception($"Training plan not found: {dto.TrainingPlan}");
-            var training = new Training { TrainingPlanName = dto.TrainingPlan };
+            var training = new Training
+            {
+                TrainingPlanName = dto.TrainingPlan,
+                Settings = dto.TrainingSettings
+            };
             var id = await trainingRepository.Add(training);
 
             training.Username = usernameHashing.Hash(mnemoJapanese.FromIntWithRandom(id));
