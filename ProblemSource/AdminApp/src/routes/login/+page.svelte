@@ -27,10 +27,10 @@
     if (Object.keys(errors).filter(k => !!(<any>errors)[k]).length === 0) {
       isLoading = true;
 	  apiFacade.accounts.login({ username: email, password: password})
-        .then(() => {
+        .then(r => {
           isSuccess = true;
           isLoading = false;
-		  loggedInUser.set({ username: email, loggedIn: true });
+		  loggedInUser.set({ username: email, loggedIn: true, role: r.role });
         })
         .catch(err => {
           errors.server = err;

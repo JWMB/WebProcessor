@@ -188,6 +188,11 @@
           "text/json",
           "application/*+json"
         ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
         "parameters": [
           {
             "name": "credentials",
@@ -201,10 +206,10 @@
         ],
         "responses": {
           "200": {
-            "x-nullable": true,
+            "x-nullable": false,
             "description": "",
             "schema": {
-              "type": "file"
+              "$ref": "#/definitions/LoginResultDto"
             }
           }
         }
@@ -733,6 +738,17 @@
               "format": "int32"
             }
           }
+        }
+      }
+    },
+    "LoginResultDto": {
+      "type": "object",
+      "required": [
+        "role"
+      ],
+      "properties": {
+        "role": {
+          "type": "string"
         }
       }
     },

@@ -6,7 +6,6 @@
 	import { ApiException } from '../apiClient';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
-	import { get } from 'svelte/store';
 	import type { CurrentUserInfo } from 'src/currentUserInfo.js';
 
 	let loggedInUserInfo: CurrentUserInfo | null; // = get(loggedInUser);
@@ -18,9 +17,8 @@
 
 	async function logout() {
 		await apiFacadeInstance.accounts.logout();
-		loggedInUserInfo = { username: "", loggedIn: false };
+		loggedInUserInfo = { username: "", loggedIn: false, role: "" };
 		loggedInUser.set(loggedInUserInfo);
-		console.log("logout");
 	}
 
 	function initApi(location: Location) {
@@ -74,6 +72,9 @@
 	<a href="{base}/" on:click={logout}>Log out {loggedInUserInfo?.username}</a>
 	{:else}
 	<a href="{base}/login">Log in</a>
+	{/if}
+	{#if loggedInUserInfo?.role == "Admin"}
+	<a href="{base}/admin">Admin</a>
 	{/if}
 </nav>
 <div class="page-container">

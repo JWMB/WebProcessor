@@ -232,7 +232,7 @@ export class AccountsClient {
         return Promise.resolve<void>(null as any);
     }
 
-    login(credentials: LoginCredentials): Promise<FileResponse | null> {
+    login(credentials: LoginCredentials): Promise<LoginResultDto> {
         let url_ = this.baseUrl + "/api/Accounts/login";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -243,7 +243,7 @@ export class AccountsClient {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Accept": "application/octet-stream"
+                "Accept": "application/json"
             }
         };
 
@@ -252,26 +252,21 @@ export class AccountsClient {
         });
     }
 
-    protected processLogin(response: Response): Promise<FileResponse | null> {
+    protected processLogin(response: Response): Promise<LoginResultDto> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
-            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
-            if (fileName) {
-                fileName = decodeURIComponent(fileName);
-            } else {
-                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            }
-            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as LoginResultDto;
+            return result200;
+            });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<FileResponse | null>(null as any);
+        return Promise.resolve<LoginResultDto>(null as any);
     }
 }
 
@@ -918,6 +913,10 @@ export interface PatchUserDto {
     role?: string | undefined;
     password?: string | undefined;
     trainings?: { [key: string]: number[]; } | undefined;
+}
+
+export interface LoginResultDto {
+    role: string;
 }
 
 export interface LoginCredentials {

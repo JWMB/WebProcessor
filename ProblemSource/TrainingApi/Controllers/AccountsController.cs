@@ -87,7 +87,7 @@ namespace TrainingApi.Controllers
 
         [HttpPost]
         [Route("login")]
-        public async Task<ActionResult> Login([FromBody] LoginCredentials credentials)
+        public async Task<ActionResult<LoginResultDto>> Login([FromBody] LoginCredentials credentials)
         {
             var user = await authenticateUserService.GetUser(credentials.Username, credentials.Password);
             if (user == null)
@@ -111,8 +111,10 @@ namespace TrainingApi.Controllers
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
             
-            return Ok();
+            return Ok(new LoginResultDto(user.Role));
         }
+
+        public readonly record struct LoginResultDto(string Role);
 
         public static ClaimsPrincipal CreatePrincipal(User user)
         {

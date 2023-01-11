@@ -50,10 +50,7 @@ namespace TrainingApi
             {
                 builder.AddApplicationInsights();
             });
-            services.AddApplicationInsightsTelemetry(options => {
-                Console.WriteLine(options.ConnectionString);
-            });
-            //services.AddApplicationInsightsTelemetryWorkerService();
+            services.AddApplicationInsightsTelemetry();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
