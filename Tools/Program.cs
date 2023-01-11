@@ -20,9 +20,7 @@ if (Console.ReadKey().Key != ConsoleKey.Y)
 var section = config.GetRequiredSection("AppSettings:AzureTable");
 var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
-// update Trainings table
-//await AddTrainingUsername.Run(tableConfig);
-
+//await TrainingMod.ModifySettings(tableConfig);
 //await MigrateUserStatesTable.Run(tableConfig);
 
 //var dbTools = new OldDbAdapter.Tools(tableConfig);

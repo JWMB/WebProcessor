@@ -3,12 +3,44 @@ using ProblemSource.Services.Storage.AzureTables;
 using ProblemSource;
 using ProblemSourceModule.Services.Storage.AzureTables;
 using System.Text.RegularExpressions;
+using ProblemSource.Models;
 
 namespace Tools
 {
-    internal class AddTrainingUsername
+    internal class TrainingMod
     {
-        public static async Task Run(AzureTableConfig tableConfig)
+        public static async Task ModifySettings(AzureTableConfig tableConfig)
+        {
+            var trainingRepo = new AzureTableTrainingRepository(new TypedTableClientFactory(tableConfig));
+            var ids = Enumerable.Range(32, 30);
+            var trainings = await trainingRepo.GetByIds(ids);
+
+            var ts = new TrainingSettings
+            {
+                cultureCode = "sv-SE",
+                alarmClockInvisible = null,
+                customData = null,
+                idleTimeout = null,
+                triggers = null,
+                manuallyUnlockedExercises = null,
+                uniqueGroupWeights = null,
+                trainingPlanOverrides = null,
+                syncSettings = null,
+                pacifistRatio = 0.1M,
+                timeLimits = new List<decimal> { 15 }, // 33
+            };
+
+            foreach (var training in trainings)
+            {
+                training.Settings = ts;
+                await trainingRepo.Update(training);
+            }
+
+            await Task.Delay(1);
+            return;
+        }
+
+        public static async Task AddTrainingUsername(AzureTableConfig tableConfig)
         {
             var trainingRepo = new AzureTableTrainingRepository(new TypedTableClientFactory(tableConfig));
             var trainings = await trainingRepo.GetAll();
