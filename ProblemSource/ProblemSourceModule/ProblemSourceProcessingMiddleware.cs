@@ -3,6 +3,7 @@ using Common.Web;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PluginModuleBase;
 using ProblemSource.Models;
 using ProblemSource.Models.LogItems;
@@ -78,8 +79,8 @@ namespace ProblemSource
             {
                 throw new ArgumentNullException($"{nameof(root.Uuid)}");
             }
-            if (user?.Claims.Any() == false  // anonymous access for "validate" request
-    && root.SessionToken == "validate") // TODO: co-opting SessionToken for now
+            //if (user?.Claims.Any() == false &&  // anonymous access for "validate" request
+            if (root.SessionToken == "validate") // TODO: co-opting SessionToken for now
             {
                 var dehashedUuid = usernameHashing.Dehash(root.Uuid);
                 if (dehashedUuid == null)
@@ -224,8 +225,8 @@ namespace ProblemSource
 
             if (currentStoredState != null)
             {
-                fullState["exercise_stats"] = JsonConvert.SerializeObject(currentStoredState.exercise_stats);
-                fullState["user_data"] = JsonConvert.SerializeObject(currentStoredState.user_data);
+                fullState["exercise_stats"] = JObject.FromObject(currentStoredState.exercise_stats);
+                fullState["user_data"] = currentStoredState.user_data == null ? null : JObject.FromObject(currentStoredState.user_data);
             }
 
             // TODO: apply rules engine - should e.g. training plan be modified?

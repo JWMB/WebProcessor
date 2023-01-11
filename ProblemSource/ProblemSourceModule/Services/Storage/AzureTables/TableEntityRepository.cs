@@ -51,13 +51,14 @@ namespace ProblemSource.Services.Storage.AzureTables
 
         private async Task<List<Response>> UpsertBatch(IEnumerable<ITableEntity> entities)
         {
-            var batch = new List<TableTransactionAction>(entities.Select(f => new TableTransactionAction(TableTransactionActionType.UpsertMerge, f)));
+            //Note: UpsertMerge keeps old columns
+            var batch = new List<TableTransactionAction>(entities.Select(f => new TableTransactionAction(TableTransactionActionType.UpsertReplace, f)));
 
             // TODO: the 100 limit makes it no longer a transaction >:(
             var result = new List<Response>();
             foreach (var chunk in batch.Chunk(100))
             {
-                var response = await tableClient.SubmitTransactionAsync(chunk);
+                var response = await tableClient.SubmitTransactionAsync(chunk); // Not supported type System.Collections.Generic.Dictionary`2[System.String,System.Int32]
                 if (response.Value.Any(o => o.IsError))
                     throw new Exception($"SubmitTransaction errors: {string.Join("\n", response.Value.Where(o => o.IsError).Select(o => o.ReasonPhrase))}");
                 result.AddRange(response.Value);
@@ -110,9 +111,9 @@ namespace ProblemSource.Services.Storage.AzureTables
                     (ex is RequestFailedException rfEx ? rfEx.ErrorCode : null);
                 throw new Exception($"{typeof(T).Name} code:{code} stored:{lengthsInfo}", ex);
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                throw ex;
             }
         }
 
