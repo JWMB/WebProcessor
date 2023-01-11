@@ -46,7 +46,13 @@ namespace TrainingApi
             AddSwaggerGen(services);
             services.AddSwaggerDocument();
 
-            services.AddApplicationInsightsTelemetry();
+            services.AddLogging(builder =>
+            {
+                builder.AddApplicationInsights();
+            });
+            services.AddApplicationInsightsTelemetry(options => {
+                Console.WriteLine(options.ConnectionString);
+            });
             //services.AddApplicationInsightsTelemetryWorkerService();
         }
 
@@ -61,6 +67,8 @@ namespace TrainingApi
                 //app.UseSwaggerUI();
                 app.UseOpenApi();
                 app.UseSwaggerUi3();
+
+                app.UseDeveloperExceptionPage();
             }
 
             app.UseCookiePolicy(new CookiePolicyOptions

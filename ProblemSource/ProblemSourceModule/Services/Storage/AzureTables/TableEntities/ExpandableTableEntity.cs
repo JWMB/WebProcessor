@@ -108,7 +108,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
 
         private static List<PropertyInfo> GetProps()
         {
-            // TODO: emit code instead (performance)?
+            // TODO: (low) cache, or emit code instead (performance)?
             return typeof(T)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.CanWrite && p.CanRead)

@@ -92,13 +92,13 @@ namespace ProblemSource.Services.Storage
 
             var updated = lookupByKey.IntersectBy(cachedKeys, o => o.Key);
             // These might be identical - check with cached values before committing
-            // TODO:...
+            // TODO: IEquatable<>?
             var forCompare = GetCachedByKeys(updated.Select(o => o.Key)).ToDictionary(CreateKey, o => o);
             var modified = new List<T>();
             foreach (var item in updated)
             {
                 var comp = forCompare[item.Key];
-                if (comp.Equals(item.Value) == false)
+                if (comp?.Equals(item.Value) == false)
                 {
                     modified.Add(item.Value);
                 }

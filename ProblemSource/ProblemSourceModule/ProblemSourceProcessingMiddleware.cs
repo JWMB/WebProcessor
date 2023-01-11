@@ -11,6 +11,7 @@ using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProblemSource
 {
@@ -66,6 +67,8 @@ namespace ProblemSource
                 throw new ArgumentException("input: incorrect format");
 
             var result = await Process(root, context.User);
+            if (result.error!= null)
+                log.LogWarning($"Training login: {result.error}");
 
             await next.Invoke(context);
 
@@ -135,6 +138,7 @@ namespace ProblemSource
             var (training, error) = await GetTrainingFromInput(root);
             if (training == null)
             {
+                log.LogWarning($"Training login: {error}");
                 return new SyncResult { error = error };
             }
 
@@ -160,6 +164,7 @@ namespace ProblemSource
                 if (userStates.Any())
                 {
                     var pushedStateItem = userStates.Last();
+                    log.LogInformation($"Training {training.Id}/'{training.Username}' - day {pushedStateItem.exercise_stats.trainingDay}");
                     if (currentStoredState != null && pushedStateItem.exercise_stats.trainingDay < currentStoredState.exercise_stats.trainingDay)
                         log.LogWarning($"({training.Id}) Latest trainingDay in stored data: {currentStoredState.exercise_stats.trainingDay}, incoming: {pushedStateItem.exercise_stats.trainingDay}");
                     else

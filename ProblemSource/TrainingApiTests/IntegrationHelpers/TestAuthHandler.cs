@@ -41,8 +41,6 @@
 //                claims.Add(new Claim(ClaimTypes.NameIdentifier, _defaultUserId));
 //            }
 
-//            // TODO: Add as many claims as you need here
-
 //            var identity = new ClaimsIdentity(claims, AuthenticationScheme);
 //            var principal = new ClaimsPrincipal(identity);
 //            var ticket = new AuthenticationTicket(principal, AuthenticationScheme);
