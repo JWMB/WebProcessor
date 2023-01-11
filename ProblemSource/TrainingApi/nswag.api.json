@@ -454,6 +454,12 @@
             "in": "query",
             "format": "int32",
             "x-nullable": false
+          },
+          {
+            "type": "string",
+            "name": "createForUser",
+            "in": "query",
+            "x-nullable": true
           }
         ],
         "responses": {

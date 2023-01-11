@@ -10,10 +10,6 @@
         await apiFacade.accounts.post(<CreateUserDto>{ username: email, password: password });
     }
 
-    const getUsers = async () => {
-        const all = await apiFacade.accounts.getAll();
-    };
-
     const getElementValue = (id: string) => (<HTMLInputElement>document.getElementById(id)).value;
 
     let users: GetUserDto[] = [];
@@ -24,10 +20,10 @@
 
 <div>
     <h2>Create user</h2>
-    Email: <input id="email" type="text" value="Fsk A">
+    Email: <input id="email" type="text" value="">
     Password: <input id="password" style="width:40px;" type="text">
     <input type="button" value="Create"
-        on:click={() => createUser(getElementValue("numTrainings"), getElementValue("className"))}>
+        on:click={() => createUser(getElementValue("numTrainings"), getElementValue("password"))}>
 </div>
 
 {#each users as user}

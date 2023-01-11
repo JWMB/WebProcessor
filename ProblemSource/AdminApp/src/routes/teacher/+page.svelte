@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { apiFacade as apiFacadeStore } from '../../globalStore';
+    import { apiFacade as apiFacadeStore, loggedInUser } from '../../globalStore';
     import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto, TrainingCreateDto } from 'src/apiClient';
@@ -12,11 +12,14 @@
 
     const apiFacade = get(apiFacadeStore);
 
+    const loggedInUserInfo = get(loggedInUser);
+
     let trainingsPromise: Promise<TrainingSummaryWithDaysDto[]>;
     // let trainingGroupsPromise: Promise<{[key: string]: TrainingSummaryDto[] }>;
     let trainingGroupsPromise2: Promise<{ group: string, summaries: TrainingSummaryDto[]}[]>;
 
     let trainingGroups: { group: string, summaries: TrainingSummaryDto[]}[] = [];
+    let createdTrainingUsernames: string[] = [];
 
     const clickedGroupRow = (e: CustomEvent<any>) => {
         trainingsPromise = apiFacade.trainings.getSummaries(e.detail.group);
@@ -26,7 +29,7 @@
         goto(`${base}/training?id=${e.detail.id}`);
     };
 
-    async function createTrainings(num: number, groupName: string, numMinutes: number) {
+    async function createTrainings(num: number, groupName: string, numMinutes: number, forUser?: string | null) {
         if (!groupName) {
             alert("A name is required");
             return;
@@ -39,7 +42,7 @@
             }
             chosenTemplate.settings.timeLimits = [numMinutes];
             const dto = <TrainingCreateDto>{ trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
-            await apiFacade.trainings.postGroup(dto, groupName, num);
+            createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
             await getTrainings();
         }
     }
@@ -76,9 +79,20 @@
         Create class: <input id="className" type="text" value="Fsk A">
         num trainings: <input id="numTrainings" style="width:40px;" type="number" min="1" max="30" value="10">
         time per day: <input id="timePerDay" style="width:40px;" type="number" min="15" max="45" value="33">
+        {#if loggedInUserInfo?.role == "Admin"}
+        create for user: <input id="forUser" type="text">
+        {/if}
         <input type="button" value="Create"
-            on:click={() => createTrainings(parseFloat(getElementValue("numTrainings")), getElementValue("className"), parseFloat(getElementValue("timePerDay")))}>
+            on:click={() => createTrainings(parseFloat(getElementValue("numTrainings")), getElementValue("className"), parseFloat(getElementValue("timePerDay")), getElementValue("forUser"))}>
+
+        {#if createdTrainingUsernames}
+        Created users:
+        {#each createdTrainingUsernames as username}
+            <li>username</li>
+        {/each}
+        {/if}
     </div>
+
     <!-- {#await trainingGroupsPromise}
         <div>Loading...</div>
     {:then grouped}

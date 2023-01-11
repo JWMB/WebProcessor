@@ -191,7 +191,12 @@ namespace ProblemSource
                     log.LogError(ex, $"UpdateAggregates");
                 }
 
-                // TODO: check for EndOfDayLogItem (or if TrainingDay has changed) to trigger 
+                var eod = logItems.OfType<EndOfDayLogItem>().FirstOrDefault();
+                // TODO: also check if stat's TrainingDay has changed
+                if (eod?.training_day == 5)
+                {
+
+                }
             }
 
             if (root.RequestState)

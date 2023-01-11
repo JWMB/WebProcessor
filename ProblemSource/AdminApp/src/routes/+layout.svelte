@@ -68,13 +68,13 @@
 <nav>
 	<a href="{base}/">Home</a>
 	<a href="{base}/teacher">Teacher</a>
+	{#if loggedInUserInfo?.role == "Admin"}
+	<a href="{base}/admin">Admin</a>
+	{/if}
 	{#if loggedInUserInfo?.loggedIn}
 	<a href="{base}/" on:click={logout}>Log out {loggedInUserInfo?.username}</a>
 	{:else}
 	<a href="{base}/login">Log in</a>
-	{/if}
-	{#if loggedInUserInfo?.role == "Admin"}
-	<a href="{base}/admin">Admin</a>
 	{/if}
 </nav>
 <div class="page-container">

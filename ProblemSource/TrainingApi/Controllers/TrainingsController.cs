@@ -8,7 +8,6 @@ using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
-using System.Linq;
 using System.Security.Claims;
 using TrainingApi.Services;
 
@@ -70,13 +69,21 @@ namespace TrainingApi.Controllers
 
         [HttpPost]
         [Route("createclass")]
-        public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings)
+        public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings, string? createForUser = null)
         {
             if (numTrainings <= 1 || numTrainings > 30) throw new ArgumentOutOfRangeException(nameof(numTrainings));
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new ArgumentOutOfRangeException("groupName");
 
             var user = await GetSignedInUser(false);
             if (user == null) throw new Exception("null user");
+
+            if (string.IsNullOrEmpty(createForUser) == false)
+            {
+                if (user.Role != Roles.Admin)
+                    throw new UnauthorizedAccessException();
+                user = await userRepository.Get(createForUser);
+                if (user == null) throw new Exception($"null user ({nameof(createForUser)}={createForUser})");
+            }
 
             var trainings = new List<Training>();
             for (int i = 0; i < numTrainings; i++)
