@@ -566,6 +566,49 @@ export class TrainingsClient {
         return Promise.resolve<Training[]>(null as any);
     }
 
+    postGroup(dto: TrainingCreateDto, groupName: string | null | undefined, numTrainings: number | undefined): Promise<string[]> {
+        let url_ = this.baseUrl + "/api/Trainings/createclass?";
+        if (groupName !== undefined && groupName !== null)
+            url_ += "groupName=" + encodeURIComponent("" + groupName) + "&";
+        if (numTrainings === null)
+            throw new Error("The parameter 'numTrainings' cannot be null.");
+        else if (numTrainings !== undefined)
+            url_ += "numTrainings=" + encodeURIComponent("" + numTrainings) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPostGroup(_response);
+        });
+    }
+
+    protected processPostGroup(response: Response): Promise<string[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string[]>(null as any);
+    }
+
     getById(id: number): Promise<Training> {
         let url_ = this.baseUrl + "/api/Trainings/{id}";
         if (id === undefined || id === null)
@@ -600,6 +643,39 @@ export class TrainingsClient {
             });
         }
         return Promise.resolve<Training>(null as any);
+    }
+
+    getTemplates(): Promise<Training[]> {
+        let url_ = this.baseUrl + "/api/Trainings/templates";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetTemplates(_response);
+        });
+    }
+
+    protected processGetTemplates(response: Response): Promise<Training[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Training[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Training[]>(null as any);
     }
 
     getGroups(): Promise<{ [key: string]: TrainingSummaryDto[]; }> {

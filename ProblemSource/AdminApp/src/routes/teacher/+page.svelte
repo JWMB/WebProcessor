@@ -2,7 +2,7 @@
     import { apiFacade as apiFacadeStore } from '../../globalStore';
     import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
-	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto } from 'src/apiClient';
+	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto, TrainingCreateDto } from 'src/apiClient';
 	import TrainingsTable from '../../components/trainingsTable.svelte';
 	import TrainingGroupsTable from '../../components/trainingGroupsTable.svelte';
 	import { goto } from '$app/navigation';
@@ -25,6 +25,28 @@
         console.log("training", e.detail.id);
         goto(`${base}/training?id=${e.detail.id}`);
     };
+
+    async function createTrainings(num: number, groupName: string, numMinutes: number) {
+        if (!groupName) {
+            alert("A name is required");
+            return;
+        }
+        if (confirm(`Create class '${groupName}' with ${num} trainings?`)) {
+            const templates = await apiFacade.trainings.getTemplates();
+            const chosenTemplate = templates[0];
+            if (!chosenTemplate.settings) {
+                chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };    
+            }
+            chosenTemplate.settings.timeLimits = [numMinutes];
+            const dto = <TrainingCreateDto>{ trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
+            await apiFacade.trainings.postGroup(dto, groupName, num);
+            await getTrainings();
+        }
+    }
+
+    function getElementValue(id: string) {
+        return (<HTMLInputElement>document.getElementById(id)).value;
+    }
 
     async function getTrainings() {
         if (apiFacade == null) {
@@ -50,6 +72,13 @@
 
 <div>
     <h2>Classes</h2>
+    <div>
+        Create class: <input id="className" type="text" value="Fsk A">
+        num trainings: <input id="numTrainings" style="width:40px;" type="number" min="1" max="30" value="10">
+        time per day: <input id="timePerDay" style="width:40px;" type="number" min="15" max="45" value="33">
+        <input type="button" value="Create"
+            on:click={() => createTrainings(parseFloat(getElementValue("numTrainings")), getElementValue("className"), parseFloat(getElementValue("timePerDay")))}>
+    </div>
     <!-- {#await trainingGroupsPromise}
         <div>Loading...</div>
     {:then grouped}
@@ -90,18 +119,22 @@
     {#await trainingGroupsPromise2}
     <div>Loading...</div>
     {:then trainings}
+        {#if !!trainings && trainings.length > 0}
         <TrainingGroupsTable trainingSummaries={trainings} on:clickedRow={clickedGroupRow}></TrainingGroupsTable>
+        {/if}
     {:catch error}
         {error}
     {/await}
     
 
-    <h2>Trainings</h2>
     <!-- <TrainingsTable trainingSummaries={trainingSummaries} numDays={5}></TrainingsTable> -->
     {#await trainingsPromise}
         <div>Loading...</div>
     {:then trainings}
+        {#if !!trainings && trainings.length > 0}
+        <h2>Trainings</h2>
         <TrainingsTable trainingSummaries={trainings} numDays={14} on:clickedRow={clickedTrainingRow}></TrainingsTable>
+        {/if}
     {:catch error}
         {error}
     {/await}

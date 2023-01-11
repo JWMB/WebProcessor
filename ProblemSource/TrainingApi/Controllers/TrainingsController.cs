@@ -11,7 +11,6 @@ using ProblemSourceModule.Services.Storage;
 using System.Linq;
 using System.Security.Claims;
 using TrainingApi.Services;
-using static TrainingApi.Controllers.TrainingsController;
 
 namespace TrainingApi.Controllers
 {
@@ -51,7 +50,13 @@ namespace TrainingApi.Controllers
         [HttpPost]
         public async Task<string> Post(TrainingCreateDto dto)
         {
-            // {"timeLimits":[33.0],"uniqueGroupWeights":null,"manuallyUnlockedExercises":null,"idleTimeout":null,"cultureCode":"sv-SE","customData":null,"triggers":null,"pacifistRatio":0.1,"trainingPlanOverrides":null,"syncSettings":null,"alarmClockInvisible":null}
+            var training = await CreateTraining(dto);
+            return training.Username;
+        }
+
+        private async Task<Training> CreateTraining(TrainingCreateDto dto)
+        {
+            // TODO: move to trainingRepository
             var tp = await trainingPlanRepository.Get(dto.TrainingPlan);
             if (tp == null)
                 throw new Exception($"Training plan not found: {dto.TrainingPlan}");
@@ -60,18 +65,33 @@ namespace TrainingApi.Controllers
 
             training.Username = usernameHashing.Hash(mnemoJapanese.FromIntWithRandom(id));
             await trainingRepository.Update(training);
-
-            // TODO: add to User.Trainings - needs a group name
-
-            return training.Username;
+            return training;
         }
 
-        //[HttpPut]
-        //public async Task<string> Put(TrainingCreateDTO dto)
-        //{
-        //    await Task.Delay(1);
-        //    return "";
-        //}
+        [HttpPost]
+        [Route("createclass")]
+        public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings)
+        {
+            if (numTrainings <= 1 || numTrainings > 30) throw new ArgumentOutOfRangeException(nameof(numTrainings));
+            if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new ArgumentOutOfRangeException("groupName");
+
+            var user = await GetSignedInUser(false);
+            if (user == null) throw new Exception("null user");
+
+            var trainings = new List<Training>();
+            for (int i = 0; i < numTrainings; i++)
+                trainings.Add(await CreateTraining(dto));
+
+            if (!user.Trainings.TryGetValue(groupName, out var list))
+            {
+                list = new List<int>();
+                user.Trainings.Add(groupName, list);
+            }
+            list.AddRange(trainings.Select(o => o.Id));
+            await userRepository.Update(user);
+
+            return trainings.Select(o => o.Username).ToList();
+        }
 
         [HttpGet]
         [Route("{id}")]
@@ -84,6 +104,30 @@ namespace TrainingApi.Controllers
         public async Task<IEnumerable<Training>> Get()
         {
             return await GetUsersTrainings();
+        }
+
+        [HttpGet]
+        [Route("templates")]
+        public IEnumerable<Training> GetTemplates()
+        {
+            // {"timeLimits":[33.0]}
+            var ts = new TrainingSettings
+            {
+                cultureCode = "sv-SE",
+                alarmClockInvisible = null,
+                customData = null,
+                idleTimeout = null,
+                triggers = null,
+                manuallyUnlockedExercises = null,
+                uniqueGroupWeights = null,
+                trainingPlanOverrides = null,
+                syncSettings = null,
+                pacifistRatio = 0.1M,
+                timeLimits = new List<decimal> { 33 },
+            };
+            return new[] {
+                new Training { Id = 1, Username = "Default training", TrainingPlanName = "2017 HT template Default", Settings = ts }
+            };
         }
 
         [HttpGet]
@@ -146,18 +190,20 @@ namespace TrainingApi.Controllers
             }).ToList();
         }
 
-        private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null)
+        private async Task<User?> GetSignedInUser(bool fallbackToDev)
         {
+            // TODO: move to service
             var nameClaim = User.Claims.First(o => o.Type == ClaimTypes.Name).Value;
             var user = await userRepository.Get(nameClaim);
+            if (user == null && fallbackToDev && System.Diagnostics.Debugger.IsAttached && nameClaim == "dev")
+                return new User { Role = Roles.Admin };
+            return user;
+        }
+
+        private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null)
+        {
+            var user = await GetSignedInUser(true);
             Dictionary<string, List<Training>> groupToIds = new();
-            if (user == null)
-            {
-                if (System.Diagnostics.Debugger.IsAttached && nameClaim == "dev")
-                    user = new User { Role = Roles.Admin };
-                else
-                    return groupToIds;
-            }
 
             if (user.Trainings.Any() == false && user.Role == Roles.Admin)
                 groupToIds.Add("", (await trainingRepository.GetAll()).ToList());
