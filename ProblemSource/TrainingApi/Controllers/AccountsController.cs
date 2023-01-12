@@ -95,13 +95,14 @@ namespace TrainingApi.Controllers
         [Route("login")]
         public async Task<ActionResult<LoginResultDto>> Login([FromBody] LoginCredentials credentials)
         {
+            //TODO: move to e.g. B2C
             var user = await authenticateUserService.GetUser(credentials.Username, credentials.Password);
             if (user == null)
             {
                 return Unauthorized();
             }
 
-            var principal = CreatePrincipal(user);
+            var principal = WebUserProvider.CreatePrincipal(user);
             var authProperties = new AuthenticationProperties
             {
                 //AllowRefresh = <bool>, // Refreshing the authentication session should be allowed.
@@ -121,16 +122,6 @@ namespace TrainingApi.Controllers
         }
 
         public readonly record struct LoginResultDto(string Role);
-
-        public static ClaimsPrincipal CreatePrincipal(User user)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Email),
-                new Claim(ClaimTypes.Role, user.Role)
-            };
-            return new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
-        }
     }
 
     public class LoginCredentials

@@ -22,6 +22,7 @@ namespace TrainingApi.Controllers
         private readonly ITrainingRepository trainingRepository;
         private readonly IStatisticsProvider statisticsProvider;
         private readonly IUserRepository userRepository;
+        private readonly IUserProvider userProvider;
         private readonly MnemoJapanese mnemoJapanese;
         private readonly UsernameHashing usernameHashing;
         private readonly IAggregationService aggregationService;
@@ -31,7 +32,7 @@ namespace TrainingApi.Controllers
         private readonly ILogger<AggregatesController> _logger;
 
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
-            IUserRepository userRepository, MnemoJapanese mnemoJapanese, UsernameHashing usernameHashing, 
+            IUserRepository userRepository, IUserProvider userProvider, MnemoJapanese mnemoJapanese, UsernameHashing usernameHashing, 
             IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
             ILogger<AggregatesController> logger)
         {
@@ -39,6 +40,7 @@ namespace TrainingApi.Controllers
             this.trainingRepository = trainingRepository;
             this.statisticsProvider = statisticsProvider;
             this.userRepository = userRepository;
+            this.userProvider = userProvider;
             this.mnemoJapanese = mnemoJapanese;
             this.usernameHashing = usernameHashing;
             this.aggregationService = aggregationService;
@@ -78,8 +80,7 @@ namespace TrainingApi.Controllers
             if (numTrainings <= 1 || numTrainings > 30) throw new ArgumentOutOfRangeException(nameof(numTrainings));
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new ArgumentOutOfRangeException("groupName");
 
-            var user = await GetSignedInUser(false);
-            if (user == null) throw new Exception("null user");
+            var user = userProvider.UserOrThrow; // await GetSignedInUser(false);
 
             if (string.IsNullOrEmpty(createForUser) == false)
             {
@@ -201,19 +202,19 @@ namespace TrainingApi.Controllers
             }).ToList();
         }
 
-        private async Task<User?> GetSignedInUser(bool fallbackToDev)
-        {
-            // TODO: move to service
-            var nameClaim = User.Claims.First(o => o.Type == ClaimTypes.Name).Value;
-            var user = await userRepository.Get(nameClaim);
-            if (user == null && fallbackToDev && System.Diagnostics.Debugger.IsAttached && nameClaim == "dev")
-                return new User { Role = Roles.Admin };
-            return user;
-        }
+        //private async Task<User?> GetSignedInUser(bool fallbackToDev)
+        //{
+        //    // TODO: move to service
+        //    var nameClaim = User.Claims.First(o => o.Type == ClaimTypes.Name).Value;
+        //    var user = await userRepository.Get(nameClaim);
+        //    if (user == null && fallbackToDev && System.Diagnostics.Debugger.IsAttached && nameClaim == "dev")
+        //        return new User { Role = Roles.Admin };
+        //    return user;
+        //}
 
         private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null)
         {
-            var user = await GetSignedInUser(true);
+            var user = userProvider.UserOrThrow; // await GetSignedInUser(true);
             Dictionary<string, List<Training>> groupToIds = new();
 
             if (user.Trainings.Any() == false && user.Role == Roles.Admin)

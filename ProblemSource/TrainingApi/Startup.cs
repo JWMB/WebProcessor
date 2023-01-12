@@ -10,6 +10,7 @@ using PluginModuleBase;
 using System.Data;
 using System.Text;
 using TrainingApi.Controllers;
+using TrainingApi.RealTime;
 using TrainingApi.Services;
 
 namespace TrainingApi
@@ -18,11 +19,22 @@ namespace TrainingApi
     {
         private IPluginModule[] plugins = Array.Empty<IPluginModule>();
         private OldDb.Startup? oldDbStartup;
+        private RealTime.Startup? realTimeStartup;
 
         public void ConfigureServices(IServiceCollection services, ConfigurationManager configurationManager, IWebHostEnvironment env)
         {
-            services.AddScoped<IStatisticsProvider, StatisticsProvider>(); // RecreatedStatisticsProvider
+            services.AddScoped<IStatisticsProvider, StatisticsProvider>();
             services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
+
+            services.AddTransient<IUserProvider, WebUserProvider>();
+            services.AddTransient<IAccessResolver, AccessResolver>();
+
+            if (configurationManager.GetValue<bool>("RealTime"))
+            {
+                // TODO: should we use 
+                var realTimeStartup = new RealTime.Startup();
+                realTimeStartup.ConfigureServices(services);
+            }
 
             plugins = ConfigureProblemSource(services, configurationManager, env);
 
@@ -76,7 +88,10 @@ namespace TrainingApi
             app.UseHttpsRedirection();
 
             if (app is WebApplication webApp)
+            {
                 webApp.MapControllers();
+                realTimeStartup?.Configure(webApp, "/chathub");
+            }
 
             // static files with fallback to index.html (entry point for admin interface)
             var cacheMaxAgeOneWeek = (60 * 60 * 24 * 7).ToString();
@@ -106,7 +121,7 @@ namespace TrainingApi
                             autologin = false;
 
                         if (autologin)
-                            context.User = AccountsController.CreatePrincipal(new ProblemSourceModule.Models.User { Email = "dev", Role = Roles.Admin });
+                            context.User = WebUserProvider.CreatePrincipal(new ProblemSourceModule.Models.User { Email = "dev", Role = Roles.Admin });
                     }
 
                     await next.Invoke();

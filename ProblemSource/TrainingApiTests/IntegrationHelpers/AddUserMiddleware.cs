@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using TrainingApi.Controllers;
 using ProblemSourceModule.Models;
+using TrainingApi.Services;
 
 namespace TrainingApiTests.IntegrationHelpers
 {
@@ -22,7 +23,7 @@ namespace TrainingApiTests.IntegrationHelpers
             {
                 var user = System.Text.Json.JsonSerializer.Deserialize<User>(auth.Substring(auth.IndexOf(" ") + 1));
                 if (user != null)
-                    context.User = AccountsController.CreatePrincipal(user);
+                    context.User = WebUserProvider.CreatePrincipal(user);
             }
             await next(context);
         }
