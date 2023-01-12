@@ -78,11 +78,11 @@ namespace TrainingApi
             if (app is WebApplication webApp)
                 webApp.MapControllers();
 
-            // static files
+            // static files with fallback to index.html (entry point for admin interface)
             var cacheMaxAgeOneWeek = (60 * 60 * 24 * 7).ToString();
             app.UseStaticFiles(new StaticFileOptions
             {
-                FileProvider = new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "StaticFiles", "Admin")),
+                FileProvider = new FallbackFileProvider("index.html", new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "StaticFiles", "Admin"))),
                 RequestPath = "/admin",
                 OnPrepareResponse = ctx =>
                 {
