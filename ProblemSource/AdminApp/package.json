@@ -34,6 +34,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@microsoft/signalr": "^7.0.2",
 		"ag-grid-community": "^28.2.1",
 		"chart.js": "^3.9.1",
 		"color-convert": "^2.0.1"

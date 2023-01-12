@@ -9,6 +9,7 @@
 	import { base } from '$app/paths';
 	import type { CurrentUserInfo } from 'src/currentUserInfo.js';
 	import { browser } from '$app/environment';
+	import { Realtime } from '../services/realtime.js';
 
 	let loggedInUserInfo: CurrentUserInfo | null; // = get(loggedInUser);
 	let apiFacadeInstance: ApiFacade;
@@ -24,13 +25,22 @@
 		loggedInUser.set(loggedInUserInfo);
 	}
 
-	function initApi(location: Location) {
-		const apiBaseUrl = location.host.indexOf("localhost") >= 0 || location.host.indexOf(":8080") > 0
+	const resolveBaseUrl = (location: Location) =>
+		location.host.indexOf("localhost") >= 0 || location.host.indexOf(":8080") > 0
 			? "https://localhost:7173" : location.origin;
-		apiFacadeInstance = new ApiFacade(apiBaseUrl);
+	function initApi(location: Location) {
+		// const apiBaseUrl = location.host.indexOf("localhost") >= 0 || location.host.indexOf(":8080") > 0
+		// 	? "https://localhost:7173" : location.origin;
+		apiFacadeInstance = new ApiFacade(resolveBaseUrl(location));
 		apiFacade.set(apiFacadeInstance);
+
 	}
 
+	function startRealtime() {
+		const realtime = new Realtime();
+		realtime.connect(resolveBaseUrl(window.location));
+	}
+	
 	function setupTopLevelErrorHandling(root: typeof globalThis | Window) {
 		root.onunhandledrejection = (e) => {
 		  if (e.reason instanceof ApiException) {
@@ -75,6 +85,7 @@
 	{:else}
 	<a href="{base}/login">Log in</a>
 	{/if}
+	<button on:click={startRealtime()}>Connect</button>
 </nav>
 <div class="page-container">
 	<slot />

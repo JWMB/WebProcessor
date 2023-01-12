@@ -29,10 +29,9 @@ namespace TrainingApi
             services.AddTransient<IUserProvider, WebUserProvider>();
             services.AddTransient<IAccessResolver, AccessResolver>();
 
-            if (configurationManager.GetValue<bool>("RealTime"))
+            if (true || configurationManager.GetValue<bool>("RealTimeEndPoint"))
             {
-                // TODO: should we use 
-                var realTimeStartup = new RealTime.Startup();
+                realTimeStartup = new RealTime.Startup();
                 realTimeStartup.ConfigureServices(services);
             }
 
@@ -90,7 +89,7 @@ namespace TrainingApi
             if (app is WebApplication webApp)
             {
                 webApp.MapControllers();
-                realTimeStartup?.Configure(webApp, "/chathub");
+                realTimeStartup?.Configure(webApp, "/realtime");
             }
 
             // static files with fallback to index.html (entry point for admin interface)

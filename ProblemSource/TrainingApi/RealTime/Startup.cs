@@ -6,6 +6,7 @@ namespace TrainingApi.RealTime
     {
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSignalR();
             services.AddSingleton<IConnectionsRepository, ConnectionsRepository>();
             services.AddSingleton<QueueListener>();
             services.AddSingleton<CommHubWrapper>();
