@@ -1,5 +1,6 @@
 <script lang="ts">
-	export const prerender = true;
+	export const prerender = false;
+	export const ssr = false;
 
     import { apiFacade, loggedInUser } from '../globalStore.js';
     import { ApiFacade } from '../apiFacade';
@@ -7,6 +8,7 @@
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import type { CurrentUserInfo } from 'src/currentUserInfo.js';
+	import { browser } from '$app/environment';
 
 	let loggedInUserInfo: CurrentUserInfo | null; // = get(loggedInUser);
 	let apiFacadeInstance: ApiFacade;
@@ -56,11 +58,7 @@
 		}
 	}
 
-	if (globalThis == null) {
-		console.error("No globalThis", globalThis);
-	} else if (globalThis.location == null) {
-		console.error("No globalThis.location", globalThis.location);
-	} else {
+	if (browser) {
 		initApi(globalThis.location);
 		setupTopLevelErrorHandling(globalThis);
 	}

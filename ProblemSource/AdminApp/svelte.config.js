@@ -14,7 +14,6 @@ const config = {
 		prerender: { entries: [] },
 		paths: {
 			base: "/admin",
-
 			// Not working:
 			// https://github.com/sveltejs/kit/issues/2958
 			// https://github.com/sveltejs/kit/pull/7543
