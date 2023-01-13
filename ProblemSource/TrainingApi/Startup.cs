@@ -9,8 +9,6 @@ using Microsoft.OpenApi.Models;
 using PluginModuleBase;
 using System.Data;
 using System.Text;
-using TrainingApi.Controllers;
-using TrainingApi.RealTime;
 using TrainingApi.Services;
 
 namespace TrainingApi
@@ -18,7 +16,7 @@ namespace TrainingApi
     public class Startup
     {
         private IPluginModule[] plugins = Array.Empty<IPluginModule>();
-        private OldDb.Startup? oldDbStartup;
+        private OldDbAdapter.Startup? oldDbStartup = null;
         private RealTime.Startup? realTimeStartup;
 
         public void ConfigureServices(IServiceCollection services, ConfigurationManager configurationManager, IWebHostEnvironment env)
@@ -42,14 +40,12 @@ namespace TrainingApi
                 options.AddPolicy(RolesRequirement.AdminOrTeacher, policy => policy.Requirements.Add(new RolesRequirement(RolesRequirement.AdminOrTeacher)));
             });
 
-            //var oldDbEnabled = configurationManager.GetValue<bool>("OldDbEnabled");
-            //if (oldDbEnabled && System.Diagnostics.Debugger.IsAttached)
-            //{
-            //    services.AddScoped<TrainingDbContext>();
-            //    services.AddSingleton(sp => new OldDbRaw("Server=localhost;Database=trainingdb;Trusted_Connection=True;"));
-            //    oldDbStartup = new OldDb.Startup();
-            //    oldDbStartup.ConfigureServices(services);
-            //}
+            var oldDbEnabled = configurationManager.GetValue<bool>("OldDbEnabled");
+            if (oldDbEnabled && System.Diagnostics.Debugger.IsAttached)
+            {
+                oldDbStartup = new OldDbAdapter.Startup();
+                oldDbStartup.ConfigureServices(services);
+            }
 
             services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -66,7 +62,7 @@ namespace TrainingApi
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            ServiceConfiguration.ConfigurePlugins(app.ApplicationServices, plugins);
+            ServiceConfiguration.ConfigurePlugins(app, plugins);
 
             // Configure the HTTP request pipeline.
             if (env.IsDevelopment())
@@ -148,10 +144,10 @@ namespace TrainingApi
                 MinimumSameSitePolicy = env.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.None : Microsoft.AspNetCore.Http.SameSiteMode.Lax
             });
 
-            ServiceConfiguration.ConfigureApplicationInsights(app.ApplicationServices, config, env.IsDevelopment());
+            ServiceConfiguration.ConfigureApplicationInsights(app, config, env.IsDevelopment());
 
             if (oldDbStartup != null)
-                app.UseEndpoints(oldDbStartup.ConfigureGraphQL); //app.UseEndpoints(x => x.MapGraphQL()); app.Map(/graphql", )
+                oldDbStartup.Configure(app);
         }
 
         private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
@@ -200,59 +196,56 @@ namespace TrainingApi
             services.AddAuthentication(options =>
             {
                 // https://weblog.west-wind.com/posts/2022/Mar/29/Combining-Bearer-Token-and-Cookie-Auth-in-ASPNET
-
                 options.DefaultScheme = combinedScheme;
                 options.DefaultChallengeScheme = combinedScheme;
                 options.DefaultAuthenticateScheme = combinedScheme;
                 options.DefaultForbidScheme = combinedScheme;
-            })
-                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+
+            }).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+            {
+                options.ExpireTimeSpan = TimeSpan.FromDays(1);
+                //options.Cookie.SecurePolicy = true ? CookieSecurePolicy.None : CookieSecurePolicy.Always; //_environment.IsDevelopment()
+                options.Cookie.SameSite = env.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.None : Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+                options.Events = new CustomCookieAuthEvents();
+
+            }).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                // This is a way to invalidate older tokens in case of exposure
+                var issuedAfter = DateTime.Parse(config["Token:IssuedAfter"] ?? "", System.Globalization.CultureInfo.InvariantCulture);
+                var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Token:TokenSigningKey"] ?? ""));
+
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    options.ExpireTimeSpan = TimeSpan.FromDays(1);
-                    //options.Cookie.SecurePolicy = true ? CookieSecurePolicy.None : CookieSecurePolicy.Always; //_environment.IsDevelopment()
-                    options.Cookie.SameSite = env.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.None : Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+                    ValidIssuer = config["Token:ValidIssuer"],
+                    ValidateIssuer = true,
 
-                    options.Events = new CustomCookieAuthEvents();
-                })
-                .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+                    ValidAudiences = config["Token:ValidAudiences"]?.Split(',') ?? new[] { "" },
+                    ValidateAudience = true,
+
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = securityKey,
+
+                    ValidateLifetime = true,
+                    LifetimeValidator = (_, _, securityToken, validationParameters) =>
+                        securityToken.ValidFrom > issuedAfter &&
+                        securityToken.ValidTo > DateTime.UtcNow
+                };
+                options.Validate();
+
+            }).AddPolicyScheme(combinedScheme, combinedScheme, options =>
+            {
+                // runs on each request
+                options.ForwardDefaultSelector = context =>
                 {
-                    // This is a way to invalidate older tokens in case of exposure
-                    var issuedAfter = DateTime.Parse(config["Token:IssuedAfter"] ?? "", System.Globalization.CultureInfo.InvariantCulture);
-                    var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Token:TokenSigningKey"] ?? ""));
+                    // filter by auth type
+                    var authorization = context.Request.Headers[HeaderNames.Authorization];
+                    if (authorization.ToString().StartsWith(JwtBearerDefaults.AuthenticationScheme) == true)
+                        return JwtBearerDefaults.AuthenticationScheme;
 
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidIssuer = config["Token:ValidIssuer"],
-                        ValidateIssuer = true,
-
-                        ValidAudiences = config["Token:ValidAudiences"]?.Split(',') ?? new[] { "" },
-                        ValidateAudience = true,
-
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = securityKey,
-
-                        ValidateLifetime = true,
-                        LifetimeValidator = (_, _, securityToken, validationParameters) =>
-                            securityToken.ValidFrom > issuedAfter &&
-                            securityToken.ValidTo > DateTime.UtcNow
-                    };
-
-                    options.Validate();
-                })
-                .AddPolicyScheme(combinedScheme, combinedScheme, options =>
-                {
-                    // runs on each request
-                    options.ForwardDefaultSelector = context =>
-                    {
-                        // filter by auth type
-                        var authorization = context.Request.Headers[HeaderNames.Authorization];
-                        if (authorization.ToString().StartsWith(JwtBearerDefaults.AuthenticationScheme) == true)
-                            return JwtBearerDefaults.AuthenticationScheme;
-
-                        // otherwise always check for cookie auth
-                        return CookieAuthenticationDefaults.AuthenticationScheme;
-                    };
-                });
+                    // otherwise always check for cookie auth
+                    return CookieAuthenticationDefaults.AuthenticationScheme;
+                };
+            });
         }
     }
 }

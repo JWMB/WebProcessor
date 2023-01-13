@@ -52,7 +52,9 @@ namespace Organization.Tests
             var jsonFile = @"C:\Users\uzk446\Downloads\Skolenhetsregistret_20220818.json";
             if (File.Exists(jsonFile))
             {
-                schools = JsonConvert.DeserializeObject<List<SchoolBase>>(File.ReadAllText(jsonFile), jsonSettings);
+                var tmp = JsonConvert.DeserializeObject<List<SchoolBase>>(File.ReadAllText(jsonFile), jsonSettings);
+                if (tmp == null) throw new NullReferenceException(jsonFile);
+                schools = tmp;
             }
             else
             {
@@ -147,6 +149,8 @@ namespace Organization.Tests
                 File.WriteAllText(jsonFile, json);
             }
             //var json = System.Text.Json.JsonSerializer.Serialize(schools.Take(2), schools.GetType(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            if (schools == null)
+                throw new NullReferenceException(nameof(schools));
 
             var basicSchools = schools.OfType<BasicSchool>();
             var byPedagogy = basicSchools.GroupBy(o => o.PedagogyType).ToList();

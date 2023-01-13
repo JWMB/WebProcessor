@@ -1,11 +1,8 @@
-﻿using Azure.Data.Tables;
-using Azure;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using ProblemSource.Models.Aggregates;
 
 namespace ProblemSource.Services.Storage.AzureTables.TableEntities
 {
-
     public class PhaseTableEntity : TableEntityBase
     {
         public int id { get; set; }

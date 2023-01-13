@@ -1,6 +1,5 @@
 ﻿using Azure.Data.Tables;
 using PluginModuleBase;
-//using ProblemSource.Services.Storage.AzureTables;
 
 namespace Common.Web.Services
 {
@@ -22,6 +21,7 @@ namespace Common.Web.Services
                 inited = true;
             }
 
+            // TODO: use ExpandableTableEntityConverter instead
             var entity = new TableEntity(uuid, ((long)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds).ToString());
             AzureTableHelpers.SetLongString(entity, Newtonsoft.Json.JsonConvert.SerializeObject(data));
 

@@ -28,19 +28,23 @@
 	const resolveBaseUrl = (location: Location) =>
 		location.host.indexOf("localhost") >= 0 || location.host.indexOf(":8080") > 0
 			? "https://localhost:7173" : location.origin;
-	function initApi(location: Location) {
+
+			function initApi(location: Location) {
 		// const apiBaseUrl = location.host.indexOf("localhost") >= 0 || location.host.indexOf(":8080") > 0
 		// 	? "https://localhost:7173" : location.origin;
 		apiFacadeInstance = new ApiFacade(resolveBaseUrl(location));
 		apiFacade.set(apiFacadeInstance);
-
 	}
 
 	function startRealtime() {
 		const realtime = new Realtime();
+		
+		realtime.onConnected = () => console.log("ok, connected");
+		realtime.onReceived = (o) => console.log("received", o);
+		realtime.onDisconnected = (err) => console.log("disconnected", err);
 		realtime.connect(resolveBaseUrl(window.location));
 	}
-	
+
 	function setupTopLevelErrorHandling(root: typeof globalThis | Window) {
 		root.onunhandledrejection = (e) => {
 		  if (e.reason instanceof ApiException) {
@@ -85,7 +89,7 @@
 	{:else}
 	<a href="{base}/login">Log in</a>
 	{/if}
-	<button on:click={startRealtime()}>Connect</button>
+	<button on:click={() => startRealtime()}>Connect</button>
 </nav>
 <div class="page-container">
 	<slot />

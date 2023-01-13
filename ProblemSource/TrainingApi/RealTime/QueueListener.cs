@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Queues;
 using Microsoft.AspNetCore.SignalR;
+using ProblemSource.Services.Storage.AzureTables;
 using TrainingApi.Services;
 
 namespace TrainingApi.RealTime
@@ -9,12 +10,14 @@ namespace TrainingApi.RealTime
         private readonly QueueClient client;
         private readonly CommHubWrapper chatHub;
         private readonly IAccessResolver accessResolver;
+        private readonly ILogger<QueueListener> log;
 
-        public QueueListener(CommHubWrapper chatHub, IAccessResolver accessResolver)
+        public QueueListener(CommHubWrapper chatHub, IAccessResolver accessResolver, AzureTableConfig azureTableConfig, ILogger<QueueListener> log)
         {
             client = new QueueClient("UseDevelopmentStorage=true", "problemsource-sync");
             this.chatHub = chatHub;
             this.accessResolver = accessResolver;
+            this.log = log;
         }
 
         public async Task Receive(CancellationToken cancellationToken)
@@ -42,7 +45,9 @@ namespace TrainingApi.RealTime
                 }
             }
             catch (Exception ex)
-            { }
+            {
+                log.LogError(ex);
+            }
         }
     }
 }

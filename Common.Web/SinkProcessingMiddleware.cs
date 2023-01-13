@@ -13,8 +13,6 @@ namespace Common.Web
             this.sink = sink;
         }
 
-        //public bool SupportsMiddlewarePattern => true;
-
         public async Task Invoke(HttpContext context, RequestDelegate next)
         {
             // note: https://stackoverflow.com/a/40994711
@@ -25,12 +23,5 @@ namespace Common.Web
             
             await next.Invoke(context);
         }
-
-        //public async Task<object?> Process(object input, System.Security.Claims.ClaimsPrincipal? user)
-        //{
-        //    // TODO: a client and/or user id
-        //    await sink.Log("unknown", input);
-        //    return null;
-        //}
     }
 }

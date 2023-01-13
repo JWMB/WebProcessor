@@ -1,5 +1,6 @@
 ﻿using Common;
 using Common.Web.Services;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,40 +17,29 @@ namespace ProblemSource
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            ConfigureServices(services, true);
-        }
-
-        public void ConfigureServices(IServiceCollection services, bool configureForPipeline)
-        {
-            if (configureForPipeline)
-                ConfigurePipeline(services);
-
             services.AddSingleton<ITrainingPlanRepository, EmbeddedTrainingPlanRepository>();
-            services.AddSingleton<IAggregationService, AggregationService>(); // AggregationService NullAggregationService
+            services.AddSingleton<IAggregationService, AggregationService>();
+
+            services.AddSingleton<ProblemSourceProcessingMiddleware>();
+            services.AddSingleton<IEventDispatcher, NullEventDispatcher>();
+
+            services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
+            //            services.AddSingleton<IEventDispatcher>(sp =>
+            ////    new QueueEventDispatcher(sp.GetRequiredService<IConfiguration>().GetOrThrow<string>("AppSettings:AzureQueue:ConnectionString"), sp.GetRequiredService<ILogger<QueueEventDispatcher>>()));
+
             services.AddMemoryCache();
 
             ConfigureForAzureTables(services);
             ConfigureUsernameHashing(services);
         }
 
-        public void ConfigurePipeline(IServiceCollection services)
-        {
-            services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
-            services.AddSingleton<ProblemSourceProcessingMiddleware>();
-            services.AddSingleton<IEventDispatcher>(sp =>
-                new QueueEventDispatcher(sp.GetRequiredService<IConfiguration>().GetOrThrow<string>("AppSettings:AzureQueue:ConnectionString"), sp.GetRequiredService<ILogger<QueueEventDispatcher>>()));
-            //QueueEventDispatcher NullEventDispatcher
-        }
-
         public void ConfigureForAzureTables(IServiceCollection services)
         {
             services.AddSingleton<IUserRepository, AzureTableUserRepository>();
             services.AddSingleton<ITypedTableClientFactory, TypedTableClientFactory>();
-            RemoveService<ITableClientFactory>(services);
-            services.AddSingleton<ITableClientFactory>(sp => sp.GetRequiredService<ITypedTableClientFactory>());
+            services.UpsertSingleton<ITableClientFactory>(sp => sp.GetRequiredService<ITypedTableClientFactory>());
 
-            //services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
-            services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, CachingAzureTableUserGeneratedDataRepositoriesProviderFactory>();
+            services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, CachingAzureTableUserGeneratedDataRepositoriesProviderFactory>(); //AzureTableUserGeneratedDataRepositoriesProviderFactory
 
             services.AddSingleton<ITrainingRepository, AzureTableTrainingRepository>();
         }
@@ -60,8 +50,9 @@ namespace ProblemSource
             services.AddSingleton(sp => new UsernameHashing(sp.GetRequiredService<MnemoJapanese>(), 2));
         }
 
-        public void Configure(IServiceProvider serviceProvider)
+        public void Configure(IApplicationBuilder app)
         {
+            var serviceProvider = app.ApplicationServices;
             serviceProvider.GetService<IProcessingMiddlewarePipelineRepository>()?
                 .Register("problemsource", serviceProvider.GetRequiredService<ProblemSourceProcessingMiddleware>());
 
@@ -72,8 +63,43 @@ namespace ProblemSource
             var queueEventDispatcher = serviceProvider.GetService<IEventDispatcher>() as QueueEventDispatcher;
             queueEventDispatcher?.Init().Wait();
         }
+    }
 
-        private static bool RemoveService<T>(IServiceCollection services)
+    public static class IServiceCollectionExtensions
+    {
+        public static void UpsertSingleton<TService>(this IServiceCollection services)
+            where TService : class
+            => services.Upsert<TService>(() => services.AddSingleton<TService>());
+
+        public static void UpsertSingleton<TService>(this IServiceCollection services, Func<IServiceProvider, TService> implementationFactory)
+            where TService : class
+            =>
+            services.Upsert<TService>(() => services.AddSingleton(sp => implementationFactory(sp)));
+
+        public static void UpsertSingleton<TService, TImplementation>(this IServiceCollection services)
+            where TService : class
+            where TImplementation : class, TService
+            =>
+            services.Upsert<TService, TImplementation>(() => services.AddSingleton<TService, TImplementation>());
+
+
+        public static void Upsert<TService, TImplementation>(this IServiceCollection services, Action add)
+            where TService : class
+            where TImplementation : class, TService
+        {
+            services.RemoveService<TService>();
+            services.RemoveService<TImplementation>();
+            add();
+        }
+        public static void Upsert<TService>(this IServiceCollection services, Action add)
+    where TService : class
+        {
+            services.RemoveService<TService>();
+            add();
+        }
+
+
+        public static bool RemoveService<T>(this IServiceCollection services)
         {
             var serviceDescriptor = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(T));
             if (serviceDescriptor != null)
@@ -83,5 +109,6 @@ namespace ProblemSource
             }
             return false;
         }
+
     }
 }

@@ -29,7 +29,7 @@ namespace TrainingApi.Controllers
         private readonly IUserGeneratedDataRepositoryProviderFactory dataRepoFactory;
 
         //private readonly IUserStateRepository userStateRepository;
-        private readonly ILogger<AggregatesController> _logger;
+        private readonly ILogger<AggregatesController> log;
 
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
             IUserRepository userRepository, IUserProvider userProvider, MnemoJapanese mnemoJapanese, UsernameHashing usernameHashing, 
@@ -45,7 +45,7 @@ namespace TrainingApi.Controllers
             this.usernameHashing = usernameHashing;
             this.aggregationService = aggregationService;
             this.dataRepoFactory = dataRepoFactory;
-            _logger = logger;
+            log = logger;
         }
 
         [HttpPost]
@@ -186,6 +186,7 @@ namespace TrainingApi.Controllers
             }
             catch (Exception ex)
             {
+                log.LogError(ex, $"group = {group}");
                 throw;
             }
 

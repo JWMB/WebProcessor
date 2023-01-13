@@ -6,7 +6,6 @@ namespace ProblemSource.Services.Storage.AzureTables
     {
         public string ConnectionString { get; set; } = "";
         public string TablePrefix { get; set; } = "";
-        public string TableUserStates { get; set; } = "";
         public string TableUserLogs { get; set; } = "";
         public string TableTrainingPlans { get; set; } = "";
 

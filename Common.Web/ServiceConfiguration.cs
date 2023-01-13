@@ -1,6 +1,7 @@
 ﻿using Common.Web.Services;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PluginModuleBase;
@@ -20,15 +21,16 @@ namespace Common.Web
                 plugin.ConfigureServices(services);
         }
 
-        public static void ConfigurePlugins(IServiceProvider serviceProvider, IEnumerable<IPluginModule> pluginModules)
+        public static void ConfigurePlugins(IApplicationBuilder app, IEnumerable<IPluginModule> pluginModules)
         {
-            serviceProvider.GetRequiredService<IProcessingMiddlewarePipelineRepository>().Register("default", serviceProvider.GetRequiredService<SinkProcessingMiddleware>());
+            var sp = app.ApplicationServices;
+            sp.GetRequiredService<IProcessingMiddlewarePipelineRepository>().Register("default", sp.GetRequiredService<SinkProcessingMiddleware>());
 
             foreach (var plugin in pluginModules)
-                plugin.Configure(serviceProvider);
+                plugin.Configure(app);
         }
 
-        public static void ConfigureApplicationInsights(IServiceProvider serviceProvider, IConfiguration config, bool isDevelopment)
+        public static void ConfigureApplicationInsights(IApplicationBuilder app, IConfiguration config, bool isDevelopment)
         {
             var aiConn = config.GetValue("ApplicationInsights:ConnectionString", "");
             if (aiConn == "SECRET" || aiConn == string.Empty)
@@ -38,7 +40,7 @@ namespace Common.Web
             }
             else
             {
-                var telemetryConfig = serviceProvider.GetService<TelemetryConfiguration>();
+                var telemetryConfig = app.ApplicationServices.GetService<TelemetryConfiguration>();
                 if (telemetryConfig != null)
                 {
                     telemetryConfig.ConnectionString = aiConn;
