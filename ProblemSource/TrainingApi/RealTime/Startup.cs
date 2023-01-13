@@ -13,9 +13,13 @@ namespace TrainingApi.RealTime
             services.AddHostedService(sp => new TimedHostedService(sp.GetRequiredService<QueueListener>().Receive, sp.GetRequiredService<ILogger<TimedHostedService>>()));
         }
 
-        public void Configure(WebApplication app, string path)
-        {   
-            app.MapHub<CommHub>(path);
+        public void Configure(WebApplication app, string pathPattern)
+        {
+            // TODO: read up on https://learn.microsoft.com/en-us/aspnet/core/signalr/hubs?view=aspnetcore-7.0
+            app.MapHub<CommHub>(pathPattern, options =>
+            {
+                options.MinimumProtocolVersion = 0;
+            });
         }
 
         //public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)

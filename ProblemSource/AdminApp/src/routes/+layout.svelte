@@ -9,7 +9,7 @@
 	import { base } from '$app/paths';
 	import type { CurrentUserInfo } from 'src/currentUserInfo.js';
 	import { browser } from '$app/environment';
-	import { Realtime } from '../services/realtime.js';
+	import { Realtime, type Message } from '../services/realtime.js';
 
 	let loggedInUserInfo: CurrentUserInfo | null; // = get(loggedInUser);
 	let apiFacadeInstance: ApiFacade;
@@ -36,13 +36,20 @@
 		apiFacade.set(apiFacadeInstance);
 	}
 
-	function startRealtime() {
-		const realtime = new Realtime();
-		
-		realtime.onConnected = () => console.log("ok, connected");
-		realtime.onReceived = (o) => console.log("received", o);
-		realtime.onDisconnected = (err) => console.log("disconnected", err);
-		realtime.connect(resolveBaseUrl(window.location));
+	const realtime = new Realtime();
+
+	async function toggleRealtimeConnection() {
+		if (realtime.isConnected) {
+			realtime.disconnect();
+		} else {
+			realtime.onConnected = () => console.log("ok, connected");
+			realtime.onDisconnected = (err) => console.log("disconnected", err);
+			realtime.onReceived = (o: Message) => { 
+				console.log("received", o.username, o.events);
+			};
+			try { await realtime.connect(resolveBaseUrl(window.location)); }
+			catch (err) { console.log("error connecting", err); }
+		}
 	}
 
 	function setupTopLevelErrorHandling(root: typeof globalThis | Window) {
@@ -89,7 +96,8 @@
 	{:else}
 	<a href="{base}/login">Log in</a>
 	{/if}
-	<button on:click={() => startRealtime()}>Connect</button>
+	<button on:click={() => toggleRealtimeConnection()}>{realtime.isConnected ? "Disconnect" : "Connect"}</button>
+	<div></div>
 </nav>
 <div class="page-container">
 	<slot />

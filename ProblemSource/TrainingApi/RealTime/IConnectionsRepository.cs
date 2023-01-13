@@ -1,30 +1,34 @@
-﻿using System.Collections.Concurrent;
-using System.Security.Claims;
+﻿using ProblemSourceModule.Models;
+using System.Collections.Concurrent;
 
 namespace TrainingApi.RealTime
 {
     public interface IConnectionsRepository
     {
-        void Add(string connectionId, ClaimsPrincipal? user);
+        void Add(string connectionId, User? user);
         void Remove(string connectionId);
-        IDictionary<string, ClaimsPrincipal?> Connections { get; }
+        IDictionary<string, User?> Connections { get; }
     }
 
     public class ConnectionsRepository : IConnectionsRepository
     {
-        private ConcurrentDictionary<string, ClaimsPrincipal?> connections = new();
+        private ConcurrentDictionary<string, User?> connections = new();
         private object lockObject = new();
 
-        public void Add(string connectionId, ClaimsPrincipal? user)
+        public void Add(string connectionId, User? user)
         {
+            if (connections.ContainsKey(connectionId))
+                return;
+            // TODO: check if user already connected, then... remove old entry and add new?
             connections.AddOrUpdate(connectionId, user, (key, val) => user);
         }
+
         public void Remove(string connectionId)
         {
             _ = connections!.Remove(connectionId, out _);
         }
 
-        public IDictionary<string, ClaimsPrincipal?> Connections
+        public IDictionary<string, User?> Connections
         {
             get
             {

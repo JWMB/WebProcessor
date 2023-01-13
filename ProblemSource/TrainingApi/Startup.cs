@@ -24,10 +24,12 @@ namespace TrainingApi
             services.AddScoped<IStatisticsProvider, StatisticsProvider>();
             services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
 
-            services.AddTransient<IUserProvider, WebUserProvider>();
+            services.AddTransient<ICurrentUserProvider, WebUserProvider>();
             services.AddTransient<IAccessResolver, AccessResolver>();
 
-            if (true || configurationManager.GetValue<bool>("RealTimeEndPoint"))
+            var appSettings = TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, configurationManager, "AppSettings");
+
+            if (appSettings.RealTime.Enabled)
             {
                 realTimeStartup = new RealTime.Startup();
                 realTimeStartup.ConfigureServices(services);
@@ -109,14 +111,23 @@ namespace TrainingApi
                     if (context.User?.Claims.Any() == false)
                     {
                         // For the lazy developer - swagger and test client are automatically authenticated
-                        var autologin = context.Request.GetTypedHeaders().Referer?.AbsolutePath.Contains("/swagger/") == true
-                            || context.Request.GetTypedHeaders().Referer?.AbsoluteUri.StartsWith("http://localhost:") == true;
+                        var referer = context.Request.GetTypedHeaders().Referer;
+                        // when from swagger and localhost
+                        var autologin = referer?.AbsolutePath.Contains("/swagger/") == true
+                            || referer?.AbsoluteUri.StartsWith("http://localhost:") == true;
+
+                        if (!autologin)
+                        {
+                            // when connecting for websockets (context.WebSockets.IsWebSocketRequest is false when connecting)
+                            if (context.Request.Method == "CONNECT" && context.Request.Path == "/realtime")
+                                autologin = true;
+                        }
 
                         if (autologin && context.Request.Cookies.Any(o => o.Key == "autologin" && o.Value == "0"))
                             autologin = false;
 
                         if (autologin)
-                            context.User = WebUserProvider.CreatePrincipal(new ProblemSourceModule.Models.User { Email = "dev", Role = Roles.Admin });
+                            context.User = WebUserProvider.CreatePrincipal(WebUserProvider.FakeDevUser);
                     }
 
                     await next.Invoke();
@@ -152,7 +163,7 @@ namespace TrainingApi
 
         private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
         {
-            TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, config, "AppSettings");
+            //TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, config, "AppSettings");
             ConfigureAuthentication(services, config, env);
 
             var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };

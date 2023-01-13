@@ -12,7 +12,7 @@ namespace Common.Web
             return instance;
         }
 
-        public static void ConfigureTypedConfiguration<T>(IServiceCollection services, IConfiguration config, string sectionKey) where T : new()
+        public static T ConfigureTypedConfiguration<T>(IServiceCollection services, IConfiguration config, string sectionKey) where T : new()
         {
             // TODO: (low) continue investigation - how to avoid reflection and get validation errors immediately
 
@@ -60,6 +60,8 @@ namespace Common.Web
             // https://kaylumah.nl/2021/11/29/validated-strongly-typed-ioptions.html
             // If we want to inject IOptions<Type> instead of just Type, this is needed: https://stackoverflow.com/a/61157181 services.ConfigureOptions(instance)
             //services.Configure<AceKnowledgeOptions>(config.GetSection("AceKnowledge"));
+
+            return appSettings;
         }
     }
 }

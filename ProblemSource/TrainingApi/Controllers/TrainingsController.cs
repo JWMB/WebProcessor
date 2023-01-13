@@ -22,7 +22,7 @@ namespace TrainingApi.Controllers
         private readonly ITrainingRepository trainingRepository;
         private readonly IStatisticsProvider statisticsProvider;
         private readonly IUserRepository userRepository;
-        private readonly IUserProvider userProvider;
+        private readonly ICurrentUserProvider userProvider;
         private readonly MnemoJapanese mnemoJapanese;
         private readonly UsernameHashing usernameHashing;
         private readonly IAggregationService aggregationService;
@@ -32,7 +32,7 @@ namespace TrainingApi.Controllers
         private readonly ILogger<AggregatesController> log;
 
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
-            IUserRepository userRepository, IUserProvider userProvider, MnemoJapanese mnemoJapanese, UsernameHashing usernameHashing, 
+            IUserRepository userRepository, ICurrentUserProvider userProvider, MnemoJapanese mnemoJapanese, UsernameHashing usernameHashing, 
             IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
             ILogger<AggregatesController> logger)
         {

@@ -62,7 +62,7 @@ namespace ProblemSource.Services
 
             try
             {
-                await client.SendMessageAsync(Newtonsoft.Json.JsonConvert.SerializeObject(0));
+                await client.SendMessageAsync(Newtonsoft.Json.JsonConvert.SerializeObject(o));
             }
             catch (Exception ex)
             {

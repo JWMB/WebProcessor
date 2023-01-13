@@ -152,8 +152,8 @@ namespace ProblemSource
                 sessionInfo.Session.UserRepositories = userGeneratedRepositoriesFactory.Create(training.Id);
             }
 
-            await eventDispatcher.Dispatch(root.Events); // E.g. for real-time teacher view
-
+            await eventDispatcher.Dispatch(new { TrainingId = training.Id, training.Username, root.CurrentTime, root.Events }); // E.g. for real-time teacher view
+            
             var currentStoredState = (await sessionInfo.Session.UserRepositories.UserStates.GetAll()).SingleOrDefault();
 
             if (root.Events?.Any() == true)

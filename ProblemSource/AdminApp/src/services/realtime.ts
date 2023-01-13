@@ -3,7 +3,9 @@ import { createEventDispatcher } from "svelte";
 
 export interface Message {
     trainingId: number;
-    message: string;
+    username: string;
+    events: any[];
+    message?: string;
 }
 
 export class Realtime {
@@ -25,17 +27,19 @@ export class Realtime {
             return;
         
         const url = `${hostOrigin}/realtime`;
+        console.log("connecting...", url, this.hasDisconnectLikeState(), this.connection);
+
         this.connection = new HubConnectionBuilder()
             .withUrl(url)
             .configureLogging(LogLevel.Information)
             .withAutomaticReconnect()
             .build();
 
-        console.log("connecting...", url);
-        this.connection.on("ReceiveMessage", (trn, msg: string) => {
-            console.log(`got msg`, trn, msg);
+        this.connection.on("ReceiveMessage", (msg: Message | string) => {
+            // console.log(`got msg`, msg);
+            if (typeof msg === "string") msg = <Message>JSON.parse(msg);
             if (this.onReceived != null)
-                this.onReceived( <Message>{ trainingId: trn, message: msg });
+                this.onReceived(msg);
             // this.dispatch("received", <Message>{ trainingId: trn, message: msg })
         });
 
@@ -43,11 +47,14 @@ export class Realtime {
         this.connection.onreconnecting(id => console.log("reconnecting"));
         this.connection.onclose(err => { if (!!this.onDisconnected) { this.onDisconnected(err); }});
 
-        await this.connection.start();
+        try { await this.connection.start(); }
+        catch (err) { this.connection = null; throw err; }
         if (!!this.onConnected) { this.onConnected(); }
     }
 
     get state() { return this.connection?.state || HubConnectionState.Disconnected };
+
+    get isConnected() { return this.connection == null ? false : this.connection.state === HubConnectionState.Connected; }
 
     private hasDisconnectLikeState() {
         return this.connection != null 
