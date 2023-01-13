@@ -1,5 +1,4 @@
 ﻿using Common;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Shouldly;
 using TrainingApiTests.IntegrationHelpers;
 

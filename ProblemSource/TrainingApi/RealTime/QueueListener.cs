@@ -46,7 +46,7 @@ namespace TrainingApi.RealTime
             }
             catch (Exception ex)
             {
-                log.LogError(ex);
+                log.LogError(ex, "Receive error");
             }
         }
     }

@@ -28,7 +28,7 @@ namespace ProblemSourceModule.Tests.AzureTable
             var tableEntity = converter.FromPoco(phase);
             // problems is too large to fit in one column - should be exploded into several
             var expandedColumns = JsonConvert.DeserializeObject<Dictionary<string, int>>(tableEntity.GetString("__ExpandedColumns"));
-            expandedColumns["problems"].ShouldBe(4);
+            expandedColumns!["problems"].ShouldBe(4);
 
             var recreatedPhase = converter.ToPoco(tableEntity);
 

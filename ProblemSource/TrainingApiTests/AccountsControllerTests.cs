@@ -1,8 +1,7 @@
-﻿using ProblemSourceModule.Services.Storage;
+﻿using Newtonsoft.Json;
+using ProblemSourceModule.Models;
 using Shouldly;
-using System;
 using System.Net;
-using System.Net.Http.Json;
 using TrainingApi;
 using TrainingApiTests.IntegrationHelpers;
 
@@ -21,9 +20,13 @@ namespace TrainingApiTests
             var ts = new MyTestServer();
             var client = ts.CreateClient(role == null ? null : new ProblemSourceModule.Models.User { Email = userIdSameAsRequested ? requestedId : "", Role = role });
 
-            //var response = await client.GetAsync($"/api/accounts/jonas"); // Doesn't even reach AccountsController...
             var response = await client.GetAsync($"/api/accounts/getone?id={requestedId}");
             response.StatusCode.ShouldBe(expected);
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                var content = JsonConvert.DeserializeObject<User>(await response.Content.ReadAsStringAsync());
+                content.ShouldNotBeNull();
+            }
         }
 
         [Theory]

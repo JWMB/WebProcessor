@@ -9,17 +9,11 @@
   <ItemGroup>
     <None Remove="Resources\2017 HT template Default.json" />
     <None Remove="Resources\2018 VT template Default.json" />
-    <None Remove="Resources\json.json" />
     <None Remove="Resources\testplan.json" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\2018 VT template Default.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\json.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

@@ -1,6 +1,4 @@
-﻿using AutoFixture.AutoMoq;
-using AutoFixture;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -9,12 +7,13 @@ using ProblemSource.Services.Storage;
 using ProblemSourceModule.Services.Storage;
 using System.Net.Http.Headers;
 using ProblemSourceModule.Models;
+using AutoBogus;
+using AutoBogus.FakeItEasy;
 
 namespace TrainingApiTests.IntegrationHelpers
 {
     internal class MyTestServer
     {
-        private IFixture fixture;
         public TestServer Server { get; private set; }
 
         public HttpClient CreateClient(User? user = null)
@@ -27,21 +26,25 @@ namespace TrainingApiTests.IntegrationHelpers
 
         public MyTestServer(Action<IServiceCollection>? configureTestServices = null, Dictionary<string, string>? config = null)
         {
-            fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
-
             if (configureTestServices == null)
             {
                 configureTestServices = services =>
                 {
                     services.AddTransient<IStartupFilter, TestStartupFilter>();
 
-                    services.AddSingleton(sp => fixture.Create<IUserRepository>());
-                    services.AddSingleton(sp => fixture.Create<IUserGeneratedDataRepositoryProviderFactory>());
-                    services.AddSingleton(sp => fixture.Create<ITrainingRepository>());
+                    services.AddSingleton(sp => CreateAutoMocked<IUserRepository>());
+                    services.AddSingleton(sp => CreateAutoMocked<IUserGeneratedDataRepositoryProviderFactory>());
+                    services.AddSingleton(sp => CreateAutoMocked<ITrainingRepository>());
                 };
             }
 
             Server = CreateServer(config, configureTestServices);
+        }
+
+        private static T CreateAutoMocked<T>()
+            where T : class
+        {
+            return new AutoFaker<T>().Configure(config => config.WithBinder<FakeItEasyBinder>()).Generate();
         }
 
         private TestServer CreateServer(Dictionary<string, string>? config = null, Action<IServiceCollection>? configureTestServices = null)
