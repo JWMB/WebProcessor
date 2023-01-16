@@ -2,7 +2,7 @@
 	export const prerender = false;
 	export const ssr = false;
 
-    import { apiFacade, loggedInUser } from '../globalStore.js';
+    import { apiFacade, loggedInUser, trainingUpdates } from '../globalStore.js';
     import { ApiFacade } from '../apiFacade';
 	import { ApiException } from '../apiClient';
 	import { goto } from '$app/navigation';
@@ -14,12 +14,18 @@
 	let loggedInUserInfo: CurrentUserInfo | null; // = get(loggedInUser);
 	let apiFacadeInstance: ApiFacade;
 
-	// TODO: some cookie
+	const realtime = new Realtime();
+	let realtimeInfo: { message: Message, removeAt: Date, opacity: number }[] = [];
+
+	// TODO: use some cookie
 	loggedInUser.subscribe(value => {
 		loggedInUserInfo = value;
 	});
 
 	async function logout() {
+		if (realtime.isConnected) {
+			realtime.disconnect();
+		}
 		await apiFacadeInstance.accounts.logout();
 		loggedInUserInfo = { username: "", loggedIn: false, role: "" };
 		loggedInUser.set(loggedInUserInfo);
@@ -29,16 +35,21 @@
 		location.host.indexOf("localhost") >= 0 || location.host.indexOf(":8080") > 0
 			? "https://localhost:7173" : location.origin;
 
-			function initApi(location: Location) {
-		// const apiBaseUrl = location.host.indexOf("localhost") >= 0 || location.host.indexOf(":8080") > 0
-		// 	? "https://localhost:7173" : location.origin;
+	function initApi(location: Location) {
 		apiFacadeInstance = new ApiFacade(resolveBaseUrl(location));
 		apiFacade.set(apiFacadeInstance);
 	}
 
-	const realtime = new Realtime();
+	setInterval(() => {
+		if (realtimeInfo.length) {
+			realtimeInfo = realtimeInfo
+				.map(o => ({...o, opacity: Math.max(0, o.removeAt.valueOf() - Date.now().valueOf()) / 1000}))
+				.filter(o => o.opacity > 0);
+		}
+	}, 10);
 
 	async function toggleRealtimeConnection() {
+		// TODO: how to disconnect on e.g. reload
 		if (realtime.isConnected) {
 			realtime.disconnect();
 		} else {
@@ -46,6 +57,8 @@
 			realtime.onDisconnected = (err) => console.log("disconnected", err);
 			realtime.onReceived = (o: Message) => { 
 				console.log("received", o.username, o.events);
+				// Error: A callback for the method 'receivemessage' threw error 'TypeError: $trainingUpdates is not iterable'.
+				realtimeInfo = [...realtimeInfo, { message: o, removeAt: new Date(Date.now() + 5 * 1000), opacity: 1}];
 			};
 			try { await realtime.connect(resolveBaseUrl(window.location)); }
 			catch (err) { console.log("error connecting", err); }
@@ -96,7 +109,12 @@
 	{:else}
 	<a href="{base}/login">Log in</a>
 	{/if}
-	<button on:click={() => toggleRealtimeConnection()}>{realtime.isConnected ? "Disconnect" : "Connect"}</button>
+	{#if loggedInUserInfo?.role == "Admin"}
+	<button on:click={() => toggleRealtimeConnection()}>{realtime.isConnected ? "Disconnect" : "Connect"}</button> <!--TODO: how to auto-update text (connect/disconnect)?-->
+	{/if}
+	{#each realtimeInfo as info}
+		<span style="opacity: {info.opacity};">{info.message.username}</span>
+	{/each}
 	<div></div>
 </nav>
 <div class="page-container">

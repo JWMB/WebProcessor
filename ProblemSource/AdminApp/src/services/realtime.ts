@@ -22,6 +22,9 @@ export class Realtime {
         // this.dispatch = createEventDispatcher<Message>();
     }
 
+    // TODO: when HMR, old connection is still alive but no way to get ahold of it..?
+    // meaning old code is still triggered through the old onReceived etc "events"
+
     async connect(hostOrigin: string) {
         if (this.connection != null && this.hasDisconnectLikeState() === false)
             return;
@@ -38,8 +41,9 @@ export class Realtime {
         this.connection.on("ReceiveMessage", (msg: Message | string) => {
             // console.log(`got msg`, msg);
             if (typeof msg === "string") msg = <Message>JSON.parse(msg);
-            if (this.onReceived != null)
+            if (this.onReceived != null) {
                 this.onReceived(msg);
+            }
             // this.dispatch("received", <Message>{ trainingId: trn, message: msg })
         });
 
