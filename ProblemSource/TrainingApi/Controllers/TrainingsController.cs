@@ -7,6 +7,7 @@ using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
+using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using System.Security.Claims;
 using TrainingApi.Services;
@@ -23,8 +24,7 @@ namespace TrainingApi.Controllers
         private readonly IStatisticsProvider statisticsProvider;
         private readonly IUserRepository userRepository;
         private readonly ICurrentUserProvider userProvider;
-        private readonly MnemoJapanese mnemoJapanese;
-        private readonly UsernameHashing usernameHashing;
+        private readonly ITrainingUsernameService trainingUsernameService;
         private readonly IAggregationService aggregationService;
         private readonly IUserGeneratedDataRepositoryProviderFactory dataRepoFactory;
 
@@ -32,7 +32,7 @@ namespace TrainingApi.Controllers
         private readonly ILogger<AggregatesController> log;
 
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
-            IUserRepository userRepository, ICurrentUserProvider userProvider, MnemoJapanese mnemoJapanese, UsernameHashing usernameHashing, 
+            IUserRepository userRepository, ICurrentUserProvider userProvider, ITrainingUsernameService trainingUsernameService, 
             IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
             ILogger<AggregatesController> logger)
         {
@@ -41,8 +41,7 @@ namespace TrainingApi.Controllers
             this.statisticsProvider = statisticsProvider;
             this.userRepository = userRepository;
             this.userProvider = userProvider;
-            this.mnemoJapanese = mnemoJapanese;
-            this.usernameHashing = usernameHashing;
+            this.trainingUsernameService = trainingUsernameService;
             this.aggregationService = aggregationService;
             this.dataRepoFactory = dataRepoFactory;
             log = logger;
@@ -57,20 +56,7 @@ namespace TrainingApi.Controllers
 
         private async Task<Training> CreateTraining(TrainingCreateDto dto)
         {
-            // TODO: move to trainingRepository
-            var tp = await trainingPlanRepository.Get(dto.TrainingPlan);
-            if (tp == null)
-                throw new Exception($"Training plan not found: {dto.TrainingPlan}");
-            var training = new Training
-            {
-                TrainingPlanName = dto.TrainingPlan,
-                Settings = dto.TrainingSettings
-            };
-            var id = await trainingRepository.Add(training);
-
-            training.Username = usernameHashing.Hash(mnemoJapanese.FromIntWithRandom(id));
-            await trainingRepository.Update(training);
-            return training;
+            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan, dto.TrainingSettings);
         }
 
         [HttpPost]

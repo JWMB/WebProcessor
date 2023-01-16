@@ -8,6 +8,7 @@ using PluginModuleBase;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
 
@@ -48,6 +49,7 @@ namespace ProblemSource
         {
             services.AddSingleton(new MnemoJapanese(2));
             services.AddSingleton(sp => new UsernameHashing(sp.GetRequiredService<MnemoJapanese>(), 2));
+            services.AddSingleton<ITrainingUsernameService, MnemoJapaneseTrainingUsernameService>();
         }
 
         public void Configure(IApplicationBuilder app)

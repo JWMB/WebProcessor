@@ -31,7 +31,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tools", "Tools\Tools.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OldDbAdapter", "ProblemSource\OldDbAdapter\OldDbAdapter.csproj", "{6F4A33DF-4519-4236-B92B-2AC3CAADCCF3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mailer", "Mailer\Mailer.csproj", "{C732503A-744D-47B1-BB92-72F1FB24A259}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmailServices", "EmailServices\EmailServices.csproj", "{B90063E9-5BD2-4B51-9550-E1FA6E333772}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -91,10 +91,10 @@ Global
 		{6F4A33DF-4519-4236-B92B-2AC3CAADCCF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F4A33DF-4519-4236-B92B-2AC3CAADCCF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F4A33DF-4519-4236-B92B-2AC3CAADCCF3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C732503A-744D-47B1-BB92-72F1FB24A259}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C732503A-744D-47B1-BB92-72F1FB24A259}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C732503A-744D-47B1-BB92-72F1FB24A259}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C732503A-744D-47B1-BB92-72F1FB24A259}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B90063E9-5BD2-4B51-9550-E1FA6E333772}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B90063E9-5BD2-4B51-9550-E1FA6E333772}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B90063E9-5BD2-4B51-9550-E1FA6E333772}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B90063E9-5BD2-4B51-9550-E1FA6E333772}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
