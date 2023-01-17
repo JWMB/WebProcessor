@@ -8,7 +8,9 @@ export enum SeverityLevel {
 export interface NotificationItem {
     createdAt: Date;
     text: string;
+    details?: {[key: string]: string};
     severity?: SeverityLevel;
+    data?: any;
 }
 
 export interface TrainingUpdateMessage {

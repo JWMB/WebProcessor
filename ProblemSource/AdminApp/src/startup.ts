@@ -2,7 +2,7 @@ import { goto } from "$app/navigation";
 import { base } from '$app/paths';
 import { ApiException } from "./apiClient";
 import { ApiFacade } from './apiFacade';
-import { notificationsStore, apiFacade, loggedInUser } from './globalStore.js';
+import { notificationsStore, apiFacade, loggedInUser, type NotificationItemDto } from './globalStore.js';
 import { SeverityLevel } from "./types";
 
 export class Startup {
@@ -28,29 +28,33 @@ export class Startup {
 
     setupTopLevelErrorHandling(root: typeof globalThis | Window) {
 		root.onunhandledrejection = (e) => {
-		  if (e.reason instanceof ApiException) {
-			const apiEx = <ApiException>e.reason;
-			if (apiEx.status === 401) {
-				goto(`${base}/login`);
-				return;
-			} else if (apiEx.status === 404) {
-				console.log("404!");
-                notificationsStore.add({ text: "Not found", createdAt: new Date(Date.now()), severity: SeverityLevel.error });
-				return;
-			}
-		  } else if (!!e.reason?.message) {
-			console.error(e.reason.message, { stack: e.reason.stack });
-			return;
-		  }
-		  console.error('we got exception, but the app has crashed', e);
-			// here we should gracefully show some fallback error or previous good known state
-			// this does not work though:
-			// current = C1; 
-			
-			// todo: This is unexpected error, send error to log server
-			// only way to reload page so that users can try again until error is resolved
-			// uncomment to reload page:
-			// window.location = "/oi-oi-oi";
+            let notification: NotificationItemDto | null = null;
+
+            if (!!e.reason) {
+                let statusPrefix = "";
+                let details: {[key: string]: string} = {};
+                if (e.reason instanceof Error) {
+                    if (e.reason instanceof ApiException) {
+                        if (e.reason.status === 401) {
+                            goto(`${base}/login`);
+                            return;
+                        } else if (e.reason.status === 404) {
+                            console.log("404!");
+                            notification = { text: "Not found", severity: SeverityLevel.warning };
+                            return;
+                        } else {
+                            statusPrefix = `${e.reason.status}: `;
+                            details["status"] = e.reason.status.toString();
+                        }
+                    }
+                    details["stack"] = e.reason.stack ?? "";
+                }
+                notification = { text: `${statusPrefix}${e.reason.message || "Unknown"}`, data: e.reason, details: details, severity: SeverityLevel.error };
+            } else {
+                notification = { text: "Unknown", data: e, severity: SeverityLevel.error };
+            }
+
+            notificationsStore.add(notification);
 		}
 	}
 }

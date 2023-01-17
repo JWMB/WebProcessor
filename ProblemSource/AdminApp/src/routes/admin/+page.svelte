@@ -28,3 +28,5 @@
 {#each users as user}
     <li>{user.username} {user.role} {JSON.stringify(user.trainings)}</li>
 {/each}
+
+<button on:click={async() => await apiFacade.testing.throwException()}></button>
