@@ -43,6 +43,7 @@
 
   onMount(() => {
     const context = (<HTMLCanvasElement>document.getElementById('chart_timePerExercise')).getContext("2d");
+    if (context == null) throw new Error("No context found");
     chart = new Chart(context, 
       {
         type: 'line',

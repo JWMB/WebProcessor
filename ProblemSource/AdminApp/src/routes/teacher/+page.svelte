@@ -11,7 +11,7 @@
     // let trainingSummaries: TrainingSummary[] = [];
 
     const apiFacade = get(apiFacadeStore);
-
+    
     const loggedInUserInfo = get(loggedInUser);
 
     let trainingsPromise: Promise<TrainingSummaryWithDaysDto[]>;
