@@ -32,13 +32,13 @@ namespace TrainingApi.RealTime
 
         private JObject? ParseMessage(BinaryData blob)
         {
-            var body = System.Text.Encoding.UTF8.GetString(blob);
+            var body = Encoding.UTF8.GetString(blob);
             if (!body.StartsWith("{") && !body.StartsWith("["))
             {
                 // helper while developing...
                 try
                 {
-                    body = Encoding.UTF8.GetString(System.Convert.FromBase64String(body));
+                    body = Encoding.UTF8.GetString(Convert.FromBase64String(body));
                 }
                 catch
                 {
@@ -47,7 +47,7 @@ namespace TrainingApi.RealTime
             }
             try
             {
-                return Newtonsoft.Json.Linq.JObject.Parse(body);
+                return JObject.Parse(body);
             }
             catch
             {
