@@ -8,12 +8,12 @@ export interface Message {
     message?: string;
 }
 
-export class Realtime {
+export class Realtime<T> {
 
     private connection: HubConnection | null = null;
 
     // TODO: proper event system
-    onReceived?: (msg: Message) => void;
+    onReceived?: (msg: T) => void;
     onConnected?: () => void;
     onDisconnected?: (err: Error | undefined) => void;
 
@@ -30,7 +30,7 @@ export class Realtime {
             return;
         
         const url = `${hostOrigin}/realtime`;
-        console.log("connecting...", url, this.hasDisconnectLikeState(), this.connection);
+        // console.log("connecting...", url, this.hasDisconnectLikeState(), this.connection);
 
         this.connection = new HubConnectionBuilder()
             .withUrl(url)
@@ -38,9 +38,9 @@ export class Realtime {
             .withAutomaticReconnect()
             .build();
 
-        this.connection.on("ReceiveMessage", (msg: Message | string) => {
+        this.connection.on("ReceiveMessage", (msg: T | string) => {
             // console.log(`got msg`, msg);
-            if (typeof msg === "string") msg = <Message>JSON.parse(msg);
+            if (typeof msg === "string") msg = <T>JSON.parse(msg);
             if (this.onReceived != null) {
                 this.onReceived(msg);
             }
