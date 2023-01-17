@@ -1,7 +1,6 @@
 import { get, writable } from 'svelte/store';
 import type { ApiFacade } from './apiFacade';
 import type { CurrentUserInfo } from './currentUserInfo';
-import type { TrainingUpdateMessage } from './services/realtime';
 import { SeverityLevel, type NotificationItem } from './types';
 
 export const apiFacade = writable<ApiFacade>();

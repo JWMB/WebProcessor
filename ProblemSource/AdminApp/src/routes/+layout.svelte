@@ -5,39 +5,42 @@
     import { notificationsStore, apiFacade, loggedInUser } from '../globalStore.js';
 	import { base } from '$app/paths';
 	import { browser } from '$app/environment';
-	import { Realtime, type TrainingUpdateMessage } from '../services/realtime.js';
+	import { Realtime } from '../services/realtime.js';
 	import { onDestroy } from 'svelte';
 	import NotificationBar from 'src/components/notificationBar.svelte';
 	import { Startup } from 'src/startup.js';
+	import type { TrainingUpdateMessage } from 'src/types.js';
 
 	const realtime = new Realtime<TrainingUpdateMessage>();
+	let realtimeConnected: boolean | null = false;
 
 	async function logout() {
 		if (realtime.isConnected) {
 			realtime.disconnect();
 		}
 		await $apiFacade.accounts.logout();
-		$loggedInUser = { username: "", loggedIn: false, role: "" };
+		$loggedInUser = null;
 	}
 
 	async function toggleRealtimeConnection() {
 		if (realtime.isConnected) {
+			realtimeConnected = null;
 			realtime.disconnect();
 		} else {
-			realtime.onConnected = () => console.log("ok, connected");
-			realtime.onDisconnected = (err) => console.log("disconnected", err);
+			realtime.onConnected = () => { realtimeConnected = true; };
+			realtime.onDisconnected = (err) => { realtimeConnected = false; console.log("disconnected", err); }
 			realtime.onReceived = msg => { 
 				console.log("received", msg.username, msg.events);
 				notificationsStore.add({ createdAt: new Date(Date.now()), text: msg.username });
 				// $notifications = [...$notifications, { createdAt: new Date(Date.now()), text: msg.username }];
 			};
+			realtimeConnected = null;
 			try { await realtime.connect(Startup.resolveLocalServerBaseUrl(window.location)); }
 			catch (err) { console.log("error connecting", err); }
 		}
 	}
 
 	onDestroy(() => {
-		console.log("Destroy!  ");
 		realtime.disconnect();
 	});
 
@@ -58,7 +61,7 @@
 	<a href="{base}/login">Log in</a>
 	{/if}
 	{#if $loggedInUser?.role == "Admin"}
-	<button on:click={() => toggleRealtimeConnection()}>{realtime.isConnected ? "Disconnect" : "Connect"}</button> <!--TODO: how to auto-update text (connect/disconnect)?-->
+	<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? "Disconnect" : "Connect"}</button>
 	{/if}
 </nav>
 <div class="page-container">

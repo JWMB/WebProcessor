@@ -10,3 +10,10 @@ export interface NotificationItem {
     text: string;
     severity?: SeverityLevel;
 }
+
+export interface TrainingUpdateMessage {
+    trainingId: number;
+    username: string;
+    events: any[];
+    message?: string;
+}

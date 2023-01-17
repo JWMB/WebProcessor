@@ -1,12 +1,5 @@
 import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr";
 
-export interface TrainingUpdateMessage {
-    trainingId: number;
-    username: string;
-    events: any[];
-    message?: string;
-}
-
 export class Realtime<T> {
 
     private connection: HubConnection | null = null;
