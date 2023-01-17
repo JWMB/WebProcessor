@@ -35,6 +35,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@js-temporal/polyfill": "^0.4.3",
 		"@microsoft/signalr": "^7.0.2",
 		"ag-grid-community": "^28.2.1",
 		"chart.js": "^3.9.1",
