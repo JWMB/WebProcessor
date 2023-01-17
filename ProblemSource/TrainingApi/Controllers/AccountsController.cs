@@ -15,12 +15,14 @@ namespace TrainingApi.Controllers
     {
         private readonly IUserRepository userRepository;
         private readonly IAuthenticateUserService authenticateUserService;
+        private readonly ICurrentUserProvider userProvider;
         private readonly ILogger<AccountsController> log;
 
-        public AccountsController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ILogger<AccountsController> logger)
+        public AccountsController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ICurrentUserProvider userProvider, ILogger<AccountsController> logger)
         {
             this.userRepository = userRepository;
             this.authenticateUserService = authenticateUserService;
+            this.userProvider = userProvider;
             log = logger;
         }
 
@@ -83,6 +85,11 @@ namespace TrainingApi.Controllers
             await userRepository.Update(user);
             return Ok();
         }
+
+        [Authorize]
+        [HttpGet]
+        [Route("GetLoggedInUser")]
+        public GetUserDto GetLoggedInUser() => GetUserDto.FromUser(userProvider.UserOrThrow);
 
         [HttpPost]
         [Route("logout")]

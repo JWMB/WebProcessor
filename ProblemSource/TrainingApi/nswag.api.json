@@ -164,6 +164,28 @@
         }
       }
     },
+    "/api/Accounts/GetLoggedInUser": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "Accounts_GetLoggedInUser",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GetUserDto"
+            }
+          }
+        }
+      }
+    },
     "/api/Accounts/logout": {
       "post": {
         "tags": [

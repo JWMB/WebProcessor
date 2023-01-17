@@ -2,7 +2,7 @@ import { goto } from "$app/navigation";
 import { base } from '$app/paths';
 import { ApiException } from "./apiClient";
 import { ApiFacade } from './apiFacade';
-import { notificationsStore, apiFacade } from './globalStore.js';
+import { notificationsStore, apiFacade, loggedInUser } from './globalStore.js';
 import { SeverityLevel } from "./types";
 
 export class Startup {
@@ -19,7 +19,11 @@ export class Startup {
     initApi(location: Location) {
         const f = new ApiFacade(Startup.resolveLocalServerBaseUrl(location));
 		apiFacade.set(f);
-        //f.accounts.get
+        f.accounts.getLoggedInUser()
+            .then(r => {
+                loggedInUser.set({ username:r.username, loggedIn: true, role: r.role });
+            })
+            .catch(err => console.log("not logged in", err));
 	}
 
     setupTopLevelErrorHandling(root: typeof globalThis | Window) {
