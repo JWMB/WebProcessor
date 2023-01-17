@@ -10,13 +10,13 @@ export class Startup {
 		this.setupTopLevelErrorHandling(root);
     }
 	
-    resolveBaseUrl(location: Location) {
+    static resolveBaseUrl(location: Location) {
         return location.host.indexOf("localhost") >= 0 || location.host.indexOf(":8080") > 0
         ? "https://localhost:7173" : location.origin;
     }
 
     initApi(location: Location) {
-		apiFacade.set(new ApiFacade(this.resolveBaseUrl(location)));
+		apiFacade.set(new ApiFacade(Startup.resolveBaseUrl(location)));
 	}
 
     setupTopLevelErrorHandling(root: typeof globalThis | Window) {
