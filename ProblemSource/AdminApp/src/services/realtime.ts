@@ -1,7 +1,6 @@
 import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr";
-import { createEventDispatcher } from "svelte";
 
-export interface Message {
+export interface TrainingUpdateMessage {
     trainingId: number;
     username: string;
     events: any[];

@@ -2,17 +2,15 @@
 	export const prerender = false;
 	export const ssr = false;
 
-    import { apiFacade, loggedInUser, trainingUpdates } from '../globalStore.js';
+    import { notificationsStore, apiFacade, loggedInUser } from '../globalStore.js';
 	import { base } from '$app/paths';
 	import { browser } from '$app/environment';
-	import { Realtime, type Message } from '../services/realtime.js';
+	import { Realtime, type TrainingUpdateMessage } from '../services/realtime.js';
 	import { onDestroy } from 'svelte';
 	import NotificationBar from 'src/components/notificationBar.svelte';
 	import { Startup } from 'src/startup.js';
 
-	const realtime = new Realtime<Message>();
-	let notifications: { createdAt: Date, text: string}[] = [];
-
+	const realtime = new Realtime<TrainingUpdateMessage>();
 
 	async function logout() {
 		if (realtime.isConnected) {
@@ -30,10 +28,10 @@
 			realtime.onDisconnected = (err) => console.log("disconnected", err);
 			realtime.onReceived = msg => { 
 				console.log("received", msg.username, msg.events);
-				// Error: A callback for the method 'receivemessage' threw error 'TypeError: $trainingUpdates is not iterable'.
-				notifications = [...notifications, { createdAt: new Date(Date.now()), text: msg.username }];
+				notificationsStore.add({ createdAt: new Date(Date.now()), text: msg.username });
+				// $notifications = [...$notifications, { createdAt: new Date(Date.now()), text: msg.username }];
 			};
-			try { await realtime.connect(Startup.resolveBaseUrl(window.location)); }
+			try { await realtime.connect(Startup.resolveLocalServerBaseUrl(window.location)); }
 			catch (err) { console.log("error connecting", err); }
 		}
 	}
@@ -64,7 +62,7 @@
 	{/if}
 </nav>
 <div class="page-container">
-	<NotificationBar notifications={notifications}></NotificationBar>
+	<NotificationBar></NotificationBar>
 	<slot />
 </div>
 
