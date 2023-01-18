@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ProblemSource;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
@@ -9,7 +8,7 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
-using System.Security.Claims;
+using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
 
 namespace TrainingApi.Controllers
@@ -66,7 +65,18 @@ namespace TrainingApi.Controllers
             if (numTrainings <= 1 || numTrainings > 30) throw new ArgumentOutOfRangeException(nameof(numTrainings));
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new ArgumentOutOfRangeException("groupName");
 
-            var user = userProvider.UserOrThrow; // await GetSignedInUser(false);
+            var user = userProvider.UserOrThrow;
+
+            if (true || user.Role != Roles.Admin)
+            {
+                var currentNumTrainings = user.Trainings.Sum(o => o.Value.Count());
+                var max = 50;
+                if (numTrainings + currentNumTrainings > max)
+                {
+                    throw new HttpException($"We currently allow max {max} trainings per account. You have {Math.Max(0, max - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
+                }
+            }
+
 
             if (string.IsNullOrEmpty(createForUser) == false)
             {
@@ -189,19 +199,9 @@ namespace TrainingApi.Controllers
             }).ToList();
         }
 
-        //private async Task<User?> GetSignedInUser(bool fallbackToDev)
-        //{
-        //    // TODO: move to service
-        //    var nameClaim = User.Claims.First(o => o.Type == ClaimTypes.Name).Value;
-        //    var user = await userRepository.Get(nameClaim);
-        //    if (user == null && fallbackToDev && System.Diagnostics.Debugger.IsAttached && nameClaim == "dev")
-        //        return new User { Role = Roles.Admin };
-        //    return user;
-        //}
-
         private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null)
         {
-            var user = userProvider.UserOrThrow; // await GetSignedInUser(true);
+            var user = userProvider.UserOrThrow;
             Dictionary<string, List<Training>> groupToIds = new();
 
             if (user.Trainings.Any() == false && user.Role == Roles.Admin)

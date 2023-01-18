@@ -32,8 +32,10 @@ export class Startup {
 
             if (!!e.reason) {
                 let statusPrefix = "";
+                let message = "Unknown";
                 let details: {[key: string]: string} = {};
                 if (e.reason instanceof Error) {
+                    message = e.reason.message;
                     if (e.reason instanceof ApiException) {
                         if (e.reason.status === 401) {
                             goto(`${base}/login`);
@@ -45,11 +47,12 @@ export class Startup {
                         } else {
                             statusPrefix = `${e.reason.status}: `;
                             details["status"] = e.reason.status.toString();
+                            message = e.reason.response;
                         }
                     }
                     details["stack"] = e.reason.stack ?? "";
                 }
-                notification = { text: `${statusPrefix}${e.reason.message || "Unknown"}`, data: e.reason, details: details, severity: SeverityLevel.error };
+                notification = { text: `${statusPrefix}${message}`, data: e.reason, details: details, severity: SeverityLevel.error };
             } else {
                 notification = { text: "Unknown", data: e, severity: SeverityLevel.error };
             }

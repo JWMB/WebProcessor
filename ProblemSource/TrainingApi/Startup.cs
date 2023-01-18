@@ -2,6 +2,8 @@
 using Common.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
@@ -9,7 +11,9 @@ using Microsoft.OpenApi.Models;
 using PluginModuleBase;
 using System.Data;
 using System.Text;
+using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace TrainingApi
 {
@@ -74,8 +78,14 @@ namespace TrainingApi
                 app.UseOpenApi();
                 app.UseSwaggerUi3();
 
-                app.UseDeveloperExceptionPage();
+                //app.UseDeveloperExceptionPage();
             }
+            else
+            {
+                app.UseHsts();
+            }
+
+            app.UseExceptionHandler(err => err.UseCustomErrors(env));
 
             app.UseCookiePolicy(new CookiePolicyOptions
             {
