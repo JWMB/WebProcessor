@@ -67,7 +67,7 @@ namespace TrainingApi.Controllers
 
             var user = userProvider.UserOrThrow;
 
-            if (true || user.Role != Roles.Admin)
+            if (user.Role != Roles.Admin)
             {
                 var currentNumTrainings = user.Trainings.Sum(o => o.Value.Count());
                 var max = 50;
