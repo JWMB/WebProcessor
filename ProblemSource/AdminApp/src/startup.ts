@@ -45,9 +45,17 @@ export class Startup {
                             notification = { text: "Not found", severity: SeverityLevel.warning };
                             return;
                         } else {
-                            statusPrefix = `${e.reason.status}: `;
-                            details["status"] = e.reason.status.toString();
-                            message = e.reason.response;
+                            let s = e.reason.status;
+                            if (e.reason.response.startsWith("{")) {
+                                const errorDetails = JSON.parse(e.reason.response);
+                                message = errorDetails.title;
+                                if (errorDetails.status) s = errorDetails.status;
+                                details["details"] = errorDetails.details;
+                            } else {
+                                message = e.reason.response;
+                            }
+                            statusPrefix = `${s}: `;
+                            details["status"] = s.toString();
                         }
                     }
                     details["stack"] = e.reason.stack ?? "";
