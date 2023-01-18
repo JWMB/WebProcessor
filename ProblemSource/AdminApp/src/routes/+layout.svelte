@@ -70,6 +70,12 @@
 </div>
 
 <style>
+	:global(body) {
+		font-family: monospace;
+	}
+	:global(input) {
+		font-family: monospace;
+	}
 	nav {
 		position: absolute;
 		top: 0;
