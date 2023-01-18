@@ -13,7 +13,6 @@ using System.Data;
 using System.Text;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace TrainingApi
 {
@@ -100,15 +99,23 @@ namespace TrainingApi
                 realTimeStartup?.Configure(webApp, "/realtime");
             }
 
+            // TODO: separate into a method
             // static files with fallback to index.html (entry point for admin interface)
-            var cacheMaxAgeOneWeek = (60 * 60 * 24 * 7).ToString();
+            var cacheMaxAge = TimeSpan.FromMinutes(10);
+            var fileProvider = new FallbackFileProvider("index.html", new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "StaticFiles", "Admin")), "/admin");
             app.UseStaticFiles(new StaticFileOptions
             {
-                FileProvider = new FallbackFileProvider("index.html", new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "StaticFiles", "Admin"))),
-                RequestPath = "/admin",
+                ServeUnknownFileTypes = true,
+                FileProvider = fileProvider,
+                RequestPath = fileProvider.RootPath,
                 OnPrepareResponse = ctx =>
                 {
-                    ctx.Context.Response.Headers.Append("Cache-Control", $"public, max-age={cacheMaxAgeOneWeek}");
+                    if (fileProvider.ShouldRewriteUrl(ctx.File, ctx.Context.Request, out var path))
+                    {
+                        ctx.Context.Response.Redirect(path);
+                    }
+                    else
+                        ctx.Context.Response.Headers.Append("Cache-Control", $"public, max-age={(int)cacheMaxAge.TotalSeconds}");
                 }
             });
 
