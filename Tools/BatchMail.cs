@@ -1,11 +1,13 @@
 ﻿using Common;
+using EmailServices;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.Net.Mail;
-using static ProblemSource.Services.BatchCreateUsers;
+using static Tools.BatchCreateUsers;
 
 namespace Tools
 {
-    internal class BatchMail
+    public class BatchMail
     {
         private readonly IEmailService emailService;
 
@@ -68,6 +70,36 @@ Vi kommer inte spara några personliga data och användandet av appen är godkä
             if (app == null) throw new ArgumentNullException(app, "ApplicationName");
 
             return new GmailService(app, authSection.SectionToJson(), "/authtokens");
+        }
+
+        public async static Task CreateUsersAndEmail(IConfiguration config, BatchCreateUsers createUsers)
+        {
+            var emails = new[] { "david.sjolander@gmail.com" };
+            //var emails = new[] { "jonas.beckeman@outlook.com" };
+            //var emails = File.ReadAllLines("").Where(o => o.Length > 0);
+
+            var result = await createUsers.CreateUsers(emails, new Dictionary<string, int> { { "Test", 1 } });
+            File.WriteAllText("createdUsers.json", JsonConvert.SerializeObject(result));
+            //var result = emails.Select(email => 
+            //    new CreateUserResult { 
+            //        User = new ProblemSourceModule.Models.User { Email = email },
+            //        WasCreated = true,
+            //        Password = "bla blabla",
+            //        CreatedTrainings = new Dictionary<string, List<string>> { { "Test", new() { "ajaj fofo", "nubbe sddfd" } } }
+            //    });
+
+            var batchMail = new BatchMail(CreateGmailService(config.GetRequiredSection("Gmail")));
+            foreach (var item in result.Where(o => o.WasCreated))
+            {
+                var msg = CreateNewUserCreatedMessage(item);
+                msg.From = new MailAddress("jonas.beckeman@gmail.com");
+                var mime = GmailService.CreateMimeMessage(msg);
+
+                batchMail.Send(msg);
+            }
+
+            var str = string.Join("\n", result.Select(o => $"--User: {o.User.Email}\tPassword: {o.Password}\n{o.CreatedTrainingsToString()}"));
+            Console.WriteLine(str);
         }
     }
 }

@@ -1,15 +1,13 @@
 ﻿using Common.Web;
+using EmailServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using ProblemSource.Services;
 using ProblemSource.Services.Storage.AzureTables;
 using Tools;
-using static ProblemSource.Services.BatchCreateUsers;
-using static ProblemSource.Services.LogEventsToPhases;
 
 var config = CreateConfig();
 
@@ -25,27 +23,8 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
 var serviceProvider = InititalizeServices(config);
 
-var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
-//var emails = new[] { "giuliag.lazzaro@gmail.com" };
-var emails = new[] { "torkel.klingberg@gmail.com", "torkel.klingberg@ki.se" };
-//var emails = new[] { "jonas.beckeman@outlook.com" };
-//var emails = File.ReadAllLines("").Where(o => o.Length > 0);
 
-//var result = await creator.CreateUsers(emails, new Dictionary<string, int> { { "Test", 1 } });
-//File.WriteAllText("createdUsers.json", JsonConvert.SerializeObject(result));
-var result = emails.Select(email => new CreateUserResult { User = new ProblemSourceModule.Models.User { Email = email }, WasCreated = true, Password = "bla blabla", CreatedTrainings = new Dictionary<string, List<string>> { { "Test", new() { "ajaj fofo", "nubbe sddfd" } } } });
-
-var batchMail = new BatchMail(BatchMail.CreateGmailService(config.GetRequiredSection("Gmail")));
-foreach (var item in result.Where(o => o.WasCreated))
-{
-    var msg = BatchMail.CreateNewUserCreatedMessage(item);
-    msg.From = new System.Net.Mail.MailAddress("jonas.beckeman@gmail.com");
-    var mime = GmailService.CreateMimeMessage(msg);
-
-    batchMail.Send(msg);
-}
-var str = string.Join("\n", result.Select(o => $"--User: {o.User.Email}\tPassword: {o.Password}\n{o.CreatedTrainingsToString()}"));
-Console.WriteLine(str);
+// await BatchMail.CreateUsersAndEmail(config, serviceProvider.CreateInstance<BatchCreateUsers>());
 
 //await TrainingMod.ModifySettings(tableConfig);
 //await MigrateUserStatesTable.Run(tableConfig);

@@ -1,6 +1,9 @@
 ﻿using System.Net.Mail;
 
-public interface IEmailService
+namespace EmailServices
 {
-    bool SendEmail(MailMessage data);
+    public interface IEmailService
+    {
+        bool SendEmail(MailMessage data);
+    }
 }

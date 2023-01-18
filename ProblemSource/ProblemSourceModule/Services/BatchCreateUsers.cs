@@ -3,7 +3,7 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 
-namespace ProblemSource.Services
+namespace Tools
 {
     public class BatchCreateUsers
     {
