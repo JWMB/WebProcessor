@@ -60,10 +60,12 @@ namespace TrainingApi.Controllers
 
         [HttpPost]
         [Route("createclass")]
+        [ProducesErrorResponseType(typeof(HttpException))]
         public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings, string? createForUser = null)
         {
-            if (numTrainings <= 1 || numTrainings > 30) throw new ArgumentOutOfRangeException(nameof(numTrainings));
-            if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new ArgumentOutOfRangeException("groupName");
+            // TODO: standard validation
+            if (numTrainings <= 1 || numTrainings > 30) throw new HttpException($"{nameof(numTrainings)} exceeds accepted range", StatusCodes.Status400BadRequest);
+            if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);
 
             var user = userProvider.UserOrThrow;
 
