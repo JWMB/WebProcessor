@@ -1,4 +1,5 @@
 ﻿using ProblemSource.Models.LogItems;
+using System.Text.RegularExpressions;
 
 namespace ProblemSource.Models.Aggregates
 {
@@ -37,6 +38,8 @@ namespace ProblemSource.Models.Aggregates
                 training_day = trainingDay,
             };
         }
+
+        public static string GetExerciseCommonName(string exercise) => Regex.Replace(exercise, @"#\d+", "");
 
         public static string UniqueIdWithinUser(Phase p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{p.time}";
 
