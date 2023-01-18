@@ -14,6 +14,7 @@ export interface NotificationItemDto extends Omit<NotificationItem, "createdAt">
 
 export const notificationsStore = (() => {
     const store = writable<NotificationItem[]>([]);
+
     function add(item: NotificationItemDto) {
         const logFunc = item.severity == SeverityLevel.critical || item.severity == SeverityLevel.error
             ? console.error : (item.severity == SeverityLevel.warning ? console.warn : console.log);
@@ -25,8 +26,16 @@ export const notificationsStore = (() => {
         n.push(<NotificationItem>item);
         store.set(n);
     }
+
+    function removeAt(index: number) {
+        const n = get(store);
+        n.splice(index, 1);
+        store.set(n);
+    }
+
     return {
         subscribe: store.subscribe,
-        add: add
+        add: add,
+        removeAt: removeAt
     }
 })();

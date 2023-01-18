@@ -50,18 +50,18 @@
 </script>
 
 <nav>
+	{#if $loggedInUser?.loggedIn == true}
 	<a href="{base}/">Home</a>
 	<a href="{base}/teacher">Teacher</a>
-	{#if $loggedInUser?.role == "Admin"}
+	{#if $loggedInUser.role == "Admin"}
 	<a href="{base}/admin">Admin</a>
 	{/if}
-	{#if $loggedInUser?.loggedIn}
+	{#if $loggedInUser.role == "Admin"}
+	<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? "Disconnect" : "Connect"}</button>
+	{/if}
 	<a href="{base}/" on:click={logout}>Log out {$loggedInUser?.username}</a>
 	{:else}
 	<a href="{base}/login">Log in</a>
-	{/if}
-	{#if $loggedInUser?.role == "Admin"}
-	<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? "Disconnect" : "Connect"}</button>
 	{/if}
 </nav>
 <div class="page-container">

@@ -11,6 +11,7 @@ export interface NotificationItem {
     details?: {[key: string]: string};
     severity?: SeverityLevel;
     data?: any;
+    color?: string;
 }
 
 export interface TrainingUpdateMessage {
