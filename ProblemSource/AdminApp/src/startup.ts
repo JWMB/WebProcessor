@@ -9,6 +9,15 @@ export class Startup {
     init(root: typeof globalThis | Window) {
 		this.initApi(root.location);
 		this.setupTopLevelErrorHandling(root);
+
+        if (root.location.pathname.toLowerCase().endsWith("index.html")) {
+            const urlSearchParams = new URLSearchParams(window.location.search);
+            let path = urlSearchParams.get("path");
+            if (path != null && path.length > 1) {
+                if (path.startsWith("/")) path = path.substring(1);
+                goto(`${base}/${path}`);
+            }
+        }
     }
 	
     static resolveLocalServerBaseUrl(location: Location) {
