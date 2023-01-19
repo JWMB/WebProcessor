@@ -110,12 +110,12 @@ namespace ProblemSource.Models.Aggregates
             {
                 var stats = new FeaturesForExercise();
 
-                // Calc pre-requisites
+                // Calc pre-requisites:
                 var allProblems = phases.SelectMany(phase => phase.problems).ToList();
                 if (allProblems.Count == 0)
                     return stats;
 
-                var responseTimes = allProblems.SelectMany(o => o.answers.Select(o => (decimal)o.response_time)) // Note: doesn't care if correct or not
+                var responseTimes = allProblems.SelectMany(o => o.answers.Select(o => (double)o.response_time)) // Note: doesn't care if correct or not
                     .Select(o => Math.Min(o, 60000)) // cap at 60 seconds
                     .Order()
                     .ToList();
@@ -123,18 +123,19 @@ namespace ProblemSource.Models.Aggregates
                 if (responseTimes.Count == 0)
                     return stats;
 
-                var lnResponseTimes = responseTimes.Select(t => (decimal)Math.Log((double)t));
-                var cutoff = lnResponseTimes.GetMedian() + 2.5M * lnResponseTimes.GetStandardDeviation();
-                // TODO: easier to un-log cutoff
+                var lnResponseTimes = responseTimes.Select(t => Math.Log(t));
+                var cutoff = Math.Exp(lnResponseTimes.GetMedian() + 2.5 * lnResponseTimes.GetStandardDeviation());
 
-                Func<decimal, bool> isNotOutlier = val => (decimal)Math.Log((double)val) <= cutoff;
-                Func<decimal, bool> isOutlier = val => (decimal)Math.Log((double)val) > cutoff;
+                Func<double, bool> isNotOutlier = val => val <= cutoff;
+                Func<double, bool> isOutlier = val => val > cutoff;
+
+
+                // Calc outputs:
 
                 stats.NumProblemsWithAnswers = allProblems.Count(problem => problem.answers.Any());
                 stats.PercentCorrect = 100 * allProblems.Count(problem => problem.answers.Any(answer => answer.correct)) / allProblems.Count();
 
-                // Standard deviation:
-                stats.StandardDeviation = responseTimes.Where(isNotOutlier).GetStandardDeviation();
+                stats.StandardDeviation = (decimal)responseTimes.Where(isNotOutlier).GetStandardDeviation();
 
                 // Highest level reached (with at least one correct answered on that level)
                 stats.HighestLevel = allProblems
@@ -147,32 +148,28 @@ namespace ProblemSource.Models.Aggregates
                 stats.NumExercisesToHighestLevel = 1 + orderedPhases.FindIndex(phase => phase.problems.Any(p => p.level == stats.HighestLevel));
 
                 // 7) Median time correct: The median response time for correctly answered questions after outliers have been removed
-                // for exercise = Tangram, Rotation, NVR SO, Mathtest01 and Numbercomparison01
                 stats.MedianTimeCorrect = (int)allProblems
                     .Where(HasCorrectAnswer)
-                    .Select(o => (decimal)o.answers.First().response_time)
+                    .Select(o => (double)o.answers.First().response_time)
                     .Where(isNotOutlier)
                     .GetMedian();
 
                 // 8) Median time incorrect: The median response time for correctly answered questions minus the median response time for incorrectly answered questions after outliers have been removed
-                // for exercise = WM - Grid, Npals, Rotation and Mathtest01
                 stats.MedianTimeIncorrect =
                     stats.MedianTimeCorrect - (int)allProblems
                     .Where(problem => HasCorrectAnswer(problem) == false)
-                    .Select(o => (decimal)o.answers.First().response_time)
+                    .Select(o => (double)o.answers.First().response_time)
                     .Where(isNotOutlier)
                     .GetMedian();
                 //TODO: not sure this is what is expected
 
                 //9) Number of high response times: The number of questions with a response time above the outlier cutoff
-                //for exercise = Npals, Rotation, Numberline, NVR RP, NVR SO and Numbercomparison01
                 stats.NumHighResponseTimes = allProblems.Count(problem => problem.answers.Any(answer => isOutlier(answer.response_time)));
 
                 //10) Skew: The skew for response times after outliers have been removed
-                //for exercise = Mathtest01, Npals, NVR RP, NVR SO, Rotation and Tangram 
+                stats.Skew = 0; // TODO: ?
 
                 //11) Median level: The median level of correctly answered questions
-                //for exercise = Npals, Numberline and NVR RP
                 stats.MedianLevel = allProblems.Where(problem => problem.answers.Any(answer => answer.correct))
                     .Select(problem => problem.level)
                     .Order()
@@ -182,7 +179,6 @@ namespace ProblemSource.Models.Aggregates
 
                 bool HasCorrectAnswer(Problem problem) => problem.answers.Any(answer => answer.correct);
             }
-
         }
     }
 
@@ -191,26 +187,30 @@ namespace ProblemSource.Models.Aggregates
         public static object?[] ToObjectArray<T>(this IEnumerable<FeaturesForExercise> values, Func<FeaturesForExercise, T> selector) =>
             values.Select(selector).Select(o => (object?)o).ToArray();
 
-        public static decimal GetMedian(this IEnumerable<decimal> values)
+        public static decimal GetMedian(this IEnumerable<decimal> values) => (decimal)values.Order().Select(o => (double)o).GetMedian();
+
+        public static double GetMedian(this IEnumerable<double> values)
         {
-            if (values is not IOrderedEnumerable<decimal>)
+            if (values is not IOrderedEnumerable<double>)
                 values = values.Order().ToArray();
-            var enumerable = values as decimal[] ?? values.ToArray();
+            var enumerable = values as double[] ?? values.ToArray();
             var count = enumerable.Count();
             if (count == 0)
                 return 0;
             return enumerable[count / 2];
         }
 
-        public static decimal GetStandardDeviation(this IEnumerable<decimal> values)
+        public static decimal GetStandardDeviation(this IEnumerable<decimal> values) => (decimal)values.Select(o => (double)o).GetStandardDeviation();
+
+        public static double GetStandardDeviation(this IEnumerable<double> values)
         {
-            var enumerable = values as decimal[] ?? values.ToArray();
+            var enumerable = values as double[] ?? values.ToArray();
             var count = enumerable.Count();
             if (count > 1)
             {
                 var avg = enumerable.Average();
                 var sum = enumerable.Sum(d => (d - avg) * (d - avg));
-                return (decimal)Math.Sqrt((double)(sum / count));
+                return Math.Sqrt((sum / count));
             }
             return 0;
         }
