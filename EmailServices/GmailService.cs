@@ -9,7 +9,7 @@ using System.Net.Mail;
 
 namespace EmailServices
 {
-    public class GmailService : IEmailService
+    public class GmailService : IEmailService, IEmailTemplateProvider
     {
         private readonly string applicationName;
         private readonly string settingsJson;
@@ -18,6 +18,7 @@ namespace EmailServices
         private UserCredential? userCredential;
 
         // https://mycodebit.com/send-emails-in-asp-net-core-5-using-gmail-api/
+        // https://console.cloud.google.com/
         public GmailService(string applicationName, string settingsJson, string pathTokenResponseFolder)
         {
             this.applicationName = applicationName;
@@ -50,7 +51,16 @@ namespace EmailServices
 
             userCredential = GoogleWebAuthorizationBroker.AuthorizeAsync(
                          GoogleClientSecrets.FromStream(stream).Secrets,
-                          new[] { Google.Apis.Gmail.v1.GmailService.Scope.GmailSend },
+                          new[] {
+                              // https://developers.google.com/gmail/api/auth/scopes
+                              // https://console.cloud.google.com/
+                              // Note: after modifying, might have to delete local token
+                              // Seems to be incorrect: https://developers.google.com/api-client-library/dotnet/guide/aaa_oauth
+                              // Could find no subfolder in %APPDATA% with the pathTokenResponseFolder name 
+                              // Easiest is to pick a different name for pathTokenResponseFolder
+                              Google.Apis.Gmail.v1.GmailService.Scope.GmailSend,
+                              Google.Apis.Gmail.v1.GmailService.Scope.GmailCompose
+                          },
                           "user",
                           CancellationToken.None,
                           new FileDataStore(pathTokenResponseFolder, true)).Result;
@@ -124,15 +134,17 @@ MIME-Version: 1.0
             return newMsg;
         }
 
-        public bool SendEmail(MailMessage data)
+        //         public async Task<bool> SendEmail(MailMessage data)
+        public Task<bool> SendEmail(MailMessage data)
         {
             var msg = CreateMessage(data);
+            var service = CreateService();
             try
             {
-                var service = CreateService();
                 var response = service.Users.Messages.Send(msg, "me").Execute();
+                // TODO: async variant doesn't work? var response = await service.Users.Messages.Send(msg, "me").ExecuteAsync();
                 if (response?.LabelIds.Contains("SENT") == true)
-                    return true;
+                    return Task.FromResult(true);
                 //service.Users.Messages.Insert()
 
                 throw new Exception($"{(response == null ? "null" : "labels: " + string.Join(", ", response.LabelIds))}");
@@ -150,6 +162,112 @@ MIME-Version: 1.0
               .Replace('+', '-')
               .Replace('/', '_')
               .Replace("=", "");
+        }
+
+        private static string Base64UrlDecode(string input)
+        {
+            input = input
+                .Replace('-', '+')
+                .Replace('_', '/');
+            return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(input));
+        }
+
+        public async Task<IEnumerable<MailMessage>> GetTemplates(string? subjectFilter = null)
+        {
+            var service = CreateService();
+            var cmd = service.Users.Drafts.List("me");
+            cmd.MaxResults = 5;
+            if (subjectFilter != null)
+            {
+                cmd.Q = $"subject: {subjectFilter}";
+            }
+            var response = await cmd.ExecuteAsync();
+
+            var drafts = new List<Draft>();
+            foreach (var item in response.Drafts)
+            {
+                var draft = await service.Users.Drafts.Get("me", item.Id).ExecuteAsync();
+                if (draft != null)
+                    drafts.Add(draft);
+            }
+
+            var result = drafts
+                .Where(o => o.Message.Payload != null)
+                .Select(o => CreateFrom(o.Message))
+                .OfType<MailMessage>()
+                .ToList();
+
+            return result;
+        }
+
+        public static MailMessage? CreateFrom(Message message)
+        {
+            // message.LabelIds ["DRAFT"]
+
+            // { "name": "MIME-Version", "value": "1.0", "ETag": null },
+            // { "name": "Date", "value": "Tue, 17 Jan 2023 16:27:34 +0100", "ETag": null },
+            // { "name": "Message-ID", "value": "<CAKGQKycHO8ens9Gz2O2tSujncxgdvz2qRhWrBmftVvMbimM_3Q@mail.gmail.com>", "ETag": null },
+            // { "name": "Subject", "value": "", "ETag": null },
+            // { "name": "From", "value": "Jonas Beckeman <jonas.beckeman@gmail.com>", "ETag": null },
+            // { "name": "Content-Type", "value": "multipart/alternative; boundary=\"000000000000d8cc2705f27756cc\"", "ETag": null }
+
+            if (message.Payload == null)
+                return null;
+
+            var fallbackAddress = "unknown@gmail.com";
+            var result = new MailMessage(GetHeader("From", fallbackAddress), GetHeader("To", fallbackAddress), GetHeader("Subject", ""), "");
+
+            MessagePart? part;
+            {
+                part = message.Payload.Parts?.FirstOrDefault(o => o.MimeType == "text/html");
+                if (part != null)
+                {
+                    result.IsBodyHtml = true;
+                }
+                else
+                {
+                    part = message.Payload.Parts?.FirstOrDefault(o => o.MimeType == "text/plain");
+                    result.IsBodyHtml = false;
+                }
+            }
+
+            if (part == null)
+                return null;
+
+            result.Body = Base64UrlDecode(part.Body.Data);
+
+            AddAddresses("Bcc", result.Bcc);
+            AddAddresses("Cc", result.CC);
+
+            return result;
+
+            void AddAddresses(string field, MailAddressCollection collection)
+            {
+                var data = GetHeaderOrNull(field);
+                if (data != null)
+                {
+                    var split = data.Split(',').Select(o => o.Trim()).Where(o => o.Length > 2);
+                    foreach (var item in split)
+                    {
+                        try
+                        {
+                            collection.Add(new MailAddress(item));
+                        }
+                        catch (Exception ex)
+                        { }
+                    }
+                }
+            }
+
+            string GetHeader(string key, string defaultValue) =>
+                message.Payload.Headers.FirstOrDefault(o => o.Name == key)?.Value ?? defaultValue;
+
+            string? GetHeaderOrNull(string key) =>
+                message.Payload.Headers.FirstOrDefault(o => o.Name == key)?.Value ?? null;
+
+            string GetHeaderOrThrow(string key) =>
+                message.Payload.Headers.First(o => o.Name == key).Value;
+
         }
     }
 }

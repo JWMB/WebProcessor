@@ -4,6 +4,11 @@ namespace EmailServices
 {
     public interface IEmailService
     {
-        bool SendEmail(MailMessage data);
+        Task<bool> SendEmail(MailMessage data);
+    }
+
+    public interface IEmailTemplateProvider
+    {
+        Task<IEnumerable<MailMessage>> GetTemplates(string? subjectFilter = null);
     }
 }

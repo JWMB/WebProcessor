@@ -5,9 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using ProblemSource.Services.Storage.AzureTables;
-using Tools;
 
 var config = CreateConfig();
 
@@ -24,7 +22,7 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 var serviceProvider = InititalizeServices(config);
 
 
-// await BatchMail.CreateUsersAndEmail(config, serviceProvider.CreateInstance<BatchCreateUsers>());
+//await BatchMail.CreateUsersAndEmail(config, serviceProvider.CreateInstance<BatchCreateUsers>());
 
 //await TrainingMod.ModifySettings(tableConfig);
 //await MigrateUserStatesTable.Run(tableConfig);

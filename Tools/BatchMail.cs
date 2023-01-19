@@ -3,6 +3,7 @@ using EmailServices;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Net.Mail;
+using System.Text.RegularExpressions;
 using static Tools.BatchCreateUsers;
 
 namespace Tools
@@ -63,42 +64,64 @@ Vi kommer inte spara några personliga data och användandet av appen är godkä
             emailService.SendEmail(message);
         }
 
-        public static IEmailService CreateGmailService(IConfigurationSection gmailSection)
+        public static GmailService CreateGmailService(IConfigurationSection gmailSection)
         {
             var authSection = gmailSection.GetRequiredSection("ClientSecret");
             var app = gmailSection["ApplicationName"];
             if (app == null) throw new ArgumentNullException(app, "ApplicationName");
 
-            return new GmailService(app, authSection.SectionToJson(), "/authtokens");
+            return new GmailService(app, authSection.SectionToJson(), "/GMail.AuthTokens");
         }
 
         public async static Task CreateUsersAndEmail(IConfiguration config, BatchCreateUsers createUsers)
         {
-            var emails = new[] { "david.sjolander@gmail.com" };
-            //var emails = new[] { "jonas.beckeman@outlook.com" };
+            var gmailService = CreateGmailService(config.GetRequiredSection("Gmail"));
+            var draftName = "Vektor invitation";
+            var draft = (await gmailService.GetTemplates(draftName)).FirstOrDefault();
+            if (draft == null)
+                throw new Exception($"Draft not found: '{draftName}'");
+
+            Func<CreateUserResult, Dictionary<string, string>> createReplacements = u =>
+                new Dictionary<string, string>
+            {
+                { "email", u.User.Email },
+                { "password", u.Password },
+                { "createdGroups", u.CreatedTrainingsToString() },
+            };
+
+            var emails = new[] { "jonas.beckeman@outlook.com" };
             //var emails = File.ReadAllLines("").Where(o => o.Length > 0);
 
-            var result = await createUsers.CreateUsers(emails, new Dictionary<string, int> { { "Test", 1 } });
-            File.WriteAllText("createdUsers.json", JsonConvert.SerializeObject(result));
-            //var result = emails.Select(email => 
-            //    new CreateUserResult { 
-            //        User = new ProblemSourceModule.Models.User { Email = email },
-            //        WasCreated = true,
-            //        Password = "bla blabla",
-            //        CreatedTrainings = new Dictionary<string, List<string>> { { "Test", new() { "ajaj fofo", "nubbe sddfd" } } }
-            //    });
+            //var createdUsersInfo = await createUsers.CreateUsers(emails, new Dictionary<string, int> { { "Test", 1 } });
+            //File.WriteAllText("createdUsers.json", JsonConvert.SerializeObject(createdUsersInfo));
 
-            var batchMail = new BatchMail(CreateGmailService(config.GetRequiredSection("Gmail")));
-            foreach (var item in result.Where(o => o.WasCreated))
+            var createdUsersInfo = emails.Select(email =>
+                new CreateUserResult
+                {
+                    User = new ProblemSourceModule.Models.User { Email = email },
+                    WasCreated = true,
+                    Password = "bla blabla",
+                    CreatedTrainings = new Dictionary<string, List<string>> { { "Test", new() { "ajaj fofo", "nubbe sddfd" } } }
+                });
+
+            var batchMail = new BatchMail(gmailService);
+            foreach (var item in createdUsersInfo.Where(o => o.WasCreated))
             {
-                var msg = CreateNewUserCreatedMessage(item);
-                msg.From = new MailAddress("jonas.beckeman@gmail.com");
+                var body = draft.Body;
+                foreach (var kv in createReplacements(item))
+                    body = body.Replace($"{{{kv.Key}}}", kv.Value);
+
+                var msg = new MailMessage("jonas.beckeman@gmail.com", item.User.Email, draft.Subject, body);
+                msg.IsBodyHtml = draft.IsBodyHtml;
+
+                //var msg = CreateNewUserCreatedMessage(item);
+                //msg.From = new MailAddress("jonas.beckeman@gmail.com");
                 var mime = GmailService.CreateMimeMessage(msg);
 
                 batchMail.Send(msg);
             }
 
-            var str = string.Join("\n", result.Select(o => $"--User: {o.User.Email}\tPassword: {o.Password}\n{o.CreatedTrainingsToString()}"));
+            var str = string.Join("\n", createdUsersInfo.Select(o => $"--User: {o.User.Email}\tPassword: {o.Password}\n{o.CreatedTrainingsToString()}"));
             Console.WriteLine(str);
         }
     }
