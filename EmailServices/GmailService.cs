@@ -134,18 +134,27 @@ MIME-Version: 1.0
             return newMsg;
         }
 
-        //         public async Task<bool> SendEmail(MailMessage data)
+        private static string MeUser = "me";
+
         public Task<bool> SendEmail(MailMessage data)
         {
             var msg = CreateMessage(data);
             var service = CreateService();
             try
             {
-                var response = service.Users.Messages.Send(msg, "me").Execute();
-                // TODO: async variant doesn't work? var response = await service.Users.Messages.Send(msg, "me").ExecuteAsync();
-                if (response?.LabelIds.Contains("SENT") == true)
-                    return Task.FromResult(true);
-                //service.Users.Messages.Insert()
+                var onlyDraft = false;
+                Message response;
+                if (onlyDraft)
+                {
+                    response = service.Users.Messages.Insert(msg, MeUser).Execute(); // Request had insufficient authentication scopes.'
+                }
+                else
+                {
+                    response = service.Users.Messages.Send(msg, MeUser).Execute();
+                    if (response?.LabelIds.Contains("SENT") == true)
+                        return Task.FromResult(true);
+                }
+                // TODO: async variant doesn't work? var response = await service.Users.Messages.Send(msg, MeUser).ExecuteAsync();
 
                 throw new Exception($"{(response == null ? "null" : "labels: " + string.Join(", ", response.LabelIds))}");
             }
@@ -175,7 +184,7 @@ MIME-Version: 1.0
         public async Task<IEnumerable<MailMessage>> GetTemplates(string? subjectFilter = null)
         {
             var service = CreateService();
-            var cmd = service.Users.Drafts.List("me");
+            var cmd = service.Users.Drafts.List(MeUser);
             cmd.MaxResults = 5;
             if (subjectFilter != null)
             {
@@ -186,7 +195,7 @@ MIME-Version: 1.0
             var drafts = new List<Draft>();
             foreach (var item in response.Drafts)
             {
-                var draft = await service.Users.Drafts.Get("me", item.Id).ExecuteAsync();
+                var draft = await service.Users.Drafts.Get(MeUser, item.Id).ExecuteAsync();
                 if (draft != null)
                     drafts.Add(draft);
             }

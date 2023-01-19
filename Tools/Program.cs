@@ -5,11 +5,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using ProblemSource.Services.Storage.AzureTables;
+using Tools;
 
 var config = CreateConfig();
 
 Console.WriteLine("Run tooling?");
+Console.WriteLine("-----MAKE SURE secrets.json IS NOT INADVERTEDLY USING PRODUCTION SETTINGS!----");
 if (Console.ReadKey().Key != ConsoleKey.Y)
 {
     Console.WriteLine("kbye");
@@ -22,7 +25,11 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 var serviceProvider = InititalizeServices(config);
 
 
-//await BatchMail.CreateUsersAndEmail(config, serviceProvider.CreateInstance<BatchCreateUsers>());
+var emails = new[] { "jonas.beckeman@outlook.com" }; // "jonas.beckeman@outlook.com" //var emails = File.ReadAllLines("").Where(o => o.Length > 0);
+var createdUsersInfo = BatchCreateUsers.CreateDummyUserList(emails);
+//var createdUsersInfo = await serviceProvider.CreateInstance<BatchCreateUsers>().CreateUsers(emails, new Dictionary<string, int> { { "Test", 10 } }, "2018 VT template Default");
+File.WriteAllText("createdUsers.json", JsonConvert.SerializeObject(createdUsersInfo));
+await BatchMail.SendInvitations(config, createdUsersInfo);
 
 //await TrainingMod.ModifySettings(tableConfig);
 //await MigrateUserStatesTable.Run(tableConfig);

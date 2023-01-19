@@ -1,4 +1,5 @@
-﻿using ProblemSource.Services.Storage;
+﻿using ProblemSource.Models;
+using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
@@ -20,12 +21,12 @@ namespace Tools
             this.trainingUsernameService = trainingUsernameService;
         }
 
-        public async Task<IEnumerable<CreateUserResult>> CreateUsers(IEnumerable<string> emails, Dictionary<string, int>? groupsAndNumTrainings = null)
+        public async Task<IEnumerable<CreateUserResult>> CreateUsers(IEnumerable<string> emails, Dictionary<string, int>? groupsAndNumTrainings = null, string? trainingPlanName = null)
         {
             var result = new List<CreateUserResult>();
             foreach (var email in emails)
             {
-                var user = await CreateUser(email, groupsAndNumTrainings);
+                var user = await CreateUser(email, groupsAndNumTrainings, trainingPlanName: trainingPlanName, settings: null);
                 result.Add(user);
             }
             return result;
@@ -41,7 +42,7 @@ namespace Tools
             public string CreatedTrainingsToString() => string.Join("\n", CreatedTrainings.Select(o => $"Group '{o.Key}':\n{string.Join("\n", o.Value.Select(n => $"* {n}"))}"));
         }
 
-        public async Task<CreateUserResult> CreateUser(string email, Dictionary<string, int>? groupsAndNumTrainings = null)
+        public async Task<CreateUserResult> CreateUser(string email, Dictionary<string, int>? groupsAndNumTrainings = null, string? trainingPlanName = null, TrainingSettings? settings = null)
         {
             var existing = await userRepository.Get(email);
             if (existing != null)
@@ -58,6 +59,9 @@ namespace Tools
             var createdTrainings = new Dictionary<string, List<string>>();
             if (groupsAndNumTrainings != null)
             {
+                if (trainingPlanName == null)
+                    throw new ArgumentException($"{nameof(trainingPlanName)} cannot be null");
+
                 foreach (var (group, numTrainings) in groupsAndNumTrainings)
                 {
                     if (!user.Trainings.ContainsKey(group))
@@ -67,7 +71,7 @@ namespace Tools
 
                     for (int i = 0; i < numTrainings; i++)
                     {
-                        var training = await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, "2018 VT template Default", null);
+                        var training = await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, trainingPlanName, settings);
                         user.Trainings[group].Add(training.Id);
                         createdTrainings[group].Add(training.Username);
                     }
@@ -77,5 +81,18 @@ namespace Tools
 
             return new CreateUserResult { User = user, WasCreated = true, Password = password, CreatedTrainings = createdTrainings };
         }
+
+        public static List<CreateUserResult> CreateDummyUserList(IEnumerable<string> emails)
+        {
+            return emails.Select(email =>
+                new CreateUserResult
+                {
+                    User = new User { Email = email },
+                    WasCreated = true,
+                    Password = "bla blabla",
+                    CreatedTrainings = new Dictionary<string, List<string>> { { "Test", new() { "ajaj fofo", "nubbe sddfd" } } }
+                }).ToList();
+        }
+
     }
 }
