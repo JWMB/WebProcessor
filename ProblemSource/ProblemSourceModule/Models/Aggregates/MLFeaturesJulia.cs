@@ -112,6 +112,10 @@ namespace ProblemSource.Models.Aggregates
                 public decimal MaxLevel { get; set; }
 
                 public double OutlierCutOff { get; set; }
+
+                public bool IsOutlier(double responseTime) => responseTime >= OutlierCutOff;
+                public bool IsNotOutlier(double responseTime) => responseTime < OutlierCutOff;
+
                 public List<double> ResponseTimes { get; set; } = new();
 
                 public double Mean => ResponseTimes.Average();
@@ -145,16 +149,11 @@ namespace ProblemSource.Models.Aggregates
                 if (allProblems.Count == 0)
                     return stats;
 
-                var responseTimes = allProblems.SelectMany(o => o.answers.Select(o => (double)o.response_time)) // Note: doesn't care if correct or not
-                    .Select(o => Math.Min(o, 60000)) // cap at 60 seconds
-                    .Order()
-                    .ToList();
-
-                if (responseTimes.Count == 0)
-                    return stats;
-
                 var responseTimesPerLevel = allProblems.GroupBy(problem => (int)problem.level).ToDictionary(o => o.Key, ResponseTimesStats.Calc);
+
                 var responseTimesTotal = ResponseTimesStats.Calc(allProblems);
+                if (responseTimesTotal.ResponseTimesNoOutliers.Any() == false)
+                    return stats;
 
                 // Calc outputs:
 
@@ -163,8 +162,7 @@ namespace ProblemSource.Models.Aggregates
 
                 stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
                     .Select(o => o.StandardDeviationNoOutliers / o.MeanNoOutliers)
-                    .Sum();
-                //stats.StandardDeviation = (decimal)responseTimes.Where(isNotOutlier).GetStandardDeviation();
+                    .Sum(); // TODO: should be Average(), no?
 
                 // Highest level reached (with at least one correct answered on that level)
                 stats.HighestLevel = allProblems
@@ -179,21 +177,25 @@ namespace ProblemSource.Models.Aggregates
                 // 7) Median time correct: The median response time for correctly answered questions after outliers have been removed
                 stats.MedianTimeCorrect = (int)allProblems
                     .Where(HasCorrectAnswer)
-                    .Select(o => (double)o.answers.First().response_time)
-                    .Where(isNotOutlier)
+                    .Select(o => new { Level = (int)o.level, ResponseTime = (double)o.answers.First().response_time })
+                    .Where(o => responseTimesPerLevel[o.Level].IsNotOutlier(o.ResponseTime))
+                    .Select(o => o.ResponseTime)
                     .GetMedian();
 
                 // 8) Median time incorrect: The median response time for correctly answered questions minus the median response time for incorrectly answered questions after outliers have been removed
                 stats.MedianTimeIncorrect =
                     stats.MedianTimeCorrect - (int)allProblems
-                    .Where(problem => HasCorrectAnswer(problem) == false)
-                    .Select(o => (double)o.answers.First().response_time)
-                    .Where(isNotOutlier)
+                    .Where(HasNoCorrectAnswer)
+                    .Select(o => new { Level = (int)o.level, ResponseTime = (double)o.answers.First().response_time })
+                    .Where(o => responseTimesPerLevel[o.Level].IsNotOutlier(o.ResponseTime))
+                    .Select(o => o.ResponseTime)
                     .GetMedian();
                 //TODO: not sure this is what is expected
 
                 //9) Number of high response times: The number of questions with a response time above the outlier cutoff
-                stats.NumHighResponseTimes = allProblems.Count(problem => problem.answers.Any(answer => isOutlier(answer.response_time)));
+                //stats.NumHighResponseTimes = allProblems
+                //    .Select(o => new { Level = (int)o.level, ResponseTime = (double)o.answers.First().response_time })
+                //    .Count(problem => problem.answers.Any(answer => isOutlier(answer.response_time)));
 
                 //10) Skew: The skew for response times after outliers have been removed
                 stats.Skew = 0; // TODO: ?
@@ -207,6 +209,7 @@ namespace ProblemSource.Models.Aggregates
                 return stats;
 
                 bool HasCorrectAnswer(Problem problem) => problem.answers.Any(answer => answer.correct);
+                bool HasNoCorrectAnswer(Problem problem) => HasCorrectAnswer(problem) == false;
             }
         }
     }
@@ -235,13 +238,11 @@ namespace ProblemSource.Models.Aggregates
         {
             var enumerable = values as double[] ?? values.ToArray();
             var count = enumerable.Count();
-            if (count > 1)
-            {
-                var avg = enumerable.Average();
-                var sum = enumerable.Sum(d => (d - avg) * (d - avg));
-                return Math.Sqrt((sum / count));
-            }
-            return 0;
+            if (count <= 1)
+                return 0;
+            var avg = enumerable.Average();
+            var sum = enumerable.Sum(d => (d - avg) * (d - avg));
+            return Math.Sqrt((sum / count));
         }
     }
 }

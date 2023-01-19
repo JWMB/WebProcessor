@@ -221,6 +221,7 @@ namespace TrainingApi
         private void ConfigureAuthentication(IServiceCollection services, IConfiguration config, IHostEnvironment env)
         {
             var combinedScheme = "JWT_OR_COOKIE";
+
             services.AddAuthentication(options =>
             {
                 // https://weblog.west-wind.com/posts/2022/Mar/29/Combining-Bearer-Token-and-Cookie-Auth-in-ASPNET
@@ -232,8 +233,12 @@ namespace TrainingApi
             }).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
             {
                 options.ExpireTimeSpan = TimeSpan.FromDays(1);
+
                 //options.Cookie.SecurePolicy = true ? CookieSecurePolicy.None : CookieSecurePolicy.Always; //_environment.IsDevelopment()
                 options.Cookie.SameSite = env.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.None : Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+                if (Enum.TryParse< Microsoft.AspNetCore.Http.SameSiteMode>(config.GetValue("Cookies:SameSite", ""), out var sameSiteConfig))
+                    options.Cookie.SameSite = sameSiteConfig;
+
                 options.Events = new CustomCookieAuthEvents();
 
             }).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
