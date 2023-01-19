@@ -6,10 +6,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PluginModuleBase;
 using ProblemSource.Models;
+using ProblemSource.Models.Aggregates;
 using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -26,6 +28,7 @@ namespace ProblemSource
         private readonly UsernameHashing usernameHashing;
         private readonly MnemoJapanese mnemoJapanese;
         private readonly ITrainingRepository trainingRepository;
+        private readonly TrainingAnalyzerCollection trainingAnalyzers;
         private readonly ILogger<ProblemSourceProcessingMiddleware> log;
 
         //public bool SupportsMiddlewarePattern => throw new NotImplementedException();
@@ -33,7 +36,7 @@ namespace ProblemSource
         public ProblemSourceProcessingMiddleware(ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
             IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, UsernameHashing usernameHashing, MnemoJapanese mnemoJapanese,
-            ITrainingRepository trainingRepository,
+            ITrainingRepository trainingRepository, TrainingAnalyzerCollection trainingAnalyzers,
             ILogger<ProblemSourceProcessingMiddleware> log)
         {
             this.trainingPlanRepository = trainingPlanRepository;
@@ -45,6 +48,7 @@ namespace ProblemSource
             this.usernameHashing = usernameHashing;
             this.mnemoJapanese = mnemoJapanese;
             this.trainingRepository = trainingRepository;
+            this.trainingAnalyzers = trainingAnalyzers;
             this.log = log;
         }
 
@@ -191,12 +195,7 @@ namespace ProblemSource
                     log.LogError(ex, $"UpdateAggregates");
                 }
 
-                var eod = logItems.OfType<EndOfDayLogItem>().FirstOrDefault();
-                // TODO: also check if stat's TrainingDay has changed
-                if (eod?.training_day == 5)
-                {
-
-                }
+                await trainingAnalyzers.Execute(training, logItems, sessionInfo.Session.UserRepositories);
             }
 
             if (root.RequestState)

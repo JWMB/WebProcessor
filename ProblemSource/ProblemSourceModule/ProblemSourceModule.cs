@@ -22,6 +22,7 @@ namespace ProblemSource
             services.AddSingleton<IAggregationService, AggregationService>();
 
             services.AddSingleton<ProblemSourceProcessingMiddleware>();
+            services.AddSingleton<TrainingAnalyzerCollection>();
             services.AddSingleton<IEventDispatcher, NullEventDispatcher>();
 
             services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
