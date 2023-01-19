@@ -57,7 +57,7 @@ namespace ProblemSource.Models.Aggregates
                     .ToObjectArray(o => o.StandardDeviation),
 
                 new[] { npals, numberline, nvr_so, nvr_rp }
-                    .ToObjectArray(o => o.HighestLevel),
+                    .ToObjectArray(o => o.HighestLevelInt),
 
                 new[] { npals, tangram, numberline, rotation, nvr_rp }
                     .ToObjectArray(o => o.NumExercisesToHighestLevel),
@@ -94,7 +94,7 @@ namespace ProblemSource.Models.Aggregates
             public int PercentCorrect { get; set; }
             public int NumProblemsWithAnswers { get; set; }
             public decimal StandardDeviation { get; set; }
-            public decimal HighestLevel { get; set; }
+            public int HighestLevelInt { get; set; }
             public int NumExercisesToHighestLevel { get; set; }
 
             public int MedianTimeCorrect { get; set; }
@@ -167,14 +167,14 @@ namespace ProblemSource.Models.Aggregates
                     .Sum(); // TODO: should be Average(), no?
 
                 // Highest level reached (with at least one correct answered on that level)
-                stats.HighestLevel = allProblems
+                stats.HighestLevelInt = allProblems
                     .Where(HasCorrectAnswer)
-                    .Max(problem => problem.level);
+                    .Max(problem => (int)problem.level);
 
                 var orderedPhases = phases.OrderBy(p => $"{p.training_day.ToString().PadLeft(3, '0')}_{p.time}").ToList();
                 // Number of exercises: The number of exercises it took to reach the highest level defined above
                 // TODO: just reach level, or with correct answer?
-                stats.NumExercisesToHighestLevel = 1 + orderedPhases.FindIndex(phase => phase.problems.Any(p => p.level == stats.HighestLevel));
+                stats.NumExercisesToHighestLevel = 1 + orderedPhases.FindIndex(phase => phase.problems.Any(p => (int)p.level == stats.HighestLevelInt));
 
                 // 7) Median time correct: The median response time for correctly answered questions after outliers have been removed
                 stats.MedianTimeCorrect = (int)allProblems
@@ -197,7 +197,7 @@ namespace ProblemSource.Models.Aggregates
                 //9) Number of high response times: The number of questions with a response time above the outlier cutoff
                 // stats.NumHighResponseTimes = allProblems.Count(problem => problem.answers.Any(answer => isOutlier(answer.response_time)));
                 stats.NumHighResponseTimes = allProblems
-                    .GroupBy(problem => problem.level)
+                    .GroupBy(problem => (int)problem.level)
                     .Select(grp => {
                         var rt = responseTimesPerLevel[(int)grp.Key];
                         return grp.Count(problem => problem.answers.Any(answer => rt.IsOutlier(answer.response_time)));
@@ -208,7 +208,7 @@ namespace ProblemSource.Models.Aggregates
 
                 //11) Median level: The median level of correctly answered questions
                 stats.MedianLevel = allProblems.Where(problem => problem.answers.Any(answer => answer.correct))
-                    .Select(problem => problem.level)
+                    .Select(problem => (decimal)(int)problem.level)
                     .Order()
                     .GetMedian();
 
