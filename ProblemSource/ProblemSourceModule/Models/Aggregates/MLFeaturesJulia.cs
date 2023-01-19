@@ -45,48 +45,48 @@ namespace ProblemSource.Models.Aggregates
             var tangram = GetFeatures("tangram");
             var rotation = GetFeatures("rotation");
 
-            return new object[][] {
+            return new object?[][] {
                 new[] { npals, wmGrid, numberline, mathTest01, nvr_rp, nvr_so, numberComparison01 }
-                    .Select(o => (object)o.PercentCorrect).ToArray(),
+                    .ToObjectArray(o => o.PercentCorrect),
 
                 // Note: tangram instead of wmGrid
                 new[] { npals, tangram, numberline, mathTest01, nvr_rp, nvr_so, numberComparison01 }
-                    .Select(o => (object)o.NumProblemsWithAnswers).ToArray(),
+                    .ToObjectArray(o => o.NumProblemsWithAnswers),
 
                 new[] { wmGrid, npals, numberline, rotation, nvr_rp, mathTest01, numberComparison01 }
-                    .Select(o => (object)o.StandardDeviation).ToArray(),
+                    .ToObjectArray(o => o.StandardDeviation),
 
                 new[] { npals, numberline, nvr_so, nvr_rp }
-                    .Select(o => (object)o.HighestLevel).ToArray(),
+                    .ToObjectArray(o => o.HighestLevel),
 
                 new[] { npals, tangram, numberline, rotation, nvr_rp }
-                    .Select(o => (object)o.NumExercises).ToArray(),
+                    .ToObjectArray(o => o.NumExercisesToHighestLevel),
 
                 new[]{ (object)MeanTimeIncrease },
 
                 // Note: description for NVR SO slightly different - "time correct" instead of "median time correct"
                 new[] { tangram, rotation, nvr_so, mathTest01, numberComparison01 }
-                    .Select(o => (object)o.MedianTimeCorrect).ToArray(),
+                    .ToObjectArray(o => o.MedianTimeCorrect),
 
                 new[] { wmGrid, npals, rotation, mathTest01 }
-                    .Select(o => (object)o.MedianTimeIncorrect).ToArray(),
+                    .ToObjectArray(o => o.MedianTimeIncorrect),
 
                 new[] { npals, rotation, numberline, nvr_rp, nvr_so, numberComparison01 }
-                    .Select(o => (object)o.NumHighResponseTimes).ToArray(),
+                    .ToObjectArray(o => o.NumHighResponseTimes),
 
                 new[] { mathTest01, npals, nvr_rp, nvr_so, rotation, tangram }
-                    .Select(o => (object)o.Skew).ToArray(),
+                    .ToObjectArray(o => o.Skew),
 
                 new[] { npals, numberline, nvr_rp }
-                    .Select(o => (object)o.MedianLevel).ToArray(),
+                    .ToObjectArray(o => o.MedianLevel),
 
                 new[]{ (object)(TrainingTime20Min ? 1 : 0) },
 
                 new[]{ (object)(Age6_7 ? 1 : 0) },
 
-            }.SelectMany(o => o).Select(o => o.ToString() ?? "").ToArray();
+            }.SelectMany(o => o).Select(o => o?.ToString() ?? "").ToArray();
 
-            FeaturesForExercise GetFeatures(string exercise) => ByExercise.GetValueOrDefault(exercise, new FeaturesForExercise()); 
+            FeaturesForExercise GetFeatures(string exercise) => ByExercise.GetValueOrDefault(exercise, new FeaturesForExercise());
         }
 
         public class FeaturesForExercise
@@ -95,7 +95,7 @@ namespace ProblemSource.Models.Aggregates
             public int NumProblemsWithAnswers { get; set; }
             public decimal StandardDeviation { get; set; }
             public decimal HighestLevel { get; set; }
-            public int NumExercises { get; set; }
+            public int NumExercisesToHighestLevel { get; set; }
 
             public int MedianTimeCorrect { get; set; }
             public int MedianTimeIncorrect { get; set; }
@@ -144,7 +144,7 @@ namespace ProblemSource.Models.Aggregates
                 var orderedPhases = phases.OrderBy(p => $"{p.training_day.ToString().PadLeft(3, '0')}_{p.time}").ToList();
                 // Number of exercises: The number of exercises it took to reach the highest level defined above
                 // TODO: just reach level, or with correct answer?
-                stats.NumExercises = 1 + orderedPhases.FindIndex(phase => phase.problems.Any(p => p.level == stats.HighestLevel));
+                stats.NumExercisesToHighestLevel = 1 + orderedPhases.FindIndex(phase => phase.problems.Any(p => p.level == stats.HighestLevel));
 
                 // 7) Median time correct: The median response time for correctly answered questions after outliers have been removed
                 // for exercise = Tangram, Rotation, NVR SO, Mathtest01 and Numbercomparison01
@@ -188,6 +188,9 @@ namespace ProblemSource.Models.Aggregates
 
     public static class StatisticsExtensions
     {
+        public static object?[] ToObjectArray<T>(this IEnumerable<FeaturesForExercise> values, Func<FeaturesForExercise, T> selector) =>
+            values.Select(selector).Select(o => (object?)o).ToArray();
+
         public static decimal GetMedian(this IEnumerable<decimal> values)
         {
             if (values is not IOrderedEnumerable<decimal>)
@@ -198,6 +201,7 @@ namespace ProblemSource.Models.Aggregates
                 return 0;
             return enumerable[count / 2];
         }
+
         public static decimal GetStandardDeviation(this IEnumerable<decimal> values)
         {
             var enumerable = values as decimal[] ?? values.ToArray();

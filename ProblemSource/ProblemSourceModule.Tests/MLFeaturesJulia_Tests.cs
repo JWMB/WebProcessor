@@ -29,7 +29,7 @@ namespace ProblemSourceModule.Tests
                     {
                         new Problem
                         {
-                            level = 4,
+                            level = 2,
                             answers = new List<Answer>{ new Answer { correct = true, response_time = 1000 } }
                         },
                     }
@@ -41,7 +41,7 @@ namespace ProblemSourceModule.Tests
                     {
                         new Problem
                         {
-                            level = 4,
+                            level = 3,
                             answers = new List<Answer>{ new Answer { correct = true, response_time = 1000 } }
                         },
                     }
@@ -61,7 +61,7 @@ namespace ProblemSourceModule.Tests
             };
             var trainingSettings = new TrainingSettings { timeLimits = new[] { 33M }.ToList() };
             var features = MLFeaturesJulia.FromPhases(trainingSettings, phases);
-            features.ByExercise["npals"].NumExercises.ShouldBe(3);
+            features.ByExercise["npals"].NumExercisesToHighestLevel.ShouldBe(3);
         }
 
         [Fact]
@@ -102,7 +102,7 @@ namespace ProblemSourceModule.Tests
                 {
                     { exercise, new MLFeaturesJulia.FeaturesForExercise
                         {
-                            HighestLevel = 6, MedianLevel = 6, MedianTimeCorrect = 2000, MedianTimeIncorrect = 889, PercentCorrect = 66, NumProblemsWithAnswers = 3, NumExercises = 1,
+                            HighestLevel = 6, MedianLevel = 6, MedianTimeCorrect = 2000, MedianTimeIncorrect = 889, PercentCorrect = 66, NumProblemsWithAnswers = 3, NumExercisesToHighestLevel = 1,
                             StandardDeviation = 447.541680243925m
                         }
                     }
