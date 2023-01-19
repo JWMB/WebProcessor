@@ -113,15 +113,15 @@ namespace ProblemSource.Models.Aggregates
 
                 public double OutlierCutOff { get; set; }
 
-                public bool IsOutlier(double responseTime) => responseTime >= OutlierCutOff;
-                public bool IsNotOutlier(double responseTime) => responseTime < OutlierCutOff;
+                public bool IsOutlier(double responseTime) => responseTime > OutlierCutOff;
+                public bool IsNotOutlier(double responseTime) => responseTime <= OutlierCutOff;
 
                 public List<double> ResponseTimes { get; set; } = new();
 
                 public double Mean => ResponseTimes.Average();
                 public double MeanNoOutliers => ResponseTimesNoOutliers.Average();
 
-                public IEnumerable<double> ResponseTimesNoOutliers => ResponseTimes.Where(o => o < OutlierCutOff);
+                public IEnumerable<double> ResponseTimesNoOutliers => ResponseTimes.Where(IsNotOutlier);
 
                 public double StandardDeviationNoOutliers => ResponseTimesNoOutliers.GetStandardDeviation();
 
@@ -132,9 +132,11 @@ namespace ProblemSource.Models.Aggregates
                     result.MaxLevel = problems.Max(o => o.level);
                     result.MinLevel = problems.Min(o => o.level);
 
-                    var responseTimes = problems.SelectMany(p => p.answers.Select(a => Math.Min(a.response_time, 60000)));
-                    var lnResponseTimes = responseTimes.Select(t => Math.Log(t));
-                    result.OutlierCutOff = Math.Exp(lnResponseTimes.GetMedian() + 2.5 * lnResponseTimes.GetStandardDeviation());
+                    result.ResponseTimes = problems.SelectMany(p => p.answers.Select(a => (double)Math.Min(a.response_time, 60000))).ToList();
+
+                    var lnResponseTimes = result.ResponseTimes.Select(t => Math.Log(t));
+                    // Add small value for double precision purposes (if all have same value, they might be consider outliers)
+                    result.OutlierCutOff = 0.001 + Math.Exp(lnResponseTimes.GetMedian() + 2.5 * lnResponseTimes.GetStandardDeviation());
 
                     return result;
                 }
@@ -193,9 +195,13 @@ namespace ProblemSource.Models.Aggregates
                 //TODO: not sure this is what is expected
 
                 //9) Number of high response times: The number of questions with a response time above the outlier cutoff
-                //stats.NumHighResponseTimes = allProblems
-                //    .Select(o => new { Level = (int)o.level, ResponseTime = (double)o.answers.First().response_time })
-                //    .Count(problem => problem.answers.Any(answer => isOutlier(answer.response_time)));
+                // stats.NumHighResponseTimes = allProblems.Count(problem => problem.answers.Any(answer => isOutlier(answer.response_time)));
+                stats.NumHighResponseTimes = allProblems
+                    .GroupBy(problem => problem.level)
+                    .Select(grp => {
+                        var rt = responseTimesPerLevel[(int)grp.Key];
+                        return grp.Count(problem => problem.answers.Any(answer => rt.IsOutlier(answer.response_time)));
+                    }).Sum();
 
                 //10) Skew: The skew for response times after outliers have been removed
                 stats.Skew = 0; // TODO: ?

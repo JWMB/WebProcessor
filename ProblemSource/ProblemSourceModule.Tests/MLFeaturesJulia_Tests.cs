@@ -103,12 +103,13 @@ namespace ProblemSourceModule.Tests
                     { exercise, new MLFeaturesJulia.FeaturesForExercise
                         {
                             HighestLevel = 6, MedianLevel = 6, MedianTimeCorrect = 2000, MedianTimeIncorrect = 889, PercentCorrect = 66, NumProblemsWithAnswers = 3, NumExercisesToHighestLevel = 1,
-                            StandardDeviation = 447.541680243925m
+                            StandardDeviation = 0.285760205721633m //447.541680243925m
                         }
                     }
                 }
             };
 
+            var tmp = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { features.ByExercise[exercise], expected.ByExercise[exercise] });
             features.ByExercise[exercise].ShouldBeEquivalentTo(expected.ByExercise[exercise]);
 
             features.ToArray().ShouldBe(expected.ToArray(), ignoreOrder: false);
