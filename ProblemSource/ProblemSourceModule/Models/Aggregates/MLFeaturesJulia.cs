@@ -106,6 +106,36 @@ namespace ProblemSource.Models.Aggregates
 
             public decimal MedianLevel { get; set; }
 
+            private class ResponseTimesStats
+            {
+                public decimal MinLevel { get; set; }
+                public decimal MaxLevel { get; set; }
+
+                public double OutlierCutOff { get; set; }
+                public List<double> ResponseTimes { get; set; } = new();
+
+                public double Mean => ResponseTimes.Average();
+                public double MeanNoOutliers => ResponseTimesNoOutliers.Average();
+
+                public IEnumerable<double> ResponseTimesNoOutliers => ResponseTimes.Where(o => o < OutlierCutOff);
+
+                public double StandardDeviationNoOutliers => ResponseTimesNoOutliers.GetStandardDeviation();
+
+                public static ResponseTimesStats Calc(IEnumerable<Problem> problems)
+                {
+                    var result = new ResponseTimesStats();
+
+                    result.MaxLevel = problems.Max(o => o.level);
+                    result.MinLevel = problems.Min(o => o.level);
+
+                    var responseTimes = problems.SelectMany(p => p.answers.Select(a => Math.Min(a.response_time, 60000)));
+                    var lnResponseTimes = responseTimes.Select(t => Math.Log(t));
+                    result.OutlierCutOff = Math.Exp(lnResponseTimes.GetMedian() + 2.5 * lnResponseTimes.GetStandardDeviation());
+
+                    return result;
+                }
+            }
+
             public static FeaturesForExercise Create(IEnumerable<Phase> phases)
             {
                 var stats = new FeaturesForExercise();
@@ -123,19 +153,18 @@ namespace ProblemSource.Models.Aggregates
                 if (responseTimes.Count == 0)
                     return stats;
 
-                var lnResponseTimes = responseTimes.Select(t => Math.Log(t));
-                var cutoff = Math.Exp(lnResponseTimes.GetMedian() + 2.5 * lnResponseTimes.GetStandardDeviation());
-
-                Func<double, bool> isNotOutlier = val => val <= cutoff;
-                Func<double, bool> isOutlier = val => val > cutoff;
-
+                var responseTimesPerLevel = allProblems.GroupBy(problem => (int)problem.level).ToDictionary(o => o.Key, ResponseTimesStats.Calc);
+                var responseTimesTotal = ResponseTimesStats.Calc(allProblems);
 
                 // Calc outputs:
 
                 stats.NumProblemsWithAnswers = allProblems.Count(problem => problem.answers.Any());
                 stats.PercentCorrect = 100 * allProblems.Count(problem => problem.answers.Any(answer => answer.correct)) / allProblems.Count();
 
-                stats.StandardDeviation = (decimal)responseTimes.Where(isNotOutlier).GetStandardDeviation();
+                stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
+                    .Select(o => o.StandardDeviationNoOutliers / o.MeanNoOutliers)
+                    .Sum();
+                //stats.StandardDeviation = (decimal)responseTimes.Where(isNotOutlier).GetStandardDeviation();
 
                 // Highest level reached (with at least one correct answered on that level)
                 stats.HighestLevel = allProblems
