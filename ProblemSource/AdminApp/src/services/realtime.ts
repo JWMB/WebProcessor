@@ -20,7 +20,7 @@ export class Realtime<T> {
     async connect(hostOrigin: string) {
         if (this.connection != null && this.hasDisconnectLikeState() === false)
             return;
-        
+
         const url = `${hostOrigin}/realtime`;
         // console.log("connecting...", url, this.hasDisconnectLikeState(), this.connection);
 
@@ -41,7 +41,7 @@ export class Realtime<T> {
 
         this.connection.onreconnected(id => console.log("reconnected"));
         this.connection.onreconnecting(id => console.log("reconnecting"));
-        this.connection.onclose(err => { if (!!this.onDisconnected) { this.onDisconnected(err); }});
+        this.connection.onclose(err => { if (!!this.onDisconnected) { this.onDisconnected(err); } });
 
         try { await this.connection.start(); }
         catch (err) { this.connection = null; throw err; }
@@ -53,9 +53,9 @@ export class Realtime<T> {
     get isConnected() { return this.connection == null ? false : this.connection.state === HubConnectionState.Connected; }
 
     private hasDisconnectLikeState() {
-        return this.connection != null 
+        return this.connection != null
             && (this.connection.state === HubConnectionState.Disconnecting
-            || this.connection.state === HubConnectionState.Disconnected);
+                || this.connection.state === HubConnectionState.Disconnected);
     }
 
     disconnect() {

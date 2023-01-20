@@ -4,11 +4,12 @@ import { ApiException } from "./apiClient";
 import { ApiFacade } from './apiFacade';
 import { notificationsStore, apiFacade, loggedInUser, type NotificationItemDto } from './globalStore.js';
 import { SeverityLevel } from "./types";
+import { PUBLIC_LOCAL_SERVER_PATH } from '$env/static/public'
 
 export class Startup {
     init(root: typeof globalThis | Window) {
-		this.initApi(root.location);
-		this.setupTopLevelErrorHandling(root);
+        this.initApi(root.location);
+        this.setupTopLevelErrorHandling(root);
 
         if (root.location.pathname.toLowerCase().endsWith("index.html")) {
             const urlSearchParams = new URLSearchParams(window.location.search);
@@ -19,30 +20,29 @@ export class Startup {
             }
         }
     }
-	
+
     static resolveLocalServerBaseUrl(location: Location) {
-        return location.host.indexOf("localhost") >= 0 || location.host.indexOf(":8080") > 0
-        ? "https://localhost:7173" : location.origin;
+        return PUBLIC_LOCAL_SERVER_PATH || location.origin;
     }
 
     initApi(location: Location) {
         const f = new ApiFacade(Startup.resolveLocalServerBaseUrl(location));
-		apiFacade.set(f);
+        apiFacade.set(f);
         f.accounts.getLoggedInUser()
             .then(r => {
-                loggedInUser.set({ username:r.username, loggedIn: true, role: r.role });
+                loggedInUser.set({ username: r.username, loggedIn: true, role: r.role });
             })
             .catch(err => console.log("not logged in", err));
-	}
+    }
 
     setupTopLevelErrorHandling(root: typeof globalThis | Window) {
-		root.onunhandledrejection = (e) => {
+        root.onunhandledrejection = (e) => {
             let notification: NotificationItemDto | null = null;
 
             if (!!e.reason) {
                 let statusPrefix = "";
                 let message = "Unknown";
-                let details: {[key: string]: string} = {};
+                let details: { [key: string]: string } = {};
                 if (e.reason instanceof Error) {
                     message = e.reason.message;
                     if (e.reason instanceof ApiException) {
@@ -75,6 +75,6 @@ export class Startup {
             }
 
             notificationsStore.add(notification);
-		}
-	}
+        }
+    }
 }
