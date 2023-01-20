@@ -4,30 +4,59 @@
 	import { onMount } from 'svelte';
 	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto, TrainingCreateDto } from 'src/apiClient';
 	import TrainingsTable from '../../components/trainingsTable.svelte';
-	import TrainingGroupsTable from '../../components/trainingGroupsTable.svelte';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
-
-	// let trainingSummaries: TrainingSummary[] = [];
+	import Tabs from 'src/components/tabs.svelte';
+	import ProgressBar from './progress-bar.svelte';
 
 	const apiFacade = get(apiFacadeStore);
-
 	const loggedInUserInfo = get(loggedInUser);
 
-	let trainingsPromise: Promise<TrainingSummaryWithDaysDto[]>;
-	// let trainingGroupsPromise: Promise<{[key: string]: TrainingSummaryDto[] }>;
-	let trainingGroupsPromise2: Promise<{ group: string; summaries: TrainingSummaryDto[] }[]>;
+	let detailedTrainingsData: TrainingSummaryWithDaysDto[] = [];
+	let noOfDays = 7;
+	$: trainings = calculateTrainingStats(detailedTrainingsData, noOfDays);
+	let groups: { group: string; summaries: TrainingSummaryDto[] }[];
 
-	let trainingGroups: { group: string; summaries: TrainingSummaryDto[] }[] = [];
+	onMount(() => getData());
+
+	async function getData() {
+		if (apiFacade == null) {
+			console.error('apiFacade null');
+			return;
+		}
+		const groupsData = await apiFacade.trainings.getGroups();
+		groups = Object.entries(groupsData).map((o) => ({ group: o[0], summaries: o[1] }));
+	}
+
+	async function onSelectGroup(groupId: string) {
+		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId);
+	}
+
+	function calculateTrainingStats(data: TrainingSummaryWithDaysDto[], numberOfDays = 7) {
+		return data.map((t) => {
+			return {
+				id: t.id,
+				username: t.username,
+				trainedDays: t.days.length,
+				trainedDaysMax: 30,
+				accuracy: 10,
+				effectiveTime: 22,
+				totalTime: 32,
+				comments: [] as Array<{ type: 'Critical' | 'Warning' | 'Info'; description: string }>
+			};
+		});
+	}
+
+	const onSelectTraining = (trainingId: number) => {
+		goto(`${base}/training?id=${trainingId}`);
+	};
+
+	let newGroupData = {
+		name: 'Fsk A',
+		noOfTrainings: 10,
+		timePerDay: 10
+	};
 	let createdTrainingUsernames: string[] = [];
-
-	const clickedGroupRow = (e: CustomEvent<any>) => {
-		trainingsPromise = apiFacade.trainings.getSummaries(e.detail.group);
-	};
-	const clickedTrainingRow = (e: CustomEvent<any>) => {
-		goto(`${base}/training?id=${e.detail.id}`);
-	};
-
 	async function createTrainings(num: number, groupName: string, numMinutes: number, forUser?: string | null) {
 		if (!groupName) {
 			alert('A name is required');
@@ -42,49 +71,22 @@
 			chosenTemplate.settings.timeLimits = [numMinutes];
 			const dto = <TrainingCreateDto>{ trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
 			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
-			await getTrainings();
+			await getData();
 		}
 	}
 
 	function getElementValue(id: string) {
 		return (<HTMLInputElement>document.getElementById(id)).value;
 	}
-
-	async function getTrainings() {
-		if (apiFacade == null) {
-			console.error('apiFacade null');
-			return;
-		}
-		//trainingsPromise = apiFacade.trainings.getSummaries();
-
-		trainingGroupsPromise2 = new Promise((res) => {
-			apiFacade.trainings.getGroups().then((r) => {
-				const asList = Object.entries(r).map((o) => ({ group: o[0], summaries: o[1] }));
-				trainingGroups = asList;
-				res(asList);
-			});
-		});
-		// trainingGroupsPromise = apiFacade.trainings.getGroups();
-		//trainingSummaries = await apiFacade.trainings.getSummaries();
-		//console.log("OK", trainingSummaries.length); // why is TrainingsTable not always updated?
-	}
-
-	onMount(() => getTrainings());
 </script>
 
-<div>
-	<h2>Classes</h2>
+<div class="teacher-view">
+	<h2>Your groups/classes</h2>
 	<div>
-		Create class: <input id="className" type="text" value="Fsk A" />
-		num trainings: <input id="numTrainings" style="width:40px;" type="number" min="1" max="30" value="10" />
-		time per day: <input id="timePerDay" style="width:40px;" type="number" min="15" max="45" value="33" />
-		{#if loggedInUserInfo?.role == 'Admin'}
-			create for user: <input id="forUser" type="text" />
-		{/if}
-		<input
-			type="button"
-			value="Create"
-			on:click={() => createTrainings(parseFloat(getElementValue('numTrainings')), getElementValue('className'), parseFloat(getElementValue('timePerDay')), getElementValue('forUser'))} />
+		Create class: <input id="className" type="text" bind:value={newGroupData.name} />
+		Number of trainings: <input id="numTrainings" bind:value={newGroupData.noOfTrainings} min="1" max="40" />
+		Time per day: <input id="timePerDay" type="number" bind:value={newGroupData.timePerDay} min="15" max="45" />
+		<button value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, '')}>Create</button>
 
 		{#if createdTrainingUsernames}
 			Created users:
@@ -94,25 +96,59 @@
 		{/if}
 	</div>
 
-	{#await trainingGroupsPromise2}
-		<div>Loading...</div>
-	{:then trainings}
-		{#if !!trainings && trainings.length > 0}
-			<TrainingGroupsTable trainingSummaries={trainings} on:clickedRow={clickedGroupRow} />
-		{/if}
-	{:catch error}
-		{error}
-	{/await}
+	{#if groups && groups.length > 0}
+		<Tabs
+			urlParam="group"
+			tabs={groups.map((g) => {
+				return { id: g.group };
+			})}
+			on:selected={(e) => onSelectGroup(e.detail)} />
+	{/if}
 
-	<!-- <TrainingsTable trainingSummaries={trainingSummaries} numDays={5}></TrainingsTable> -->
-	{#await trainingsPromise}
-		<div>Loading...</div>
-	{:then trainings}
-		{#if !!trainings && trainings.length > 0}
-			<h2>Trainings</h2>
-			<TrainingsTable trainingSummaries={trainings} numDays={14} on:clickedRow={clickedTrainingRow} />
-		{/if}
-	{:catch error}
-		{error}
-	{/await}
+	{#if trainings && trainings.length > 0}
+		<h2>Trainings</h2>
+		<table>
+			<tr>
+				<th>User</th>
+				<th>Days trained</th>
+				<th>Effective time/day</th><th>Accuracy</th><th>Notes</th>
+			</tr>
+			{#each trainings as t (t.id)}
+				<tr on:click={() => onSelectTraining(t.id)}>
+					<td>{t.username}</td>
+					<td><ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" color="#00ff00" /></td>
+					<td>{t.accuracy}/100</td>
+					<td>
+						{#each t.comments as c}
+							{c.description}
+						{/each}</td>
+				</tr>
+			{/each}
+		</table>
+		<!-- <TrainingsTable trainingSummaries={trainings} numDays={14} on:clickedRow={clickedTrainingRow} /> -->
+	{/if}
 </div>
+
+<style>
+	.teacher-view {
+		padding: 20px;
+	}
+	table {
+		height: 100%;
+		text-align: left;
+		width: 100%;
+		border-spacing: 0;
+		border-collapse: collapse;
+	}
+	tr {
+		height: 25px;
+	}
+	tr:nth-child(even) {
+		background: #eeeeee;
+	}
+	th,
+	td {
+		margin-right: 10px;
+		padding: 3px 0;
+	}
+</style>

@@ -1,0 +1,99 @@
+{
+  "locales": [
+    "en-US",
+    "sv-SE"
+  ],
+  "languageName": [
+    "English (US)",
+    "Svenska"
+  ],
+  "ComparatorNumberMoreThan": [
+    ">",
+    ">"
+  ],
+  "ComparatorNumberLessThan": [
+    "<",
+    "<"
+  ],
+  "ComparatorNumberEqualTo": [
+    "==",
+    "=="
+  ],
+  "ComparatorNumberNotEqualTo": [
+    "!=",
+    "!="
+  ],
+  "ComparatorDateIsSet": [
+    "IS SET",
+    ""
+  ],
+  "ComparatorDateBefore": [
+    "BEFORE",
+    ""
+  ],
+  "ComparatorDateAfter": [
+    "AFTER",
+    ""
+  ],
+  "ComparatorDateEqualTo": [
+    "==",
+    "=="
+  ],
+  "ComparatorDateNotEqualTo": [
+    "!=",
+    "!="
+  ],
+  "ComparatorStringEqualTo": [
+    "IS",
+    ""
+  ],
+  "ComparatorStringNotEqualTo": [
+    "IS NOT",
+    ""
+  ],
+  "ComparatorStringIncludes": [
+    "INCLUDES",
+    ""
+  ],
+  "ComparatorStringNotIncludes": [
+    "EXCLUDES",
+    ""
+  ],
+  "ComparatorStringEmpty": [
+    "IS EMPTY",
+    ""
+  ],
+  "ComparatorStringNotEmpty": [
+    "IS NOT EMPTY",
+    ""
+  ],
+  "ComparatorStringIsInList": [
+    "IS IN LIST",
+    ""
+  ],
+  "ComparatorBoolean": [
+    "IS",
+    ""
+  ],
+  "ComparatorNumberIncreased": [
+    "INCREASED",
+    ""
+  ],
+  "ComparatorEnumEquals": [
+    "==",
+    ""
+  ],
+  "ComparatorEnumNotEquals": [
+    "!=",
+    ""
+  ],
+  "ComparatorEnumIsInList": [
+    "IS IN LIST",
+    ""
+  ],
+  "ComparatorEnumIsNotInList": [
+    "IS NOT IN LIST",
+    ""
+  ],
+  "endOfFile": []
+}

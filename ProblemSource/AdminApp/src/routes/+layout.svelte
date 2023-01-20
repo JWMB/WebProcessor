@@ -60,9 +60,11 @@
 <nav>
 	{#if $loggedInUser?.loggedIn == true}
 		<a href="{base}/">Home</a>
-		<a href="{base}/teacher">Teacher</a>
+
 		{#if $loggedInUser.role == 'Admin'}
 			<a href="{base}/admin">Admin</a>
+			<a href="{base}/admin/teacher">Teacher</a>
+			<a href="{base}/teacher">Teacher2</a>
 		{/if}
 		{#if $loggedInUser.role == 'Admin'}
 			<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? 'Disconnect' : 'Connect'}</button>
