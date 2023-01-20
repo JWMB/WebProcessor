@@ -24,7 +24,9 @@ namespace ProblemSource.Models.Aggregates
         {
             return new MLFeaturesJulia
             {
-                ByExercise = phases.Where(o => o.training_day <= dayCutoff)
+                ByExercise = phases
+                    .Where(o => o.training_day <= dayCutoff)
+                    .Where(o => o.phase_type != "GUIDE")
                     .GroupBy(o => Phase.GetExerciseCommonName(o.exercise))
                     .ToDictionary(o => o.Key, FeaturesForExercise.Create),
                 MeanTimeIncrease = 0,
@@ -72,8 +74,10 @@ namespace ProblemSource.Models.Aggregates
                 new[] { tangram, rotation, nvr_so, mathTest01, numberComparison01 }
                     .ToObjectArray(o => o.MedianTimeCorrect),
 
+                //new[] { wmGrid, npals, rotation, mathTest01 }
+                //    .ToObjectArray(o => o.MedianTimeIncorrect),
                 new[] { wmGrid, npals, rotation, mathTest01 }
-                    .ToObjectArray(o => o.MedianTimeIncorrect),
+                    .ToObjectArray(o => o.MedianTimeCorrectSubIncorrect),
 
                 new[] { npals, rotation, numberline, nvr_rp, nvr_so, numberComparison01 }
                     .ToObjectArray(o => o.NumHighResponseTimes),
@@ -102,12 +106,13 @@ namespace ProblemSource.Models.Aggregates
             public decimal StandardDeviation { get; set; }
             public int HighestLevelInt { get; set; }
             public int NumExercisesToHighestLevel { get; set; }
-            public decimal NumExercisesDivHighestLevel => 1M * NumExercises / HighestLevelInt;
+            public decimal? NumExercisesDivHighestLevel => HighestLevelInt == 0 ? null : 1M * NumExercises / HighestLevelInt;
 
 
             public int MedianTimeCorrect { get; set; }
             public int MedianTimeIncorrect { get; set; }
-            
+            public int MedianTimeCorrectSubIncorrect => MedianTimeCorrect - MedianTimeIncorrect;
+
             public int NumHighResponseTimes { get; set; }
 
             public int Skew { get; set; }
@@ -172,7 +177,7 @@ namespace ProblemSource.Models.Aggregates
 
                 stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
                     .Select(o => o.StandardDeviationNoOutliers / o.MeanNoOutliers)
-                    .Sum(); // TODO: should be Average(), no?
+                    .Average(); // TODO: was Sum().. Verify correct assumption to change this
 
                 // Highest level reached (with at least one correct answered on that level)
                 stats.HighestLevelInt = allProblems
@@ -195,8 +200,7 @@ namespace ProblemSource.Models.Aggregates
                     .GetMedian();
 
                 // 8) Median time incorrect: The median response time for correctly answered questions minus the median response time for incorrectly answered questions after outliers have been removed
-                stats.MedianTimeIncorrect =
-                    stats.MedianTimeCorrect - (int)allProblems
+                stats.MedianTimeIncorrect = (int)allProblems
                     .Where(HasNoCorrectAnswer)
                     .Select(o => new { Level = (int)o.level, ResponseTime = (double)o.answers.First().response_time })
                     .Where(o => responseTimesPerLevel[o.Level].IsNotOutlier(o.ResponseTime))

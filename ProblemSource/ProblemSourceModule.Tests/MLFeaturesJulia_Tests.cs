@@ -173,7 +173,7 @@ namespace ProblemSourceModule.Tests
                         var rows = byDay; //.OrderBy(o => o.problem_time).ToList();
                         foreach (var item in rows)
                         {
-                            if (item.exercise != currentPhase.exercise || item.isValid == false)
+                            if (item.exercise != currentPhase.exercise || item.isValid == false || item.phase_type != currentPhase.phase_type)
                             {
                                 currentPhase = new Phase { exercise = item.exercise, phase_type = item.phase_type, time = item.problem_time, training_day = byDay.Key };
                                 phases.Add(currentPhase);
@@ -205,9 +205,12 @@ namespace ProblemSourceModule.Tests
                         training_plan_id = int.Parse(items[2]),
                         training_time = int.Parse(items[3])
                     };
-                }).ToDictionary(o => o.Id, o => o);
+                })
+                .ToDictionary(o => o.Id, o => o);
+
 
             var joined = personal.Join(result, pers => pers.Key, phases => phases.Id, (pers, phases) => new { phases.Id, phases.Phases, pers.Value.training_time, pers.Value.age });
+            //joined = joined.Where(o => o.Id == 165628); // Note: for testing
             var analyzed = joined
                 .ToDictionary(o => o.Id, o => new {
                     Phases = o.Phases,
