@@ -20,7 +20,7 @@ namespace ProblemSource.Models.Aggregates
         /// </summary>
         public bool Age6_7 { get; set; }
 
-        public static MLFeaturesJulia FromPhases(TrainingSettings trainingSettings, IEnumerable<Phase> phases, int dayCutoff = 5)
+        public static MLFeaturesJulia FromPhases(TrainingSettings trainingSettings, IEnumerable<Phase> phases, int age, int dayCutoff = 5)
         {
             return new MLFeaturesJulia
             {
@@ -29,7 +29,7 @@ namespace ProblemSource.Models.Aggregates
                     .ToDictionary(o => o.Key, FeaturesForExercise.Create),
                 MeanTimeIncrease = 0,
                 TrainingTime20Min = (trainingSettings.timeLimits?.FirstOrDefault() ?? 33) == 20,
-                Age6_7 = false, // TODO:
+                Age6_7 = age == 6,
             };
         }
 
@@ -47,7 +47,7 @@ namespace ProblemSource.Models.Aggregates
 
             return new object?[][] {
                 new[] { npals, wmGrid, numberline, mathTest01, nvr_rp, nvr_so, numberComparison01 }
-                    .ToObjectArray(o => o.PercentCorrect),
+                    .ToObjectArray(o => o.FractionCorrect),
 
                 // Note: tangram instead of wmGrid
                 new[] { npals, tangram, numberline, mathTest01, nvr_rp, nvr_so, numberComparison01 }
@@ -91,7 +91,7 @@ namespace ProblemSource.Models.Aggregates
 
         public class FeaturesForExercise
         {
-            public int PercentCorrect { get; set; }
+            public decimal FractionCorrect { get; set; }
             public int NumProblemsWithAnswers { get; set; }
             public decimal StandardDeviation { get; set; }
             public int HighestLevelInt { get; set; }
@@ -160,7 +160,7 @@ namespace ProblemSource.Models.Aggregates
                 // Calc outputs:
 
                 stats.NumProblemsWithAnswers = allProblems.Count(problem => problem.answers.Any());
-                stats.PercentCorrect = 100 * allProblems.Count(problem => problem.answers.Any(answer => answer.correct)) / allProblems.Count();
+                stats.FractionCorrect = 1M * allProblems.Count(problem => problem.answers.Any(answer => answer.correct)) / allProblems.Count();
 
                 stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
                     .Select(o => o.StandardDeviationNoOutliers / o.MeanNoOutliers)
