@@ -63,10 +63,7 @@ namespace ProblemSource.Models.Aggregates
 
                 // all_data[nr_exercises] = all_data[nr_exercises] / all_data[highest_level]
                 new[] { npals, tangram, numberline, rotation, nvr_rp }
-                    .ToObjectArray(o => o.NumExercisesDivHighestLevel),
-
-                //new[] { npals, tangram, numberline, rotation, nvr_rp }
-                //    .ToObjectArray(o => o.NumExercisesToHighestLevel),
+                    .ToObjectArray(o => o.NumProblemsToHighestLevelDivHighestLevel), // NumProblemsDivHighestLevel NumExercisesToHighestLevel
 
                 new[]{ (object)MeanTimeIncrease },
 
@@ -99,14 +96,15 @@ namespace ProblemSource.Models.Aggregates
 
         public class FeaturesForExercise
         {
-            public int NumExercises { get; set; }
+            public int NumProblems { get; set; }
 
             public decimal FractionCorrect { get; set; }
             public int NumProblemsWithAnswers { get; set; }
             public decimal StandardDeviation { get; set; }
             public int HighestLevelInt { get; set; }
-            public int NumExercisesToHighestLevel { get; set; }
-            public decimal? NumExercisesDivHighestLevel => HighestLevelInt == 0 ? null : 1M * NumExercises / HighestLevelInt;
+            public int NumProblemsToHighestLevel { get; set; }
+            public decimal? NumProblemsDivHighestLevel => HighestLevelInt == 0 ? null : 1M * NumProblems / HighestLevelInt;
+            public decimal? NumProblemsToHighestLevelDivHighestLevel => HighestLevelInt == 0 ? null : 1M * NumProblemsToHighestLevel / HighestLevelInt;
 
 
             public int MedianTimeCorrect { get; set; }
@@ -136,7 +134,7 @@ namespace ProblemSource.Models.Aggregates
 
                 public IEnumerable<double> ResponseTimesNoOutliers => ResponseTimes.Where(IsNotOutlier);
 
-                public double StandardDeviationNoOutliers => ResponseTimesNoOutliers.GetStandardDeviation();
+                public double StandardDeviationNoOutliers => ResponseTimesNoOutliers.StdDev();
 
                 public static ResponseTimesStats Calc(IEnumerable<Problem> problems)
                 {
@@ -149,7 +147,7 @@ namespace ProblemSource.Models.Aggregates
 
                     var lnResponseTimes = result.ResponseTimes.Select(t => Math.Log(t));
                     // Add small value for double precision purposes (if all have same value, they might be consider outliers)
-                    result.OutlierCutOff = 0.001 + Math.Exp(lnResponseTimes.GetMedian() + 2.5 * lnResponseTimes.GetStandardDeviation());
+                    result.OutlierCutOff = 0.001 + Math.Exp(lnResponseTimes.Median() + 2.5 * lnResponseTimes.StdDev());
 
                     return result;
                 }
@@ -175,21 +173,21 @@ namespace ProblemSource.Models.Aggregates
                 stats.NumProblemsWithAnswers = allProblems.Count(problem => problem.answers.Any());
                 stats.FractionCorrect = 1M * allProblems.Count(problem => problem.answers.Any(answer => answer.correct)) / allProblems.Count();
 
-                stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
-                    .Select(o => o.StandardDeviationNoOutliers / o.MeanNoOutliers)
-                    .Average(); // TODO: was Sum().. Verify correct assumption to change this
-
                 // Highest level reached (with at least one correct answered on that level)
                 stats.HighestLevelInt = allProblems
                     .Where(HasCorrectAnswer)
                     .Max(problem => (int)problem.level);
 
-                var orderedPhases = phases.OrderBy(p => $"{p.training_day.ToString().PadLeft(3, '0')}_{p.time}").ToList();
-                // Number of exercises: The number of exercises it took to reach the highest level defined above
-                // TODO: just reach level, or with correct answer?
-                stats.NumExercisesToHighestLevel = 1 + orderedPhases.FindIndex(phase => phase.problems.Any(p => (int)p.level == stats.HighestLevelInt));
 
-                stats.NumExercises = orderedPhases.Count();
+                // Number of exercises: The number of exercises it took to reach the highest level defined above
+                // "Exercise" here means combination of training_day, exercise and level
+                // TODO: just reach level, or with correct answer?
+                //stats.NumProblemsToHighestLevel = 1 + phases.SelectMany(o => o.problems).ToList().FindIndex(o => (int)o.level == stats.HighestLevelInt);
+                stats.NumProblemsToHighestLevel = 1 + phases.SelectMany(o => o.problems).ToList().FindIndex(o => (int)o.level == stats.HighestLevelInt && o.answers.Any(a => a.correct));
+                //var orderedPhases = phases.OrderBy(p => $"{p.training_day.ToString().PadLeft(3, '0')}_{p.time}").ToList();
+                //stats.NumProblemsToHighestLevel = 1 + orderedPhases.FindIndex(phase => phase.problems.Any(p => (int)p.level == stats.HighestLevelInt));
+
+                stats.NumProblems = phases.Sum(o => o.problems.Count());
 
                 // 7) Median time correct: The median response time for correctly answered questions after outliers have been removed
                 stats.MedianTimeCorrect = (int)allProblems
@@ -197,7 +195,7 @@ namespace ProblemSource.Models.Aggregates
                     .Select(o => new { Level = (int)o.level, ResponseTime = (double)o.answers.First().response_time })
                     .Where(o => responseTimesPerLevel[o.Level].IsNotOutlier(o.ResponseTime))
                     .Select(o => o.ResponseTime)
-                    .GetMedian();
+                    .Median();
 
                 // 8) Median time incorrect: The median response time for correctly answered questions minus the median response time for incorrectly answered questions after outliers have been removed
                 stats.MedianTimeIncorrect = (int)allProblems
@@ -205,8 +203,20 @@ namespace ProblemSource.Models.Aggregates
                     .Select(o => new { Level = (int)o.level, ResponseTime = (double)o.answers.First().response_time })
                     .Where(o => responseTimesPerLevel[o.Level].IsNotOutlier(o.ResponseTime))
                     .Select(o => o.ResponseTime)
-                    .GetMedian();
+                    .Median();
                 //TODO: not sure this is what is expected
+
+                // Std(tot) = (std(1)*3/10 + std(2)*2/10 + std(3)*5/10) / median_time_correct(tot)
+                stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
+                    .Select(o => o.StandardDeviationNoOutliers * o.ResponseTimesNoOutliers.Count() / responseTimesTotal.ResponseTimesNoOutliers.Count())
+                    .Sum()
+                    / stats.MedianTimeCorrect;
+
+                // Std(tot) = Avg(std(level1)/mean_time(level1) + std(level2)/mean_time(level2) + …)
+                //stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
+                //    .Select(o => o.StandardDeviationNoOutliers / o.MeanNoOutliers)
+                //    .Average(); // TODO: was Sum().. Verify correct assumption to change this
+
 
                 //9) Number of high response times: The number of questions with a response time above the outlier cutoff
                 // stats.NumHighResponseTimes = allProblems.Count(problem => problem.answers.Any(answer => isOutlier(answer.response_time)));
@@ -224,7 +234,7 @@ namespace ProblemSource.Models.Aggregates
                 stats.MedianLevel = allProblems.Where(problem => problem.answers.Any(answer => answer.correct))
                     .Select(problem => (decimal)(int)problem.level)
                     .Order()
-                    .GetMedian();
+                    .Median();
 
                 return stats;
 
@@ -239,9 +249,9 @@ namespace ProblemSource.Models.Aggregates
         public static object?[] ToObjectArray<T>(this IEnumerable<FeaturesForExercise> values, Func<FeaturesForExercise, T> selector) =>
             values.Select(selector).Select(o => (object?)o).ToArray();
 
-        public static decimal GetMedian(this IEnumerable<decimal> values) => (decimal)values.Order().Select(o => (double)o).GetMedian();
+        public static decimal Median(this IEnumerable<decimal> values) => (decimal)values.Order().Select(o => (double)o).Median();
 
-        public static double GetMedian(this IEnumerable<double> values)
+        public static double Median(this IEnumerable<double> values)
         {
             if (values is not IOrderedEnumerable<double>)
                 values = values.Order().ToArray();
@@ -252,9 +262,9 @@ namespace ProblemSource.Models.Aggregates
             return enumerable[count / 2];
         }
 
-        public static decimal GetStandardDeviation(this IEnumerable<decimal> values) => (decimal)values.Select(o => (double)o).GetStandardDeviation();
+        public static decimal StdDev(this IEnumerable<decimal> values) => (decimal)values.Select(o => (double)o).StdDev();
 
-        public static double GetStandardDeviation(this IEnumerable<double> values)
+        public static double StdDev(this IEnumerable<double> values)
         {
             var enumerable = values as double[] ?? values.ToArray();
             var count = enumerable.Count();
@@ -262,7 +272,7 @@ namespace ProblemSource.Models.Aggregates
                 return 0;
             var avg = enumerable.Average();
             var sum = enumerable.Sum(d => (d - avg) * (d - avg));
-            return Math.Sqrt((sum / count));
+            return Math.Sqrt(sum / (count - 1));
         }
     }
 }

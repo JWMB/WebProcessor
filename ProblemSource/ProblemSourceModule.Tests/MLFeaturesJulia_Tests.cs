@@ -66,7 +66,7 @@ namespace ProblemSourceModule.Tests
             };
             var trainingSettings = new TrainingSettings { timeLimits = new[] { 33M }.ToList() };
             var features = MLFeaturesJulia.FromPhases(trainingSettings, phases, age: 6);
-            features.ByExercise["npals"].NumExercisesToHighestLevel.ShouldBe(3);
+            features.ByExercise["npals"].NumProblemsToHighestLevel.ShouldBe(3);
         }
 
         [Fact]
@@ -107,7 +107,7 @@ namespace ProblemSourceModule.Tests
                 {
                     { exercise, new MLFeaturesJulia.FeaturesForExercise
                         {
-                            HighestLevelInt = 6, MedianLevel = 6, MedianTimeCorrect = 2000, MedianTimeIncorrect = 889, FractionCorrect = 0.66M, NumProblemsWithAnswers = 3, NumExercisesToHighestLevel = 1,
+                            HighestLevelInt = 6, MedianLevel = 6, MedianTimeCorrect = 2000, MedianTimeIncorrect = 889, FractionCorrect = 0.66M, NumProblemsWithAnswers = 3, NumProblemsToHighestLevel = 1,
                             StandardDeviation = 0.285760205721633m //447.541680243925m
                         }
                     }
@@ -210,7 +210,7 @@ namespace ProblemSourceModule.Tests
 
 
             var joined = personal.Join(result, pers => pers.Key, phases => phases.Id, (pers, phases) => new { phases.Id, phases.Phases, pers.Value.training_time, pers.Value.age });
-            //joined = joined.Where(o => o.Id == 165628); // Note: for testing
+            joined = joined.Where(o => o.Id == 165628); // Note: for testing
             var analyzed = joined
                 .ToDictionary(o => o.Id, o => new {
                     Phases = o.Phases,
