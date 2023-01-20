@@ -15,7 +15,7 @@ namespace ProblemSourceModule.Tests
         public void MLFeaturesJulia_ColumnCount()
         {
             var phases = new List<Phase>();
-            var trainingSettings = new TrainingSettings { timeLimits = new[] { 33M }.ToList() };
+            var trainingSettings = TrainingSettings.Default;
             var features = MLFeaturesJulia.FromPhases(trainingSettings, phases, age: 6);
 
             var asArray = features.ToArray();
@@ -64,7 +64,7 @@ namespace ProblemSourceModule.Tests
                     }
                 }
             };
-            var trainingSettings = new TrainingSettings { timeLimits = new[] { 33M }.ToList() };
+            var trainingSettings = TrainingSettings.Default;
             var features = MLFeaturesJulia.FromPhases(trainingSettings, phases, age: 6);
             features.ByExercise["npals"].NumProblemsToHighestLevel.ShouldBe(3);
         }
@@ -98,7 +98,7 @@ namespace ProblemSourceModule.Tests
                     }
                 }
             };
-            var trainingSettings = new TrainingSettings { timeLimits = new[] { 33M }.ToList() };
+            var trainingSettings = TrainingSettings.Default;
             var features = MLFeaturesJulia.FromPhases(trainingSettings, phases, age: 6);
 
             var expected = new MLFeaturesJulia

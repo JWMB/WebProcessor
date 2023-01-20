@@ -219,7 +219,7 @@ namespace ProblemSource
             if (trainingPlan == null)
                 throw new Exception($"Training plan '{trainingPlanName}' does not exist");
 
-            var fullState = Newtonsoft.Json.Linq.JObject.FromObject(new UserFullState
+            var fullState = JObject.FromObject(new UserFullState
             {
                 uuid = root.Uuid,
                 training_plan = trainingPlan,
@@ -243,32 +243,8 @@ namespace ProblemSource
                 fullState["user_data"] = currentStoredState.user_data == null ? null : JObject.FromObject(currentStoredState.user_data);
             }
 
-            // TODO: apply rules engine - should e.g. training plan be modified?
-
             return JsonConvert.SerializeObject(fullState);
         }
-
-        //interface ITrainingModifierEngine
-        //{
-        //    void Run(Training training);
-        //}
-        //class TrainingModifierEngine : ITrainingModifierEngine
-        //{
-        //    public void Run(Training training)
-        //    {
-        //    }
-        //    class Day5Switcher
-        //    {
-        //        public void Run(Training training)
-        //        {
-        //            var trainingDay = 5;
-        //            if (trainingDay == 5)
-        //            {
-        //                //training.Settings.trainingPlanOverrides
-        //            }
-        //        }
-        //    }
-        //}
 
         private static List<LogItem> DeserializeEvents(object[] events, ILogger? log = null)
         {

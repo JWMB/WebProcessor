@@ -7,6 +7,6 @@ namespace ProblemSourceModule.Models
         public int Id { get; set; }
         public string Username { get; set; } = string.Empty;
         public string TrainingPlanName { get; set; } = string.Empty;
-        public TrainingSettings? Settings { get; set; }
+        public TrainingSettings Settings { get; set; } = TrainingSettings.Default;
     }
 }

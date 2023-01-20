@@ -30,7 +30,7 @@ namespace ProblemSource.Models.Aggregates
                     .GroupBy(o => Phase.GetExerciseCommonName(o.exercise))
                     .ToDictionary(o => o.Key, FeaturesForExercise.Create),
                 MeanTimeIncrease = 0,
-                TrainingTime20Min = (trainingSettings.timeLimits?.FirstOrDefault() ?? 33) == 20,
+                TrainingTime20Min = trainingSettings.timeLimits.FirstOrDefault() == 20M,
                 Age6_7 = age == 6,
             };
         }

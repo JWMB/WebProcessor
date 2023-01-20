@@ -121,20 +121,7 @@ namespace TrainingApi.Controllers
         public IEnumerable<Training> GetTemplates()
         {
             // {"timeLimits":[33.0]}
-            var ts = new TrainingSettings
-            {
-                cultureCode = "sv-SE",
-                alarmClockInvisible = null,
-                customData = null,
-                idleTimeout = null,
-                triggers = null,
-                manuallyUnlockedExercises = null,
-                uniqueGroupWeights = null,
-                trainingPlanOverrides = null,
-                syncSettings = null,
-                pacifistRatio = 0.1M,
-                timeLimits = new List<decimal> { 33 },
-            };
+            var ts = TrainingSettings.Default;
             return new[] {
                 new Training { Id = 1, Username = "Default training", TrainingPlanName = "2017 HT template Default", Settings = ts }
             };
@@ -266,7 +253,7 @@ namespace TrainingApi.Controllers
         public class TrainingCreateDto
         {
             public string TrainingPlan { get; set; } = "";
-            public TrainingSettings TrainingSettings { get; set; } = new TrainingSettings();
+            public TrainingSettings TrainingSettings { get; set; } = TrainingSettings.Default;
         }
     }
 }
