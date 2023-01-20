@@ -1079,7 +1079,7 @@ export interface Training {
     id: number;
     username: string;
     trainingPlanName: string;
-    settings?: TrainingSettings | undefined;
+    settings: TrainingSettings;
 }
 
 export interface TrainingSummaryDto {

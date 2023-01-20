@@ -223,11 +223,7 @@ namespace ProblemSource
             {
                 uuid = root.Uuid,
                 training_plan = trainingPlan,
-                training_settings = training.Settings ?? new TrainingSettings
-                {
-                    timeLimits = new List<decimal> { 33 },
-                    customData = new CustomData { unlockAllPlanets = false }
-                }
+                training_settings = training.Settings
             });
 
             var typedTrainingPlan = JsonConvert.DeserializeObject<TrainingPlan>(JsonConvert.SerializeObject(trainingPlan));

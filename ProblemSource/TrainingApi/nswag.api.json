@@ -1175,7 +1175,8 @@
       "required": [
         "id",
         "username",
-        "trainingPlanName"
+        "trainingPlanName",
+        "settings"
       ],
       "properties": {
         "id": {
