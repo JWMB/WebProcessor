@@ -193,12 +193,14 @@ namespace TrainingApi.Controllers
                 .Where(o => o.First().AccountId > 0)
                 .ToDictionary(o => o.First().AccountId, o => o.ToList());
 
-            return tdDict.Select(kv => new TrainingSummaryWithDaysDto
-            {
-                Id = kv.Key,
-                Username = trainings.FirstOrDefault(o => o.Id == kv.Key)?.Username ?? "", // kv.Value.FirstOrDefault()?.AccountUuid ?? "N/A", // TODO: if no days trained, Uuid will be missing - should be part of Training
-                Days = kv.Value
-            }).ToList();
+            return trainings.Join(tdDict, training => training.Id, days => days.Key, (training, days) =>
+                new TrainingSummaryWithDaysDto
+                {
+                    Id = training.Id,
+                    Username = training.Username,
+                    Days = days.Value
+                }
+            ).ToList();
         }
 
         private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null)
