@@ -195,7 +195,12 @@ namespace ProblemSource
                     log.LogError(ex, $"UpdateAggregates");
                 }
 
-                await trainingAnalyzers.Execute(training, logItems, sessionInfo.Session.UserRepositories);
+                var modified = await trainingAnalyzers.Execute(training, logItems, sessionInfo.Session.UserRepositories);
+                if (modified)
+                {
+                    log.LogInformation($"Modified training saved, id = {training.Id}");
+                    await trainingRepository.Update(training);
+                }
             }
 
             if (root.RequestState)
