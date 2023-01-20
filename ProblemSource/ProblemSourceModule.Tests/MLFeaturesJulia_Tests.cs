@@ -151,7 +151,10 @@ namespace ProblemSourceModule.Tests
                     var index = val.IndexOf(".");
                     return int.Parse(index > 0 ? val.Remove(index) : val);
                 }
-            }).Where(o => o.training_day <= 5).ToList();
+            })
+                .Where(o => o.training_day <= 5)
+                .Where(o => o.isValid)
+                .ToList();
 
             //var timeDiffs = new List<long>();
             //var prev = 0L;
@@ -167,7 +170,7 @@ namespace ProblemSourceModule.Tests
                     .Select(byDay => {
                         var phases = new List<Phase>();
                         var currentPhase = new Phase();
-                        var rows = byDay.OrderBy(o => o.problem_time).ToList();
+                        var rows = byDay; //.OrderBy(o => o.problem_time).ToList();
                         foreach (var item in rows)
                         {
                             if (item.exercise != currentPhase.exercise || item.isValid == false)

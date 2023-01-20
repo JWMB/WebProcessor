@@ -59,8 +59,12 @@ namespace ProblemSource.Models.Aggregates
                 new[] { npals, numberline, nvr_so, nvr_rp }
                     .ToObjectArray(o => o.HighestLevelInt),
 
+                // all_data[nr_exercises] = all_data[nr_exercises] / all_data[highest_level]
                 new[] { npals, tangram, numberline, rotation, nvr_rp }
-                    .ToObjectArray(o => o.NumExercisesToHighestLevel),
+                    .ToObjectArray(o => o.NumExercisesDivHighestLevel),
+
+                //new[] { npals, tangram, numberline, rotation, nvr_rp }
+                //    .ToObjectArray(o => o.NumExercisesToHighestLevel),
 
                 new[]{ (object)MeanTimeIncrease },
 
@@ -91,11 +95,15 @@ namespace ProblemSource.Models.Aggregates
 
         public class FeaturesForExercise
         {
+            public int NumExercises { get; set; }
+
             public decimal FractionCorrect { get; set; }
             public int NumProblemsWithAnswers { get; set; }
             public decimal StandardDeviation { get; set; }
             public int HighestLevelInt { get; set; }
             public int NumExercisesToHighestLevel { get; set; }
+            public decimal NumExercisesDivHighestLevel => 1M * NumExercises / HighestLevelInt;
+
 
             public int MedianTimeCorrect { get; set; }
             public int MedianTimeIncorrect { get; set; }
@@ -175,6 +183,8 @@ namespace ProblemSource.Models.Aggregates
                 // Number of exercises: The number of exercises it took to reach the highest level defined above
                 // TODO: just reach level, or with correct answer?
                 stats.NumExercisesToHighestLevel = 1 + orderedPhases.FindIndex(phase => phase.problems.Any(p => (int)p.level == stats.HighestLevelInt));
+
+                stats.NumExercises = orderedPhases.Count();
 
                 // 7) Median time correct: The median response time for correctly answered questions after outliers have been removed
                 stats.MedianTimeCorrect = (int)allProblems
