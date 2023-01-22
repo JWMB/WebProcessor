@@ -94,12 +94,11 @@ namespace ProblemSource
             add();
         }
         public static void Upsert<TService>(this IServiceCollection services, Action add)
-    where TService : class
+            where TService : class
         {
             services.RemoveService<TService>();
             add();
         }
-
 
         public static bool RemoveService<T>(this IServiceCollection services)
         {
@@ -111,6 +110,5 @@ namespace ProblemSource
             }
             return false;
         }
-
     }
 }

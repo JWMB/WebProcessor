@@ -188,17 +188,17 @@ namespace TrainingApi.Controllers
                 throw;
             }
 
-            var tdDict = results
+            var daysById = results
                 .Where(o => o.Any())
                 .Where(o => o.First().AccountId > 0)
                 .ToDictionary(o => o.First().AccountId, o => o.ToList());
 
-            return trainings.Join(tdDict, training => training.Id, days => days.Key, (training, days) =>
+            return trainings.Select(training =>
                 new TrainingSummaryWithDaysDto
                 {
                     Id = training.Id,
                     Username = training.Username,
-                    Days = days.Value
+                    Days = daysById.GetValueOrDefault(training.Id, new List<TrainingDayAccount>())
                 }
             ).ToList();
         }

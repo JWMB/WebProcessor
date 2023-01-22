@@ -24,24 +24,30 @@ namespace TrainingApiTests.IntegrationHelpers
            return client;
         }
 
-        public MyTestServer(Action<IServiceCollection>? configureTestServices = null, Dictionary<string, string>? config = null)
+        public MyTestServer(Action<IServiceCollection>? configureTestServices = null, Action<IServiceCollection>? postConfigureTestServices = null, Dictionary<string, string>? config = null)
         {
-            if (configureTestServices == null)
-            {
-                configureTestServices = services =>
+            Action<IServiceCollection> configure = services => {
+                if (configureTestServices == null)
                 {
-                    services.AddTransient<IStartupFilter, TestStartupFilter>();
+                    configureTestServices = services =>
+                    {
+                        services.AddTransient<IStartupFilter, TestStartupFilter>();
 
-                    services.AddSingleton(sp => CreateAutoMocked<IUserRepository>());
-                    services.AddSingleton(sp => CreateAutoMocked<IUserGeneratedDataRepositoryProviderFactory>());
-                    services.AddSingleton(sp => CreateAutoMocked<ITrainingRepository>());
-                };
-            }
+                        //services.
+                        services.AddSingleton(sp => CreateAutoMocked<IUserRepository>());
+                        services.AddSingleton(sp => CreateAutoMocked<IUserGeneratedDataRepositoryProviderFactory>());
+                        services.AddSingleton(sp => CreateAutoMocked<ITrainingRepository>());
+                    };
+                }
 
-            Server = CreateServer(config, configureTestServices);
+                configureTestServices(services);
+                postConfigureTestServices?.Invoke(services);
+            };
+
+            Server = CreateServer(config, configure);
         }
 
-        private static T CreateAutoMocked<T>()
+        public static T CreateAutoMocked<T>()
             where T : class
         {
             return new AutoFaker<T>().Configure(config => config.WithBinder<FakeItEasyBinder>()).Generate();
