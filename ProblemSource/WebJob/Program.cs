@@ -2,6 +2,7 @@
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WebJob;
 
 var builder = new HostBuilder();
 builder.ConfigureWebJobs(b =>
@@ -53,5 +54,10 @@ builder.ConfigureWebJobs(b =>
 
 using (var host = builder.Build())
 {
-    await host.RunAsync();
+    //await host.RunAsync();
+
+    await host.StartAsync();
+
+    var jobHost = host.Services.GetService<IJobHost>();
+    await jobHost.CallAsync(nameof(Functions.MyContinuousMethod));
 }

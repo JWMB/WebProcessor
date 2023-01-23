@@ -11,4 +11,8 @@
     <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.33" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ProblemSourceModule\ProblemSourceModule.csproj" />
+  </ItemGroup>
+
 </Project>
