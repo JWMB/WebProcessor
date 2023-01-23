@@ -1200,8 +1200,10 @@
         "username",
         "created",
         "trainedDays",
+        "targetDays",
         "avgResponseMinutes",
         "avgRemainingMinutes",
+        "targetMinutesPerDay",
         "avgAccuracy"
       ],
       "properties": {
@@ -1220,11 +1222,19 @@
           "type": "integer",
           "format": "int32"
         },
+        "targetDays": {
+          "type": "integer",
+          "format": "int32"
+        },
         "avgResponseMinutes": {
           "type": "number",
           "format": "decimal"
         },
         "avgRemainingMinutes": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "targetMinutesPerDay": {
           "type": "number",
           "format": "decimal"
         },
