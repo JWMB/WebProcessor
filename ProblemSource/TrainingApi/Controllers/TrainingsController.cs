@@ -233,8 +233,10 @@ namespace TrainingApi.Controllers
             public string Username { get; set; } = string.Empty;
             public DateTimeOffset Created { get; set; }
             public int TrainedDays { get; set; }
+            public int TargetDays { get; set; }
             public decimal AvgResponseMinutes { get; set; }
             public decimal AvgRemainingMinutes { get; set; }
+            public decimal TargetMinutesPerDay { get; set; }
             public decimal AvgAccuracy { get; set; }
             public DateTimeOffset? FirstLogin { get; set; }
             public DateTimeOffset? LastLogin { get; set; }
@@ -245,10 +247,12 @@ namespace TrainingApi.Controllers
                 {
                     Id = training.Id,
                     Username = training.Username,
-                    Created = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero), // training.CreatedAt
+                    Created = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero), // TODO: training.CreatedAt
                     TrainedDays = summary?.TrainedDays ?? 0,
+                    TargetDays = 30, // TODO: training settings
                     AvgResponseMinutes = summary?.AvgResponseMinutes ?? 0,
                     AvgRemainingMinutes = summary?.AvgRemainingMinutes ?? 0,
+                    TargetMinutesPerDay = training.Settings?.timeLimits.FirstOrDefault() ?? 33,
                     AvgAccuracy = summary?.AvgAccuracy ?? 0,
                     FirstLogin = summary?.FirstLogin,
                     LastLogin = summary?.LastLogin,
