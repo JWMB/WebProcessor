@@ -15,9 +15,9 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             this.modelService = modelService;
         }
 
-        public async Task<bool> Analyze(Training training, List<LogItem> latestLogItems, IUserGeneratedDataRepositoryProvider provider)
+        public async Task<bool> Analyze(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
         {
-            var eod = latestLogItems.OfType<EndOfDayLogItem>().FirstOrDefault();
+            var eod = latestLogItems?.OfType<EndOfDayLogItem>().FirstOrDefault();
             // TODO: also check if stat's TrainingDay has changed
 
             if (eod?.training_day == 5)
@@ -25,7 +25,8 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 var age = 6; // TODO: where can we get age? Add in TrainingSettings for now?
                 var mlFeatures = MLFeaturesJulia.FromPhases(training.Settings ?? new TrainingSettings(), await provider.Phases.GetAll(), age: age);
                 var result = await modelService.Post(mlFeatures);
-                    
+                training.Settings ??= TrainingSettings.Default;
+
                 if (result.IsLowestQuartile)
                 {
                     training.Settings.timeLimits = training.Settings.timeLimits.Select(o => o * 0.9M).ToList();

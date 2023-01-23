@@ -8,6 +8,6 @@ namespace ProblemSourceModule.Services
 
     public interface ITrainingAnalyzer
     {
-        Task<bool> Analyze(Training training, List<LogItem> latestLogItems, IUserGeneratedDataRepositoryProvider provider);
+        Task<bool> Analyze(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems);
     }
 }

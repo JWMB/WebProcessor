@@ -17,7 +17,7 @@ namespace ProblemSourceModule.Services
             this.log = log;
         }
 
-        public async Task<bool> Execute(Training training, List<LogItem> latestLogItems, IUserGeneratedDataRepositoryProvider provider)
+        public async Task<bool> Execute(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
         {
             if (instances?.Any() != true)
                 return false;
@@ -27,7 +27,7 @@ namespace ProblemSourceModule.Services
             {
                 try
                 {
-                    modified |= await item.Analyze(training, latestLogItems, provider);
+                    modified |= await item.Analyze(training, provider, latestLogItems);
                 }
                 catch (Exception ex)
                 {

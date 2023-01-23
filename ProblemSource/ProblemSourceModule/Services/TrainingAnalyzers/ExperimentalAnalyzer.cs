@@ -8,9 +8,9 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
     public class ExperimentalAnalyzer : ITrainingAnalyzer
     {
-        public Task<bool> Analyze(Training training, List<LogItem> latestLogItems, IUserGeneratedDataRepositoryProvider provider)
+        public Task<bool> Analyze(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
         {
-            var eod = latestLogItems.OfType<EndOfDayLogItem>().FirstOrDefault();
+            var eod = latestLogItems?.OfType<EndOfDayLogItem>().FirstOrDefault();
 
             if (eod != null)
             {

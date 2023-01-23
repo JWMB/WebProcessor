@@ -195,7 +195,7 @@ namespace ProblemSource
                     log.LogError(ex, $"UpdateAggregates");
                 }
 
-                var modified = await trainingAnalyzers.Execute(training, logItems, sessionInfo.Session.UserRepositories);
+                var modified = await trainingAnalyzers.Execute(training, sessionInfo.Session.UserRepositories, logItems);
                 if (modified)
                 {
                     log.LogInformation($"Modified training saved, id = {training.Id}");

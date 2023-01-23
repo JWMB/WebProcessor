@@ -43,21 +43,21 @@ builder.ConfigureWebJobs(b =>
 .ConfigureServices((context, services) =>
 {
     services.AddSingleton(context.Configuration);
+    services.AddSingleton<IEnumerable<Work>>(sp =>
+        Work.GetWorkTypes().Select(type => (Work)sp.CreateInstance(type)));
+    //services.AddSingleton<Func<IEnumerable<Work>>>(sp => () => Work.GetWorkTypes().Select(type => (Work)sp.CreateInstance(type)));
+
     //services.AddMemoryCache();
 
     // other DI configuration here
 })
 .UseConsoleLifetime();
 
-//var host = builder.Build();
-//Services = host.Services;
 
 using (var host = builder.Build())
 {
-    //await host.RunAsync();
-
     await host.StartAsync();
 
-    var jobHost = host.Services.GetService<IJobHost>();
+    var jobHost = host.Services.GetRequiredService<IJobHost>();
     await jobHost.CallAsync(nameof(Functions.MyContinuousMethod));
 }
