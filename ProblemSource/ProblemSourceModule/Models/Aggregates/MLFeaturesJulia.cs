@@ -102,6 +102,9 @@ namespace ProblemSource.Models.Aggregates
             public int NumProblemsWithAnswers { get; set; }
             public decimal StandardDeviation { get; set; }
             public int HighestLevelInt { get; set; }
+            /// <summary>
+            /// 0-indexed!
+            /// </summary>
             public int NumProblemsToHighestLevel { get; set; }
             public decimal? NumProblemsDivHighestLevel => HighestLevelInt == 0 ? null : 1M * NumProblems / HighestLevelInt;
             public decimal? NumProblemsToHighestLevelDivHighestLevel => HighestLevelInt == 0 ? null : 1M * NumProblemsToHighestLevel / HighestLevelInt;
@@ -164,6 +167,17 @@ namespace ProblemSource.Models.Aggregates
 
                 var responseTimesPerLevel = allProblems.GroupBy(problem => (int)problem.level).ToDictionary(o => o.Key, ResponseTimesStats.Calc);
 
+                var debug = responseTimesPerLevel.Select(o => new
+                {
+                    Level = o.Value.MinLevel,
+                    o.Value.OutlierCutOff,
+                    o.Value.Mean,
+                    o.Value.MeanNoOutliers,
+                    o.Value.StandardDeviationNoOutliers,
+                    Num = o.Value.ResponseTimes.Count(),
+                    NumOutliers = (o.Value.ResponseTimes.Count() - o.Value.ResponseTimesNoOutliers.Count())
+                });
+
                 var responseTimesTotal = ResponseTimesStats.Calc(allProblems);
                 if (responseTimesTotal.ResponseTimesNoOutliers.Any() == false)
                     return stats;
@@ -178,14 +192,14 @@ namespace ProblemSource.Models.Aggregates
                     .Where(HasCorrectAnswer)
                     .Max(problem => (int)problem.level);
 
-
                 // Number of exercises: The number of exercises it took to reach the highest level defined above
                 // "Exercise" here means combination of training_day, exercise and level
                 // TODO: just reach level, or with correct answer?
-                //stats.NumProblemsToHighestLevel = 1 + phases.SelectMany(o => o.problems).ToList().FindIndex(o => (int)o.level == stats.HighestLevelInt);
-                stats.NumProblemsToHighestLevel = 1 + phases.SelectMany(o => o.problems).ToList().FindIndex(o => (int)o.level == stats.HighestLevelInt && o.answers.Any(a => a.correct));
+                // Note: 0-indexed
+                stats.NumProblemsToHighestLevel = phases.SelectMany(o => o.problems).ToList().FindIndex(o => (int)o.level == stats.HighestLevelInt);
+                //stats.NumProblemsToHighestLevel = phases.SelectMany(o => o.problems).ToList().FindIndex(o => (int)o.level == stats.HighestLevelInt && o.answers.Any(a => a.correct));
                 //var orderedPhases = phases.OrderBy(p => $"{p.training_day.ToString().PadLeft(3, '0')}_{p.time}").ToList();
-                //stats.NumProblemsToHighestLevel = 1 + orderedPhases.FindIndex(phase => phase.problems.Any(p => (int)p.level == stats.HighestLevelInt));
+                //stats.NumProblemsToHighestLevel = orderedPhases.FindIndex(phase => phase.problems.Any(p => (int)p.level == stats.HighestLevelInt));
 
                 stats.NumProblems = phases.Sum(o => o.problems.Count());
 
