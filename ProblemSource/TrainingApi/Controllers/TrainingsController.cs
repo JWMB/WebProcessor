@@ -53,6 +53,21 @@ namespace TrainingApi.Controllers
             return training.Username;
         }
 
+        [Authorize(Policy = RolesRequirement.Admin)]
+        [HttpDelete]
+        public async Task Delete(int id, bool deleteTrainingDataOnly = true)
+        {
+            var training = await trainingRepository.Get(id);
+            if (training == null)
+                return;
+
+            var fact = dataRepoFactory.Create(id);
+            await fact.RemoveAll();
+
+            if (deleteTrainingDataOnly == false)
+                await trainingRepository.RemoveByIdIfExists(id);
+        }
+
         private async Task<Training> CreateTraining(TrainingCreateDto dto)
         {
             return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan, dto.TrainingSettings);

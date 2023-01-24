@@ -414,6 +414,33 @@
           }
         }
       },
+      "delete": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_Delete",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "query",
+            "format": "int32",
+            "x-nullable": false
+          },
+          {
+            "type": "boolean",
+            "name": "deleteTrainingDataOnly",
+            "in": "query",
+            "default": true,
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
       "get": {
         "tags": [
           "Trainings"

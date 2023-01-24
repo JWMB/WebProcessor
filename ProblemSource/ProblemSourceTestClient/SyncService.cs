@@ -4,18 +4,19 @@ namespace TestClient
 {
     internal class SyncService
     {
-        private readonly HttpClient client;
+        private readonly IHttpClientFactory clientFactory;
         private Uri? syncUri;
-        public SyncService()
+
+        public SyncService(IHttpClientFactory clientFactory)
         {
-            client = new HttpClient();
+            this.clientFactory = clientFactory;
         }
 
-        public async Task Init()
-        {
-            var apiUrl = "https://localhost:7173/api/";
+        private HttpClient GetClient() => clientFactory.CreateClient();
 
-            var response = await client.GetStringAsync($"{apiUrl}Relay/GetSyncUrls?uuid=123");
+        public async Task Init(string baseUrl)
+        {
+            var response = await GetClient().GetStringAsync($"{baseUrl}Relay/GetSyncUrls?uuid=123");
             syncUri = Newtonsoft.Json.JsonConvert.DeserializeObject<List<SyncUrl>>(response)?.First().Url;
             if (syncUri?.IsAbsoluteUri == false)
                 throw new Exception($"Sync URI incomplete: {syncUri}");
@@ -32,7 +33,7 @@ namespace TestClient
 
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", bearerToken ?? GenerateToken());
 
-            return await client.SendAsync(request);
+            return await GetClient().SendAsync(request);
         }
 
         private string GenerateToken(string signingKey = "somereallylongkeygoeshere", string audience = "logsink_client", string pipeline = "problemsource")
