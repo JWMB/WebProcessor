@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 
-namespace TrainingApiTests.IntegrationHelpers
+namespace TrainingApi.Tests.IntegrationHelpers
 {
     public class TestStartupFilter : IStartupFilter
     {

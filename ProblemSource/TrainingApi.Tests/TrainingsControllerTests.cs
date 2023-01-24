@@ -1,24 +1,13 @@
-﻿using AutoBogus;
-using FakeItEasy;
+﻿using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
-using Newtonsoft.Json;
-using ProblemSource;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
-using TrainingApi;
-using TrainingApiTests.IntegrationHelpers;
+using TrainingApi.Tests.IntegrationHelpers;
 using static TrainingApi.Controllers.TrainingsController;
 
-namespace TrainingApiTests
+namespace TrainingApi.Tests
 {
     public class TrainingsControllerTests
     {

@@ -1,8 +1,8 @@
 ﻿using Common;
 using Shouldly;
-using TrainingApiTests.IntegrationHelpers;
+using TrainingApi.Tests.IntegrationHelpers;
 
-namespace WebApi.Tests
+namespace TrainingApi.Tests
 {
     public class SyncTests
     {
