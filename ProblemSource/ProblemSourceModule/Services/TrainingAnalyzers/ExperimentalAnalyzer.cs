@@ -14,7 +14,22 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             if (eod != null)
             {
-                var mathTest = """
+                var weightChange = WeightChange();
+                var overrides = new
+                {
+                    triggers = new[] {
+                        JsonConvert.DeserializeObject<dynamic>(weightChange.Replace("{trainingDay}", eod.training_day.ToString()))
+                    }
+                };
+                training.Settings.trainingPlanOverrides = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(overrides));
+                return Task.FromResult(true);
+            }
+            return Task.FromResult(false);
+        }
+
+        private string MathTest()
+        {
+            return """
 {
     "triggerTime": "MAP",
     "criteriaValues": [
@@ -33,8 +48,11 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
     }
 }
 """;
+        }
 
-                var weightChange = """
+        private string WeightChange()
+        {
+            return """
 {
     "triggerTime": "MAP",
     "criteriaValues": [
@@ -66,16 +84,6 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
     }
 }
 """;
-                var overrides = new
-                {
-                    triggers = new[] {
-                        JsonConvert.DeserializeObject<dynamic>(weightChange.Replace("{trainingDay}", eod.training_day.ToString()))
-                    }
-                };
-                training.Settings.trainingPlanOverrides = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(overrides));
-                return Task.FromResult(true);
-            }
-            return Task.FromResult(false);
         }
     }
 }

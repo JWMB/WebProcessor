@@ -140,28 +140,22 @@ MIME-Version: 1.0
         {
             var msg = CreateMessage(data);
             var service = CreateService();
-            try
-            {
-                var onlyDraft = false;
-                Message response;
-                if (onlyDraft)
-                {
-                    response = service.Users.Messages.Insert(msg, MeUser).Execute(); // Request had insufficient authentication scopes.'
-                }
-                else
-                {
-                    response = service.Users.Messages.Send(msg, MeUser).Execute();
-                    if (response?.LabelIds.Contains("SENT") == true)
-                        return Task.FromResult(true);
-                }
-                // TODO: async variant doesn't work? var response = await service.Users.Messages.Send(msg, MeUser).ExecuteAsync();
 
-                throw new Exception($"{(response == null ? "null" : "labels: " + string.Join(", ", response.LabelIds))}");
-            }
-            catch (Exception e)
+            var onlyDraft = false;
+            Message response;
+            if (onlyDraft)
             {
-                throw e;
+                response = service.Users.Messages.Insert(msg, MeUser).Execute(); // Request had insufficient authentication scopes.'
             }
+            else
+            {
+                response = service.Users.Messages.Send(msg, MeUser).Execute();
+                if (response?.LabelIds.Contains("SENT") == true)
+                    return Task.FromResult(true);
+            }
+            // TODO: async variant doesn't work? var response = await service.Users.Messages.Send(msg, MeUser).ExecuteAsync();
+
+            throw new Exception($"{(response == null ? "null" : "labels: " + string.Join(", ", response.LabelIds))}");
         }
 
         private static string Base64UrlEncode(string input)
@@ -258,12 +252,7 @@ MIME-Version: 1.0
                     var split = data.Split(',').Select(o => o.Trim()).Where(o => o.Length > 2);
                     foreach (var item in split)
                     {
-                        try
-                        {
-                            collection.Add(new MailAddress(item));
-                        }
-                        catch (Exception ex)
-                        { }
+                        collection.Add(new MailAddress(item));
                     }
                 }
             }
@@ -274,9 +263,8 @@ MIME-Version: 1.0
             string? GetHeaderOrNull(string key) =>
                 message.Payload.Headers.FirstOrDefault(o => o.Name == key)?.Value ?? null;
 
-            string GetHeaderOrThrow(string key) =>
-                message.Payload.Headers.First(o => o.Name == key).Value;
-
+            //string GetHeaderOrThrow(string key) =>
+            //    message.Payload.Headers.First(o => o.Name == key).Value;
         }
     }
 }
