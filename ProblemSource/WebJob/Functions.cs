@@ -1,29 +1,23 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.DependencyInjection;
-using ProblemSource.Services.Storage;
-using ProblemSourceModule.Models;
-using ProblemSourceModule.Services;
-using ProblemSourceModule.Services.Storage;
-using System.Reflection;
 
 namespace WebJob
 {
     public class Functions
     {
-        private readonly IEnumerable<Work> workInstances;
+        private readonly IWorkInstanceProvider workInstanceProvider;
 
-        //public Functions(Func<IEnumerable<Work>> workInstanceProvider)
-        public Functions(IEnumerable<Work> workInstances)
+        public Functions(IWorkInstanceProvider workInstanceProvider)
         {
-            this.workInstances = workInstances;
+            this.workInstanceProvider = workInstanceProvider;
         }
 
         [Singleton]
-        [FunctionName(nameof(Functions.MyContinuousMethod))]
+        [FunctionName(nameof(Functions.ContinuousMethod))]
         [NoAutomaticTrigger]
-        public async Task MyContinuousMethod()
+        public async Task ContinuousMethod()
         {
-            //var workInstances = workInstanceProvider();
+            var workInstances = workInstanceProvider.Get();
             while (true)
             {
                 foreach (var work in workInstances)
@@ -33,16 +27,8 @@ namespace WebJob
                         await work.Run();
                     }
                 }
-                await Task.Delay(10000);
+                await Task.Delay(TimeSpan.FromSeconds(10));
             }
-        }
-    }
-
-    public class WorkInstanceProvider
-    {
-        public IEnumerable<Work> X(IServiceProvider sp)
-        {
-            return Work.GetWorkTypes().Select(type => (Work)sp.CreateInstance(type));
         }
     }
 
@@ -64,81 +50,6 @@ namespace WebJob
             var parameters = parameterInfo.Select(o => instance.GetRequiredService(o.ParameterType)).ToArray();
 
             return constructor.Invoke(parameters);
-        }
-
-    }
-
-    public abstract class Work
-    {
-        public abstract bool ShouldRun();
-        public abstract Task Run();
-
-        protected bool IsNightTime => DateTime.Now.Hour > 22 || DateTime.Now.Hour < 6;
-
-        public DateTimeOffset LastRun { get; set; }
-        protected TimeSpan MinInterval { get; set; } = TimeSpan.FromMinutes(10);
-        protected bool MinIntervalHasPassed => (DateTimeOffset.Now - LastRun) > MinInterval;
-
-        public static List<Type> GetWorkTypes()
-        {
-            return new List<Type> { typeof(DummyWork) };
-            //var assemblies = System.Reflection.Assembly.GetExecutingAssembly().GetReferencedAssemblies();
-            var assemblies = new[] { typeof(Work).Assembly };
-
-            var type = typeof(Work);
-            var inherited = assemblies
-                .Where(o => o.FullName != null)
-                .SelectMany(o => Assembly.Load(o.FullName!).GetTypes().Where(t => type.IsAssignableFrom(t) && t.IsAbstract == false));
-
-            return inherited.ToList();
-        }
-
-    }
-
-    public class DummyWork : Work
-    {
-        public override Task Run() => Task.CompletedTask;
-
-        public override bool ShouldRun() => true;
-    }
-
-    public class RunDayAnalyzers : Work
-    {
-        private readonly TrainingAnalyzerCollection trainingAnalyzers;
-        private readonly ITrainingRepository trainingRepository;
-        private readonly IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory;
-
-        public RunDayAnalyzers(TrainingAnalyzerCollection trainingAnalyzers, ITrainingRepository trainingRepository, IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory)
-        {
-            MinInterval = TimeSpan.FromHours(3);
-            this.trainingAnalyzers = trainingAnalyzers;
-            this.trainingRepository = trainingRepository;
-            this.dataRepositoryProviderFactory = dataRepositoryProviderFactory;
-        }
-
-        public override async Task Run()
-        {
-            // TODO: Find trainings that synced during the day
-            var trainings = new List<Training>();
-
-            foreach (var training in trainings)
-            {
-                // TODO: check if training has already been checked
-                var trainingHasBeenAnalyzed = false;
-                if (trainingHasBeenAnalyzed == false)
-                {
-                    var modified = await trainingAnalyzers.Execute(training, dataRepositoryProviderFactory.Create(training.Id), null);
-                    if (modified)
-                    {
-                        // 
-                    }
-                }
-            }
-        }
-
-        public override bool ShouldRun()
-        {
-            return IsNightTime && MinIntervalHasPassed;
         }
     }
 }

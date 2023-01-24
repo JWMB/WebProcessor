@@ -17,10 +17,9 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
         public async Task<bool> Analyze(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
         {
-            var eod = latestLogItems?.OfType<EndOfDayLogItem>().FirstOrDefault();
-            // TODO: also check if stat's TrainingDay has changed
+            var runAfterDay = 5;
 
-            if (eod?.training_day == 5)
+            if (await ITrainingAnalyzer.WasDayJustCompleted(runAfterDay, provider, latestLogItems))
             {
                 var age = 6; // TODO: where can we get age? Add in TrainingSettings for now?
                 var mlFeatures = MLFeaturesJulia.FromPhases(training.Settings ?? new TrainingSettings(), await provider.Phases.GetAll(), age: age);

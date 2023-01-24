@@ -6,13 +6,16 @@ using ProblemSource.Services.Storage;
 using Shouldly;
 using ProblemSource.Models.LogItems;
 using Newtonsoft.Json.Linq;
+using Moq;
+using ProblemSourceModule.Models.Aggregates;
+using ProblemSourceModule.Services;
 
 namespace ProblemSourceModule.Tests
 {
     public class TrainingAnalyzerTests
     {
         [Fact]
-        public async Task ExperimentalAnalyzer_Clean()
+        public async Task ExperimentalAnalyzer_TriggeredOnEndOfDayLogItem()
         {
             // Arrange
             var fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
@@ -23,7 +26,7 @@ namespace ProblemSourceModule.Tests
             var logItems = new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = trainingDay } };
 
             // Act
-            var modified = await analyzer.Analyze(training, logItems, fixture.Create<IUserGeneratedDataRepositoryProvider>());
+            var modified = await analyzer.Analyze(training, fixture.Create<IUserGeneratedDataRepositoryProvider>(), logItems);
 
             // Assert
             modified.ShouldBeTrue();
@@ -33,6 +36,44 @@ namespace ProblemSourceModule.Tests
 
             overrides["triggers"]?[0]?["actionData"]?["type"]?.ToString().ShouldBe("TrainingPlanModTriggerAction");
             overrides["triggers"]?[0]?["actionData"]?["id"]?.ToString().ShouldBe($"modDay0_{trainingDay}");
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task Analyzer_TriggeredOnEndOfDayLogItem(bool isTriggerDay)
+        {
+            // Arrange
+            var fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
+
+            var trainingDay = 5;
+            var logItems = new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = trainingDay + (isTriggerDay ? 0 : 1) } };
+
+            var completed = await ITrainingAnalyzer.WasDayJustCompleted(trainingDay, fixture.Create<IUserGeneratedDataRepositoryProvider>(), logItems);
+
+            completed.ShouldBe(isTriggerDay);
+        }
+
+        [Theory]
+        [InlineData(true, 2, true)]
+        [InlineData(true, 0, false)]
+        [InlineData(false, 0, false)]
+        public async Task Analyzer_TriggeredOnTrainingSummaries(bool isTriggerDay, int hoursSinceSync, bool expectedCompleted)
+        {
+            // Arrange
+            var fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
+
+            var trainingDay = 5;
+
+            var repoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
+            var trainingSummaries = new Mock<IBatchRepository<TrainingSummary>>();
+            var summary = new TrainingSummary { TrainedDays = trainingDay + (isTriggerDay ? 0 : 1), LastLogin = DateTimeOffset.UtcNow.AddHours(-hoursSinceSync) };
+            trainingSummaries.Setup(o => o.GetAll()).ReturnsAsync(new List<TrainingSummary> { summary });
+            repoProvider.Setup(o => o.TrainingSummaries).Returns(trainingSummaries.Object);
+
+            var completed = await ITrainingAnalyzer.WasDayJustCompleted(trainingDay, repoProvider.Object, null);
+
+            completed.ShouldBe(expectedCompleted);
         }
     }
 }

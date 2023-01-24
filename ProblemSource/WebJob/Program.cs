@@ -1,7 +1,10 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using Common.Web;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Services;
 using WebJob;
 
 var builder = new HostBuilder();
@@ -13,13 +16,13 @@ builder.ConfigureWebJobs(b =>
 })
 .ConfigureAppConfiguration(b =>
 {
-    // Adding command line as additional configuration source
+    b.AddJsonFile("appsettings.json");
     //b.AddCommandLine(args);
 })
 .ConfigureLogging((context, b) =>
 {
     // here we can access context.HostingEnvironment.IsDevelopment() yet
-    if (context.Configuration["environment"] == EnvironmentName.Development)
+    if (context.Configuration["environment"] == Environments.Development)
     {
         //b.SetMinimumLevel(LogLevel.Debug);
         //b.AddConsole();
@@ -43,13 +46,15 @@ builder.ConfigureWebJobs(b =>
 .ConfigureServices((context, services) =>
 {
     services.AddSingleton(context.Configuration);
-    services.AddSingleton<IEnumerable<Work>>(sp =>
-        Work.GetWorkTypes().Select(type => (Work)sp.CreateInstance(type)));
-    //services.AddSingleton<Func<IEnumerable<Work>>>(sp => () => Work.GetWorkTypes().Select(type => (Work)sp.CreateInstance(type)));
-
+    services.AddSingleton<IWorkInstanceProvider, WorkInstanceProvider>();
     //services.AddMemoryCache();
 
-    // other DI configuration here
+    TypedConfiguration.ConfigureTypedConfiguration<AzureTableConfig>(services, context.Configuration, "AppSettings:AzureTable");
+    //var section = context.Configuration.GetRequiredSection("AppSettings:AzureTable");
+    //var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
+
+    services.AddSingleton<TrainingAnalyzerCollection>();
+    new ProblemSource.ProblemSourceModule().ConfigureForAzureTables(services, useCaching: false);
 })
 .UseConsoleLifetime();
 
@@ -59,5 +64,5 @@ using (var host = builder.Build())
     await host.StartAsync();
 
     var jobHost = host.Services.GetRequiredService<IJobHost>();
-    await jobHost.CallAsync(nameof(Functions.MyContinuousMethod));
+    await jobHost.CallAsync(nameof(Functions.ContinuousMethod));
 }

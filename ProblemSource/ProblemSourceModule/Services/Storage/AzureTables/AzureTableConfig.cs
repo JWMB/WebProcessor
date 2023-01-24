@@ -11,6 +11,7 @@ namespace ProblemSource.Services.Storage.AzureTables
 
         public TableClient CreateTableClient(string tableName) => new TableClient(ConnectionString, tableName);
 
+        // TODO: SoC - move these
         public static string IdToKey(int id) => id.ToString().PadLeft(6, '0');
         public static int KeyToId(string key) => int.Parse(key);
     }

@@ -60,6 +60,7 @@ IConfigurationRoot CreateConfig()
 
 IServiceProvider InititalizeServices(IConfigurationRoot config)
 {
+    // TODO: we probably want some of these in a central place, as it's used by several applications
     var section = config.GetRequiredSection("AppSettings:AzureTable");
     var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 

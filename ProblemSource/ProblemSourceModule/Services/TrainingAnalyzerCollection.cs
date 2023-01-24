@@ -31,7 +31,7 @@ namespace ProblemSourceModule.Services
                 }
                 catch (Exception ex)
                 {
-                    log.LogWarning($"{nameof(MLFeaturesJulia)}: {ex.Message}", ex);
+                    log.LogWarning($"{item.GetType().Name}: {ex.Message}", ex);
                     return false;
                 }
             }
