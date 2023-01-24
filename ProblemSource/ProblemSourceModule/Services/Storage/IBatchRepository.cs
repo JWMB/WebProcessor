@@ -4,6 +4,7 @@
     {
         Task<IEnumerable<T>> GetAll();
         Task<(IEnumerable<T> Added, IEnumerable<T> Updated)> Upsert(IEnumerable<T> items);
+        Task<int> RemoveAll();
     }
 
     public class InMemoryBatchRepository<T> : IBatchRepository<T>
@@ -27,5 +28,12 @@
         }
 
         public Task<IEnumerable<T>> GetAll() => Task.FromResult((IEnumerable<T>)cached);
+
+        public Task<int> RemoveAll()
+        {
+            var cnt = cached.Count;
+            cached.Clear();
+            return Task.FromResult(cnt);
+        }
     }
 }

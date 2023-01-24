@@ -189,6 +189,14 @@ namespace ProblemSource.Services.Storage.AzureTables
             return exception;
         }
 
+        public async Task<int> RemoveAll()
+        {
+            var all = await GetAll();
+            foreach (var item in all.Select(o => toTableEntity(o)))
+                await tableClient.DeleteEntityAsync(item.PartitionKey, item.RowKey);
+            return all.Count();
+        }
+
         //public class TableEntityId
         //{
         //    public string PartitionKey { get; set; } = string.Empty;

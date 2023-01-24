@@ -118,5 +118,15 @@ namespace ProblemSource.Services.Storage
 
             //return (toAdd.Select(o => o.Value).ToList(), toUpdate.Select(o => o.Value).ToList());
         }
+
+        public async Task<int> RemoveAll()
+        {
+            var cacheKeys = GetCachedKeys();
+            foreach (var key in cacheKeys)
+                cache.Remove(key);
+
+            var count = await repo.RemoveAll();
+            return count;
+        }
     }
 }
