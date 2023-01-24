@@ -125,6 +125,9 @@ namespace ProblemSource.Models.Aggregates
                 public decimal MinLevel { get; set; }
                 public decimal MaxLevel { get; set; }
 
+                /// <summary>
+                /// May be replace with the global (level-independent) cutoff value
+                /// </summary>
                 public double OutlierCutOff { get; set; }
 
                 public bool IsOutlier(double responseTime) => responseTime > OutlierCutOff;
@@ -148,6 +151,7 @@ namespace ProblemSource.Models.Aggregates
 
                     result.ResponseTimes = problems.SelectMany(p => p.answers.Select(a => (double)Math.Min(a.response_time, 60000))).ToList();
 
+                    // ln(RT) > median(ln(all RTs)) + 2.5 * sd(ln(all RTs))
                     var lnResponseTimes = result.ResponseTimes.Select(t => Math.Log(t));
                     // Add small value for double precision purposes (if all have same value, they might be consider outliers)
                     result.OutlierCutOff = 0.001 + Math.Exp(lnResponseTimes.Median() + 2.5 * lnResponseTimes.StdDev());
@@ -165,24 +169,28 @@ namespace ProblemSource.Models.Aggregates
                 if (allProblems.Count == 0)
                     return stats;
 
-                var responseTimesPerLevel = allProblems.GroupBy(problem => (int)problem.level).ToDictionary(o => o.Key, ResponseTimesStats.Calc);
-
-                var debug = responseTimesPerLevel.Select(o => new
-                {
-                    Level = o.Value.MinLevel,
-                    o.Value.OutlierCutOff,
-                    o.Value.Mean,
-                    o.Value.MeanNoOutliers,
-                    o.Value.StandardDeviationNoOutliers,
-                    Num = o.Value.ResponseTimes.Count(),
-                    NumOutliers = (o.Value.ResponseTimes.Count() - o.Value.ResponseTimesNoOutliers.Count())
-                });
-
                 var responseTimesTotal = ResponseTimesStats.Calc(allProblems);
                 if (responseTimesTotal.ResponseTimesNoOutliers.Any() == false)
                     return stats;
 
-                // Calc outputs:
+                var responseTimesPerLevel = allProblems.GroupBy(problem => (int)problem.level).ToDictionary(o => o.Key, ResponseTimesStats.Calc);
+
+                // NOTE: after discussions, we should NOT use level-specific cutoffs
+                foreach (var kv in responseTimesPerLevel)
+                    kv.Value.OutlierCutOff = responseTimesTotal.OutlierCutOff;
+
+                //var debug = responseTimesPerLevel.Select(o => new
+                //{
+                //    Level = o.Value.MinLevel,
+                //    o.Value.OutlierCutOff,
+                //    o.Value.Mean,
+                //    o.Value.MeanNoOutliers,
+                //    o.Value.StandardDeviationNoOutliers,
+                //    Num = o.Value.ResponseTimes.Count(),
+                //    NumOutliers = (o.Value.ResponseTimes.Count() - o.Value.ResponseTimesNoOutliers.Count())
+                //});
+
+                    // Calc outputs:
 
                 stats.NumProblemsWithAnswers = allProblems.Count(problem => problem.answers.Any());
                 stats.FractionCorrect = 1M * allProblems.Count(problem => problem.answers.Any(answer => answer.correct)) / allProblems.Count();
@@ -225,6 +233,13 @@ namespace ProblemSource.Models.Aggregates
                     .Select(o => o.StandardDeviationNoOutliers * o.ResponseTimesNoOutliers.Count() / responseTimesTotal.ResponseTimesNoOutliers.Count())
                     .Sum()
                     / stats.MedianTimeCorrect;
+                //var totalResponsesNoOutliersCount = responseTimesTotal.ResponseTimesNoOutliers.Count();
+                //stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
+                //    .Select(o => {
+                //        var timesInLevelNoOutlisers = o.ResponseTimes.Where(t => t < responseTimesTotal.OutlierCutOff).ToList();
+                //        return timesInLevelNoOutlisers.StdDev() * timesInLevelNoOutlisers.Count() / totalResponsesNoOutliersCount;
+                //    }).Sum() / stats.MedianTimeCorrect;
+
 
                 // Std(tot) = Avg(std(level1)/mean_time(level1) + std(level2)/mean_time(level2) + …)
                 //stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
