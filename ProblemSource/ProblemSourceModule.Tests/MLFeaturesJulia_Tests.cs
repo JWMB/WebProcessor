@@ -125,6 +125,8 @@ namespace ProblemSourceModule.Tests
             var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "JuliaData") + "\\";
             System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
+            var exerciseGlobals = MLFeaturesJulia.ReadExerciseGlobals();
+
             var csvInput = File.ReadLines($"{path}raw_small.csv");
             var answerRows = Preprocess(csvInput).Skip(1).Select(items =>
             {
@@ -214,7 +216,8 @@ namespace ProblemSourceModule.Tests
                     Features = MLFeaturesJulia.FromPhases(
                         new TrainingSettings {timeLimits = new List<decimal> { o.training_time } },
                         o.Phases,
-                        age: int.Parse(Regex.Match(o.age, @"\d").Value))
+                        age: int.Parse(Regex.Match(o.age, @"\d").Value),
+                        exerciseGlobals: exerciseGlobals)
                 });
 
             //,npals_correct,WM_grid_correct,numberline_correct,mathTest01_correct,nvr_rp_correct,nvr_so_correct,numberComparison01_correct,npals_count,tangram_count,numberline_count,mathTest01_count,nvr_rp_count,nvr_so_count,numberComparison01_count,WM_grid_std,npals_std,numberline_std,rotation_std,nvr_rp_std,mathTest01_std,numberComparison01_std,npals_highest_lev,numberline_highest_lev,nvr_so_highest_lev,nvr_rp_highest_lev,npals_nr_exercises,tangram_nr_exercises,numberline_nr_exercises,rotation_nr_exercises,nvr_rp_nr_exercises,mean_time_increase,tangram_median_time_correct,rotation_median_time_correct,nvr_so_median_time_correct,mathTest01_median_time_correct,numberComparison01_median_time_correct,WM_grid_median_time_incorrect,npals_median_time_incorrect,rotation_median_time_incorrect,mathTest01_median_time_incorrect,npals_nr_high_response_times,rotation_nr_high_response_times,numberline_nr_high_response_times,nvr_rp_nr_high_response_times,nvr_so_nr_high_response_times,numberComparison01_nr_high_response_times,mathTest01_skew,npals_skew,nvr_rp_skew,nvr_so_skew,rotation_skew,tangram_skew,npals_level_median,numberline_level_median,nvr_rp_level_median
@@ -263,7 +266,10 @@ namespace ProblemSourceModule.Tests
                 (string exercise, string property) SplitColumnName(string columnName)
                 {
                     if (columnName.Length == 0) return ("N/A", "N/A");
-                    var startIndex = columnName.StartsWith("nvr_") ? "nvr_".Length + 1 : 0;
+                    columnName = columnName.ToLower();
+                    var startIndex = 
+                        columnName.StartsWith("nvr_") ? "nvr_".Length + 1 :
+                            (columnName.StartsWith("wm_") ? "wm_".Length + 1 : 0);
                     var index = columnName.IndexOf("_", startIndex);
                     return (columnName.Substring(0, index), columnName.Substring(index + 1));
                 }
