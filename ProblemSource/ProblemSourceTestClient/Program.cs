@@ -56,6 +56,10 @@ foreach (var client in clients)
 stopwatch.Stop();
 var initClientsPerSecond = 1M * clients.Count / stopwatch.ElapsedMilliseconds;
 
+// TODO: Seed clients so they're at different training days (i.e. different amounts of data to load/cache)
+// TODO: add endpoint for clearing cache so we can simulate "fresh sync" (or maybe any sync with EndOfDayLogItem should trigger session/cache clearing)?
+
+
 // Start regular syncing:
 stopwatch.Start();
 var numSyncs = 0;

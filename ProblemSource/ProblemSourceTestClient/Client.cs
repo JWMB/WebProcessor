@@ -10,7 +10,7 @@ namespace TestClient
         private readonly string uuid;
 
         private readonly List<LogItem> logItems = new();
-        private int trainingDay;
+        public int TrainingDay { get; private set; }
         private int phaseNumInDay;
 
         public Client(SyncService syncService, string uuid)
@@ -80,7 +80,7 @@ namespace TestClient
             {
                 time = DateTime.Now.UnixTimestamp(),
                 exercise = "ex1",
-                training_day = trainingDay,
+                training_day = TrainingDay,
                 sequence = 0,
             });
 
@@ -110,7 +110,7 @@ namespace TestClient
             if (phaseNumInDay == 10)
             {
                 //logItems.Add(new EndOfDayLogItem { training_day = trainingDay });
-                trainingDay++;
+                TrainingDay++;
                 phaseNumInDay = 0;
             }
         }
@@ -121,7 +121,7 @@ namespace TestClient
 
             await Task.Delay(100);
 
-            this.trainingDay = trainingDay;
+            this.TrainingDay = trainingDay;
             for (int i = 0; i < 10; i++)
             {
                 await PlayPhase();
@@ -136,7 +136,7 @@ namespace TestClient
             {
                 time = DateTime.Now.UnixTimestamp(),
                 exercise = "ex1",
-                training_day = trainingDay,
+                training_day = TrainingDay,
                 sequence = 0,
             });
 

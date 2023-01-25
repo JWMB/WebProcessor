@@ -28,3 +28,13 @@ WHERE updated_at > '2020-03-01' and updated_at < '2020-04-01'
 )
 SELECT COUNT(*) as cnt, dayHour FROM cte GROUP BY dayHour ORDER BY cnt DESC
 ```
+
+On the 27th, 8-9, 427 distinct trainings were syncing, so by approximation each training synced 11.5 times during the hour
+```SQL
+WITH cte AS (
+SELECT CONCAT(DATEPART(day, updated_at), '-', DATEPART(hour, updated_at))  AS dayHour, account_id
+  FROM [trainingdb].[dbo].[phases]
+  WHERE updated_at > '2020-03-01' and updated_at < '2020-04-01'
+)
+SELECT COUNT(DISTINCT(account_id)) as cnt, dayHour FROM cte GROUP BY dayHour ORDER BY cnt DESC
+```
