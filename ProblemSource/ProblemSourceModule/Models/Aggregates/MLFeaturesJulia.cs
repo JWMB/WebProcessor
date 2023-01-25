@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
-using static ProblemSource.Services.LogEventsToPhases;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+﻿using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
 
 namespace ProblemSource.Models.Aggregates
 {
@@ -9,8 +6,11 @@ namespace ProblemSource.Models.Aggregates
     {
         public Dictionary<string, FeaturesForExercise> ByExercise { get; set; } = new();
 
-        // Mean time increase: The difference in response time between the question following an incorrectly answered question and the incorrectly answered question (response time after incorrect minus response time incorrect)
-        public int MeanTimeIncrease { get; set; }
+        /// <summary>
+        ///  Mean time increase: The difference in response time between the question following an incorrectly answered question
+        ///  and the incorrectly answered question (response time after incorrect minus response time incorrect)
+        /// </summary>
+        public double MeanTimeIncrease { get; set; }
 
         /// <summary>
         /// 12) Training time 20 min: Dummy coded with a 1 if the training time is 20 min and 0 if the training time is 33 min per day.
@@ -25,18 +25,23 @@ namespace ProblemSource.Models.Aggregates
         public static MLFeaturesJulia FromPhases(TrainingSettings trainingSettings, IEnumerable<Phase> phases, int age, List<ExerciseGlobals>? exerciseGlobals = null, int dayCutoff = 5)
         {
             exerciseGlobals ??= ExerciseGlobals.GetDefaults();
-            return new MLFeaturesJulia
-            {
-                ByExercise = phases
+
+            var filtered = phases
                     .Where(o => o.training_day <= dayCutoff)
                     .Where(o => o.phase_type != "GUIDE")
-                    .Where(o => !o.exercise.EndsWith("#intro"))
+                    .Where(o => !o.exercise.EndsWith("#intro"));
+            //.GroupBy(o => Phase.GetExerciseCommonName(o.exercise).ToLower())
+            var featuresByExercise = filtered
                     .Select(o => new { Name = Phase.GetExerciseCommonName(o.exercise).ToLower(), Phase = o })
                     .GroupBy(o => o.Name)
-                    //.GroupBy(o => Phase.GetExerciseCommonName(o.exercise).ToLower())
-                    .ToDictionary(o => o.Key, o => 
-                        FeaturesForExercise.Create(o.Select(p => p.Phase), exerciseGlobals.SingleOrDefault(p => p.Exercise == o.Key) ?? new ExerciseGlobals())),
-                MeanTimeIncrease = 0,
+                    .ToDictionary(o => o.Key, o =>
+                        FeaturesForExercise.Create(o.Select(p => p.Phase), exerciseGlobals.SingleOrDefault(p => p.Exercise == o.Key) ?? new ExerciseGlobals()));
+
+
+            return new MLFeaturesJulia
+            {
+                ByExercise = featuresByExercise,
+                MeanTimeIncrease = featuresByExercise.Values.Average(o => o.MeanTimeIncrease),
                 TrainingTime20Min = trainingSettings.timeLimits.FirstOrDefault() == 20M,
                 Age6_7 = age == 6,
             };
@@ -202,6 +207,12 @@ namespace ProblemSource.Models.Aggregates
 
             public decimal MedianLevel { get; set; }
 
+            /// <summary>
+            ///  Mean time increase: The difference in response time between the question following an incorrectly answered question
+            ///  and the incorrectly answered question (response time after incorrect minus response time incorrect)
+            /// </summary>
+            public double MeanTimeIncrease { get; set; }
+
             private class ResponseTimesStats
             {
                 public decimal MinLevel { get; set; }
@@ -256,7 +267,6 @@ namespace ProblemSource.Models.Aggregates
             public static FeaturesForExercise Create(IEnumerable<Phase> phases, ExerciseGlobals globals)
             {
                 var stats = new FeaturesForExercise();
-
                 // First remove answers with non-positive response_time and trim problems:
                 foreach (var phase in phases)
                 {
@@ -393,6 +403,9 @@ namespace ProblemSource.Models.Aggregates
                     .Order()
                     .Median();
 
+                var incorrectToNextRTDiffs = allProblems.AggregateWithPrevious((p, c) => p.answers.Any(a => a.correct) == true ? null : (int?)(c.answers.First().response_time - p.answers.First().response_time));
+                stats.MeanTimeIncrease = incorrectToNextRTDiffs.OfType<int>().Average();
+
                 return stats;
 
                 bool HasCorrectAnswer(Problem problem) => problem.answers.Any(answer => answer.correct);
@@ -403,6 +416,15 @@ namespace ProblemSource.Models.Aggregates
 
     public static class StatisticsExtensions
     {
+        public static IEnumerable<TOut> AggregateWithPrevious<TIn, TOut>(this IEnumerable<TIn> values, Func<TIn, TIn, TOut> actOnPreviousAndCurrent)
+        {
+            var prev = values.First();
+            foreach (var item in values.Skip(1))
+            {
+                yield return actOnPreviousAndCurrent(prev, item);
+            }
+        }
+
         public static object?[] ToObjectArray<T>(this IEnumerable<FeaturesForExercise> values, Func<FeaturesForExercise, T> selector) =>
             values.Select(selector).Select(o => (object?)o).ToArray();
 
