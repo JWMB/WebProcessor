@@ -125,8 +125,6 @@ namespace ProblemSourceModule.Tests
             var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "JuliaData") + "\\";
             System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
-            var exerciseGlobals = MLFeaturesJulia.ReadExerciseGlobals();
-
             var csvInput = File.ReadLines($"{path}raw_small.csv");
             var answerRows = Preprocess(csvInput).Skip(1).Select(items =>
             {
@@ -207,7 +205,6 @@ namespace ProblemSourceModule.Tests
                         new TrainingSettings {timeLimits = new List<decimal> { o.training_time } },
                         o.Phases,
                         age: int.Parse(Regex.Match(o.age, @"\d").Value),
-                        exerciseGlobals: exerciseGlobals,
                         dayCutoff: 9999) // Note: Julia didn't filter out day > 5
                 });
 

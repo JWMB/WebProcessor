@@ -1,4 +1,7 @@
-﻿using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
+﻿using Newtonsoft.Json.Linq;
+using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
+using static ProblemSource.Services.LogEventsToPhases;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProblemSource.Models.Aggregates
 {
@@ -21,6 +24,7 @@ namespace ProblemSource.Models.Aggregates
 
         public static MLFeaturesJulia FromPhases(TrainingSettings trainingSettings, IEnumerable<Phase> phases, int age, List<ExerciseGlobals>? exerciseGlobals = null, int dayCutoff = 5)
         {
+            exerciseGlobals ??= ExerciseGlobals.GetDefaults();
             return new MLFeaturesJulia
             {
                 ByExercise = phases
@@ -31,7 +35,7 @@ namespace ProblemSource.Models.Aggregates
                     .GroupBy(o => o.Name)
                     //.GroupBy(o => Phase.GetExerciseCommonName(o.exercise).ToLower())
                     .ToDictionary(o => o.Key, o => 
-                        FeaturesForExercise.Create(o.Select(p => p.Phase), exerciseGlobals == null ? new ExerciseGlobals() : exerciseGlobals.Single(p => p.Exercise == o.Key))),
+                        FeaturesForExercise.Create(o.Select(p => p.Phase), exerciseGlobals.SingleOrDefault(p => p.Exercise == o.Key) ?? new ExerciseGlobals())),
                 MeanTimeIncrease = 0,
                 TrainingTime20Min = trainingSettings.timeLimits.FirstOrDefault() == 20M,
                 Age6_7 = age == 6,
@@ -97,28 +101,79 @@ namespace ProblemSource.Models.Aggregates
             FeaturesForExercise GetFeatures(string exercise) => ByExercise.GetValueOrDefault(exercise.ToLower(), new FeaturesForExercise());
         }
 
-        public static List<ExerciseGlobals> ReadExerciseGlobals()
-        {
-            var str = File.ReadAllText(@"C:\Users\uzk446\Desktop\JuliaData\globals.csv");
-            var result = str.Trim().Split('\n').Skip(1).Select(o => {
-                var items = o.Trim().Split(',');
-                return new ExerciseGlobals { Exercise = CorrectExercise(items[0]), Median = double.Parse(items[1]), StdDev = double.Parse(items[2]) };
-            }).ToList();
-            return result;
-
-            string CorrectExercise(string input)
-            {
-                var val = input.ToLower().Replace(" ", "_");
-                if (val.StartsWith("math_test") || val.StartsWith("number_comparison")) return val.Replace("_", "");
-                return val;
-            }
-        }
-
         public class ExerciseGlobals
         {
             public string Exercise { get; set; } = "";
             public double Median { get; set; }
             public double StdDev { get; set; }
+
+            public static List<ExerciseGlobals> GetDefaults()
+            {
+                return new[] {
+                  new ExerciseGlobals {
+                                    Exercise = "npals",
+                    Median = 8.249,
+                    StdDev = 0.62
+                  },
+                  new ExerciseGlobals {
+                                    Exercise = "numberline",
+                    Median = 8.47,
+                    StdDev = 0.663
+                  },
+                  new ExerciseGlobals {
+                                    Exercise = "mathtest01",
+                    Median = 8.412,
+                    StdDev = 0.717
+                  },
+                  new ExerciseGlobals {
+                                    Exercise = "numbercomparison01",
+                    Median = 6.95,
+                    StdDev = 0.518
+                  },
+                  new ExerciseGlobals {
+                                    Exercise = "wm_grid",
+                    Median = 8.931,
+                    StdDev = 0.317
+                  },
+                  new ExerciseGlobals {
+                                    Exercise = "rotation",
+                    Median = 7.865,
+                    StdDev = 0.64
+                  },
+                  new ExerciseGlobals {
+                                    Exercise = "tangram",
+                    Median = 10.448,
+                    StdDev = 0.544
+                  },
+                  new ExerciseGlobals {
+                                    Exercise = "nvr_so",
+                    Median = 8.483,
+                    StdDev = 0.598
+                  },
+                  new ExerciseGlobals {
+                                    Exercise = "nvr_rp",
+                    Median = 8.868,
+                    StdDev = 0.547
+                  }
+                }.ToList();
+            }
+
+            public static List<ExerciseGlobals> ReadExerciseGlobals()
+            {
+                var str = File.ReadAllText(@"C:\Users\uzk446\Desktop\JuliaData\globals.csv");
+                var result = str.Trim().Split('\n').Skip(1).Select(o => {
+                    var items = o.Trim().Split(',');
+                    return new ExerciseGlobals { Exercise = CorrectExercise(items[0]), Median = double.Parse(items[1]), StdDev = double.Parse(items[2]) };
+                }).ToList();
+                return result;
+
+                string CorrectExercise(string input)
+                {
+                    var val = input.ToLower().Replace(" ", "_");
+                    if (val.StartsWith("math_test") || val.StartsWith("number_comparison")) return val.Replace("_", "");
+                    return val;
+                }
+            }
         }
 
         public class FeaturesForExercise
@@ -143,7 +198,7 @@ namespace ProblemSource.Models.Aggregates
 
             public int NumHighResponseTimes { get; set; }
 
-            public int Skew { get; set; }
+            public double Skew { get; set; }
 
             public decimal MedianLevel { get; set; }
 
@@ -330,7 +385,7 @@ namespace ProblemSource.Models.Aggregates
                     }).Sum();
 
                 //10) Skew: The skew for response times after outliers have been removed
-                stats.Skew = 0; // TODO: ?
+                stats.Skew = responseTimesTotal.ResponseTimesCorrectNoOutliers.Skewness();
 
                 //11) Median level: The median level of correctly answered questions
                 stats.MedianLevel = allProblems.Where(problem => problem.answers.Any(answer => answer.correct))
@@ -375,6 +430,30 @@ namespace ProblemSource.Models.Aggregates
             var avg = enumerable.Average();
             var sum = enumerable.Sum(d => (d - avg) * (d - avg));
             return Math.Sqrt(sum / (count - 1));
+        }
+
+        public static double Skewness(this IEnumerable<double> values)
+        {
+            var enumerable = values as double[] ?? values.ToArray();
+
+            var avg = values.Average();
+            var sd = values.StdDev();
+            var cnt = (double)values.Count();
+
+            var skewCum = 0.0d; // the cum part of SKEW formula
+            for (int i = 0; i < enumerable.Length; i++)
+            {
+                var b = (enumerable[i] - avg) / sd;
+                skewCum += b * b * b;
+            }
+            return cnt / (cnt - 1) / (cnt - 2) * skewCum;
+            //var sum = 0d;
+            //for (int i = 0; i < cnt; i++)
+            //{
+            //    var diff = enumerable[i] - values.Average();
+            //    sum += diff * diff * diff;
+            //}
+            //return sum / (sd * sd * sd);
         }
     }
 }
