@@ -77,7 +77,7 @@ namespace ProblemSource.Models.Aggregates
                 //new[] { wmGrid, npals, rotation, mathTest01 }
                 //    .ToObjectArray(o => o.MedianTimeIncorrect),
                 new[] { wmGrid, npals, rotation, mathTest01 }
-                    .ToObjectArray(o => o.MedianTimeCorrectSubIncorrect),
+                    .ToObjectArray(o => o.MedianTimeIncorrectSubCorrect),
 
                 new[] { npals, rotation, numberline, nvr_rp, nvr_so, numberComparison01 }
                     .ToObjectArray(o => o.NumHighResponseTimes),
@@ -139,7 +139,7 @@ namespace ProblemSource.Models.Aggregates
 
             public int MedianTimeCorrect { get; set; }
             public int MedianTimeIncorrect { get; set; }
-            public int MedianTimeCorrectSubIncorrect => MedianTimeCorrect - MedianTimeIncorrect;
+            public int MedianTimeIncorrectSubCorrect => MedianTimeIncorrect - MedianTimeCorrect;
 
             public int NumHighResponseTimes { get; set; }
 
@@ -161,13 +161,15 @@ namespace ProblemSource.Models.Aggregates
                 public bool IsNotOutlier(double responseTime) => responseTime <= OutlierCutOff;
 
                 public List<double> ResponseTimes { get; set; } = new();
+                public List<double> ResponseTimesCorrect { get; set; } = new();
 
                 public double Mean => ResponseTimes.Average();
                 public double MeanNoOutliers => ResponseTimesNoOutliers.Average();
 
                 public IEnumerable<double> ResponseTimesNoOutliers => ResponseTimes.Where(IsNotOutlier);
+                public IEnumerable<double> ResponseTimesCorrectNoOutliers => ResponseTimesCorrect.Where(IsNotOutlier);
 
-                public double StandardDeviationNoOutliers => ResponseTimesNoOutliers.StdDev();
+                public double StandardDeviationCorrectNoOutliers => ResponseTimesCorrectNoOutliers.StdDev();
 
                 public static ResponseTimesStats Calc(IEnumerable<Problem> problems)
                 {
@@ -176,6 +178,7 @@ namespace ProblemSource.Models.Aggregates
                     result.MaxLevel = problems.Max(o => o.level);
                     result.MinLevel = problems.Min(o => o.level);
 
+                    result.ResponseTimesCorrect = problems.SelectMany(p => p.answers.Where(a => a.correct).Select(a => (double)a.response_time)).ToList();
                     result.ResponseTimes = problems.SelectMany(p => p.answers.Select(a => (double)a.response_time)).ToList();
                     var ceiling = 0; // 60 * 1000;
                     if (ceiling > 0)
@@ -199,19 +202,39 @@ namespace ProblemSource.Models.Aggregates
             {
                 var stats = new FeaturesForExercise();
 
+                // First remove answers with non-positive response_time and trim problems:
+                foreach (var phase in phases)
+                {
+                    foreach (var problem in phase.problems)
+                        problem.answers = problem.answers.Where(o => o.response_time > 0).ToList();
+                    phase.problems = phase.problems.Where(o => o.answers.Any()).ToList();
+                }
+
                 // Calc pre-requisites:
                 var allProblems = phases.SelectMany(phase => phase.problems).ToList();
+
                 if (allProblems.Count == 0)
                     return stats;
 
                 var responseTimesTotal = ResponseTimesStats.Calc(allProblems);
-                if (responseTimesTotal.ResponseTimesNoOutliers.Any() == false)
+                if (responseTimesTotal.ResponseTimes.Any() == false)
                     return stats;
 
-
-                var debugExercise = phases.First().exercise;
+                // verify they come in correct order
+                {
+                    var prev = allProblems.First();
+                    foreach (var p in allProblems.Skip(1))
+                    {
+                        var diff = p.time - prev.time;
+                        if (diff < 0)
+                        { }
+                        prev = p;
+                    }
+                }
 
                 var responseTimesPerLevel = allProblems.GroupBy(problem => (int)problem.level).ToDictionary(o => o.Key, ResponseTimesStats.Calc);
+
+                var debugExercise = phases.First().exercise.ToLower();
 
                 //// NOTE: after discussions, we should NOT use level-specific cutoffs
                 //foreach (var kv in responseTimesPerLevel)
@@ -220,6 +243,9 @@ namespace ProblemSource.Models.Aggregates
                 responseTimesTotal.SetCutoff(globals.Median, globals.StdDev);
                 foreach (var kv in responseTimesPerLevel)
                     kv.Value.SetCutoff(globals.Median, globals.StdDev);
+
+                var debugXX = Newtonsoft.Json.JsonConvert.SerializeObject(responseTimesPerLevel.Select(o => new 
+                { o.Value.MinLevel, o.Value.OutlierCutOff, o.Value.Mean, o.Value.MeanNoOutliers, o.Value.StandardDeviationCorrectNoOutliers, o.Value.ResponseTimes.Count, ResponseTimesNoOutliersCount = o.Value.ResponseTimesNoOutliers.Count() }));
 
                 //var debug = responseTimesPerLevel.Select(o => new
                 //{
@@ -246,10 +272,14 @@ namespace ProblemSource.Models.Aggregates
                 // "Exercise" here means combination of training_day, exercise and level
                 // TODO: just reach level, or with correct answer?
                 // Note: 0-indexed
-                stats.NumProblemsToHighestLevel = phases.SelectMany(o => o.problems).ToList().FindIndex(o => (int)o.level == stats.HighestLevelInt);
-                //stats.NumProblemsToHighestLevel = phases.SelectMany(o => o.problems).ToList().FindIndex(o => (int)o.level == stats.HighestLevelInt && o.answers.Any(a => a.correct));
+
+                //stats.NumProblemsToHighestLevel = phases.SelectMany(o => o.problems).ToList().FindIndex(o => (int)o.level == stats.HighestLevelInt);
+                stats.NumProblemsToHighestLevel = allProblems.FindIndex(o => (int)o.level == stats.HighestLevelInt && o.answers.Any(a => a.correct));
                 //var orderedPhases = phases.OrderBy(p => $"{p.training_day.ToString().PadLeft(3, '0')}_{p.time}").ToList();
                 //stats.NumProblemsToHighestLevel = orderedPhases.FindIndex(phase => phase.problems.Any(p => (int)p.level == stats.HighestLevelInt));
+                // Note: in Julias example, outlier trials were filtered out
+                //stats.NumProblemsToHighestLevel = allProblems.Where(o => o.answers.Any(a => responseTimesTotal.IsOutlier(a.response_time) == false)).ToList()
+                    //.FindIndex(o => (int)o.level == stats.HighestLevelInt && o.answers.Any(a => a.correct));
 
                 stats.NumProblems = phases.Sum(o => o.problems.Count());
 
@@ -272,7 +302,8 @@ namespace ProblemSource.Models.Aggregates
 
                 // Std(tot) = (std(1)*3/10 + std(2)*2/10 + std(3)*5/10) / median_time_correct(tot)
                 stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
-                    .Select(o => o.StandardDeviationNoOutliers * o.ResponseTimesNoOutliers.Count() / responseTimesTotal.ResponseTimesNoOutliers.Count())
+                    .Where(o => o.ResponseTimesCorrectNoOutliers.Any())
+                    .Select(o => o.StandardDeviationCorrectNoOutliers * o.ResponseTimesCorrectNoOutliers.Count() / responseTimesTotal.ResponseTimesCorrectNoOutliers.Count())
                     .Sum()
                     / stats.MedianTimeCorrect;
                 //var totalResponsesNoOutliersCount = responseTimesTotal.ResponseTimesNoOutliers.Count();

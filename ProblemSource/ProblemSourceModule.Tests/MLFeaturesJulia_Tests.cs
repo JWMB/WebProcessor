@@ -151,17 +151,9 @@ namespace ProblemSourceModule.Tests
                     return int.Parse(index > 0 ? val.Remove(index) : val);
                 }
             })
-                .Where(o => o.training_day <= 5)
-                .Where(o => o.isValid)
+                //.Where(o => o.training_day <= 5)
+                //.Where(o => o.isValid)
                 .ToList();
-
-            //var timeDiffs = new List<long>();
-            //var prev = 0L;
-            //foreach (var item in answerRows)
-            //{
-            //    timeDiffs.Add(item.problem_time - prev);
-            //    prev = item.problem_time;
-            //}
 
             var result = answerRows.GroupBy(o => o.account_id).Select(byTraining => {
                 var allPhases = byTraining
@@ -178,14 +170,12 @@ namespace ProblemSourceModule.Tests
                                 phases.Add(currentPhase);
                             }
 
-                            if (item.isValid)
-                            {
-                                var problem = new Problem { time = item.problem_time, level = item.level };
-                                var answer = new Answer { correct = item.correct, time = item.problem_time, response_time = item.response_time };
+                            var problem = new Problem { time = item.problem_time, level = item.level };
+                            var answer = new Answer { correct = item.correct, time = item.problem_time, response_time = item.response_time };
+                            problem.answers.Add(answer);
 
-                                problem.answers.Add(answer);
-                                currentPhase.problems.Add(problem);
-                            }
+                            //if (item.isValid)
+                            currentPhase.problems.Add(problem);
                         }
                         return phases;
                     }).SelectMany(o => o.ToList());
@@ -217,7 +207,8 @@ namespace ProblemSourceModule.Tests
                         new TrainingSettings {timeLimits = new List<decimal> { o.training_time } },
                         o.Phases,
                         age: int.Parse(Regex.Match(o.age, @"\d").Value),
-                        exerciseGlobals: exerciseGlobals)
+                        exerciseGlobals: exerciseGlobals,
+                        dayCutoff: 9999) // Note: Julia didn't filter out day > 5
                 });
 
             //,npals_correct,WM_grid_correct,numberline_correct,mathTest01_correct,nvr_rp_correct,nvr_so_correct,numberComparison01_correct,npals_count,tangram_count,numberline_count,mathTest01_count,nvr_rp_count,nvr_so_count,numberComparison01_count,WM_grid_std,npals_std,numberline_std,rotation_std,nvr_rp_std,mathTest01_std,numberComparison01_std,npals_highest_lev,numberline_highest_lev,nvr_so_highest_lev,nvr_rp_highest_lev,npals_nr_exercises,tangram_nr_exercises,numberline_nr_exercises,rotation_nr_exercises,nvr_rp_nr_exercises,mean_time_increase,tangram_median_time_correct,rotation_median_time_correct,nvr_so_median_time_correct,mathTest01_median_time_correct,numberComparison01_median_time_correct,WM_grid_median_time_incorrect,npals_median_time_incorrect,rotation_median_time_incorrect,mathTest01_median_time_incorrect,npals_nr_high_response_times,rotation_nr_high_response_times,numberline_nr_high_response_times,nvr_rp_nr_high_response_times,nvr_so_nr_high_response_times,numberComparison01_nr_high_response_times,mathTest01_skew,npals_skew,nvr_rp_skew,nvr_so_skew,rotation_skew,tangram_skew,npals_level_median,numberline_level_median,nvr_rp_level_median
