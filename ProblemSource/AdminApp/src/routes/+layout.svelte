@@ -2,7 +2,7 @@
 	export const prerender = false;
 	export const ssr = false;
 
-    import { notificationsStore, apiFacade, loggedInUser } from '../globalStore.js';
+	import { notificationsStore, apiFacade, loggedInUser } from '../globalStore.js';
 	import { base } from '$app/paths';
 	import { browser } from '$app/environment';
 	import { Realtime } from '../services/realtime.js';
@@ -27,16 +27,24 @@
 			realtimeConnected = null;
 			realtime.disconnect();
 		} else {
-			realtime.onConnected = () => { realtimeConnected = true; };
-			realtime.onDisconnected = (err) => { realtimeConnected = false; console.log("disconnected", err); }
-			realtime.onReceived = msg => { 
-				console.log("received", msg.username, msg.events);
+			realtime.onConnected = () => {
+				realtimeConnected = true;
+			};
+			realtime.onDisconnected = (err) => {
+				realtimeConnected = false;
+				console.log('disconnected', err);
+			};
+			realtime.onReceived = (msg) => {
+				console.log('received', msg.username, msg.events);
 				notificationsStore.add({ createdAt: new Date(Date.now()), text: msg.username });
 				// $notifications = [...$notifications, { createdAt: new Date(Date.now()), text: msg.username }];
 			};
 			realtimeConnected = null;
-			try { await realtime.connect(Startup.resolveLocalServerBaseUrl(window.location)); }
-			catch (err) { console.log("error connecting", err); }
+			try {
+				await realtime.connect(Startup.resolveLocalServerBaseUrl(window.location));
+			} catch (err) {
+				console.log('error connecting', err);
+			}
 		}
 	}
 
@@ -51,21 +59,21 @@
 
 <nav>
 	{#if $loggedInUser?.loggedIn == true}
-	<a href="{base}/">Home</a>
-	<a href="{base}/teacher">Teacher</a>
-	{#if $loggedInUser.role == "Admin"}
-	<a href="{base}/admin">Admin</a>
-	{/if}
-	{#if $loggedInUser.role == "Admin"}
-	<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? "Disconnect" : "Connect"}</button>
-	{/if}
-	<a href="{base}/" on:click={logout}>Log out {$loggedInUser?.username}</a>
+		<a href="{base}/">Home</a>
+		<a href="{base}/teacher">Teacher</a>
+		{#if $loggedInUser.role == 'Admin'}
+			<a href="{base}/admin">Admin</a>
+		{/if}
+		{#if $loggedInUser.role == 'Admin'}
+			<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? 'Disconnect' : 'Connect'}</button>
+		{/if}
+		<a href="{base}/" on:click={logout}>Log out {$loggedInUser?.username}</a>
 	{:else}
-	<a href="{base}/login">Log in</a>
+		<a href="{base}/login">Log in</a>
 	{/if}
 </nav>
 <div class="page-container">
-	<NotificationBar></NotificationBar>
+	<NotificationBar />
 	<slot />
 </div>
 

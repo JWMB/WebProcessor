@@ -17,6 +17,8 @@ namespace ProblemSource.Services.Storage
 
         IBatchRepository<TrainingSummary> TrainingSummaries { get; }
         IBatchRepository<UserGeneratedState> UserStates { get; }
+
+        Task RemoveAll();
     }
 
     public static class MemoryCacheExtensions

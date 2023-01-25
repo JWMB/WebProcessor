@@ -53,6 +53,21 @@ namespace TrainingApi.Controllers
             return training.Username;
         }
 
+        [Authorize(Policy = RolesRequirement.Admin)]
+        [HttpDelete]
+        public async Task Delete(int id, bool deleteTrainingDataOnly = true)
+        {
+            var training = await trainingRepository.Get(id);
+            if (training == null)
+                return;
+
+            var fact = dataRepoFactory.Create(id);
+            await fact.RemoveAll();
+
+            if (deleteTrainingDataOnly == false)
+                await trainingRepository.RemoveByIdIfExists(id);
+        }
+
         private async Task<Training> CreateTraining(TrainingCreateDto dto)
         {
             return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan, dto.TrainingSettings);
@@ -175,17 +190,19 @@ namespace TrainingApi.Controllers
                 throw;
             }
 
-            var tdDict = results
+            var daysById = results
                 .Where(o => o.Any())
                 .Where(o => o.First().AccountId > 0)
                 .ToDictionary(o => o.First().AccountId, o => o.ToList());
 
-            return tdDict.Select(kv => new TrainingSummaryWithDaysDto
-            {
-                Id = kv.Key,
-                Username = trainings.FirstOrDefault(o => o.Id == kv.Key)?.Username ?? "", // kv.Value.FirstOrDefault()?.AccountUuid ?? "N/A", // TODO: if no days trained, Uuid will be missing - should be part of Training
-                Days = kv.Value
-            }).ToList();
+            return trainings.Select(training =>
+                new TrainingSummaryWithDaysDto
+                {
+                    Id = training.Id,
+                    Username = training.Username,
+                    Days = daysById.GetValueOrDefault(training.Id, new List<TrainingDayAccount>())
+                }
+            ).ToList();
         }
 
         private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null)

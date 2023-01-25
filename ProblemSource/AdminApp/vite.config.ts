@@ -1,16 +1,17 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-// import basicSsl from '@vitejs/plugin-basic-ssl'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import type { UserConfig } from 'vite';
 import path from 'path';
 
+
+const useHttps = process.env.VITE_HTTPS != 'false'; //import.meta.env.VITE_HTTPS != "false";
 const config: UserConfig = { //
 	plugins: [
 		sveltekit(),
-		// basicSsl()
-	],
+	].concat(useHttps ? [basicSsl()] : []),
 	server: {
 		port: 5171,
-		//https: true,
+		https: useHttps,
 		// proxy: {
 		// 	'/api': {
 		// 		target: 'https://localhost:7173', // The API is running locally via IIS on this port
@@ -20,7 +21,7 @@ const config: UserConfig = { //
 		// 	  }
 		// }
 	},
-	resolve: { alias: { src: path.resolve('./src')}}
+	resolve: { alias: { src: path.resolve('./src') } }
 };
 
 export default config;

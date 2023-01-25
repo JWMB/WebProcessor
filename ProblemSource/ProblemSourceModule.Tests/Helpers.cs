@@ -12,11 +12,18 @@ namespace ProblemSource.Tests
 {
     public static class LogItemsExtensions
     {
-        public static IEnumerable<LogItem> Prepare(this IEnumerable<LogItem> items)
+        public static IEnumerable<LogItem> Prepare(this IEnumerable<LogItem> items, long? startTimeStamp = null, bool overrideExistingTime = false)
         {
+            var index = 0L;
             foreach (var item in items)
             {
                 item.className = item.GetType().Name;
+                if (startTimeStamp != null)
+                {
+                    if (item.time == 0 || overrideExistingTime)
+                        item.time = startTimeStamp.Value + index;
+                }
+                index++;
             }
             return items;
         }

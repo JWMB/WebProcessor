@@ -4,7 +4,7 @@
 //using System.Security.Claims;
 //using System.Text.Encodings.Web;
 
-//namespace TrainingApiTests
+//namespace TrainingApi.Tests
 //{
 //    public class TestAuthHandlerOptions : AuthenticationSchemeOptions
 //    {

@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProblemSourceTestClient", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrainingApi", "ProblemSource\TrainingApi\TrainingApi.csproj", "{4CF9D126-AFC4-4D96-BF8F-075D6EA6CD80}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrainingApiTests", "ProblemSource\TrainingApiTests\TrainingApiTests.csproj", "{BC9C8705-3602-4998-A2ED-387E9C1D822D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrainingApi.Tests", "ProblemSource\TrainingApi.Tests\TrainingApi.Tests.csproj", "{BC9C8705-3602-4998-A2ED-387E9C1D822D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OldDb", "ProblemSource\OldDb\OldDb.csproj", "{D8D3E0FE-5627-4643-9004-3A28F6324EAF}"
 EndProject

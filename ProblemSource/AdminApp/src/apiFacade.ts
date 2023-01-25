@@ -8,9 +8,9 @@ export class ApiFacade {
     private testingClient: TestingClient;
 
     constructor(baseUrl: string) {
-        const http = 
+        const http =
             // { fetch: fetch };
-            { fetch: (r: Request, init?: RequestInit) => fetch(RequestAdapter.createFetchArguments(r, init))}
+            { fetch: (r: Request, init?: RequestInit) => fetch(RequestAdapter.createFetchArguments(r, init)) }
         this.aggregatesClient = new AggregatesClient(baseUrl, http);
         this.accountsClient = new AccountsClient(baseUrl, http);
         this.trainingsClient = new TrainingsClient(baseUrl, http);

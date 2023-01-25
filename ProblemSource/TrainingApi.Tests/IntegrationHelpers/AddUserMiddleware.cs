@@ -3,7 +3,7 @@ using TrainingApi.Controllers;
 using ProblemSourceModule.Models;
 using TrainingApi.Services;
 
-namespace TrainingApiTests.IntegrationHelpers
+namespace TrainingApi.Tests.IntegrationHelpers
 {
     public class AddUserMiddleware
     {

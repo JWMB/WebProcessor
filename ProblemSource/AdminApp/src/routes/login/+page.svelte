@@ -1,142 +1,141 @@
 <script lang="ts">
-	import { get } from "svelte/store";
-    import { apiFacade as apiFacadeStore, loggedInUser } from '../../globalStore';
+	import { get } from 'svelte/store';
+	import { apiFacade as apiFacadeStore, loggedInUser } from '../../globalStore';
 
+	let email = '';
+	let password = '';
 
-  let email = "";
-  let password = "";
+	let isLoading = false;
 
-  let isLoading = false;
+	let isSuccess = false;
 
-  let isSuccess = false;
+	const apiFacade = get(apiFacadeStore);
 
-  const apiFacade = get(apiFacadeStore)
-  
-  let errors = { email: "", password: "", server: "" };
+	let errors = { email: '', password: '', server: '' };
 
-  const handleSubmit = () => {
-	Object.keys(errors).forEach(k => (<any>errors)[k] = null);
+	const handleSubmit = () => {
+		Object.keys(errors).forEach((k) => ((<any>errors)[k] = null));
 
-    if (email.length === 0) {
-      errors.email = "Field should not be empty";
-    }
-    if (password.length === 0) {
-      errors.password = "Field should not be empty";
-    }
+		if (email.length === 0) {
+			errors.email = 'Field should not be empty';
+		}
+		if (password.length === 0) {
+			errors.password = 'Field should not be empty';
+		}
 
-    if (Object.keys(errors).filter(k => !!(<any>errors)[k]).length === 0) {
-      isLoading = true;
-	  apiFacade.accounts.login({ username: email, password: password})
-        .then(r => {
-          isSuccess = true;
-          isLoading = false;
-		  loggedInUser.set({ username: email, loggedIn: true, role: r.role });
-        })
-        .catch(err => {
-          errors.server = err;
-          isLoading = false;
-        });
-    }
-  };
+		if (Object.keys(errors).filter((k) => !!(<any>errors)[k]).length === 0) {
+			isLoading = true;
+			apiFacade.accounts
+				.login({ username: email, password: password })
+				.then((r) => {
+					isSuccess = true;
+					isLoading = false;
+					loggedInUser.set({ username: email, loggedIn: true, role: r.role });
+				})
+				.catch((err) => {
+					errors.server = err;
+					isLoading = false;
+				});
+		}
+	};
 </script>
+
+<form on:submit|preventDefault={handleSubmit}>
+	{#if isSuccess}
+		<div class="success">
+			🔓
+			<br />
+			You've been successfully logged in.
+		</div>
+	{:else}
+		<h1>👤</h1>
+
+		<label>Email</label>
+		<input name="email" placeholder="name@example.com" bind:value={email} />
+
+		<label>Password</label>
+		<input name="password" type="password" bind:value={password} />
+
+		<button type="submit">
+			{#if isLoading}Logging in...{:else}Log in 🔒{/if}
+		</button>
+
+		{#if Object.keys(errors).length > 0}
+			<ul class="errors">
+				{#each Object.keys(errors) as field}
+					<li>{field}: {errors[field]}</li>
+				{/each}
+			</ul>
+		{/if}
+	{/if}
+</form>
 
 <style>
 	form {
-	  background: #fff;
-	  padding: 50px;
-	  width: 250px;
-	  height: 400px;
-	  display: flex;
-	  flex-direction: column;
-	  justify-content: center;
-	  align-items: center;
-	  box-shadow: 0px 20px 14px 8px rgba(0, 0, 0, 0.58);
+		background: #fff;
+		padding: 50px;
+		width: 250px;
+		height: 400px;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		box-shadow: 0px 20px 14px 8px rgba(0, 0, 0, 0.58);
 	}
-  
+
 	label {
-	  margin: 10px 0;
-	  align-self: flex-start;
-	  font-weight: 500;
+		margin: 10px 0;
+		align-self: flex-start;
+		font-weight: 500;
 	}
-  
+
 	input {
-	  border: none;
-	  border-bottom: 1px solid #ccc;
-	  margin-bottom: 20px;
-	  transition: all 300ms ease-in-out;
-	  width: 100%;
+		border: none;
+		border-bottom: 1px solid #ccc;
+		margin-bottom: 20px;
+		transition: all 300ms ease-in-out;
+		width: 100%;
 	}
-  
+
 	input:focus {
-	  outline: 0;
-	  border-bottom: 1px solid #666;
+		outline: 0;
+		border-bottom: 1px solid #666;
 	}
-  
+
 	button {
-	  margin-top: 20px;
-	  background: black;
-	  color: white;
-	  padding: 10px 0;
-	  width: 200px;
-	  border-radius: 25px;
-	  text-transform: uppercase;
-	  font-weight: bold;
-	  cursor: pointer;
-	  transition: all 300ms ease-in-out;
+		margin-top: 20px;
+		background: black;
+		color: white;
+		padding: 10px 0;
+		width: 200px;
+		border-radius: 25px;
+		text-transform: uppercase;
+		font-weight: bold;
+		cursor: pointer;
+		transition: all 300ms ease-in-out;
 	}
-  
+
 	button:hover {
-	  transform: translateY(-2.5px);
-	  box-shadow: 0px 1px 10px 0px rgba(0, 0, 0, 0.58);
+		transform: translateY(-2.5px);
+		box-shadow: 0px 1px 10px 0px rgba(0, 0, 0, 0.58);
 	}
-  
+
 	h1 {
-	  margin: 10px 20px 30px 20px;
-	  font-size: 40px;
+		margin: 10px 20px 30px 20px;
+		font-size: 40px;
 	}
-  
+
 	.errors {
-	  list-style-type: none;
-	  padding: 10px;
-	  margin: 0;
-	  border: 2px solid #be6283;
-	  color: #be6283;
-	  background: rgba(190, 98, 131, 0.3);
+		list-style-type: none;
+		padding: 10px;
+		margin: 0;
+		border: 2px solid #be6283;
+		color: #be6283;
+		background: rgba(190, 98, 131, 0.3);
 	}
-  
+
 	.success {
-	  font-size: 24px;
-	  text-align: center;
+		font-size: 24px;
+		text-align: center;
 	}
-  </style>
-  
-  <form on:submit|preventDefault={handleSubmit}>
-	{#if isSuccess}
-	  <div class="success">
-		🔓
-		<br />
-		You've been successfully logged in.
-	  </div>
-	{:else}
-	  <h1>👤</h1>
-  
-	  <label>Email</label>
-	  <input name="email" placeholder="name@example.com" bind:value={email} />
-  
-	  <label>Password</label>
-	  <input name="password" type="password" bind:value={password} />
-  
-	  <button type="submit">
-		{#if isLoading}Logging in...{:else}Log in 🔒{/if}
-	  </button>
-  
-	  {#if Object.keys(errors).length > 0}
-		<ul class="errors">
-		  {#each Object.keys(errors) as field}
-			<li>{field}: {errors[field]}</li>
-		  {/each}
-		</ul>
-	  {/if}
-	{/if}
-  </form>
-  
+</style>

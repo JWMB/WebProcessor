@@ -1,4 +1,4 @@
 <script lang="ts">
 </script>
 
-<!-- <TrainingView></TrainingView> -->	
+<!-- <TrainingView></TrainingView> -->
