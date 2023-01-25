@@ -63,7 +63,7 @@ namespace ProblemSourceModule.Tests
             };
             var trainingSettings = TrainingSettings.Default;
             var features = MLFeaturesJulia.FromPhases(trainingSettings, phases, age: 6);
-            features.ByExercise["npals"].NumProblemsToHighestLevel.ShouldBe(3);
+            features.ByExercise["npals"].NumProblemsToHighestLevel.ShouldBe(2);
         }
 
         [Fact]
@@ -102,13 +102,18 @@ namespace ProblemSourceModule.Tests
             {
                 ByExercise = new Dictionary<string, MLFeaturesJulia.FeaturesForExercise>
                 {
-                    { exercise, new MLFeaturesJulia.FeaturesForExercise
-                        {
-                            HighestLevelInt = 6, MedianLevel = 6, MedianTimeCorrect = 2000, MedianTimeIncorrect = 889, FractionCorrect = 0.66M, NumProblemsWithAnswers = 3, NumProblemsToHighestLevel = 1,
-                            StandardDeviation = 0.285760205721633m //447.541680243925m
+                    { exercise, new MLFeaturesJulia.FeaturesForExercise {
+                        HighestLevelInt = 6, MedianLevel = 6, 
+                        MedianTimeCorrect = 2000, MedianTimeIncorrect = 1111, //889,
+                        FractionCorrect = 2M / 3,
+                        NumProblemsWithAnswers = 3, NumProblemsToHighestLevel = 2,
+                        StandardDeviation = 0, //0.285760205721633m,
+                        NumProblems = 3, //447.541680243925m
+                        Skew = double.NaN
                         }
                     }
-                }
+                },
+                Age6_7 = true
             };
 
             var tmp = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { features.ByExercise[exercise], expected.ByExercise[exercise] });

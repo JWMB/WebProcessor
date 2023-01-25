@@ -41,7 +41,7 @@ namespace ProblemSource.Models.Aggregates
             return new MLFeaturesJulia
             {
                 ByExercise = featuresByExercise,
-                MeanTimeIncrease = featuresByExercise.Values.Average(o => o.MeanTimeIncrease),
+                MeanTimeIncrease = featuresByExercise.Values.Any() ? featuresByExercise.Values.Average(o => o.MeanTimeIncrease) : 0,
                 TrainingTime20Min = trainingSettings.timeLimits.FirstOrDefault() == 20M,
                 Age6_7 = age == 6,
             };
@@ -403,8 +403,10 @@ namespace ProblemSource.Models.Aggregates
                     .Order()
                     .Median();
 
-                var incorrectToNextRTDiffs = allProblems.AggregateWithPrevious((p, c) => p.answers.Any(a => a.correct) == true ? null : (int?)(c.answers.First().response_time - p.answers.First().response_time));
-                stats.MeanTimeIncrease = incorrectToNextRTDiffs.OfType<int>().Average();
+                var incorrectToNextRTDiffs = allProblems
+                    .AggregateWithPrevious((p, c) => p.answers.Any(a => a.correct) == true ? null : (int?)(c.answers.First().response_time - p.answers.First().response_time))
+                    .OfType<int>().ToList();
+                stats.MeanTimeIncrease = incorrectToNextRTDiffs.Any() ? incorrectToNextRTDiffs.Average() : 0;
 
                 return stats;
 
