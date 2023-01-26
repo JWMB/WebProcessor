@@ -14,13 +14,17 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             if (eod != null)
             {
-                var weightChange = CreateWeightChangeTrigger(new Dictionary<string, int> { });
-                weightChange.actionData.id = $"modDay0_{eod.training_day}";
+                var trainingDay = eod.training_day;
+
+                var groupNames = new[] { "Math", "WM", "Reasoning" };
+                var groupWeigths = groupNames.Select((o, i) => new { Key = o, Value = i == (trainingDay % groupNames.Length) ? 100 : 0 }).ToArray();
+
+                var weightChange = CreateWeightChangeTrigger(groupWeigths.ToDictionary(o => o.Key, o => o.Value));
+                weightChange.actionData.id = $"modDay0_{trainingDay}";
                 var overrides = new
                 {
                     triggers = new[] {
                         weightChange
-                        //JsonConvert.DeserializeObject<dynamic>(weightChange.Replace("{trainingDay}", eod.training_day.ToString()))
                     }
                 };
                 training.Settings.trainingPlanOverrides = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(overrides));
@@ -66,6 +70,9 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 { "rotation", 100 },
                 { "nvr_rp", 100 },
             };
+            foreach (var key in weigthsDefault.Keys.Except(weights.Keys))
+                weights[key] = weigthsDefault[key];
+
             var def = """
 {
     "triggerTime": "MAP",
@@ -91,7 +98,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 """;
             var obj = JsonConvert.DeserializeObject<dynamic>(def);
             if (obj == null) throw new Exception("aaa");
-            obj.actionData.properties.weigths = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(weigthsDefault));
+            obj.actionData.properties.weights = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(weights));
 
             return obj;
         }

@@ -43,6 +43,32 @@ namespace ProblemSourceModule.Tests
             overrides["triggers"]?[0]?["actionData"]?["id"]?.ToString().ShouldBe($"modDay0_{trainingDay}");
         }
 
+        [Fact]
+        public async Task ExperimentalAnalyzer_DifferentWeightPerDay()
+        {
+            // Arrange
+            var analyzer = new ExperimentalAnalyzer();
+            var training = new Training { };
+
+            for (int i = 0; i < 3; i++)
+            {
+                var logItems = new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = i } };
+                // Act
+                var modified = await analyzer.Analyze(training, fixture.Create<IUserGeneratedDataRepositoryProvider>(), logItems);
+
+                // Assert
+                modified.ShouldBeTrue();
+
+                training.Settings.trainingPlanOverrides.ShouldNotBeNull();
+                var overrides = (JObject)training.Settings.trainingPlanOverrides;
+                var weights = overrides["triggers"]?[0]?["actionData"]?["properties"]?["weights"];
+
+                // TODO: Assert in code
+                //weights?["Math"]?.Value<int>().ShouldBe(100);
+                //"Math": 100, "WM": 0, "Reasoning": 100,
+            }
+        }
+
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
