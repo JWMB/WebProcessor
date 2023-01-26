@@ -8,6 +8,7 @@ using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
+using ProblemSourceModule.Services.TrainingAnalyzers;
 
 namespace ProblemSource
 {
@@ -19,6 +20,7 @@ namespace ProblemSource
             services.AddSingleton<IAggregationService, AggregationService>();
 
             services.AddSingleton<ProblemSourceProcessingMiddleware>();
+            services.AddSingleton<IEnumerable<ITrainingAnalyzer>>(new[] { new ExperimentalAnalyzer() });
             services.AddSingleton<TrainingAnalyzerCollection>();
             services.AddSingleton<IEventDispatcher, NullEventDispatcher>();
 
