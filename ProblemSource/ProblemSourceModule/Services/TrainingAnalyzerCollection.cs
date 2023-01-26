@@ -1,8 +1,8 @@
-﻿using ProblemSource.Models.Aggregates;
-using ProblemSource.Models;
+﻿using ProblemSource.Models;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
 namespace ProblemSourceModule.Services
 {
@@ -22,9 +22,15 @@ namespace ProblemSourceModule.Services
             if (instances?.Any() != true)
                 return false;
 
+            if (training.Settings?.Analyzers?.Any() != true)
+                return false;
+
             var modified = false;
             foreach (var item in instances)
             {
+                if (training.Settings.Analyzers.Any(o => Regex.IsMatch(item.GetType().Name, o)) == false)
+                    continue;
+
                 try
                 {
                     modified |= await item.Analyze(training, provider, latestLogItems);

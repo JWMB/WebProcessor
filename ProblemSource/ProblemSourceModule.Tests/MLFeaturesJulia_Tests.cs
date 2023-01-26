@@ -116,7 +116,7 @@ namespace ProblemSourceModule.Tests
                 Age6_7 = true
             };
 
-            var tmp = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { features.ByExercise[exercise], expected.ByExercise[exercise] });
+            //var tmp = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { features.ByExercise[exercise], expected.ByExercise[exercise] });
             features.ByExercise[exercise].ShouldBeEquivalentTo(expected.ByExercise[exercise]);
 
             features.ToArray().ShouldBe(expected.ToArray(), ignoreOrder: false);

@@ -14,11 +14,13 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             if (eod != null)
             {
-                var weightChange = WeightChange();
+                var weightChange = CreateWeightChangeTrigger(new Dictionary<string, int> { });
+                weightChange.actionData.id = $"modDay0_{eod.training_day}";
                 var overrides = new
                 {
                     triggers = new[] {
-                        JsonConvert.DeserializeObject<dynamic>(weightChange.Replace("{trainingDay}", eod.training_day.ToString()))
+                        weightChange
+                        //JsonConvert.DeserializeObject<dynamic>(weightChange.Replace("{trainingDay}", eod.training_day.ToString()))
                     }
                 };
                 training.Settings.trainingPlanOverrides = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(overrides));
@@ -50,9 +52,21 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 """;
         }
 
-        private string WeightChange()
+        private dynamic CreateWeightChangeTrigger(Dictionary<string, int> weights)
         {
-            return """
+
+            var weigthsDefault = new Dictionary<string, int> {
+                { "Math", 100 },
+                { "WM", 100 },
+                { "Reasoning", 100 },
+                { "tangram#intro", 100 },
+                { "tangram", 100 },
+                { "nvr_so", 100 },
+                { "rotation#intro", 100 },
+                { "rotation", 100 },
+                { "nvr_rp", 100 },
+            };
+            var def = """
 {
     "triggerTime": "MAP",
     "criteriaValues": [
@@ -66,15 +80,6 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
         "id": "modDay0_{trainingDay}",
         "properties": {
             "weights": {
-                "Math": 40,
-                "WM": 30,
-                "Reasoning": 30,
-                "tangram#intro": 100,
-                "tangram": 100,
-                "nvr_so": 100,
-                "rotation#intro": 100,
-                "rotation": 100,
-                "nvr_rp": 100
             },
             "phases": {
                 "^WM_[\\w#]+": { "medalMode": "ONE_WIN" },
@@ -84,6 +89,11 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
     }
 }
 """;
+            var obj = JsonConvert.DeserializeObject<dynamic>(def);
+            if (obj == null) throw new Exception("aaa");
+            obj.actionData.properties.weigths = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(weigthsDefault));
+
+            return obj;
         }
     }
 }

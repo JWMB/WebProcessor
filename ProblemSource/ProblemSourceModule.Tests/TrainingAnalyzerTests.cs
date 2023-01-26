@@ -9,6 +9,8 @@ using Newtonsoft.Json.Linq;
 using Moq;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
+using Castle.Core.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace ProblemSourceModule.Tests
 {
@@ -36,6 +38,28 @@ namespace ProblemSourceModule.Tests
 
             overrides["triggers"]?[0]?["actionData"]?["type"]?.ToString().ShouldBe("TrainingPlanModTriggerAction");
             overrides["triggers"]?[0]?["actionData"]?["id"]?.ToString().ShouldBe($"modDay0_{trainingDay}");
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task Analyzer_TriggeredOnlyIfEnabledInSettings(bool isEnabled)
+        {
+            // Arrange
+            var fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
+
+            var analyzers = new ITrainingAnalyzer[] { new ExperimentalAnalyzer() };
+            var collection = new TrainingAnalyzerCollection(analyzers, fixture.Create<ILogger<TrainingAnalyzerCollection>>());
+
+            var training = new Training { Settings = new ProblemSource.Models.TrainingSettings { 
+                Analyzers = isEnabled ? analyzers.Select(o => o.GetType().Name).ToList() : new List<string>()
+            }};
+
+            // Act
+            var result = await collection.Execute(training, fixture.Create<IUserGeneratedDataRepositoryProvider>(), new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = 1 } }.ToList());
+
+            // Assert
+            result.ShouldBe(isEnabled);
         }
 
         [Theory]

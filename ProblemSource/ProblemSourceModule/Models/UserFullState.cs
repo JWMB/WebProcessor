@@ -65,6 +65,11 @@ namespace ProblemSource.Models
         //erase_local_data?: boolean;
         public bool? alarmClockInvisible { get; set; }
 
+        /// <summary>
+        /// Regex patterns of ITrainingAnalyzer type names to execute
+        /// </summary>
+        public List<string>? Analyzers { get; set; } 
+
         public static TrainingSettings Default => new TrainingSettings();
     }
 
