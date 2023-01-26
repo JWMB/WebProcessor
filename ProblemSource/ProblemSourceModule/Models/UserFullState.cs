@@ -50,7 +50,7 @@ namespace ProblemSource.Models
 
     public class TrainingSettings
     {
-        public List<decimal> timeLimits { get; set; } = new List<decimal> { 33 }; //time_limits
+        public List<decimal> timeLimits { get; set; } = new(); //time_limits
         public object? uniqueGroupWeights { get; set; }
         public List<string>? manuallyUnlockedExercises { get; set; }
         public decimal? idleTimeout { get; set; }
@@ -70,7 +70,7 @@ namespace ProblemSource.Models
         /// </summary>
         public List<string>? Analyzers { get; set; } 
 
-        public static TrainingSettings Default => new TrainingSettings();
+        public static TrainingSettings Default => new TrainingSettings { timeLimits = new List<decimal> { 33 } };
     }
 
     public class TrainingSyncSettings
