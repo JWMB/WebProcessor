@@ -9,19 +9,22 @@ using Newtonsoft.Json.Linq;
 using Moq;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
-using Castle.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace ProblemSourceModule.Tests
 {
     public class TrainingAnalyzerTests
     {
+        private readonly IFixture fixture;
+        public TrainingAnalyzerTests()
+        {
+            fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
+        }
+
         [Fact]
         public async Task ExperimentalAnalyzer_TriggeredOnEndOfDayLogItem()
         {
             // Arrange
-            var fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
-
             var trainingDay = 5;
             var analyzer = new ExperimentalAnalyzer();
             var training = new Training { };
@@ -46,8 +49,6 @@ namespace ProblemSourceModule.Tests
         public async Task Analyzer_TriggeredOnlyIfEnabledInSettings(bool isEnabled)
         {
             // Arrange
-            var fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
-
             var analyzers = new ITrainingAnalyzer[] { new ExperimentalAnalyzer() };
             var collection = new TrainingAnalyzerCollection(analyzers, fixture.Create<ILogger<TrainingAnalyzerCollection>>());
 
@@ -68,8 +69,6 @@ namespace ProblemSourceModule.Tests
         public async Task Analyzer_TriggeredOnEndOfDayLogItem(bool isTriggerDay)
         {
             // Arrange
-            var fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
-
             var trainingDay = 5;
             var logItems = new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = trainingDay + (isTriggerDay ? 0 : 1) } };
 
@@ -85,8 +84,6 @@ namespace ProblemSourceModule.Tests
         public async Task Analyzer_TriggeredOnTrainingSummaries(bool isTriggerDay, int hoursSinceSync, bool expectedCompleted)
         {
             // Arrange
-            var fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
-
             var trainingDay = 5;
 
             var repoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
