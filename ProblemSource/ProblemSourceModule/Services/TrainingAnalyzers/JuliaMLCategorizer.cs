@@ -19,7 +19,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
         {
             var runAfterDay = 5;
 
-            if (await ITrainingAnalyzer.WasDayJustCompleted(runAfterDay, provider, latestLogItems))
+            if (runAfterDay == await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems))
             {
                 var age = 6; // TODO: where can we get age? Add in TrainingSettings for now?
                 var mlFeatures = MLFeaturesJulia.FromPhases(training.Settings ?? new TrainingSettings(), await provider.Phases.GetAll(), age: age);

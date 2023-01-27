@@ -11,18 +11,28 @@ namespace ProblemSourceModule.Services
     {
         Task<bool> Analyze(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems);
 
-        static async Task<bool> WasDayJustCompleted(int day, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
+        static async Task<int?> WasDayJustCompleted(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
         {
-            var eod = latestLogItems?.OfType<EndOfDayLogItem>().FirstOrDefault();
-            if (eod != null)
-                return eod.training_day == day;
+            // Hmm - seems client filters out EndOfDayLogItem before syncing
+            if (latestLogItems?.LastOrDefault() is EndOfDayLogItem eod)
+                return eod.training_day;
 
-            var summary = (await provider.TrainingSummaries.GetAll()).FirstOrDefault();
-            if (summary == null || summary.TrainedDays != day)
-                return false;
+            var latestDaySummary = (await provider.TrainingDays.GetAll()).OrderBy(o => o.TrainingDay).LastOrDefault();
+            if (latestDaySummary == null)
+                return null;
 
-            var timeSinceSync = DateTimeOffset.UtcNow - summary.LastLogin;
-            return timeSinceSync >= TimeSpan.FromHours(1); // Need to wait until they've probably finished training for the day
+            if (training.Settings.timeLimits.Any())
+            {
+                var totalMinutes = latestDaySummary.RemainingMinutes + latestDaySummary.ResponseMinutes;
+                if (totalMinutes > training.Settings.timeLimits.First() * 0.9m)
+                    return latestDaySummary.TrainingDay;
+            }
+
+            var timeSinceSync = DateTimeOffset.UtcNow - latestDaySummary.EndTimeStamp; // TODO: use some updatedAt / LastLogin value (EndTimeStamp is client's local timestamp)
+            if (timeSinceSync < TimeSpan.FromHours(1)) // Need to wait until they've probably finished training for the day
+                return null;
+
+            return latestDaySummary.TrainingDay;
         }
     }
 }

@@ -33,6 +33,7 @@
           },
           "phases": {
             "^WM_[\\w#]+": { "medalMode": "ONE_WIN" },
+            "^npals[\\w#]*": { "medalMode": "ONE_WIN" },
             "^addsub[\\w#]*": { "lvlMgr": { "maxFallFromHighest": 5 } }
           }
         }

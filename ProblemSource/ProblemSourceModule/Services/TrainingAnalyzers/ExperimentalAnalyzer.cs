@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using ProblemSource.Models;
-using ProblemSource.Models.LogItems;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 
@@ -8,29 +7,27 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
     public class ExperimentalAnalyzer : ITrainingAnalyzer
     {
-        public Task<bool> Analyze(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
+        public async Task<bool> Analyze(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
         {
-            var eod = latestLogItems?.OfType<EndOfDayLogItem>().FirstOrDefault();
+            var justFinishedDay = await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems);
+            if (justFinishedDay == null)
+                return false;
 
-            if (eod != null)
+            var trainingDay = justFinishedDay.Value;
+
+            var groupNames = new[] { "Math", "WM", "Reasoning" };
+            var groupWeigths = groupNames.Select((o, i) => new { Key = o, Value = i == (trainingDay % groupNames.Length) ? 100 : 0 }).ToArray();
+
+            var weightChange = CreateWeightChangeTrigger(groupWeigths.ToDictionary(o => o.Key, o => o.Value));
+            weightChange.actionData.id = $"modDay0_{trainingDay}";
+            var overrides = new
             {
-                var trainingDay = eod.training_day;
-
-                var groupNames = new[] { "Math", "WM", "Reasoning" };
-                var groupWeigths = groupNames.Select((o, i) => new { Key = o, Value = i == (trainingDay % groupNames.Length) ? 100 : 0 }).ToArray();
-
-                var weightChange = CreateWeightChangeTrigger(groupWeigths.ToDictionary(o => o.Key, o => o.Value));
-                weightChange.actionData.id = $"modDay0_{trainingDay}";
-                var overrides = new
-                {
-                    triggers = new[] {
-                        weightChange
-                    }
-                };
-                training.Settings.trainingPlanOverrides = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(overrides));
-                return Task.FromResult(true);
-            }
-            return Task.FromResult(false);
+                triggers = new[] {
+                    weightChange
+                }
+            };
+            training.Settings.trainingPlanOverrides = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(overrides));
+            return true;
         }
 
         private string MathTest()

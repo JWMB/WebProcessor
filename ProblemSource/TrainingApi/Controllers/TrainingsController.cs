@@ -139,9 +139,14 @@ namespace TrainingApi.Controllers
         private Task<IEnumerable<Training>> GetTrainingTemplates()
         {
             // TODO: use real storage, move to service
+
+            var testSettings = TrainingSettings.Default;
+            testSettings.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.ExperimentalAnalyzer) };
+            testSettings.timeLimits = new List<decimal> { 3 };
+
             return Task.FromResult((IEnumerable<Training>)new[] {
                 new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = TrainingSettings.Default },
-                new Training { Id = 1, Username = "template_Test training", TrainingPlanName = "2017 HT template Default", Settings = TrainingSettings.Default }
+                new Training { Id = 1, Username = "template_Test training", TrainingPlanName = "2023 VT template JonasTest", Settings = testSettings }
             });
         }
 
