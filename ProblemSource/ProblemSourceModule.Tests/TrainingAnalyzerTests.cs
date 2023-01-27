@@ -90,41 +90,41 @@ namespace ProblemSourceModule.Tests
             result.ShouldBe(isEnabled);
         }
 
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public async Task Analyzer_TriggeredOnEndOfDayLogItem(bool isTriggerDay)
+        [Fact]
+        public async Task Analyzer_TriggeredOnEndOfDayLogItem()
         {
             // Arrange
             var trainingDay = 5;
-            var logItems = new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = trainingDay + (isTriggerDay ? 0 : 1) } };
+            var logItems = new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = trainingDay} };
             var training = new Training();
 
             var justCompletedDay = await ITrainingAnalyzer.WasDayJustCompleted(training, fixture.Create<IUserGeneratedDataRepositoryProvider>(), logItems);
 
-            justCompletedDay.ShouldBe(isTriggerDay ? trainingDay : null);
+            justCompletedDay.ShouldBe(trainingDay);
         }
 
         [Theory]
-        [InlineData(true, 2, true)]
-        [InlineData(true, 0, false)]
+        [InlineData(false, 2, true)]
         [InlineData(false, 0, false)]
-        public async Task Analyzer_TriggeredOnTrainingSummaries(bool isTriggerDay, int hoursSinceSync, bool expectedCompleted)
+        [InlineData(true, 0, true)]
+        public async Task Analyzer_TriggeredOnTrainingSummaries(bool trainedFullMinutes, int hoursSinceSync, bool expectedCompleted)
         {
             // Arrange
             var trainingDay = 5;
+            var training = new Training();
 
-            var summary = new TrainingSummary { TrainedDays = trainingDay + (isTriggerDay ? 0 : 1), LastLogin = DateTimeOffset.UtcNow.AddHours(-hoursSinceSync) };
-            var repoProvider = MockIUserGeneratedDataRepositoryProvider(summary);
+            var summary = new TrainingSummary { TrainedDays = trainingDay, LastLogin = DateTimeOffset.UtcNow.AddHours(-hoursSinceSync) };
+            var repoProvider = MockIUserGeneratedDataRepositoryProvider(summary, trainedFullMinutes ? (int)training.Settings.timeLimits.First() : 0);
 
-            var justCompletedDay = await ITrainingAnalyzer.WasDayJustCompleted(new Training(), repoProvider, null);
+            // Act
+            var justCompletedDay = await ITrainingAnalyzer.WasDayJustCompleted(training, repoProvider, null);
 
+            // Assert
             if (expectedCompleted) justCompletedDay.ShouldBe(trainingDay);
             else justCompletedDay.ShouldBeNull();
-            //justCompletedDay.ShouldBe(expectedCompleted ? trainingDay : null);
         }
 
-        private IUserGeneratedDataRepositoryProvider MockIUserGeneratedDataRepositoryProvider(TrainingSummary summary)
+        private IUserGeneratedDataRepositoryProvider MockIUserGeneratedDataRepositoryProvider(TrainingSummary summary, int totalMinutesTrained = 33)
         {
             var repoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
 
@@ -135,9 +135,9 @@ namespace ProblemSourceModule.Tests
             var trainingDaySummaries = new Mock<IBatchRepository<TrainingDayAccount>>();
             var trainingDay = new TrainingDayAccount {
                 TrainingDay = summary.TrainedDays,
-                RemainingMinutes = 999,
-                ResponseMinutes = 999,
-                EndTimeStamp = DateTime.UtcNow
+                RemainingMinutes = 0,
+                ResponseMinutes = totalMinutesTrained,
+                EndTimeStamp = summary.LastLogin.UtcDateTime
             };
             trainingDaySummaries.Setup(o => o.GetAll()).ReturnsAsync(new List<TrainingDayAccount> { trainingDay });
             repoProvider.Setup(o => o.TrainingDays).Returns(trainingDaySummaries.Object);
