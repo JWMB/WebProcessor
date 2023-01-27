@@ -82,8 +82,8 @@ namespace ProblemSource.Models
         public string defaultSyncUrl { get; set; } = string.Empty;
         public string routerUrl { get; set; } = string.Empty;
         public string syncTriggerCode { get; set; } = string.Empty; //TODO... Can't use runtime execution of string, will fail after minification... "{ performSync: logItem.isOfType(LeaveTestLogItem), pushState: logItem.isOfType(LeaveTestLogItem) }"
-
     }
+
     public class CustomData
     {
         public bool? menuButton { get; set; }

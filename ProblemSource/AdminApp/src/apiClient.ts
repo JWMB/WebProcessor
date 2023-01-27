@@ -1133,8 +1133,10 @@ export interface TrainingSummaryDto {
     username: string;
     created: Date;
     trainedDays: number;
+    targetDays: number;
     avgResponseMinutes: number;
     avgRemainingMinutes: number;
+    targetMinutesPerDay: number;
     avgAccuracy: number;
     firstLogin?: Date | undefined;
     lastLogin?: Date | undefined;
