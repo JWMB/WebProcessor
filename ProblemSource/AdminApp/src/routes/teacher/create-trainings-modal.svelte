@@ -12,7 +12,7 @@
 	let newGroupData = {
 		name: 'Fsk A',
 		noOfTrainings: 10,
-		timePerDay: 30
+		timePerDay: 33
 	};
 
 	let createdTrainingUsernames: string[] = [];
@@ -24,7 +24,7 @@
 		}
 		chosenTemplate.settings.timeLimits = [numMinutes];
 		const dto = <TrainingCreateDto>{ trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
-		// createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
+		createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
 		closeModal;
 		onCreateGroup(groupName);
 	}
@@ -44,10 +44,10 @@
 						Number of trainings
 						<input id="numTrainings" required bind:value={newGroupData.noOfTrainings} min="1" max="40" />
 					</label>
-					<label>
+					<!-- <label>
 						Time per day
 						<input id="timePerDay" required type="number" bind:value={newGroupData.timePerDay} min="15" max="45" />
-					</label>
+					</label> -->
 					<div class="actions">
 						<button class="primary" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, '')}>Create</button>
 						<button class="secondary" on:click={closeModal}>Cancel</button>
