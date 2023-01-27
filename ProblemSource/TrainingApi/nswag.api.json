@@ -575,7 +575,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/Training"
+                "$ref": "#/definitions/TrainingTemplateDto"
               }
             }
           }
@@ -1009,10 +1009,14 @@
     "TrainingCreateDto": {
       "type": "object",
       "required": [
-        "trainingPlan",
+        "baseTemplateId",
         "trainingSettings"
       ],
       "properties": {
+        "baseTemplateId": {
+          "type": "integer",
+          "format": "int32"
+        },
         "trainingPlan": {
           "type": "string"
         },
@@ -1218,6 +1222,30 @@
         },
         "username": {
           "type": "string"
+        },
+        "trainingPlanName": {
+          "type": "string"
+        },
+        "settings": {
+          "$ref": "#/definitions/TrainingSettings"
+        }
+      }
+    },
+    "TrainingTemplateDto": {
+      "type": "object",
+      "required": [
+        "name",
+        "id",
+        "trainingPlanName",
+        "settings"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int32"
         },
         "trainingPlanName": {
           "type": "string"

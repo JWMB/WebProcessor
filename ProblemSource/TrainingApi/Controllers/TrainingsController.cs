@@ -70,7 +70,12 @@ namespace TrainingApi.Controllers
 
         private async Task<Training> CreateTraining(TrainingCreateDto dto)
         {
-            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan, dto.TrainingSettings);
+            var templates = await GetTrainingTemplates();
+            var template = templates.FirstOrDefault(o => o.Id == dto.BaseTemplateId);
+            if (template == null)
+                throw new Exception($"Template not found: {dto.BaseTemplateId}");
+
+            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, dto.TrainingSettings);
         }
 
         [HttpPost]
@@ -79,7 +84,7 @@ namespace TrainingApi.Controllers
         public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings, string? createForUser = null)
         {
             // TODO: standard validation
-            if (numTrainings <= 1 || numTrainings > 30) throw new HttpException($"{nameof(numTrainings)} exceeds accepted range", StatusCodes.Status400BadRequest);
+            if (numTrainings < 1 || numTrainings > 30) throw new HttpException($"{nameof(numTrainings)} exceeds accepted range", StatusCodes.Status400BadRequest);
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);
 
             var user = userProvider.UserOrThrow;
@@ -131,15 +136,43 @@ namespace TrainingApi.Controllers
             return await GetUsersTrainings();
         }
 
+        private Task<IEnumerable<Training>> GetTrainingTemplates()
+        {
+            // TODO: use real storage, move to service
+            return Task.FromResult((IEnumerable<Training>)new[] {
+                new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = CreateDefaultSettings() },
+                new Training { Id = 1, Username = "template_Test training", TrainingPlanName = "2017 HT template Default", Settings = CreateDefaultSettings() }
+            });
+        }
+
+        private static TrainingSettings CreateDefaultSettings()
+        {
+            return new TrainingSettings
+            {
+                cultureCode = "sv-SE",
+                alarmClockInvisible = null,
+                customData = null,
+                idleTimeout = null,
+                triggers = null,
+                manuallyUnlockedExercises = null,
+                uniqueGroupWeights = null,
+                trainingPlanOverrides = null,
+                syncSettings = null,
+                pacifistRatio = 0.1M,
+                timeLimits = new List<decimal> { 33 },
+            };
+        }
+
         [HttpGet]
         [Route("templates")]
-        public IEnumerable<Training> GetTemplates()
+        public async Task<IEnumerable<TrainingTemplateDto>> GetTemplates()
         {
-            // {"timeLimits":[33.0]}
-            var ts = TrainingSettings.Default;
-            return new[] {
-                new Training { Id = 1, Username = "Default training", TrainingPlanName = "2017 HT template Default", Settings = ts }
-            };
+            return (await GetTrainingTemplates()).Select(o => new TrainingTemplateDto {
+                Id = o.Id,
+                Name = o.Username.Replace("template_", ""),
+                TrainingPlanName = o.TrainingPlanName,
+                Settings = o.Settings ?? CreateDefaultSettings()
+            });
         }
 
         [HttpGet]
@@ -269,8 +302,17 @@ namespace TrainingApi.Controllers
 
         public class TrainingCreateDto
         {
-            public string TrainingPlan { get; set; } = "";
-            public TrainingSettings TrainingSettings { get; set; } = TrainingSettings.Default;
+            public int BaseTemplateId { get; set; }
+            public string? TrainingPlan { get; set; }
+            public TrainingSettings TrainingSettings { get; set; } = new TrainingSettings();
+        }
+
+        public class TrainingTemplateDto
+        {
+            public string Name { get; set; } = string.Empty;
+            public int Id { get; set; }
+            public string TrainingPlanName { get; set; } = "";
+            public TrainingSettings Settings { get; set; } = new TrainingSettings();
         }
     }
 }

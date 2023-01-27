@@ -713,7 +713,7 @@ export class TrainingsClient {
         return Promise.resolve<Training>(null as any);
     }
 
-    getTemplates(): Promise<Training[]> {
+    getTemplates(): Promise<TrainingTemplateDto[]> {
         let url_ = this.baseUrl + "/api/Trainings/templates";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -729,13 +729,13 @@ export class TrainingsClient {
         });
     }
 
-    protected processGetTemplates(response: Response): Promise<Training[]> {
+    protected processGetTemplates(response: Response): Promise<TrainingTemplateDto[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Training[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TrainingTemplateDto[];
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -743,7 +743,7 @@ export class TrainingsClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<Training[]>(null as any);
+        return Promise.resolve<TrainingTemplateDto[]>(null as any);
     }
 
     getGroups(): Promise<{ [key: string]: TrainingSummaryDto[]; }> {
@@ -1046,7 +1046,8 @@ export enum LogLevel {
 }
 
 export interface TrainingCreateDto {
-    trainingPlan: string;
+    baseTemplateId: number;
+    trainingPlan?: string | undefined;
     trainingSettings: TrainingSettings;
 }
 
@@ -1117,6 +1118,13 @@ export interface TrainingSyncSettings {
 export interface Training {
     id: number;
     username: string;
+    trainingPlanName: string;
+    settings: TrainingSettings;
+}
+
+export interface TrainingTemplateDto {
+    name: string;
+    id: number;
     trainingPlanName: string;
     settings: TrainingSettings;
 }

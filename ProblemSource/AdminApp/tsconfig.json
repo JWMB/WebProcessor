@@ -8,7 +8,8 @@
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"sourceMap": true,
-		"strict": true
+		"strict": true,
+		// "types": ["vite/client"] // TODO: should work (but doesn't) according to https://vitejs.dev/guide/features.html#client-types
 	}
 	// Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias
 	//
