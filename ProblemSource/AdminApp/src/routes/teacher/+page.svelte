@@ -2,7 +2,7 @@
 	import { apiFacade as apiFacadeStore, loggedInUser } from '../../globalStore';
 	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
-	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto, TrainingCreateDto } from 'src/apiClient';
+	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto, TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
 	import TrainingsTable from '../../components/trainingsTable.svelte';
 	import TrainingGroupsTable from '../../components/trainingGroupsTable.svelte';
 	import { goto } from '$app/navigation';
@@ -14,6 +14,7 @@
 
 	const loggedInUserInfo = get(loggedInUser);
 
+	let templates: TrainingTemplateDto[] = [];
 	let trainingsPromise: Promise<TrainingSummaryWithDaysDto[]>;
 	// let trainingGroupsPromise: Promise<{[key: string]: TrainingSummaryDto[] }>;
 	let trainingGroupsPromise2: Promise<{ group: string; summaries: TrainingSummaryDto[] }[]>;
@@ -28,26 +29,28 @@
 		goto(`${base}/training?id=${e.detail.id}`);
 	};
 
-	async function createTrainings(num: number, groupName: string, numMinutes: number, forUser?: string | null) {
+	async function createTrainings(num: number, groupName: string, numMinutes: number, templateId: number, forUser?: string | null) {
 		if (!groupName) {
 			alert('A name is required');
 			return;
 		}
 		if (confirm(`Create class '${groupName}' with ${num} trainings?`)) {
-			const templates = await apiFacade.trainings.getTemplates();
-			const chosenTemplate = templates[0];
+			//const templates = await apiFacade.trainings.getTemplates();
+			const chosenTemplate = templates.filter(o => o.id == templateId)[0];
 			if (!chosenTemplate.settings) {
 				chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
 			}
 			chosenTemplate.settings.timeLimits = [numMinutes];
-			const dto = <TrainingCreateDto>{ trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
+			const dto = <TrainingCreateDto>{ baseTemplateId: chosenTemplate.id, trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
 			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
 			await getTrainings();
 		}
 	}
 
 	function getElementValue(id: string) {
-		return (<HTMLInputElement>document.getElementById(id)).value;
+		const el = document.getElementById(id);
+		if (el == null) throw `Element not found: ${id}`;
+		return (<HTMLInputElement>el).value;
 	}
 
 	async function getTrainings() {
@@ -69,7 +72,12 @@
 		//console.log("OK", trainingSummaries.length); // why is TrainingsTable not always updated?
 	}
 
-	onMount(() => getTrainings());
+	async function init() {
+		await getTrainings();
+		templates = await apiFacade.trainings.getTemplates();
+	}
+
+	onMount(() => init());
 </script>
 
 <div>
@@ -77,6 +85,11 @@
 	<div>
 		Create class: <input id="className" type="text" value="Fsk A" />
 		num trainings: <input id="numTrainings" style="width:40px;" type="number" min="1" max="30" value="10" />
+		template: <select id="template">
+			{#each templates as template}
+				<option value="{template.id}">{template.name}</option>
+			{/each}
+		</select>
 		time per day: <input id="timePerDay" style="width:40px;" type="number" min="15" max="45" value="33" />
 		{#if loggedInUserInfo?.role == 'Admin'}
 			create for user: <input id="forUser" type="text" />
@@ -84,7 +97,12 @@
 		<input
 			type="button"
 			value="Create"
-			on:click={() => createTrainings(parseFloat(getElementValue('numTrainings')), getElementValue('className'), parseFloat(getElementValue('timePerDay')), getElementValue('forUser'))} />
+			on:click={() => createTrainings(
+				parseFloat(getElementValue('numTrainings')),
+				getElementValue('className'),
+				parseFloat(getElementValue('timePerDay')),
+				parseFloat(getElementValue('template')),
+				getElementValue('forUser'))} />
 
 		{#if createdTrainingUsernames}
 			Created users:
