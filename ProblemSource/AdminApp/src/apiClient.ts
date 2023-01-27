@@ -1063,6 +1063,7 @@ export interface TrainingSettings {
     trainingPlanOverrides?: any | undefined;
     syncSettings?: TrainingSyncSettings | undefined;
     alarmClockInvisible?: boolean | undefined;
+    analyzers?: string[] | undefined;
 }
 
 export interface CustomData {
@@ -1118,7 +1119,7 @@ export interface Training {
     id: number;
     username: string;
     trainingPlanName: string;
-    settings?: TrainingSettings | undefined;
+    settings: TrainingSettings;
 }
 
 export interface TrainingTemplateDto {

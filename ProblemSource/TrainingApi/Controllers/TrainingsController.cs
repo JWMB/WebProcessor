@@ -99,7 +99,6 @@ namespace TrainingApi.Controllers
                 }
             }
 
-
             if (string.IsNullOrEmpty(createForUser) == false)
             {
                 if (user.Role != Roles.Admin)
