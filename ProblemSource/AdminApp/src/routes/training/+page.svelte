@@ -1,5 +1,5 @@
 <script lang="ts">
-	import TrainingView from '../../../components/trainingView.svelte';
+	import TrainingView from '../../components/trainingView.svelte';
 	import { onMount } from 'svelte';
 
 	let accountId: number;

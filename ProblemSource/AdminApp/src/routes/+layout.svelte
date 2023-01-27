@@ -10,6 +10,7 @@
 	import NotificationBar from 'src/components/notificationBar.svelte';
 	import { Startup } from 'src/startup.js';
 	import type { TrainingUpdateMessage } from 'src/types.js';
+	import { Modals, closeModal } from 'svelte-modals';
 
 	const realtime = new Realtime<TrainingUpdateMessage>();
 	let realtimeConnected: boolean | null = false;
@@ -60,9 +61,11 @@
 <nav>
 	{#if $loggedInUser?.loggedIn == true}
 		<a href="{base}/">Home</a>
-		<a href="{base}/teacher">Teacher</a>
+
 		{#if $loggedInUser.role == 'Admin'}
 			<a href="{base}/admin">Admin</a>
+			<a href="{base}/admin/teacher">Teacher</a>
+			<a href="{base}/teacher">Teacher2</a>
 		{/if}
 		{#if $loggedInUser.role == 'Admin'}
 			<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? 'Disconnect' : 'Connect'}</button>
@@ -76,6 +79,10 @@
 	<NotificationBar />
 	<slot />
 </div>
+
+<Modals>
+	<div slot="backdrop" class="backdrop" on:click={closeModal} />
+</Modals>
 
 <style>
 	:global(body) {
@@ -103,5 +110,15 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
+	}
+
+	.backdrop {
+		position: fixed;
+		z-index: 10;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		left: 0;
+		background: rgba(0, 0, 0, 0.5);
 	}
 </style>

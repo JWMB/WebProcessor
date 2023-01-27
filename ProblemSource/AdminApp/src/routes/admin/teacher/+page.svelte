@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { apiFacade as apiFacadeStore, loggedInUser } from '../../globalStore';
+	import { apiFacade as apiFacadeStore, loggedInUser } from '../../../globalStore';
 	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto, TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
-	import TrainingsTable from '../../components/trainingsTable.svelte';
-	import TrainingGroupsTable from '../../components/trainingGroupsTable.svelte';
+	import TrainingsTable from '../../../components/trainingsTable.svelte';
+	import TrainingGroupsTable from '../../../components/trainingGroupsTable.svelte';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 
