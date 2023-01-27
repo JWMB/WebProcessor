@@ -57,18 +57,18 @@
 				winRate: d.numRacesWon / d.numRaces
 			}));
 
-		const firstDay = training.days[0] || { accountUuid: 'N/A', startTime: new Date() };
+		const firstDay = training.days[0]; // || { accountUuid: 'N/A', startTime: new Date() };
 		// const lastDay = training.days[training.days.length - 1] || firstDay;
 		const uuid = training.username; // firstDay.accountUuid;
-		const daysSinceStart = getDaysBetween(new Date(firstDay.startTime), new Date(latestTimestamp));
+		const daysSinceStart = firstDay ? getDaysBetween(new Date(firstDay.startTime), new Date(latestTimestamp)) : 1;
 		// console.log(uuid, training.days.length, daysSinceStart);
 		return {
 			id: training.id,
 			uuid: uuid,
-			startDate: firstDay.startTime,
+			startDate: firstDay ? firstDay.startTime : null,
 			totalDays: training.days.length,
-			firstDate: getDateString(new Date(training.days[0].startTime)),
-			latestDate: getDateString(new Date(training.days[training.days.length - 1].startTime)),
+			firstDate: firstDay ? getDateString(new Date(firstDay.startTime)) : "",
+			latestDate: firstDay ? getDateString(new Date(training.days[training.days.length - 1].startTime)) : "",
 			daysPerWeek: training.days.length / (daysSinceStart / 7),
 			days: withDayIndex
 		};

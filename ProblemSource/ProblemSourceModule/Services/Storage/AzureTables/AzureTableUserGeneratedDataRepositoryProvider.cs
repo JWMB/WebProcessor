@@ -3,19 +3,18 @@ using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models.Aggregates;
-using System.Collections.Concurrent;
 
 namespace ProblemSource.Services.Storage.AzureTables
 {
     public class AzureTableUserGeneratedDataRepositoryProvider : IUserGeneratedDataRepositoryProvider
     {
-        private readonly ITypedTableClientFactory tableClientFactory;
-        private readonly int userId;
+        //private readonly ITypedTableClientFactory tableClientFactory;
+        //private readonly int userId;
 
         public AzureTableUserGeneratedDataRepositoryProvider(ITypedTableClientFactory tableClientFactory, int userId)
         {
-            this.tableClientFactory = tableClientFactory;
-            this.userId = userId;
+            //this.tableClientFactory = tableClientFactory;
+            //this.userId = userId;
 
             var partitionKey = AzureTableConfig.IdToKey(userId);
 
@@ -57,6 +56,15 @@ namespace ProblemSource.Services.Storage.AzureTables
         }
 
         protected virtual IBatchRepository<T> Create<T>(IBatchRepository<T> inner, Func<T, string> createKey) => inner;
+
+        public async Task RemoveAll()
+        {
+            await Phases.RemoveAll();
+            await TrainingDays.RemoveAll();
+            await PhaseStatistics.RemoveAll();
+            await TrainingSummaries.RemoveAll();
+            await UserStates.RemoveAll();
+        }
 
         //public IBatchRepository<Phase> Phases { get; }
         //public IBatchRepository<TrainingDayAccount> TrainingDays { get; }

@@ -10,7 +10,7 @@ using ProblemSourceModule.Models;
 using AutoBogus;
 using AutoBogus.FakeItEasy;
 
-namespace TrainingApiTests.IntegrationHelpers
+namespace TrainingApi.Tests.IntegrationHelpers
 {
     internal class MyTestServer
     {

@@ -3,8 +3,9 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 import type { UserConfig } from 'vite';
 import path from 'path';
 
-
-const useHttps = process.env.VITE_HTTPS != 'false'; //import.meta.env.VITE_HTTPS != "false";
+// TODO: import.meta does not contain 'env' (import.meta.env.VITE_HTTPS does not work)
+// TODO: process.env does not contain any variables from .env files (process.env.VITE_HTTPS does not work)
+const useHttps = process.env.COMPUTERNAME !== "CND1387M7P";
 const config: UserConfig = { //
 	plugins: [
 		sveltekit(),

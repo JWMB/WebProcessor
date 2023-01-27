@@ -8,7 +8,7 @@
 //using Shouldly;
 //using TrainingApi.Services;
 
-//namespace TrainingApiTests
+//namespace TrainingApi.Tests
 //{
 //    public class OldDbTests
 //    {
