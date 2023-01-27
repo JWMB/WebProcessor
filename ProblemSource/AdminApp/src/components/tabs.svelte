@@ -2,7 +2,7 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { createEventDispatcher, tick } from 'svelte';
+	import { createEventDispatcher, onMount, tick } from 'svelte';
 
 	const dispatchEvent = createEventDispatcher<{ selected: string }>();
 
@@ -12,19 +12,29 @@
 
 	$: current = selected || tabs[0]?.id;
 
+	onMount(() => {
+		// if (urlTab)
+	});
+	// $: if (!selected && tabs.length > 0) {
+	// 	selectTab(tabs[0]?.id);
+	// }
+
 	$: onPageChange(), $page;
 
 	function onPageChange() {
+		console.log('onPageChange');
 		if (urlParam) {
-			const urlTab = $page.url.searchParams.get(decodeURI(urlParam));
+			const urlTab = $page.url.searchParams.get(urlParam);
 			if (urlTab && browser) {
-				selectTab(urlTab, false);
+				console.log('urlTab', urlTab);
+				selectTab(decodeURI(urlTab), false);
 			}
 		}
 	}
 	onPageChange();
 
 	async function selectTab(tabId: string, changeUrl = true) {
+		console.log('select tab', tabs, tabId);
 		if (!tabs.find((t) => t.id === tabId)) {
 			return;
 		}
