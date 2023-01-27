@@ -40,7 +40,7 @@
 		position: relative;
 	}
 	.background {
-		background-color: white;
+		background-color: #eeeeee;
 		position: absolute;
 		top: 0;
 		bottom: 0;

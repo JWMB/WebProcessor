@@ -57,7 +57,7 @@
 	function onCreateGroup() {
 		openModal(CreateTrainingsModal, {
 			onCreateGroup: (id) => {
-				console.log('group was created:', id);
+				getData();
 			}
 		});
 	}
@@ -66,7 +66,7 @@
 <div class="teacher-view">
 	<h2>Your groups/classes</h2>
 
-	{#if groups && groups.length > 0}
+	{#if groups}
 		<Tabs
 			urlParam="group"
 			tabs={groups.map((g) => {
@@ -77,7 +77,7 @@
 		</Tabs>
 	{/if}
 
-	{#if trainings && trainings.length > 0}
+	{#if trainings}
 		<h2>Trainings</h2>
 		<table>
 			<tr>
@@ -88,8 +88,8 @@
 			{#each trainings as t (t.id)}
 				<tr on:click={() => onSelectTraining(t.id)}>
 					<td>{t.username}</td>
-					<td><ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" color="#00ff00" /></td>
-					<td>{t.accuracy}/100</td>
+					<td><ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" decimals={0} color="#49e280" /></td>
+					<td><ProgressBar value={t.accuracy} max={100} suffix="%" decimals={0} color="#49e280" /></td>
 					<td>
 						{#each t.comments as c}
 							{c.description}
@@ -112,15 +112,11 @@
 		border-collapse: collapse;
 	}
 	tr {
-		height: 25px;
-		border-bottom: 1px solid #dddddd;
-	}
-	tr:nth-child(even) {
-		/* background: #eeeeee; */
+		height: 32px;
 	}
 	th,
 	td {
 		margin-right: 10px;
-		padding: 3px 0;
+		padding: 6px 10px 6px 0;
 	}
 </style>

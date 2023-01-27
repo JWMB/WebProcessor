@@ -17,11 +17,6 @@
 
 	let createdTrainingUsernames: string[] = [];
 	async function createTrainings(num: number, groupName: string, numMinutes: number, forUser?: string | null) {
-		if (!groupName) {
-			alert('A name is required');
-			return;
-		}
-
 		const templates = await apiFacade.trainings.getTemplates();
 		const chosenTemplate = templates[0];
 		if (!chosenTemplate.settings) {
@@ -41,12 +36,21 @@
 			{#if createdTrainingUsernames.length === 0}
 				<h2>Create group</h2>
 				<form action="javascript:void(0);">
-					Class/group name:<input id="className" type="text" required bind:value={newGroupData.name} />
-					Number of trainings: <input id="numTrainings" required bind:value={newGroupData.noOfTrainings} min="1" max="40" />
-					Time per day: <input id="timePerDay" required type="number" bind:value={newGroupData.timePerDay} min="15" max="45" />
-					<div class="button-row">
-						<button class="primary" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, '')}>Create</button>
-						<button class="secondary" type="submit" on:click={closeModal}>Cancel</button>
+					<label>
+						Class/group name
+						<input id="className" type="text" required bind:value={newGroupData.name} />
+					</label>
+					<label>
+						Number of trainings
+						<input id="numTrainings" required bind:value={newGroupData.noOfTrainings} min="1" max="40" />
+					</label>
+					<label>
+						Time per day
+						<input id="timePerDay" required type="number" bind:value={newGroupData.timePerDay} min="15" max="45" />
+					</label>
+					<div class="actions">
+						<button class="primary" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, '')}>Create</button>
+						<button class="secondary" on:click={closeModal}>Cancel</button>
 					</div>
 				</form>
 			{:else}
@@ -55,7 +59,7 @@
 				{#each createdTrainingUsernames as username}
 					<li>{username}</li>
 				{/each}
-				<div class="button-row">
+				<div class="actions">
 					<button type="submit" on:click={closeModal}>Close</button>
 				</div>
 			{/if}
@@ -68,12 +72,6 @@
 		margin-top: 0;
 	}
 
-	.button-row {
-		margin-top: 20px;
-		display: flex;
-		gap: 5px;
-		justify-content: center;
-	}
 	input {
 		display: block;
 		margin-top: 2px;
@@ -109,6 +107,7 @@
 	.actions {
 		margin-top: 32px;
 		display: flex;
+		gap: 5px;
 		justify-content: flex-end;
 	}
 </style>
