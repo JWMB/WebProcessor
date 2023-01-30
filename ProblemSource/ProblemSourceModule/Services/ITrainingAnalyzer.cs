@@ -28,7 +28,8 @@ namespace ProblemSourceModule.Services
                     return latestDaySummary.TrainingDay;
             }
 
-            var timeSinceSync = DateTimeOffset.UtcNow - latestDaySummary.EndTimeStamp; // TODO: use some updatedAt / LastLogin value (EndTimeStamp is client's local timestamp)
+            var timeSinceSync = DateTimeOffset.UtcNow.DateTime - latestDaySummary.EndTimeStamp;  // TODO: use some updatedAt / LastLogin value (EndTimeStamp is client's local timestamp)
+            //var timeSinceSync = DateTimeOffset.UtcNow - latestDaySummary.EndTimeStamp;
             if (timeSinceSync < TimeSpan.FromHours(1)) // Need to wait until they've probably finished training for the day
                 return null;
 

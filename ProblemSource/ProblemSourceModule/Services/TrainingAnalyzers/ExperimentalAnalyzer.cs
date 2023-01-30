@@ -14,12 +14,13 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 return false;
 
             var trainingDay = justFinishedDay.Value;
+            var trainingDayForChange = trainingDay + 1;
 
             var groupNames = new[] { "Math", "WM", "Reasoning" };
             var groupWeigths = groupNames.Select((o, i) => new { Key = o, Value = i == (trainingDay % groupNames.Length) ? 100 : 0 }).ToArray();
 
             var weightChange = CreateWeightChangeTrigger(groupWeigths.ToDictionary(o => o.Key, o => o.Value));
-            weightChange.actionData.id = $"modDay0_{trainingDay}";
+            weightChange.actionData.id = $"modDay0_{trainingDayForChange}";
             var overrides = new
             {
                 triggers = new[] {

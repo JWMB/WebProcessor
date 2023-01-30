@@ -145,7 +145,7 @@ namespace TrainingApi.Controllers
 
             return Task.FromResult((IEnumerable<Training>)new[] {
                 new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = TrainingSettings.Default },
-                new Training { Id = 1, Username = "template_Test training", TrainingPlanName = "2023 VT template JonasTest", Settings = testSettings }
+                new Training { Id = 2, Username = "template_Test training", TrainingPlanName = "2023 VT template JonasTest", Settings = testSettings }
             });
         }
 
