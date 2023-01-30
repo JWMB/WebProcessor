@@ -1142,9 +1142,7 @@ export interface TrainingSummaryDto {
     lastLogin?: Date | undefined;
 }
 
-export interface TrainingSummaryWithDaysDto {
-    id: number;
-    username: string;
+export interface TrainingSummaryWithDaysDto extends TrainingSummaryDto {
     days: TrainingDayAccount[];
 }
 

@@ -1308,27 +1308,25 @@
       }
     },
     "TrainingSummaryWithDaysDto": {
-      "type": "object",
-      "required": [
-        "id",
-        "username",
-        "days"
-      ],
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int32"
+      "allOf": [
+        {
+          "$ref": "#/definitions/TrainingSummaryDto"
         },
-        "username": {
-          "type": "string"
-        },
-        "days": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/TrainingDayAccount"
+        {
+          "type": "object",
+          "required": [
+            "days"
+          ],
+          "properties": {
+            "days": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TrainingDayAccount"
+              }
+            }
           }
         }
-      }
+      ]
     }
   }
 }
