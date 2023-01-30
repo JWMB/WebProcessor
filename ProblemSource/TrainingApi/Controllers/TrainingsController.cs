@@ -273,7 +273,7 @@ namespace TrainingApi.Controllers
             public string Username { get; set; } = string.Empty;
             public DateTimeOffset Created { get; set; }
             public int TrainedDays { get; set; }
-            public int TargetDays { get; set; }
+            public int TargetDays { get; set; } = 35;
             public decimal AvgResponseMinutes { get; set; }
             public decimal AvgRemainingMinutes { get; set; }
             public decimal TargetMinutesPerDay { get; set; }
