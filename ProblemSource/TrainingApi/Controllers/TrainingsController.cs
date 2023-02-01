@@ -8,6 +8,7 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
+using System.Collections.Generic;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
 
@@ -168,14 +169,19 @@ namespace TrainingApi.Controllers
             var groupedTrainings = await GetUserGroups();
             var trainings = groupedTrainings.SelectMany(o => o.Value).DistinctBy(o => o.Id).ToList();
 
-            var summaries = await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id));
+            var summaryDtos = await GetSummaryDtos(trainings);
 
             var groupToIds = groupedTrainings.ToDictionary(o => o.Key, o => o.Value.Select(t => t.Id).ToList());
 
             return groupToIds.ToDictionary(
                 o => o.Key,
-                o => o.Value.Select(id => TrainingSummaryDto.Create(trainings.Single(t => t.Id == id), summaries.FirstOrDefault(s => s?.Id == id))
-                ).ToList());
+                o => o.Value.Select(id => summaryDtos.FirstOrDefault(o => o.Id == id)).OfType<TrainingSummaryDto>().ToList());
+        }
+
+        private async Task<List<TrainingSummaryDto>> GetSummaryDtos(IEnumerable<Training> trainings)
+        {
+            var summaries = await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id));
+            return trainings.Select(training => TrainingSummaryDto.Create<TrainingSummaryDto>(trainings.Single(t => t.Id == training.Id), summaries.FirstOrDefault(s => s?.Id == training.Id))).ToList();
         }
 
         [HttpPost]
@@ -209,18 +215,15 @@ namespace TrainingApi.Controllers
                 throw;
             }
 
+            var summaries = await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id));
+
             var daysById = results
                 .Where(o => o.Any())
                 .Where(o => o.First().AccountId > 0)
                 .ToDictionary(o => o.First().AccountId, o => o.ToList());
 
-            return trainings.Select(training =>
-                new TrainingSummaryWithDaysDto
-                {
-                    Id = training.Id,
-                    Username = training.Username,
-                    Days = daysById.GetValueOrDefault(training.Id, new List<TrainingDayAccount>())
-                }
+            return trainings.Select(training => 
+                TrainingSummaryWithDaysDto.Create(training, summaries.FirstOrDefault(o => o?.Id == training.Id), daysById.GetValueOrDefault(training.Id, new List<TrainingDayAccount>()))
             ).ToList();
         }
 
@@ -256,7 +259,7 @@ namespace TrainingApi.Controllers
             public string Username { get; set; } = string.Empty;
             public DateTimeOffset Created { get; set; }
             public int TrainedDays { get; set; }
-            public int TargetDays { get; set; }
+            public int TargetDays { get; set; } = 35;
             public decimal AvgResponseMinutes { get; set; }
             public decimal AvgRemainingMinutes { get; set; }
             public decimal TargetMinutesPerDay { get; set; }
@@ -264,9 +267,9 @@ namespace TrainingApi.Controllers
             public DateTimeOffset? FirstLogin { get; set; }
             public DateTimeOffset? LastLogin { get; set; }
 
-            public static TrainingSummaryDto Create(Training training, TrainingSummary? summary)
+            public static T Create<T>(Training training, TrainingSummary? summary) where T : TrainingSummaryDto, new()
             {
-                return new TrainingSummaryDto
+                return new T
                 {
                     Id = training.Id,
                     Username = training.Username,
@@ -283,11 +286,15 @@ namespace TrainingApi.Controllers
             }
         }
 
-        public class TrainingSummaryWithDaysDto
+        public class TrainingSummaryWithDaysDto : TrainingSummaryDto
         {
-            public int Id { get; set; }
-            public string Username { get; set; } = string.Empty;
             public List<TrainingDayAccount> Days { get; set; } = new();
+            public static TrainingSummaryWithDaysDto Create(Training training, TrainingSummary? summary, IEnumerable<TrainingDayAccount>? days)
+            {
+                var dto = Create<TrainingSummaryWithDaysDto>(training, summary);
+                dto.Days = days?.ToList() ?? new List<TrainingDayAccount>();
+                return dto;
+            }
         }
 
         public class TrainingCreateDto

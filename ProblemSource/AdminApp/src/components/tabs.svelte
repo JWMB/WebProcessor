@@ -11,16 +11,7 @@
 	export let urlParam = '';
 
 	$: current = selected || tabs[0]?.id;
-
-	onMount(() => {
-		// if (urlTab)
-	});
-	// $: if (!selected && tabs.length > 0) {
-	// 	selectTab(tabs[0]?.id);
-	// }
-
 	$: onPageChange(), $page;
-
 	function onPageChange() {
 		console.log('onPageChange');
 		if (urlParam) {
@@ -67,19 +58,19 @@
 		border-bottom: 1px solid #bebebe;
 		margin-bottom: 5px;
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 	}
 
 	.tabs-container :global(button) {
-		margin-top: 3px;
+		margin-top: 0px;
 		margin-left: 10px;
 	}
 
 	button.tab {
-		background: white;
-		border: 1px solid #bebebe;
-		height: 40px;
-		color: black;
+		background: #ededed;
+		border: 1px solid #ededed;
+		height: 34px;
+		color: rgb(108 108 108);
 		border-radius: 0;
 		border-top-left-radius: 6px;
 		border-top-right-radius: 6px;
@@ -88,10 +79,13 @@
 		margin-left: 0;
 		margin-bottom: -1px;
 		border-bottom: none;
+		min-width: 72px;
 	}
 
 	.tab.selected {
 		background: white;
-		height: 41px;
+		height: 35px;
+		color: black;
+		border-color: #bebebe;
 	}
 </style>
