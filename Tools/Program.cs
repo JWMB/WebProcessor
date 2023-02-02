@@ -19,6 +19,8 @@ if (Console.ReadKey().Key != ConsoleKey.Y)
     return;
 }
 
+new OldDbMLFeatures().TutorialTest();
+
 var section = config.GetRequiredSection("AppSettings:AzureTable");
 var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
