@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { apiFacade as apiFacadeStore, loggedInUser } from '../../globalStore';
 	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto } from 'src/apiClient';
@@ -10,9 +9,10 @@
 	import CreateTrainingsModal from './create-trainings-modal.svelte';
 	import { openModal } from 'svelte-modals';
 	import Switch from 'src/components/switch.svelte';
+	import { getApi } from 'src/globalStore';
+	import type { ApiFacade } from 'src/apiFacade';
 
-	const apiFacade = get(apiFacadeStore);
-	const loggedInUserInfo = get(loggedInUser);
+	const apiFacade = getApi() as ApiFacade;
 
 	let detailedTrainingsData: TrainingSummaryWithDaysDto[] = [];
 	let showStatsForLast7days = false;

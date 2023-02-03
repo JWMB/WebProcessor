@@ -16,7 +16,7 @@
 	const createChart = () => {
 		if (!!chart) return;
 		const context = (<HTMLCanvasElement>document.getElementById(`chart_${data.exercise}`)).getContext('2d');
-		chart = new Chart(context, {
+		chart = new Chart(context as CanvasRenderingContext2D, {
 			type: 'scatter',
 			data: {
 				//labels: data.days.map(o => o.day),

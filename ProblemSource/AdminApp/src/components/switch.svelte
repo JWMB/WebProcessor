@@ -13,7 +13,7 @@
 	.switch {
 		position: relative;
 		display: inline-block;
-		width: 38px;
+		min-width: 38px;
 		height: 26px;
 	}
 
