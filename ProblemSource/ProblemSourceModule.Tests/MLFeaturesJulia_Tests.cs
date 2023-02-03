@@ -218,6 +218,8 @@ namespace ProblemSourceModule.Tests
             var csvOutput = File.ReadLines($"{path}preprocessed_small.csv");
             var exercisesAndColumns = GetColumnsByExercise(Preprocess(csvOutput.Take(1)).First().Skip(1).ToArray());
 
+            //var tmp = analyzed.First().Value.Features.GetRelevantFeatures();
+
             var outputRows = Preprocess(csvOutput).Skip(1)
                 .Select(items => {
                     return new { Id = int.Parse(items[0]), Features = items.Skip(1).ToList() };

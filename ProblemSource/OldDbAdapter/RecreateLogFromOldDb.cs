@@ -118,7 +118,9 @@ namespace OldDbAdapter
             var phaseEnd = CreateLogItem(phase.Time, new PhaseEndLogItem());
             if (phase.UserTests.Any())
             {
-                var ut = phase.UserTests.Single();
+                var ut = phase.UserTests.Count > 1 //Should be Single but data can be corrupt
+                    ? phase.UserTests.OrderByDescending(o => o.Questions).First()
+                    : phase.UserTests.Single();
                 phaseEnd.noOfCorrect = ut.Corrects;
                 phaseEnd.noOfIncorrect = ut.Incorrects;
                 phaseEnd.noOfQuestions = ut.Questions;

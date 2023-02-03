@@ -1,4 +1,5 @@
-﻿using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
+﻿using Newtonsoft.Json.Linq;
+using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
 
 namespace ProblemSource.Models.Aggregates
 {
@@ -45,6 +46,71 @@ namespace ProblemSource.Models.Aggregates
                 TrainingTime20Min = trainingSettings.timeLimits.FirstOrDefault() == 20M,
                 Age6_7 = age == 6,
             };
+        }
+
+        public object GetRelevantFeatures()
+        {
+            var npals = "npals";
+            var wmGrid = "WM_grid";
+            var numberline = "numberline";
+            var mathTest01 = "mathTest01";
+            var nvr_rp = "nvr_rp";
+            var nvr_so = "nvr_so";
+            var numberComparison01 = "numberComparison01";
+            var tangram = "tangram";
+            var rotation = "rotation";
+
+            var root = new JObject();
+
+            AddProperties(new[] { npals, wmGrid, numberline, mathTest01, nvr_rp, nvr_so, numberComparison01 },
+                "FractionCorrect_", ffe => ffe.FractionCorrect);
+
+            // Note: tangram instead of wmGrid
+            AddProperties(new[] { npals, tangram, numberline, mathTest01, nvr_rp, nvr_so, numberComparison01 },
+                "NumProblemsWithAnswers_", ffe => ffe.NumProblemsWithAnswers);
+
+            AddProperties(new[] { wmGrid, npals, numberline, rotation, nvr_rp, mathTest01, numberComparison01 },
+                "StandardDeviation_", ffe => ffe.StandardDeviation);
+
+            AddProperties(new[] { npals, numberline, nvr_so, nvr_rp },
+                "HighestLevelInt_", ffe => ffe.HighestLevelInt);
+
+            // all_data[nr_exercises] = all_data[nr_exercises] / all_data[highest_level]
+            AddProperties(new[] { npals, tangram, numberline, rotation, nvr_rp },
+                "NumProblemsToHighestLevelDivHighestLevel_", ffe => ffe.NumProblemsToHighestLevelDivHighestLevel);
+
+            root.Add("MeanTimeIncrease", MeanTimeIncrease);
+
+            // Note: description for NVR SO slightly different - "time correct" instead of "median time correct"
+            AddProperties(new[] { tangram, rotation, nvr_so, mathTest01, numberComparison01 },
+                "MedianTimeCorrect_", ffe => ffe.MedianTimeCorrect);
+
+            //new[] { wmGrid, npals, rotation, mathTest01 }
+            //    .ToObjectArray(o => o.MedianTimeIncorrect),
+            AddProperties(new[] { wmGrid, npals, rotation, mathTest01 },
+                "MedianTimeIncorrectSubCorrect_", ffe => ffe.MedianTimeIncorrectSubCorrect);
+
+            AddProperties(new[] { npals, rotation, numberline, nvr_rp, nvr_so, numberComparison01 },
+                "NumHighResponseTimes_", ffe => ffe.NumHighResponseTimes);
+
+            AddProperties(new[] { mathTest01, npals, nvr_rp, nvr_so, rotation, tangram },
+                "Skew_", ffe => ffe.Skew);
+
+            AddProperties(new[] { npals, numberline, nvr_rp },
+                "MedianLevel_", ffe => ffe.MedianLevel);
+
+            root.Add("TrainingTime20Min", TrainingTime20Min);
+            root.Add("Age6_7", Age6_7);
+
+            return root;
+
+            void AddProperties(IEnumerable<string> exercises, string columnPrefix, Func<FeaturesForExercise, object?> func)
+            {
+                foreach (var exercise in exercises)
+                    root!.Add($"{columnPrefix}_{exercise}", new JValue(func(GetFeatures(exercise))));
+            }
+
+            FeaturesForExercise GetFeatures(string exercise) => ByExercise.GetValueOrDefault(exercise.ToLower(), new FeaturesForExercise());
         }
 
         public string[] ToArray()
@@ -188,7 +254,7 @@ namespace ProblemSource.Models.Aggregates
             public decimal FractionCorrect { get; set; }
             public int NumProblemsWithAnswers { get; set; }
             public decimal StandardDeviation { get; set; }
-            public int HighestLevelInt { get; set; }
+            public int? HighestLevelInt { get; set; }
             /// <summary>
             /// 0-indexed!
             /// </summary>
@@ -203,7 +269,7 @@ namespace ProblemSource.Models.Aggregates
 
             public int NumHighResponseTimes { get; set; }
 
-            public double Skew { get; set; }
+            public double? Skew { get; set; }
 
             public decimal MedianLevel { get; set; }
 
@@ -230,7 +296,7 @@ namespace ProblemSource.Models.Aggregates
                 public List<double> ResponseTimesCorrect { get; set; } = new();
 
                 public double Mean => ResponseTimes.Average();
-                public double MeanNoOutliers => ResponseTimesNoOutliers.Average();
+                public double? MeanNoOutliers => ResponseTimesNoOutliers.Any() ? ResponseTimesNoOutliers.Average() : null;
 
                 public IEnumerable<double> ResponseTimesNoOutliers => ResponseTimes.Where(IsNotOutlier);
                 public IEnumerable<double> ResponseTimesCorrectNoOutliers => ResponseTimesCorrect.Where(IsNotOutlier);
@@ -329,9 +395,11 @@ namespace ProblemSource.Models.Aggregates
                 stats.FractionCorrect = 1M * allProblems.Count(problem => problem.answers.Any(answer => answer.correct)) / allProblems.Count();
 
                 // Highest level reached (with at least one correct answered on that level)
-                stats.HighestLevelInt = allProblems
-                    .Where(HasCorrectAnswer)
-                    .Max(problem => (int)problem.level);
+                var allProbsCorrectAnswer = allProblems
+                    .Where(HasCorrectAnswer);
+                stats.HighestLevelInt = allProbsCorrectAnswer.Any()
+                    ? allProbsCorrectAnswer.Max(problem => (int)problem.level)
+                    : null;
 
                 // Number of exercises: The number of exercises it took to reach the highest level defined above
                 // "Exercise" here means combination of training_day, exercise and level
@@ -366,11 +434,14 @@ namespace ProblemSource.Models.Aggregates
                 //TODO: not sure this is what is expected
 
                 // Std(tot) = (std(1)*3/10 + std(2)*2/10 + std(3)*5/10) / median_time_correct(tot)
-                stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
-                    .Where(o => o.ResponseTimesCorrectNoOutliers.Any())
-                    .Select(o => o.StandardDeviationCorrectNoOutliers * o.ResponseTimesCorrectNoOutliers.Count() / responseTimesTotal.ResponseTimesCorrectNoOutliers.Count())
-                    .Sum()
-                    / stats.MedianTimeCorrect;
+                if (stats.MedianTimeCorrect > 0)
+                    stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
+                        .Where(o => o.ResponseTimesCorrectNoOutliers.Any())
+                        .Select(o => o.StandardDeviationCorrectNoOutliers * o.ResponseTimesCorrectNoOutliers.Count() / responseTimesTotal.ResponseTimesCorrectNoOutliers.Count())
+                        .Sum()
+                        / stats.MedianTimeCorrect;
+                // TODO: null if MedianTimeCorrect == 0?
+
                 //var totalResponsesNoOutliersCount = responseTimesTotal.ResponseTimesNoOutliers.Count();
                 //stats.StandardDeviation = (decimal)responseTimesPerLevel.Values
                 //    .Select(o => {
@@ -456,10 +527,12 @@ namespace ProblemSource.Models.Aggregates
             return Math.Sqrt(sum / (count - 1));
         }
 
-        public static double Skewness(this IEnumerable<double> values)
+        public static double? Skewness(this IEnumerable<double> values)
         {
             var enumerable = values as double[] ?? values.ToArray();
 
+            if (values.Any() == false)
+                return null;
             var avg = values.Average();
             var sd = values.StdDev();
             var cnt = (double)values.Count();
