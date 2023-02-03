@@ -31,26 +31,23 @@
 	}
 
 	async function onSelectGroup(groupId: string) {
-		console.log('onSelectGroup', groupId);
-		await tick();
 		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId);
-		await tick();
-		console.log(detailedTrainingsData, trainings);
 	}
 
 	function calculateTrainingStats(data: TrainingSummaryWithDaysDto[], numberOfDays = 7) {
+		console.log('data', data);
 		const average = (arr: number[]) => {
 			return arr.reduce((p, c) => p + c, 0) / arr.length;
 		};
 		return data.map((t) => {
 			const dateRange = t.days.slice(-numberOfDays);
 			const accuracy = average(dateRange.map((d) => d.numCorrectAnswers / (d.numQuestions || 1))) || 0;
-			const effectiveTime = average(dateRange.map((d) => d.responseMinutes / (d.responseMinutes + d.remainingMinutes || 1))) || 0;
+			const effectiveTime = average(dateRange.map((d) => d.responseMinutes / (t.targetMinutesPerDay || 32))) || 0;
 			return {
 				id: t.id,
 				username: t.username,
 				trainedDays: t.days.length,
-				trainedDaysMax: 30,
+				trainedDaysMax: t.targetDays || 30,
 				accuracy,
 				effectiveTime,
 				isAccuracyLow: accuracy < 0.4,
@@ -99,18 +96,30 @@
 			<label for="range">
 				{getString('teacher_stats_range_label')}
 				<span class:activeLabel={!showStatsForLast7days}>{getString('teacher_stats_range_all_days')}</span>
-				<Switch name="range" bind:checked={showStatsForLast7days} />
+				<Switch name="range" color="#c7a0fc" inactiveColor="#c7a0fc" bind:checked={showStatsForLast7days} />
 				<span class:activeLabel={showStatsForLast7days}>{getString('teacher_stats_range_last_week')}</span>
 			</label>
 		</div>
-
 		<table>
 			<tr>
-				<th class="user-column">{getString('teacher_trainings_column_header_user')}</th>
-				<th class="days-trained-column">{getString('teacher_trainings_column_header_days_trained')}</th>
-				<th class="effective-time-column">{getString('teacher_trainings_column_header_effective_time')}</th>
-				<th class="accuracy-column">{getString('teacher_trainings_column_header_accuracy')}</th>
-				<th class="notes-column">{getString('teacher_trainings_column_header_notes')}</th>
+				<th class="user-column">
+					{getString('teacher_trainings_column_header_user')}
+				</th>
+				<th class="days-trained-column">
+					{getString('teacher_trainings_column_header_days_trained')}
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_days_trained')}>?</span>
+				</th>
+				<th class="effective-time-column">
+					{getString('teacher_trainings_column_header_effective_time')}
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_effective_time')}>?</span>
+				</th>
+				<th class="accuracy-column">
+					{getString('teacher_trainings_column_header_accuracy')}
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')}>?</span>
+				</th>
+				<th class="notes-column">
+					{getString('teacher_trainings_column_header_notes')}
+				</th>
 			</tr>
 			{#each trainings as t (t.id)}
 				<tr on:click={() => onSelectTraining(t.id)}>
@@ -136,11 +145,22 @@
 		display: flex;
 		align-items: center;
 		gap: 20px;
+		justify-content: space-between;
 	}
 	.training-header label {
 		display: flex;
 		align-items: center;
 		gap: 5px;
+	}
+	.tooltip {
+		border-radius: 50%;
+		width: 20px;
+		height: 20px;
+		display: inline-flex;
+		background-color: gray;
+		color: white;
+		justify-content: center;
+		align-items: center;
 	}
 	.activeLabel {
 		font-weight: bold;
@@ -177,6 +197,6 @@
 	th,
 	td {
 		margin-right: 10px;
-		padding: 6px 10px 6px 0;
+		padding: 4px 10px 4px 0;
 	}
 </style>

@@ -9,94 +9,94 @@
   ],
   "login_error_email_missing": [
     "Email is missing",
-    ""
+    "Epostadress saknas"
   ],
   "login_error_password_missing": [
     "Password is missing",
-    ""
+    "Lösenord saknas"
   ],
   "login_label_email": [
     "Email",
-    ""
+    "Email"
   ],
   "login_label_password": [
     "Password",
-    ""
+    "Lösenord"
   ],
   "login_button_loading": [
     "Logging in...",
-    ""
+    "Loggar in..."
   ],
   "login_button_label": [
     "Log in",
-    ""
+    "Logga in"
   ],
   "login_success_text": [
     "You've been successfully logged in.",
-    ""
+    "Du är nu inloggad."
   ],
   "navbar_login_label": [
     "Log in",
-    ""
+    "Logga in"
   ],
   "navbar_logout_label": [
     "Log out",
-    ""
+    "Logga ut"
   ],
   "teacher_groups_header": [
     "Your groups/classes",
-    ""
+    "Dina grupper/klasser"
   ],
   "teacher_create_group_label": [
     "Create new group",
-    ""
+    "Skapa ny grupp"
   ],
   "teacher_training_header": [
     "Trainings",
-    ""
+    "Träningar"
   ],
   "teacher_stats_range_label": [
     "Show stats for:",
-    ""
+    "Visa statistik för:"
   ],
   "teacher_stats_range_all_days": [
     "All days",
-    ""
+    "Alla dagar"
   ],
   "teacher_stats_range_last_week": [
     "Last 7 days",
-    ""
+    "De senaste 7 dagarna"
   ],
   "teacher_trainings_column_header_user": [
     "User",
-    ""
+    "Användare"
   ],
   "teacher_trainings_column_header_days_trained": [
     "Days trained",
-    ""
+    "Tränade dagar"
   ],
   "teacher_trainings_column_header_effective_time": [
     "Effective time/day",
-    ""
+    "Effektiv tid/dag"
   ],
   "teacher_trainings_column_header_accuracy": [
     "Accuracy",
-    ""
+    "Andel rätt"
   ],
   "teacher_trainings_column_header_notes": [
     "Notes",
+    "Noteringar"
+  ],
+  "teacher_trainings_column_tooltip_effective_time": [
+    "Shows the percentage of training time the user has actively responded to problems.",
     ""
   ],
-  "": [
-    "",
+  "teacher_trainings_column_tooltip_accuracy": [
+    "Shows the percentage of correct answers.",
     ""
   ],
-  "": [
-    "",
-    ""
-  ],
-  "": [
-    "",
+  "teacher_trainings_column_tooltip_days_trained": [
+    "Shows how many days the user has trained and the total number of training days.",
     ""
   ],
   "endOfFile": []

@@ -80,6 +80,7 @@
 		padding: 0px 10px;
 		margin-top: 0;
 		margin-left: 0;
+		margin-right: 1px;
 		margin-bottom: -1px;
 		border-bottom: none;
 		min-width: 72px;
