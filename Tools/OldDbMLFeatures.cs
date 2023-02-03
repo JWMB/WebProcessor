@@ -36,7 +36,6 @@ namespace Tools
             {
                 features.Add(await CreateFeaturesForTraining(id));
             }
-
         }
 
         private bool X(ColumnInformation colInfo, string name, Func<ColumnInformation, ICollection<string>> getCollection)
@@ -87,51 +86,67 @@ namespace Tools
             var path = @"C:\Users\uzk446\Downloads\";
             var trainDataPath = Path.Join(path, "taxi-fare-train.csv");
             var testDataPath = Path.Join(path, "taxi-fare-test.csv");
+            var savedModelPath = Path.Join(path, "taxi-fare-model.zip");
             var ctx = new MLContext(seed: 0);
 
             // https://learn.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/how-to-use-the-automl-api
             var labelColumnName = "fare_amount";
-            var columnInference = ctx.Auto().InferColumns(trainDataPath, labelColumnName: labelColumnName, groupColumns: false);
-            X(columnInference.ColumnInformation, "rate_code", ci => ci.CategoricalColumnNames);
-            //columnInference.ColumnInformation.NumericColumnNames.Remove("rate_code");
-            //columnInference.ColumnInformation.CategoricalColumnNames.Add("rate_code");
-            X(columnInference.ColumnInformation, "vendor_id", ci => ci.CategoricalColumnNames);
-            X(columnInference.ColumnInformation, "payment_type", ci => ci.CategoricalColumnNames);
 
-            //mlContext.Auto().CreateRegressionExperiment(new RegressionExperimentSettings { });
-            var loader = ctx.Data.CreateTextLoader(columnInference.TextLoaderOptions);
-            // Load data into IDataView
-            var data = loader.Load(trainDataPath);
-            //var trainValidationData = ctx.Data.TrainTestSplit(data, testFraction: 0.2);
-            var trainValidationData = loader.Load(testDataPath);
-            var pipeline = ctx.Auto()
-                .Featurizer(data, columnInformation: columnInference.ColumnInformation)
-                .Append(ctx.Auto().Regression(labelColumnName: labelColumnName));
-            var experiment = ctx.Auto()
-                .CreateExperiment()
-                .SetPipeline(pipeline)
-                .SetRegressionMetric(RegressionMetric.RSquared, labelColumn: labelColumnName)
-                .SetTrainingTimeInSeconds(60)
-                .SetDataset(trainValidationData);
-            // ctx.Auto().Regression(labelColumnName: labelColumnName, useLgbm: false);
-            ctx.Log += (_, e) => {
-                if (e.Source.Equals("AutoMLExperiment"))
-                    Console.WriteLine(e.RawMessage);
-            };
+            ITransformer bestModel;
+            DataViewSchema schema;
+            if (File.Exists(savedModelPath))
+            {
+                bestModel = ctx.Model.Load(savedModelPath, out schema);
+            }
+            else
+            {
+                var columnInference = ctx.Auto().InferColumns(trainDataPath, labelColumnName: labelColumnName, groupColumns: false);
+                X(columnInference.ColumnInformation, "rate_code", ci => ci.CategoricalColumnNames);
+                //columnInference.ColumnInformation.NumericColumnNames.Remove("rate_code");
+                //columnInference.ColumnInformation.CategoricalColumnNames.Add("rate_code");
+                X(columnInference.ColumnInformation, "vendor_id", ci => ci.CategoricalColumnNames);
+                X(columnInference.ColumnInformation, "payment_type", ci => ci.CategoricalColumnNames);
 
-            var experimentResults = experiment.Run();
+                //mlContext.Auto().CreateRegressionExperiment(new RegressionExperimentSettings { });
+                var loader = ctx.Data.CreateTextLoader(columnInference.TextLoaderOptions);
+                // Load data into IDataView
+                var data = loader.Load(trainDataPath);
 
-            var bestModel = experimentResults.Model;
-            var transformedData = bestModel.Transform(data);
+                //var trainValidationData = ctx.Data.TrainTestSplit(data, testFraction: 0.2);
+                var trainValidationData = loader.Load(testDataPath);
+                var pipeline = ctx.Auto()
+                    .Featurizer(data, columnInformation: columnInference.ColumnInformation)
+                    .Append(ctx.Auto().Regression(labelColumnName: labelColumnName));
+                var experiment = ctx.Auto()
+                    .CreateExperiment()
+                    .SetPipeline(pipeline)
+                    .SetRegressionMetric(RegressionMetric.RSquared, labelColumn: labelColumnName)
+                    .SetTrainingTimeInSeconds(60)
+                    .SetDataset(trainValidationData);
+                // ctx.Auto().Regression(labelColumnName: labelColumnName, useLgbm: false);
+                ctx.Log += (_, e) =>
+                {
+                    if (e.Source.Equals("AutoMLExperiment"))
+                        Console.WriteLine(e.RawMessage);
+                };
+
+                var experimentResults = experiment.Run();
+
+                schema = data.Schema;
+                bestModel = experimentResults.Model;
+                ctx.Model.Save(bestModel, data.Schema, savedModelPath);
+            }
+
             //// https://github.com/dotnet/machinelearning-samples/issues/783
+            //var transformedData = bestModel.Transform(data);
             //var pfi = ctx.Regression.PermutationFeatureImportance(bestModel, transformedData, permutationCount: 3, labelColumnName: columnInference.ColumnInformation.LabelColumnName);
             //var featureImportance = pfi.Select(x => Tuple.Create(x.Key, x.Value.RSquared))
             //    .OrderByDescending(x => x.Item2);
 
             var predictionType = ClassFactory.CreateType(
-                new[] { columnInference.ColumnInformation.LabelColumnName },
-                new[] { data.Schema[columnInference.ColumnInformation.LabelColumnName].Type.RawType });
-            CreateGenericPrediction(ctx, data.Schema, predictionType, bestModel, new {
+                new[] { labelColumnName },
+                new[] { schema[labelColumnName].Type.RawType });
+            CreateGenericPrediction(ctx, schema, predictionType, bestModel, new {
                 vendor_id = "CMT",
                 rate_code = 1,
                 passenger_count = 1,
