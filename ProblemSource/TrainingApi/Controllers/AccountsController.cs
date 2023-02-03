@@ -6,6 +6,7 @@ using System.Security.Claims;
 using ProblemSourceModule.Services.Storage;
 using TrainingApi.Services;
 using ProblemSourceModule.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace TrainingApi.Controllers
 {
@@ -133,7 +134,11 @@ namespace TrainingApi.Controllers
 
     public class LoginCredentials
     {
+        [Required]
+        [StringLength(50, MinimumLength = 6)]
         public string Username { get; set; } = string.Empty;
+        [Required]
+        [StringLength(14, MinimumLength = 6)]
         public string Password { get; set; } = string.Empty;
     }
 

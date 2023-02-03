@@ -58,7 +58,7 @@ namespace Tools
             return false;
         }
 
-        private void CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, Type predictionType, ITransformer model, object inputObject)
+        private object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, Type predictionType, ITransformer model, object inputObject)
         {
             // Create runtime type from fields and types in a DataViewSchema
             var methodName = "CreatePredictionEngine";
@@ -78,7 +78,7 @@ namespace Tools
             var inputInstance = ClassFactory.CreateInstance(runtimeType, inputObject);
 
             var predictMethod = dynamicPredictionEngine.GetType().GetMethod("Predict", new[] { runtimeType });
-            var predict = predictMethod.Invoke(dynamicPredictionEngine, new[] { inputInstance });
+            return predictMethod.Invoke(dynamicPredictionEngine, new[] { inputInstance });
         }
 
         public void TutorialTest()
@@ -143,10 +143,24 @@ namespace Tools
             //var featureImportance = pfi.Select(x => Tuple.Create(x.Key, x.Value.RSquared))
             //    .OrderByDescending(x => x.Item2);
 
+
+//            var item = new NewClass(
+//"CMT",
+//1,
+//1,
+//1271,
+//3.8f,
+//"CRD",
+//0 //17.5
+//);
+            //var predictionFunction = ctx.Model.CreatePredictionEngine<NewClass, TaxiTripFarePrediction>(model);
+            //var prediction = predictionFunction.Predict(item);
+
             var predictionType = ClassFactory.CreateType(
-                new[] { labelColumnName },
+                new[] { "Score" }, //labelColumnName
                 new[] { schema[labelColumnName].Type.RawType });
-            CreateGenericPrediction(ctx, schema, predictionType, bestModel, new {
+            CreateGenericPrediction(ctx, schema, predictionType, bestModel, new
+            {
                 vendor_id = "CMT",
                 rate_code = 1,
                 passenger_count = 1,
@@ -155,7 +169,8 @@ namespace Tools
                 payment_type = "CRD",
                 fare_amount = 0 //17.5
             });
-            
+
+
             var model = Train(ctx, trainDataPath);
             Evaluate(ctx, model, testDataPath);
 
@@ -358,6 +373,45 @@ namespace Tools
             setIl.Emit(OpCodes.Ret);
             propertyBuilder.SetGetMethod(getPropMthdBldr);
             propertyBuilder.SetSetMethod(setPropMthdBldr);
+        }
+    }
+
+    internal class NewClass
+    {
+        public string Vendor_id { get; }
+        public int Rate_code { get; }
+        public int Passenger_count { get; }
+        public int Trip_time_in_secs { get; }
+        public float Trip_distance { get; }
+        public string Payment_type { get; }
+        public int Fare_amount { get; }
+
+        public NewClass(string vendor_id, int rate_code, int passenger_count, int trip_time_in_secs, float trip_distance, string payment_type, int fare_amount)
+        {
+            Vendor_id = vendor_id;
+            Rate_code = rate_code;
+            Passenger_count = passenger_count;
+            Trip_time_in_secs = trip_time_in_secs;
+            Trip_distance = trip_distance;
+            Payment_type = payment_type;
+            Fare_amount = fare_amount;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is NewClass other &&
+                   Vendor_id == other.Vendor_id &&
+                   Rate_code == other.Rate_code &&
+                   Passenger_count == other.Passenger_count &&
+                   Trip_time_in_secs == other.Trip_time_in_secs &&
+                   Trip_distance == other.Trip_distance &&
+                   Payment_type == other.Payment_type &&
+                   Fare_amount == other.Fare_amount;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Vendor_id, Rate_code, Passenger_count, Trip_time_in_secs, Trip_distance, Payment_type, Fare_amount);
         }
     }
 }
