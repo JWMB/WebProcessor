@@ -1,9 +1,6 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto } from 'src/apiClient';
-	import { goto } from '$app/navigation';
-	import { base } from '$app/paths';
 	import Tabs from 'src/components/tabs.svelte';
 	import ProgressBar from './progress-bar.svelte';
 	import CreateTrainingsModal from './create-trainings-modal.svelte';
@@ -11,6 +8,7 @@
 	import Switch from 'src/components/switch.svelte';
 	import { getApi } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
+	import { getString } from 'src/utilities/LanguageService';
 
 	const apiFacade = getApi() as ApiFacade;
 
@@ -34,7 +32,10 @@
 
 	async function onSelectGroup(groupId: string) {
 		console.log('onSelectGroup', groupId);
+		await tick();
 		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId);
+		await tick();
+		console.log(detailedTrainingsData, trainings);
 	}
 
 	function calculateTrainingStats(data: TrainingSummaryWithDaysDto[], numberOfDays = 7) {
@@ -61,7 +62,8 @@
 	}
 
 	function onSelectTraining(trainingId: number) {
-		goto(`${base}/training?id=${trainingId}`);
+		console.log('training id', trainingId);
+		// goto(`${base}/training?id=${trainingId}`);
 	}
 
 	function onCreateGroup() {
@@ -79,7 +81,7 @@
 </script>
 
 <div class="teacher-view">
-	<h2>Your groups/classes</h2>
+	<h2>{getString('teacher_groups_header')}</h2>
 
 	{#if groups && groups.length > 0}
 		<Tabs
@@ -88,27 +90,27 @@
 				return { id: g.group };
 			})}
 			on:selected={(e) => onSelectGroup(e.detail)}
-			><button on:click={onCreateGroup}>Create new group</button>
+			><button on:click={onCreateGroup}>{getString('teacher_create_group_label')}</button>
 		</Tabs>
 	{/if}
 	{#if trainings && trainings.length > 0}
 		<div class="training-header">
-			<h2>Trainings</h2>
-			<label>
-				Show stats for:
-				<span class:activeLabel={!showStatsForLast7days}>All days</span>
-				<Switch bind:checked={showStatsForLast7days} />
-				<span class:activeLabel={showStatsForLast7days}>Last 7 days</span>
+			<h2>{getString('teacher_training_header')}</h2>
+			<label for="range">
+				{getString('teacher_stats_range_label')}
+				<span class:activeLabel={!showStatsForLast7days}>{getString('teacher_stats_range_all_days')}</span>
+				<Switch name="range" bind:checked={showStatsForLast7days} />
+				<span class:activeLabel={showStatsForLast7days}>{getString('teacher_stats_range_last_week')}</span>
 			</label>
 		</div>
 
 		<table>
 			<tr>
-				<th class="user-column">User</th>
-				<th class="days-trained-column">Days trained</th>
-				<th class="effective-time-column">Effective time/day</th>
-				<th class="accuracy-column">Accuracy</th>
-				<th class="notes-column">Notes</th>
+				<th class="user-column">{getString('teacher_trainings_column_header_user')}</th>
+				<th class="days-trained-column">{getString('teacher_trainings_column_header_days_trained')}</th>
+				<th class="effective-time-column">{getString('teacher_trainings_column_header_effective_time')}</th>
+				<th class="accuracy-column">{getString('teacher_trainings_column_header_accuracy')}</th>
+				<th class="notes-column">{getString('teacher_trainings_column_header_notes')}</th>
 			</tr>
 			{#each trainings as t (t.id)}
 				<tr on:click={() => onSelectTraining(t.id)}>

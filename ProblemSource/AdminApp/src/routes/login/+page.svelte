@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { getApi, userStore } from 'src/globalStore';
+	import { handleRedirects } from 'src/services/redirects';
+	import { getString } from 'src/utilities/LanguageService';
 
 	let email = '';
 	let password = '';
@@ -7,16 +10,18 @@
 	let isLoading = false;
 	let isSuccess = false;
 
-	let errors = { email: '', password: '', server: '' };
+	let errors: { email?: string; password?: string; server?: string } = {};
 
 	const handleSubmit = () => {
+		handleRedirects('/login');
+		return;
 		Object.keys(errors).forEach((k) => ((<any>errors)[k] = null));
 
 		if (email.length === 0) {
-			errors.email = 'Field should not be empty';
+			errors.email = getString('login_error_email_missing');
 		}
 		if (password.length === 0) {
-			errors.password = 'Field should not be empty';
+			errors.password = getString('login_error_password_missing');
 		}
 
 		if (Object.keys(errors).filter((k) => !!(<any>errors)[k]).length === 0) {
@@ -26,6 +31,7 @@
 				.then((r) => {
 					isSuccess = true;
 					isLoading = false;
+					handleRedirects('/login');
 				})
 				.catch((err) => {
 					errors.server = err;
@@ -39,27 +45,31 @@
 	<form on:submit|preventDefault={handleSubmit}>
 		{#if isSuccess}
 			<div class="success">
-				🔓
-				<br />
-				You've been successfully logged in.
+				{getString('login_success_text')}
 			</div>
 		{:else}
 			<label
-				>Email
+				>{getString('login_label_email')}
 				<input name="email" placeholder="name@example.com" bind:value={email} />
 			</label>
 			<label
-				>Password
+				>{getString('login_label_password')}
 				<input name="password" type="password" bind:value={password} />
 			</label>
 			<button type="submit">
-				{#if isLoading}Logging in...{:else}Log in{/if}
+				{#if isLoading}
+					{getString('login_button_loading')}
+				{:else}
+					{getString('login_button_label')}
+				{/if}
 			</button>
 
 			{#if Object.keys(errors).length > 0}
 				<ul class="errors">
 					{#each Object.entries(errors) as [field, value]}
-						<li>{field}: {value}</li>
+						{#if value}
+							<li>{value}</li>
+						{/if}
 					{/each}
 				</ul>
 			{/if}

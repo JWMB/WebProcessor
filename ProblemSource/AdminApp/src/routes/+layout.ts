@@ -3,36 +3,20 @@ import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { userStore } from 'src/globalStore';
 import { Startup } from 'src/startup';
+import { initStrings } from 'src/utilities/LanguageService';
 import { get } from 'svelte/store';
+import langstrings from 'src/utilities/language_strings.json';
 import type { LayoutLoad } from '../../.svelte-kit/types/src/routes/$types'
+import { handleRedirects } from 'src/services/redirects';
 
 export const load: LayoutLoad = async ({ routeId }) => {
+    console.log('load layout', routeId)
     if (browser) {
+        initStrings(langstrings);
         new Startup().init(globalThis);
-        await userStore.inited;
-
-        // route guards
-        const user = get(userStore);
-        if (!user) {
-            if (routeId !== '/login') {
-                goto(base + '/login');
-            }
-        } else {
-            if (routeId === '/login') {
-                if (user.role === 'Admin') {
-                    goto(base + '/admin');
-                } else {
-                    goto(base + '/teacher');
-                }
-            } else {
-                if (user.role !== 'Admin' && routeId?.indexOf('/admin') !== 0) {
-                    goto(base + '/login');
-                }
-            }
-        }
+        await handleRedirects(routeId || '');
         return {
             pageInited: true
         }
     }
-
 }

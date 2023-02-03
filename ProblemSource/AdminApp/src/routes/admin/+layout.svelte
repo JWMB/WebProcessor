@@ -63,7 +63,6 @@
 		width: 100%;
 		height: 40px;
 		display: flex;
-		background: white;
 		align-items: center;
 		gap: 10px;
 	}

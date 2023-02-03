@@ -9,26 +9,29 @@
 	import { Modals, closeModal } from 'svelte-modals';
 	import { getApi, userStore } from 'src/globalStore';
 	import type { PageData } from './$types';
+	import { getString } from 'src/utilities/LanguageService';
+	import { goto } from '$app/navigation';
 
 	export let data: PageData;
 
 	async function logout() {
 		await getApi()?.accounts.logout();
+		goto(base + '/login');
 	}
 </script>
 
-<div class="login-status">
-	{#if $userStore}
-		<a href="{base}/" on:click={logout}>Log out {$userStore?.username}</a>
-	{:else}
-		<a href="{base}/login">Log in</a>
-	{/if}
-</div>
-
-<NotificationBar />
 {#if data.pageInited}
+	<div class="login-status">
+		{#if $userStore}
+			<a href="{base}/" on:click={logout}>{getString('navbar_logout_label')} {$userStore?.username}</a>
+		{:else}
+			<a href="{base}/login">{getString('navbar_login_label')}</a>
+		{/if}
+	</div>
 	<slot />
 {/if}
+
+<NotificationBar />
 
 <Modals>
 	<div slot="backdrop" class="modal-backdrop" on:click={closeModal} />
