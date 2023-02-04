@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using ProblemSource.Services.Storage.AzureTables;
+using System.IO;
 using Tools;
 
 var config = CreateConfig();
@@ -18,6 +19,11 @@ if (Console.ReadKey().Key != ConsoleKey.Y)
     Console.WriteLine("kbye");
     return;
 }
+
+//var path = @"C:\Users\uzk446\Downloads\";
+//new MLDynamic().TutorialTest(new[] { Path.Join(path, "taxi-fare-train.csv"), Path.Join(path, "taxi-fare-test.csv") },
+//"fare_amount", new[] { "rate_code", "vendor_id", "payment_type" },
+//    Path.Join(path, "taxi-fare-model.zip"));
 
 await new OldDbMLFeatures().Run();
 

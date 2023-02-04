@@ -1,48 +1,48 @@
-﻿using Microsoft.ML;
+﻿using Microsoft.ApplicationInsights;
+using Microsoft.ML;
 using Microsoft.ML.AutoML;
 
 namespace Tools
 {
     public class MLDynamic
     {
-        public void TutorialTest(string trainDataPath, string testDataPath, string labelColumnName, string[]? categoricalColumnNames = null, string? savedModelPath = null)
-        {
-            var ctx = new MLContext(seed: 0);
+        private readonly MLContext ctx;
+        private ITransformer? model;
+        private DataViewSchema? schema;
+        private string? labelColumnName;
 
+        public MLDynamic()
+        {
+            ctx = new MLContext(seed: 0);
+        }
+
+        public void Train(string[] dataPaths, string labelColumnName, IEnumerable<string>? categoricalColumnNames = null, string? savedModelPath = null)
+        {
             // https://learn.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/how-to-use-the-automl-api
 
-            ITransformer bestModel;
-            DataViewSchema schema;
+            this.labelColumnName = labelColumnName;
+
             if (!string.IsNullOrEmpty(savedModelPath) && File.Exists(savedModelPath))
             {
-                bestModel = ctx.Model.Load(savedModelPath, out schema);
+                model = ctx.Model.Load(savedModelPath, out schema);
             }
             else
             {
-                var result = Train(ctx, trainDataPath, testDataPath, labelColumnName, categoricalColumnNames);
-                bestModel = result.model;
-                schema = result.data.Schema;
+                var (data, colInfo) = LoadData(ctx, dataPaths, labelColumnName, categoricalColumnNames);
+                schema = data.Schema;
 
-                //CalcFeatureImportance(ctx, bestModel, result.data, labelColumnName);
+                var result = Train(ctx, data, colInfo, labelColumnName);
+                model = result.Model;
+
+                var info = $"{nameof(result.Metric)}:{result.Metric}, {nameof(result.Loss)}:{result.Loss}";
+                //CalcFeatureImportance(ctx, model, result.data, labelColumnName);
 
                 if (!string.IsNullOrEmpty(savedModelPath))
-                    ctx.Model.Save(bestModel, schema, savedModelPath);
+                    ctx.Model.Save(model, schema, savedModelPath);
             }
-
-
-            var prediction = CreateGenericPrediction(ctx, schema, bestModel, new
-            {
-                vendor_id = "CMT",
-                rate_code = 1,
-                passenger_count = 1,
-                trip_time_in_secs = 1271,
-                trip_distance = 3.8f,
-                payment_type = "CRD",
-                fare_amount = 0 //17.5
-            }, labelColumnName);
         }
 
-        private void CalcFeatureImportance(MLContext ctx, ITransformer model, IDataView data, string labelColumnName)
+        public void CalcFeatureImportance(MLContext ctx, ITransformer model, IDataView data, string labelColumnName)
         {
             // https://github.com/dotnet/machinelearning-samples/issues/783
             var transformedData = model.Transform(data);
@@ -51,35 +51,40 @@ namespace Tools
                 .OrderByDescending(x => x.Item2);
         }
 
-        private (IDataView data, ITransformer model) Train(MLContext ctx, string trainDataPath, string testDataPath, string labelColumnName, string[]? categoricalColumnNames = null)
+        private static (IDataView, ColumnInformation) LoadData(MLContext ctx, string[] dataPaths, string labelColumnName, IEnumerable<string>? categoricalColumnNames = null)
         {
-            var columnInference = ctx.Auto().InferColumns(trainDataPath, labelColumnName: labelColumnName, groupColumns: false);
+            var columnInference = ctx.Auto().InferColumns(dataPaths.First(), labelColumnName: labelColumnName, groupColumns: false);
 
-            //MoveColumnCollection(columnInference.ColumnInformation, "rate_code", ci => ci.CategoricalColumnNames);
-            //MoveColumnCollection(columnInference.ColumnInformation, "vendor_id", ci => ci.CategoricalColumnNames);
-            //MoveColumnCollection(columnInference.ColumnInformation, "payment_type", ci => ci.CategoricalColumnNames);
             if (categoricalColumnNames != null)
             {
                 foreach (var name in categoricalColumnNames)
                     MoveColumnCollection(columnInference.ColumnInformation, name, ci => ci.CategoricalColumnNames);
             }
 
+            // Column inference may get labelColumn type wrong
+            columnInference.TextLoaderOptions.Columns.Single(o => o.Name == labelColumnName).DataKind = Microsoft.ML.Data.DataKind.Single;
+
             //mlContext.Auto().CreateRegressionExperiment(new RegressionExperimentSettings { });
             var loader = ctx.Data.CreateTextLoader(columnInference.TextLoaderOptions);
-            // Load data into IDataView
-            var data = loader.Load(trainDataPath);
+            //var data = loader.Load(trainDataPath);
 
-            //var trainValidationData = ctx.Data.TrainTestSplit(data, testFraction: 0.2);
-            var trainValidationData = loader.Load(testDataPath);
+            //var trainValidationDataX = ctx.Data.TrainTestSplit(data, testFraction: 0.2);
+            var data = loader.Load(dataPaths);
+
+            return (data, columnInference.ColumnInformation);
+        }
+
+        private static TrialResult Train(MLContext ctx, IDataView data, ColumnInformation colInfo, string labelColumnName) //, IEnumerable<string>? categoricalColumnNames = null)
+        {
             var pipeline = ctx.Auto()
-                .Featurizer(data, columnInformation: columnInference.ColumnInformation)
+                .Featurizer(data, columnInformation: colInfo)
                 .Append(ctx.Auto().Regression(labelColumnName: labelColumnName));
             var experiment = ctx.Auto()
                 .CreateExperiment()
                 .SetPipeline(pipeline)
                 .SetRegressionMetric(RegressionMetric.RSquared, labelColumn: labelColumnName)
                 .SetTrainingTimeInSeconds(60)
-                .SetDataset(trainValidationData);
+                .SetDataset(data);
             // ctx.Auto().Regression(labelColumnName: labelColumnName, useLgbm: false);
             ctx.Log += (_, e) =>
             {
@@ -89,9 +94,9 @@ namespace Tools
 
             var experimentResults = experiment.Run();
 
-            return (data, experimentResults.Model);
-            //schema = data.Schema;
-            //bestModel = experimentResults.Model;
+            if (experimentResults == null)
+                throw new NullReferenceException(nameof(experimentResults));
+            return experimentResults;
         }
 
         private static bool MoveColumnCollection(ColumnInformation colInfo, string name, Func<ColumnInformation, ICollection<string>> getCollection)
@@ -114,15 +119,18 @@ namespace Tools
             return false;
         }
 
-        private object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model, object inputObject, string labelColumnName)
+        public object CreateGenericPrediction(object inputObject)
         {
+            if (schema == null) throw new NullReferenceException($"{nameof(schema)} is null");
+            if (model == null) throw new NullReferenceException($"{nameof(model)} is null");
+            if (string.IsNullOrEmpty(labelColumnName)) throw new NullReferenceException($"{nameof(labelColumnName)} is null");
             var predictionType = ClassFactory.CreateType(
                     new[] { "Score" },
-                    new[] { dataViewSchema[labelColumnName].Type.RawType });
-            return CreateGenericPrediction(mlContext, dataViewSchema, model, inputObject, predictionType);
+                    new[] { schema[labelColumnName].Type.RawType });
+            return CreateGenericPrediction(ctx, schema, model, inputObject, predictionType);
         }
 
-        private object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model, object inputObject, Type predictionType)
+        private static object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model, object inputObject, Type predictionType)
         {
             // Create runtime type from fields and types in a DataViewSchema
             var methodName = "CreatePredictionEngine";

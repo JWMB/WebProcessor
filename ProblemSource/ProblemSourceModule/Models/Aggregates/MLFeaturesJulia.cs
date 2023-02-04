@@ -1,8 +1,29 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
 
 namespace ProblemSource.Models.Aggregates
 {
+    public class ColumnTypeAttribute : Attribute
+    {
+        public enum ColumnType
+        {
+            Numeric,
+            Text,
+            Categorical,
+            Ignored,
+            ImagePath,
+            Label
+        }
+
+        public ColumnType Type { get; private set; }
+
+        public ColumnTypeAttribute(ColumnType type)
+        {
+            Type = type;
+        }
+    }
+
     public class MLFeaturesJulia
     {
         public Dictionary<string, FeaturesForExercise> ByExercise { get; set; } = new();
@@ -16,12 +37,18 @@ namespace ProblemSource.Models.Aggregates
         /// <summary>
         /// 12) Training time 20 min: Dummy coded with a 1 if the training time is 20 min and 0 if the training time is 33 min per day.
         /// </summary>
+        [ColumnType(ColumnTypeAttribute.ColumnType.Categorical)]
         public bool TrainingTime20Min { get; set; }
 
         /// <summary>
         /// 13) Age 6 - 7: Dummy coded with a 1 if the age is 6 - 7 and a 0 if the age is 7 - 8(other age groups have been excluded from the data set)
         /// </summary>
+        [ColumnType(ColumnTypeAttribute.ColumnType.Categorical)]
         public bool Age6_7 { get; set; }
+
+        [ColumnType(ColumnTypeAttribute.ColumnType.Label)]
+        public float Score { get; set; }
+
 
         public static MLFeaturesJulia FromPhases(TrainingSettings trainingSettings, IEnumerable<Phase> phases, int age, List<ExerciseGlobals>? exerciseGlobals = null, int dayCutoff = 5)
         {
@@ -38,6 +65,14 @@ namespace ProblemSource.Models.Aggregates
                     .ToDictionary(o => o.Key, o =>
                         FeaturesForExercise.Create(o.Select(p => p.Phase), exerciseGlobals.SingleOrDefault(p => p.Exercise == o.Key) ?? new ExerciseGlobals()));
 
+            var score = phases
+                .Where(o => o.exercise.ToLower().StartsWith("numberline"))
+                .Where(o => o.training_day >= 35 && o.training_day <= 37)
+                .Where(o => o.problems.Any())
+                .GroupBy(o => o.training_day)
+                .Select(o => new { Day = o.Key, MaxLevel = o.Max(phase => phase.problems.Max(p => p.level)) })
+                .OrderBy(o => o.Day)
+                .FirstOrDefault()?.MaxLevel ?? 0;
 
             return new MLFeaturesJulia
             {
@@ -45,6 +80,7 @@ namespace ProblemSource.Models.Aggregates
                 MeanTimeIncrease = featuresByExercise.Values.Any() ? featuresByExercise.Values.Average(o => o.MeanTimeIncrease) : 0,
                 TrainingTime20Min = trainingSettings.timeLimits.FirstOrDefault() == 20M,
                 Age6_7 = age == 6,
+                Score = (float)score,
             };
         }
 
@@ -101,6 +137,7 @@ namespace ProblemSource.Models.Aggregates
 
             root.Add("TrainingTime20Min", TrainingTime20Min);
             root.Add("Age6_7", Age6_7);
+            root.Add("Score", Score);
 
             return root;
 
