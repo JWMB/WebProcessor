@@ -43,16 +43,18 @@ namespace Tools
             }
 
             var foundDays = phases.Select(o => o.training_day).Distinct().ToList();
-            if (scoringDays.Intersect(foundDays).Any() == false)
+            if (scoringDays.Intersect(foundDays).Any() == false
+                || phases.Count < 10
+                || phases.Take(10).SelectMany(o => o.problems).Count() < 5
+                )
                 phases = new List<Phase>(); // Mark as not usable
-            else if (phases.Count < 10)
+            else if (phases.Where(o => o.training_day < 10 && o.exercise == "numberComparison01").Any() == false)
                 phases = new List<Phase>(); // Mark as not usable
-            else if (phases.Take(10).SelectMany(o => o.problems).Count() < 5)
-                phases = new List<Phase>(); // Mark as not usable
+
             return phases;
         }
 
-        public async Task Run()
+        public async Task Run(CancellationToken cancellation = default)
         {
             var path = @"C:\Users\uzk446\Downloads\";
             var csvFile = Path.Join(path, "AllTrainings.csv");
@@ -137,25 +139,9 @@ SELECT DISTINCT(account_id) AS id -- [account_id] --, MAX(other_id) as maxDay
                 Categorical = columnTypePerProperty.Where(o => o.Value == ColumnType.Categorical).Select(o => o.Key),
                 Ignore = columnTypePerProperty.Where(o => o.Value == ColumnType.Ignored).Select(o => o.Key),
             };
-            await ml.Train(new[] { csvFile }, colInfo, Path.Join(path, "JuliaMLModel.zip"), TimeSpan.FromMinutes(60));
+            await ml.Train(new[] { csvFile }, colInfo, Path.Join(path, "JuliaMLModel.zip"), TimeSpan.FromMinutes(60), cancellation);
 
             //ml.CreateGenericPrediction(new { });
-            
-            //new MLTyped().Test(Path.Join(path, "taxi-fare-train.csv"), Path.Join(path, "taxi-fare-test.csv"));
-            //new MLDynamic().TutorialTest(new[] { Path.Join(path, "taxi-fare-train.csv"), Path.Join(path, "taxi-fare-test.csv") },
-            //    "fare_amount", new[] { "rate_code", "vendor_id", "payment_type" },
-            //    Path.Join(path, "taxi-fare-model.zip"));
-            //var prediction = CreateGenericPrediction(ctx, schema, model, new
-            //{
-            //    vendor_id = "CMT",
-            //    rate_code = 1,
-            //    passenger_count = 1,
-            //    trip_time_in_secs = 1271,
-            //    trip_distance = 3.8f,
-            //    payment_type = "CRD",
-            //    fare_amount = 0 //17.5
-            //}, labelColumnName);
-
         }
     }
 }

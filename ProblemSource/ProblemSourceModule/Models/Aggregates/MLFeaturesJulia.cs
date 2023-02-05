@@ -46,8 +46,25 @@ namespace ProblemSource.Models.Aggregates
         [ColumnType(ColumnTypeAttribute.ColumnType.Categorical)]
         public bool Age6_7 { get; set; }
 
+        [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
+        public float FinalNumberLineLevel { get; set; }
+
         [ColumnType(ColumnTypeAttribute.ColumnType.Label)]
-        public float Score { get; set; }
+        public int Outcome
+        {
+            get
+            {
+                return FinalNumberLineLevel switch
+                {
+                    < 24 => 0,
+                    < 38 => 1,
+                    < 48 => 2,
+                    < 80 => 3,
+                    < 95 => 4,
+                    _ => 5
+                };
+            }
+        }
 
         [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
         public int Id { get; set; }
@@ -67,7 +84,7 @@ namespace ProblemSource.Models.Aggregates
                     .ToDictionary(o => o.Key, o =>
                         FeaturesForExercise.Create(o.Select(p => p.Phase), exerciseGlobals.SingleOrDefault(p => p.Exercise == o.Key) ?? new ExerciseGlobals()));
 
-            var score = phases
+            var levelNumberlineAroundDay35 = phases
                 .Where(o => o.exercise.ToLower().StartsWith("numberline"))
                 .Where(o => o.training_day >= 35 && o.training_day <= 37)
                 .Where(o => o.problems.Any())
@@ -82,7 +99,7 @@ namespace ProblemSource.Models.Aggregates
                 MeanTimeIncrease = featuresByExercise.Values.Any() ? featuresByExercise.Values.Average(o => o.MeanTimeIncrease) : 0,
                 TrainingTime20Min = trainingSettings.timeLimits.FirstOrDefault() == 20M,
                 Age6_7 = age == 6,
-                Score = (float)score,
+                FinalNumberLineLevel = (float)levelNumberlineAroundDay35,
             };
         }
 
@@ -137,9 +154,11 @@ namespace ProblemSource.Models.Aggregates
             AddProperties(new[] { npals, numberline, nvr_rp },
                 "MedLvl", ffe => ffe.MedianLevel);
 
-            root.Add("TT20Min", TrainingTime20Min);
-            root.Add("Age6_7", Age6_7);
-            root.Add("Score", Score);
+            // Need to have same name as properties so that the ColumnTypeAttribute values can be used for the JSON properties
+            root.Add(nameof(TrainingTime20Min), TrainingTime20Min);
+            root.Add(nameof(Age6_7), Age6_7);
+            root.Add(nameof(FinalNumberLineLevel), FinalNumberLineLevel);
+            root.Add(nameof(Outcome), Outcome);
 
             return root;
 
@@ -292,25 +311,25 @@ namespace ProblemSource.Models.Aggregates
 
             public decimal? FractionCorrect { get; set; }
             public int NumProblemsWithAnswers { get; set; }
-            public decimal StandardDeviation { get; set; }
+            public decimal? StandardDeviation { get; set; }
             public int? HighestLevelInt { get; set; }
             /// <summary>
             /// 0-indexed!
             /// </summary>
-            public int NumProblemsToHighestLevel { get; set; }
+            public int? NumProblemsToHighestLevel { get; set; }
             public decimal? NumProblemsDivHighestLevel => HighestLevelInt == 0 ? null : 1M * NumProblems / HighestLevelInt;
             public decimal? NumProblemsToHighestLevelDivHighestLevel => HighestLevelInt == 0 ? null : 1M * NumProblemsToHighestLevel / HighestLevelInt;
 
 
-            public int MedianTimeCorrect { get; set; }
-            public int MedianTimeIncorrect { get; set; }
-            public int MedianTimeIncorrectSubCorrect => MedianTimeIncorrect - MedianTimeCorrect;
+            public int? MedianTimeCorrect { get; set; }
+            public int? MedianTimeIncorrect { get; set; }
+            public int? MedianTimeIncorrectSubCorrect => MedianTimeIncorrect.HasValue && MedianTimeCorrect.HasValue ? MedianTimeIncorrect - MedianTimeCorrect : null;
 
-            public int NumHighResponseTimes { get; set; }
+            public int? NumHighResponseTimes { get; set; }
 
             public double? Skew { get; set; }
 
-            public decimal MedianLevel { get; set; }
+            public decimal? MedianLevel { get; set; }
 
             /// <summary>
             ///  Mean time increase: The difference in response time between the question following an incorrectly answered question
@@ -456,20 +475,20 @@ namespace ProblemSource.Models.Aggregates
                 stats.NumProblems = phases.Sum(o => o.problems.Count());
 
                 // 7) Median time correct: The median response time for correctly answered questions after outliers have been removed
-                stats.MedianTimeCorrect = (int)allProblems
+                stats.MedianTimeCorrect = (int?)allProblems
                     .Where(HasCorrectAnswer)
                     .Select(o => new { Level = (int)o.level, ResponseTime = (double)o.answers.First().response_time })
                     .Where(o => responseTimesPerLevel[o.Level].IsNotOutlier(o.ResponseTime))
                     .Select(o => o.ResponseTime)
-                    .Median();
+                    .MedianOrNull();
 
                 // 8) Median time incorrect: The median response time for correctly answered questions minus the median response time for incorrectly answered questions after outliers have been removed
-                stats.MedianTimeIncorrect = (int)allProblems
+                stats.MedianTimeIncorrect = (int?)allProblems
                     .Where(HasNoCorrectAnswer)
                     .Select(o => new { Level = (int)o.level, ResponseTime = (double)o.answers.First().response_time })
                     .Where(o => responseTimesPerLevel[o.Level].IsNotOutlier(o.ResponseTime))
                     .Select(o => o.ResponseTime)
-                    .Median();
+                    .MedianOrNull();
                 //TODO: not sure this is what is expected
 
                 // Std(tot) = (std(1)*3/10 + std(2)*2/10 + std(3)*5/10) / median_time_correct(tot)
@@ -478,7 +497,7 @@ namespace ProblemSource.Models.Aggregates
                         .Where(o => o.ResponseTimesCorrectNoOutliers.Any())
                         .Select(o => o.StandardDeviationCorrectNoOutliers * o.ResponseTimesCorrectNoOutliers.Count() / responseTimesTotal.ResponseTimesCorrectNoOutliers.Count())
                         .Sum()
-                        / stats.MedianTimeCorrect;
+                        / stats.MedianTimeCorrect.Value;
                 // TODO: null if MedianTimeCorrect == 0?
 
                 //var totalResponsesNoOutliersCount = responseTimesTotal.ResponseTimesNoOutliers.Count();
@@ -505,13 +524,13 @@ namespace ProblemSource.Models.Aggregates
                     }).Sum();
 
                 //10) Skew: The skew for response times after outliers have been removed
-                stats.Skew = responseTimesTotal.ResponseTimesCorrectNoOutliers.Skewness();
+                stats.Skew = responseTimesTotal.ResponseTimes.Any() ? responseTimesTotal.ResponseTimesCorrectNoOutliers.Skewness() : null;
 
                 //11) Median level: The median level of correctly answered questions
                 stats.MedianLevel = allProblems.Where(problem => problem.answers.Any(answer => answer.correct))
                     .Select(problem => (decimal)(int)problem.level)
                     .Order()
-                    .Median();
+                    .MedianOrNull();
 
                 var incorrectToNextRTDiffs = allProblems
                     .AggregateWithPrevious((p, c) => p.answers.Any(a => a.correct) == true ? null : (int?)(c.answers.First().response_time - p.answers.First().response_time))
@@ -539,6 +558,10 @@ namespace ProblemSource.Models.Aggregates
 
         public static object?[] ToObjectArray<T>(this IEnumerable<FeaturesForExercise> values, Func<FeaturesForExercise, T> selector) =>
             values.Select(selector).Select(o => (object?)o).ToArray();
+
+        public static double? MedianOrNull(this IEnumerable<double> values) => values.Any() ? values.Median() : null;
+        public static decimal? MedianOrNull(this IEnumerable<decimal> values) => values.Any() ? values.Median() : null;
+
 
         public static decimal Median(this IEnumerable<decimal> values) => (decimal)values.Order().Select(o => (double)o).Median();
 

@@ -22,7 +22,7 @@ namespace Tools
             public IEnumerable<string>? Ignore { get; set; }
         }
 
-        public async Task Train(string[] dataPaths, ColumnInfo columnInfo, string? savedModelPath = null, TimeSpan? trainingTime = null)
+        public async Task Train(string[] dataPaths, ColumnInfo columnInfo, string? savedModelPath = null, TimeSpan? trainingTime = null, CancellationToken cancellation = default)
         {
             // https://learn.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/how-to-use-the-automl-api
 
@@ -38,7 +38,7 @@ namespace Tools
                 var (data, colInfo) = LoadData(ctx, dataPaths, columnInfo);
                 Schema = data.Schema;
 
-                var result = await Train(ctx, data, colInfo, labelColumnName, trainingTime);
+                var result = await Train(ctx, data, colInfo, labelColumnName, trainingTime, cancellation);
                 Model = result.Model;
 
                 var info = $"{nameof(result.Metric)}:{result.Metric}, {nameof(result.Loss)}:{result.Loss}";
@@ -90,7 +90,8 @@ namespace Tools
             }
         }
 
-        private static async Task<TrialResult> Train(MLContext ctx, IDataView data, ColumnInformation colInfo, string labelColumnName, TimeSpan? trainingTime = null) //, IEnumerable<string>? categoricalColumnNames = null)
+        private static async Task<TrialResult> Train(MLContext ctx, IDataView data, ColumnInformation colInfo, string labelColumnName, TimeSpan? trainingTime = null, CancellationToken cancellation = default)
+            //, IEnumerable<string>? categoricalColumnNames = null)
         {
             var maxSeconds = (uint)(int)(trainingTime ?? TimeSpan.FromSeconds(60)).TotalSeconds;
             //var result = ctx.Auto()
@@ -114,7 +115,7 @@ namespace Tools
             ctx.Log += (_, e) =>
             {
                 //if (e.Kind != Microsoft.ML.Runtime.ChannelMessageKind.Trace)
-                if (e.Source.Equals("AutoMLExperiment"))
+                if (e.Source.Equals("AutoMLExperiment") && !e.RawMessage.Contains("current CPU:"))
                 {
                     var elapsed = DateTime.Now - start;
                     elapsed = new TimeSpan(elapsed.Hours, elapsed.Minutes, elapsed.Seconds);
@@ -142,7 +143,7 @@ namespace Tools
             };
 
             //experiment.SetTrialRunner
-            var experimentResults = await experiment.RunAsync();
+            var experimentResults = await experiment.RunAsync(cancellation);
 
             Console.WriteLine(string.Join("\n", messages));
 

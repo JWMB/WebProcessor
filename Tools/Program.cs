@@ -20,6 +20,15 @@ if (Console.ReadKey().Key != ConsoleKey.Y)
     return;
 }
 
+var cts = new CancellationTokenSource();
+Console.CancelKeyPress += (s, e) =>
+{
+    Console.WriteLine("Canceling...");
+    cts.Cancel();
+    e.Cancel = true;
+};
+var cancellationToken = cts.Token;
+
 //var path = @"C:\Users\uzk446\Downloads\";
 //var ml = new MLDynamic();
 //await ml.Train(new[] { Path.Join(path, "taxi-fare-train.csv"), Path.Join(path, "taxi-fare-test.csv") },
@@ -36,7 +45,7 @@ if (Console.ReadKey().Key != ConsoleKey.Y)
 //    fare_amount = 0 //17.5
 //});
 
-await new OldDbMLFeatures().Run();
+await new OldDbMLFeatures().Run(cancellationToken);
 return;
 
 var section = config.GetRequiredSection("AppSettings:AzureTable");
