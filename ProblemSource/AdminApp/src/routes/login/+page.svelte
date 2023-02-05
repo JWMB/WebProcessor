@@ -13,7 +13,6 @@
 	let errors: { email?: string; password?: string; server?: string } = {};
 
 	const handleSubmit = () => {
-		handleRedirects('/login');
 		Object.keys(errors).forEach((k) => ((<any>errors)[k] = null));
 
 		if (email.length === 0) {

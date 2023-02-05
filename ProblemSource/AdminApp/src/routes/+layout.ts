@@ -10,7 +10,6 @@ import type { LayoutLoad } from '../../.svelte-kit/types/src/routes/$types'
 import { handleRedirects } from 'src/services/redirects';
 
 export const load: LayoutLoad = async ({ routeId }) => {
-    console.log('load layout', routeId)
     if (browser) {
         initStrings(langstrings);
         new Startup().init(globalThis);
