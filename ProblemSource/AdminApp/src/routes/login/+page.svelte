@@ -14,7 +14,6 @@
 
 	const handleSubmit = () => {
 		handleRedirects('/login');
-		return;
 		Object.keys(errors).forEach((k) => ((<any>errors)[k] = null));
 
 		if (email.length === 0) {
