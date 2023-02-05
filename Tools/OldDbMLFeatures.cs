@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNetCore.Connections.Features;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OldDbAdapter;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
-using System.Data.Common;
+using System.Collections.Generic;
 using System.Globalization;
 using static ProblemSource.Models.Aggregates.ColumnTypeAttribute;
 
@@ -25,12 +24,12 @@ namespace Tools
                 Directory.CreateDirectory(folderPath);
 
             var filename = Path.Join(folderPath, $"{trainingId}.json");
+            List<Phase> phases;
             if (File.Exists(filename))
             {
-                var deserialized = JsonConvert.DeserializeObject<List<Phase>>(File.ReadAllText(filename));
-                if (deserialized == null)
+                phases = JsonConvert.DeserializeObject<List<Phase>>(File.ReadAllText(filename));
+                if (phases == null)
                     throw new Exception($"Couldn't deserialized '{filename}'");
-                return deserialized;
             }
             else
             {
@@ -38,21 +37,25 @@ namespace Tools
 
                 var logItems = await RecreateLogFromOldDb.GetAsLogItems(dbContext, trainingId, days);
 
-                var phases = LogEventsToPhases.Create(logItems).PhasesCreated;
-
-                var foundDays = phases.Select(o => o.training_day).Distinct().ToList();
-                if (scoringDays.Intersect(foundDays).Any() == false)
-                    phases = new List<Phase>(); // Mark as not usable
+                phases = LogEventsToPhases.Create(logItems).PhasesCreated;
 
                 File.WriteAllText(filename, JsonConvert.SerializeObject(phases));
-                return phases;
             }
+
+            var foundDays = phases.Select(o => o.training_day).Distinct().ToList();
+            if (scoringDays.Intersect(foundDays).Any() == false)
+                phases = new List<Phase>(); // Mark as not usable
+            else if (phases.Count < 10)
+                phases = new List<Phase>(); // Mark as not usable
+            else if (phases.Take(10).SelectMany(o => o.problems).Count() < 5)
+                phases = new List<Phase>(); // Mark as not usable
+            return phases;
         }
 
         public async Task Run()
         {
             var path = @"C:\Users\uzk446\Downloads\";
-            var csvFile = Path.Join(path, "aaa.csv");
+            var csvFile = Path.Join(path, "AllTrainings.csv");
 
             var rootType = typeof(MLFeaturesJulia);
 
@@ -72,27 +75,33 @@ SELECT DISTINCT(account_id) AS id -- [account_id] --, MAX(other_id) as maxDay
 
                 //var trainingIds = new List<int> { 84233, 85045, 86250, 88567, 89587, 89598, };
 
-                var features = new List<object>();
+                var features = new Dictionary<int, object>();
 
                 foreach (var id in trainingIds)
                 {
                     var phases = await GetTrainingPhases(id, Path.Join(path, "Phases"));
+                    if (phases.Any() == false)
+                        continue;
                     var row = MLFeaturesJulia.FromPhases(new TrainingSettings(), phases, 6, null, 5);
 
-                    features.Add(row.GetRelevantFeatures());
+                    features.Add(id, row.GetRelevantFeatures());
                 }
 
-                if (features.First() is JObject jObj)
+                if (features.First().Value is JObject jObj)
                 {
                     CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
                     var columns = jObj.Properties().Select(o => o.Name).ToList();
 
                     using (var writer = new StreamWriter(csvFile))
                     {
-                        writer.WriteLine(Join(columns));
+                        writer.WriteLine(Join(new[] { "Id" }.Concat(columns)));
+                        //writer.WriteLine(Join(columns));
 
-                        foreach (var item in features.Cast<JObject>())
-                            writer.WriteLine(Join(columns.Select(o => item.GetValue(o))));
+                        foreach (var kv in features)
+                        {
+                            var row = new object[] { kv.Key }.Concat(columns.Select(o => ((JObject)kv.Value).GetValue(o)));
+                            writer.WriteLine(Join(row));
+                        }
                     }
 
                     string Join(IEnumerable<object?> values) => string.Join(",", values.Select(Render));
@@ -103,6 +112,8 @@ SELECT DISTINCT(account_id) AS id -- [account_id] --, MAX(other_id) as maxDay
                         {
                             if (jv.Type == JTokenType.Boolean)
                                 value = jv.Value<bool>();
+                            else if (jv.Type == JTokenType.Float)
+                                value = jv.Value<float>().ToString("0.####");
                         }
                         if (value is bool b)
                             return b ? 1 : 0;
@@ -118,11 +129,15 @@ SELECT DISTINCT(account_id) AS id -- [account_id] --, MAX(other_id) as maxDay
             var columnTypePerProperty = rootType
                 .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
                 .ToDictionary(o => o.Name, o => (Attribute.GetCustomAttribute(o, typeof(ColumnTypeAttribute)) as ColumnTypeAttribute)?.Type);
-            var labelName = columnTypePerProperty.Single(o => o.Value == ColumnType.Label).Key;
-            var categoricalNames = columnTypePerProperty.Where(o => o.Value == ColumnType.Categorical).Select(o => o.Key);
 
             var ml = new MLDynamic();
-            ml.Train(new[] { csvFile }, labelName, categoricalNames, Path.Join(path, "JuliaMLModel.zip"));
+            var colInfo = new MLDynamic.ColumnInfo
+            {
+                Label = columnTypePerProperty.Single(o => o.Value == ColumnType.Label).Key,
+                Categorical = columnTypePerProperty.Where(o => o.Value == ColumnType.Categorical).Select(o => o.Key),
+                Ignore = columnTypePerProperty.Where(o => o.Value == ColumnType.Ignored).Select(o => o.Key),
+            };
+            await ml.Train(new[] { csvFile }, colInfo, Path.Join(path, "JuliaMLModel.zip"), TimeSpan.FromMinutes(60));
 
             //ml.CreateGenericPrediction(new { });
             

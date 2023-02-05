@@ -21,11 +21,23 @@ if (Console.ReadKey().Key != ConsoleKey.Y)
 }
 
 //var path = @"C:\Users\uzk446\Downloads\";
-//new MLDynamic().TutorialTest(new[] { Path.Join(path, "taxi-fare-train.csv"), Path.Join(path, "taxi-fare-test.csv") },
-//"fare_amount", new[] { "rate_code", "vendor_id", "payment_type" },
-//    Path.Join(path, "taxi-fare-model.zip"));
+//var ml = new MLDynamic();
+//await ml.Train(new[] { Path.Join(path, "taxi-fare-train.csv"), Path.Join(path, "taxi-fare-test.csv") },
+//    new MLDynamic.ColumnInfo { Label = "fare_amount", Categorical = new[] { "rate_code", "vendor_id", "payment_type" } },
+//    Path.Join(path, "taxi-fare-model.zip"), TimeSpan.FromMinutes(10));
+//var val = ml.Predict(new
+//{
+//    vendor_id = "CMT",
+//    rate_code = 1,
+//    passenger_count = 1,
+//    trip_time_in_secs = 1271,
+//    trip_distance = 3.8f,
+//    payment_type = "CRD",
+//    fare_amount = 0 //17.5
+//});
 
 await new OldDbMLFeatures().Run();
+return;
 
 var section = config.GetRequiredSection("AppSettings:AzureTable");
 var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);

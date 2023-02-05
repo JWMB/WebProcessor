@@ -1,5 +1,4 @@
-﻿using Microsoft.ApplicationInsights;
-using Microsoft.ML;
+﻿using Microsoft.ML;
 using Microsoft.ML.AutoML;
 
 namespace Tools
@@ -7,8 +6,8 @@ namespace Tools
     public class MLDynamic
     {
         private readonly MLContext ctx;
-        private ITransformer? model;
-        private DataViewSchema? schema;
+        public ITransformer? Model { get; private set; }
+        public DataViewSchema? Schema { get; private set; }
         private string? labelColumnName;
 
         public MLDynamic()
@@ -16,29 +15,37 @@ namespace Tools
             ctx = new MLContext(seed: 0);
         }
 
-        public void Train(string[] dataPaths, string labelColumnName, IEnumerable<string>? categoricalColumnNames = null, string? savedModelPath = null)
+        public class ColumnInfo
+        {
+            public string Label { get; set; } = string.Empty;
+            public IEnumerable<string>? Categorical { get; set; }
+            public IEnumerable<string>? Ignore { get; set; }
+        }
+
+        public async Task Train(string[] dataPaths, ColumnInfo columnInfo, string? savedModelPath = null, TimeSpan? trainingTime = null)
         {
             // https://learn.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/how-to-use-the-automl-api
 
-            this.labelColumnName = labelColumnName;
+            labelColumnName = columnInfo.Label;
 
             if (!string.IsNullOrEmpty(savedModelPath) && File.Exists(savedModelPath))
             {
-                model = ctx.Model.Load(savedModelPath, out schema);
+                Model = ctx.Model.Load(savedModelPath, out var schema);
+                Schema = schema;
             }
             else
             {
-                var (data, colInfo) = LoadData(ctx, dataPaths, labelColumnName, categoricalColumnNames);
-                schema = data.Schema;
+                var (data, colInfo) = LoadData(ctx, dataPaths, columnInfo);
+                Schema = data.Schema;
 
-                var result = Train(ctx, data, colInfo, labelColumnName);
-                model = result.Model;
+                var result = await Train(ctx, data, colInfo, labelColumnName, trainingTime);
+                Model = result.Model;
 
                 var info = $"{nameof(result.Metric)}:{result.Metric}, {nameof(result.Loss)}:{result.Loss}";
                 //CalcFeatureImportance(ctx, model, result.data, labelColumnName);
 
                 if (!string.IsNullOrEmpty(savedModelPath))
-                    ctx.Model.Save(model, schema, savedModelPath);
+                    ctx.Model.Save(Model, Schema, savedModelPath);
             }
         }
 
@@ -51,18 +58,20 @@ namespace Tools
                 .OrderByDescending(x => x.Item2);
         }
 
-        private static (IDataView, ColumnInformation) LoadData(MLContext ctx, string[] dataPaths, string labelColumnName, IEnumerable<string>? categoricalColumnNames = null)
+        private static (IDataView, ColumnInformation) LoadData(MLContext ctx, string[] dataPaths, ColumnInfo columnInfo)
         {
-            var columnInference = ctx.Auto().InferColumns(dataPaths.First(), labelColumnName: labelColumnName, groupColumns: false);
+            var columnInference = ctx.Auto().InferColumns(dataPaths.First(), labelColumnName: columnInfo.Label, groupColumns: false);
 
-            if (categoricalColumnNames != null)
-            {
-                foreach (var name in categoricalColumnNames)
+            if (columnInfo.Categorical != null)
+                foreach (var name in columnInfo.Categorical)
                     MoveColumnCollection(columnInference.ColumnInformation, name, ci => ci.CategoricalColumnNames);
-            }
+
+            if (columnInfo.Ignore != null)
+                foreach (var name in columnInfo.Ignore)
+                    MoveColumnCollection(columnInference.ColumnInformation, name, ci => ci.IgnoredColumnNames);
 
             // Column inference may get labelColumn type wrong
-            columnInference.TextLoaderOptions.Columns.Single(o => o.Name == labelColumnName).DataKind = Microsoft.ML.Data.DataKind.Single;
+            columnInference.TextLoaderOptions.Columns.Single(o => o.Name == columnInfo.Label).DataKind = Microsoft.ML.Data.DataKind.Single;
 
             //mlContext.Auto().CreateRegressionExperiment(new RegressionExperimentSettings { });
             var loader = ctx.Data.CreateTextLoader(columnInference.TextLoaderOptions);
@@ -74,28 +83,72 @@ namespace Tools
             return (data, columnInference.ColumnInformation);
         }
 
-        private static TrialResult Train(MLContext ctx, IDataView data, ColumnInformation colInfo, string labelColumnName) //, IEnumerable<string>? categoricalColumnNames = null)
+        public class Progressor : IProgress<CrossValidationRunDetail<Microsoft.ML.Data.RegressionMetrics>>
         {
+            public void Report(CrossValidationRunDetail<Microsoft.ML.Data.RegressionMetrics> value)
+            {
+            }
+        }
+
+        private static async Task<TrialResult> Train(MLContext ctx, IDataView data, ColumnInformation colInfo, string labelColumnName, TimeSpan? trainingTime = null) //, IEnumerable<string>? categoricalColumnNames = null)
+        {
+            var maxSeconds = (uint)(int)(trainingTime ?? TimeSpan.FromSeconds(60)).TotalSeconds;
+            //var result = ctx.Auto()
+            //    .CreateRegressionExperiment(new RegressionExperimentSettings { MaxExperimentTimeInSeconds = maxSeconds })
+            //    .Execute(trainData: data, numberOfCVFolds: 4, columnInformation: colInfo, progressHandler: new Progressor());
+
             var pipeline = ctx.Auto()
                 .Featurizer(data, columnInformation: colInfo)
                 .Append(ctx.Auto().Regression(labelColumnName: labelColumnName));
+
             var experiment = ctx.Auto()
                 .CreateExperiment()
                 .SetPipeline(pipeline)
                 .SetRegressionMetric(RegressionMetric.RSquared, labelColumn: labelColumnName)
-                .SetTrainingTimeInSeconds(60)
-                .SetDataset(data);
-            // ctx.Auto().Regression(labelColumnName: labelColumnName, useLgbm: false);
+                .SetTrainingTimeInSeconds(maxSeconds)
+                //.SetTrialRunner
+                .SetDataset(data, fold: 4);
+
+            var start = DateTime.Now;
+            var messages = new List<string>();
             ctx.Log += (_, e) =>
             {
+                //if (e.Kind != Microsoft.ML.Runtime.ChannelMessageKind.Trace)
                 if (e.Source.Equals("AutoMLExperiment"))
-                    Console.WriteLine(e.RawMessage);
+                {
+                    var elapsed = DateTime.Now - start;
+                    elapsed = new TimeSpan(elapsed.Hours, elapsed.Minutes, elapsed.Seconds);
+                    if (e.RawMessage.StartsWith("Update "))
+                    {
+                        messages.Add($"{elapsed}: {e.RawMessage}");
+                    }
+                    Console.WriteLine($"{elapsed}: {(e.RawMessage.Length > 200 ? e.RawMessage.Remove(200) : e.RawMessage)}");
+                }
+                else if (new[] { "Channel started", "Channel finished", "Channel disposed" }.Any(e.RawMessage.Contains))
+                { }
+                else if (new[] {
+                    "[Source=ValueToKeyMappingEstimator",
+                    "[Source=Converter", "[Source=ColumnConcatenatingEstimator",
+                    "[Source=SelectColumnsDataTransform", "[Source=MissingValueReplacingEstimator", 
+                    "[Source=GenerateNumber", "[Source=RangeFilter", "[Source=OneHotEncodingEstimator" }
+                    .Any(e.RawMessage.StartsWith))
+                { }
+                else if (new[] { "[Source=TextLoader" }.Any(e.Message.StartsWith))
+                { }
+                else
+                {
+                    //Console.WriteLine(e.RawMessage);
+                }
             };
 
-            var experimentResults = experiment.Run();
+            //experiment.SetTrialRunner
+            var experimentResults = await experiment.RunAsync();
+
+            Console.WriteLine(string.Join("\n", messages));
 
             if (experimentResults == null)
                 throw new NullReferenceException(nameof(experimentResults));
+
             return experimentResults;
         }
 
@@ -119,15 +172,15 @@ namespace Tools
             return false;
         }
 
-        public object CreateGenericPrediction(object inputObject)
+        public object Predict(object inputObject)
         {
-            if (schema == null) throw new NullReferenceException($"{nameof(schema)} is null");
-            if (model == null) throw new NullReferenceException($"{nameof(model)} is null");
+            if (Schema == null) throw new NullReferenceException($"{nameof(Schema)} is null");
+            if (Model == null) throw new NullReferenceException($"{nameof(Model)} is null");
             if (string.IsNullOrEmpty(labelColumnName)) throw new NullReferenceException($"{nameof(labelColumnName)} is null");
             var predictionType = ClassFactory.CreateType(
                     new[] { "Score" },
-                    new[] { schema[labelColumnName].Type.RawType });
-            return CreateGenericPrediction(ctx, schema, model, inputObject, predictionType);
+                    new[] { Schema[labelColumnName].Type.RawType });
+            return CreateGenericPrediction(ctx, Schema, Model, inputObject, predictionType);
         }
 
         private static object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model, object inputObject, Type predictionType)
