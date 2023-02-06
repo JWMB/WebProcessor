@@ -42,14 +42,14 @@ namespace TrainingApi
                 return false;
             }
 
-            if (file.Name == fallbackFile && path.EndsWith(fallbackFile)) // request.QueryString.HasValue && request.QueryString.ToString().StartsWith(qp))
+            if (file.Name == fallbackFile && path.EndsWith(fallbackFile))
             {
                 // the fallback file was specifically requested
                 rewritten = uri.AbsolutePath.ToString();
                 return false;
             }
 
-            var subPathAndQuery = uri.PathAndQuery.Substring(RootPath.Length); //path.Substring(RootPath.Length);
+            var subPathAndQuery = uri.PathAndQuery.Substring(RootPath.Length);
             rewritten = $"{RootPath}/{fallbackFile}?path={Uri.EscapeDataString(subPathAndQuery)}";
             return true;
         }
