@@ -1,10 +1,20 @@
+import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
-import type { ApiFacade } from './apiFacade';
+import type { LoginCredentials } from './apiClient';
+import { ApiFacade } from './apiFacade';
 import type { CurrentUserInfo } from './currentUserInfo';
+import { Startup } from './startup';
 import { SeverityLevel, type NotificationItem } from './types';
 
-export const apiFacade = writable<ApiFacade>();
-export const loggedInUser = writable<CurrentUserInfo | null>();
+let _apiFacade: ApiFacade;
+export function getApi() {
+    if (browser) {
+        if (!_apiFacade) {
+            _apiFacade = new ApiFacade(Startup.resolveLocalServerBaseUrl(window.location));
+        }
+        return _apiFacade;
+    }
+}
 
 //export const trainingUpdates = writable<TrainingUpdateMessage[]>([]);
 
@@ -39,3 +49,39 @@ export const notificationsStore = (() => {
         removeAt: removeAt
     }
 })();
+
+export const userStore = (() => {
+    const loggedInUser = writable<CurrentUserInfo | null>(null);
+    async function getLoggedInUser(): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if (browser) {
+                getApi()?.accounts.getLoggedInUser()
+                    .then(r => {
+                        console.log("logged in with user:", r)
+                        loggedInUser.set({ username: r.username, loggedIn: true, role: r.role });
+                        setTimeout(() => {
+                            resolve();
+                        }, 1000)
+                    })
+                    .catch(err => {
+                        console.log("not logged in", err);
+                        loggedInUser.set(null);
+                        resolve();
+                    });
+            }
+        });
+    }
+    const inited = getLoggedInUser();
+
+    return {
+        inited,
+        login: async (credentials: LoginCredentials) => {
+            await getApi()?.accounts.login(credentials);
+            await getLoggedInUser()
+        },
+        logout: async () => {
+            await getApi()?.accounts.logout();
+        },
+        subscribe: loggedInUser.subscribe
+    }
+})()

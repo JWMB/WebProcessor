@@ -49,7 +49,7 @@
 <style>
 	.progress-bar {
 		height: 100%;
-		/* border: 1px solid #dddddd; */
+		border: 2px solid #ffffff;
 		border-radius: 10px;
 		overflow: hidden;
 		position: relative;

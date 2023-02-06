@@ -26,16 +26,22 @@ namespace ProblemSourceModule.Models.Aggregates
 
         internal static TrainingSummary Create(int userId, IEnumerable<TrainingDayAccount> trainingDays)
         {
-            return new TrainingSummary
+            var result = new TrainingSummary
             {
                 Id = userId,
-                TrainedDays = trainingDays.Count(),
-                AvgResponseMinutes = trainingDays.Average(o => 1M * o.ResponseMinutes),
-                AvgRemainingMinutes = trainingDays.Average(o => 1M * o.RemainingMinutes),
-                AvgAccuracy = trainingDays.Average(o => o.NumRaces == 0 ? 0 : 1M * o.NumRacesWon / o.NumRaces),
-                FirstLogin = trainingDays.Min(o => o.StartTime),
-                LastLogin = trainingDays.Max(o => o.StartTime)
+                TrainedDays = trainingDays.Count()
             };
+
+            if (trainingDays.Any())
+            {
+                result.AvgResponseMinutes = trainingDays.Average(o => 1M * o.ResponseMinutes);
+                result.AvgRemainingMinutes = trainingDays.Average(o => 1M * o.RemainingMinutes);
+                result.AvgAccuracy = trainingDays.Average(o => o.NumRaces == 0 ? 0 : 1M * o.NumRacesWon / o.NumRaces);
+                result.FirstLogin = trainingDays.Min(o => o.StartTime);
+                result.LastLogin = trainingDays.Max(o => o.StartTime);
+            }
+
+            return result;
         }
     }
 }

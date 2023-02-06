@@ -14,18 +14,21 @@
 	$: onPageChange(), $page;
 	function onPageChange() {
 		console.log('onPageChange');
-		if (urlParam) {
+		if (browser && urlParam) {
 			const urlTab = $page.url.searchParams.get(urlParam);
-			if (urlTab && browser) {
+			if (urlTab) {
 				console.log('urlTab', urlTab);
 				selectTab(decodeURI(urlTab), false);
+			} else if (tabs.length > 0) {
+				selectTab(tabs[0].id, true);
+			} else {
+				console.log('tabs not available at start');
 			}
 		}
 	}
-	onPageChange();
 
 	async function selectTab(tabId: string, changeUrl = true) {
-		console.log('select tab', tabs, tabId);
+		console.log('select tab', tabId, changeUrl);
 		if (!tabs.find((t) => t.id === tabId)) {
 			return;
 		}
@@ -77,6 +80,7 @@
 		padding: 0px 10px;
 		margin-top: 0;
 		margin-left: 0;
+		margin-right: 1px;
 		margin-bottom: -1px;
 		border-bottom: none;
 		min-width: 72px;

@@ -21,33 +21,10 @@ namespace TrainingApi
 
         public IFileInfo GetFileInfo(string subpath)
         {
+            // First, this method is called by UseStaticFiles middleware
+            // If the file exists, we return it - otherwise we return the fallback file
             var file = inner.GetFileInfo(subpath);
             return file.Exists ? file : inner.GetFileInfo(fallbackFile);
-        }
-
-        public bool ShouldRewriteUrl(IFileInfo file, HttpRequest request, out string rewritten)
-        {
-            // TODO: we currently don't care about fallbackFile path - e.g. /sub/index.html and /index.html are treated the same now
-            var path = request.Path.ToString().ToLower();
-            if (file.Name != fallbackFile || !path.StartsWith(RootPath))
-            {
-                rewritten = request.Path.ToString();
-                return false;
-            }
-            var qp = "?path=";
-            if (file.Name == fallbackFile && path.EndsWith(fallbackFile)) // request.QueryString.HasValue && request.QueryString.ToString().StartsWith(qp))
-            {
-                rewritten = request.Path.ToString();
-                return false;
-            }
-            var subPath = path.Substring(RootPath.Length);
-            rewritten = $"{RootPath}/{fallbackFile}{qp}{Uri.EscapeDataString(subPath)}";
-            return true;
-        }
-
-        public static string SplitJoin(string str, char split, Func<IEnumerable<string>, IEnumerable<string>> func)
-        {
-            return string.Join(split, func(str.Split(split)));
         }
     }
 }

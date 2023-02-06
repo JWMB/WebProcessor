@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { apiFacade as apiFacadeStore } from '../globalStore';
 	import { get } from 'svelte/store';
 	import Chart from 'chart.js/auto'; // automatically register plugins so we don't have to elsewhere
 	//import { Chart, registerables } from 'chart.js' // see https://stackoverflow.com/questions/67060070/chart-js-core-js6162-error-error-line-is-not-a-registered-controller
@@ -9,8 +8,10 @@
 	import ExerciseChart from './exerciseChart.svelte';
 	import TrainingDaysChart from './trainingDaysChart.svelte';
 	import { onMount } from 'svelte';
+	import { getApi } from 'src/globalStore';
+	import type { ApiFacade } from 'src/apiFacade';
 
-	const apiFacade = get(apiFacadeStore);
+	const apiFacade = getApi() as ApiFacade;
 
 	let perExerciseChartData: {
 		exercise: string;

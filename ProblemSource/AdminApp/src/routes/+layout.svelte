@@ -2,117 +2,60 @@
 	export const prerender = false;
 	export const ssr = false;
 
-	import { notificationsStore, apiFacade, loggedInUser } from '../globalStore.js';
 	import { base } from '$app/paths';
 	import { browser } from '$app/environment';
-	import { Realtime } from '../services/realtime.js';
-	import { onDestroy } from 'svelte';
 	import NotificationBar from 'src/components/notificationBar.svelte';
 	import { Startup } from 'src/startup.js';
-	import type { TrainingUpdateMessage } from 'src/types.js';
 	import { Modals, closeModal } from 'svelte-modals';
+	import { getApi, userStore } from 'src/globalStore';
+	import type { PageData } from './$types';
+	import { getString } from 'src/utilities/LanguageService';
+	import { goto } from '$app/navigation';
 
-	const realtime = new Realtime<TrainingUpdateMessage>();
-	let realtimeConnected: boolean | null = false;
+	export let data: PageData;
 
 	async function logout() {
-		if (realtime.isConnected) {
-			realtime.disconnect();
-		}
-		await $apiFacade.accounts.logout();
-		$loggedInUser = null;
+		await getApi()?.accounts.logout();
+		goto(base + '/login');
 	}
-
-	async function toggleRealtimeConnection() {
-		if (realtime.isConnected) {
-			realtimeConnected = null;
-			realtime.disconnect();
-		} else {
-			realtime.onConnected = () => {
-				realtimeConnected = true;
-			};
-			realtime.onDisconnected = (err) => {
-				realtimeConnected = false;
-				console.log('disconnected', err);
-			};
-			realtime.onReceived = (msg) => {
-				console.log('received', msg.username, msg.events);
-				notificationsStore.add({ createdAt: new Date(Date.now()), text: msg.username });
-				// $notifications = [...$notifications, { createdAt: new Date(Date.now()), text: msg.username }];
-			};
-			realtimeConnected = null;
-			try {
-				await realtime.connect(Startup.resolveLocalServerBaseUrl(window.location));
-			} catch (err) {
-				console.log('error connecting', err);
-			}
-		}
-	}
-
-	onDestroy(() => {
-		realtime.disconnect();
-	});
-
-	if (browser) {
-		new Startup().init(globalThis);
+	async function login() {
+		goto(base + '/login');
 	}
 </script>
 
-<nav>
-	{#if $loggedInUser?.loggedIn == true}
-		<a href="{base}/">Home</a>
-
-		{#if $loggedInUser.role == 'Admin'}
-			<a href="{base}/admin">Admin</a>
-			<a href="{base}/admin/teacher">Teacher</a>
-			<a href="{base}/teacher">Teacher2</a>
+{#if data.pageInited}
+	<div class="login-status">
+		{#if $userStore}
+			<span> {$userStore?.username}</span>
+			<button on:click={logout}>{getString('navbar_logout_label')}</button>
+		{:else}
+			<button on:click={login}>{getString('navbar_login_label')}</button>
 		{/if}
-		{#if $loggedInUser.role == 'Admin'}
-			<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? 'Disconnect' : 'Connect'}</button>
-		{/if}
-		<a href="{base}/" on:click={logout}>Log out {$loggedInUser?.username}</a>
-	{:else}
-		<a href="{base}/login">Log in</a>
-	{/if}
-</nav>
-<div class="page-container">
-	<NotificationBar />
+	</div>
 	<slot />
-</div>
+{/if}
+
+<NotificationBar />
 
 <Modals>
-	<div slot="backdrop" class="backdrop" on:click={closeModal} />
+	<div slot="backdrop" class="modal-backdrop" on:click={closeModal} />
 </Modals>
 
-<style>
-	:global(body) {
+<style global>
+	body {
 		font-family: monospace;
 	}
-	:global(input) {
+	input {
 		font-family: monospace;
-	}
-	nav {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		z-index: 1;
-		width: 100%;
-		height: 40px;
-		display: flex;
-		background: white;
-		align-items: center;
-		gap: 10px;
-	}
-	.page-container {
-		position: absolute;
-		top: 40px;
-		left: 0;
-		right: 0;
-		bottom: 0;
 	}
 
-	.backdrop {
+	.login-status {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+	}
+
+	.modal-backdrop {
 		position: fixed;
 		z-index: 10;
 		top: 0;
@@ -120,5 +63,80 @@
 		right: 0;
 		left: 0;
 		background: rgba(0, 0, 0, 0.5);
+	}
+
+	html {
+		box-sizing: border-box;
+	}
+
+	*,
+	*:before,
+	*:after {
+		box-sizing: inherit;
+	}
+
+	[data-tooltip] {
+		position: relative;
+		z-index: 2;
+		display: block;
+		color: red;
+	}
+
+	[data-tooltip]:before,
+	[data-tooltip]:after {
+		visibility: hidden;
+		opacity: 0;
+		pointer-events: none;
+		transition: 0.2s ease-out;
+		transform: translate(-50%, 5px);
+	}
+
+	[data-tooltip]:before {
+		position: absolute;
+		bottom: 100%;
+		left: 50%;
+		margin-bottom: 5px;
+		padding: 7px;
+		width: 100%;
+		min-width: 170px;
+		max-width: 250px;
+		-webkit-border-radius: 3px;
+		-moz-border-radius: 3px;
+		border-radius: 3px;
+		background-color: #000;
+		background-color: hsla(0, 0%, 20%, 0.9);
+		color: #fff;
+		content: attr(data-tooltip);
+		text-align: center;
+		font-size: 14px;
+		line-height: 1.2;
+		transition: 0.2s ease-out;
+	}
+
+	[data-tooltip]:after {
+		position: absolute;
+		bottom: 100%;
+		left: 50%;
+		width: 0;
+		border-top: 5px solid #000;
+		border-top: 5px solid hsla(0, 0%, 20%, 0.9);
+		border-right: 5px solid transparent;
+		border-left: 5px solid transparent;
+		content: ' ';
+		font-size: 0;
+		line-height: 0;
+	}
+
+	[data-tooltip]:hover:before,
+	[data-tooltip]:hover:after {
+		visibility: visible;
+		opacity: 1;
+		transform: translate(-50%, 0);
+	}
+
+	[data-tooltip='false']:hover:before,
+	[data-tooltip='false']:hover:after {
+		visibility: hidden;
+		opacity: 0;
 	}
 </style>

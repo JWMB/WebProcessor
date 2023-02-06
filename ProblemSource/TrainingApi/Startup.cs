@@ -1,5 +1,6 @@
 ﻿using Common.Web;
 using Common.Web.Services;
+using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
@@ -110,12 +111,7 @@ namespace TrainingApi
                 RequestPath = fileProvider.RootPath,
                 OnPrepareResponse = ctx =>
                 {
-                    if (fileProvider.ShouldRewriteUrl(ctx.File, ctx.Context.Request, out var path))
-                    {
-                        ctx.Context.Response.Redirect(path);
-                    }
-                    else
-                        ctx.Context.Response.Headers.Append("Cache-Control", $"public, max-age={(int)cacheMaxAge.TotalSeconds}");
+                    ctx.Context.Response.Headers.Append("Cache-Control", $"public, max-age={(int)cacheMaxAge.TotalSeconds}");
                 }
             });
 

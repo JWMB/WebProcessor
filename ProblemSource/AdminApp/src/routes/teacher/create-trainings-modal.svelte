@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { closeModal } from 'svelte-modals';
-	import { apiFacade as apiFacadeStore } from 'src/globalStore';
 	import type { TrainingCreateDto } from 'src/apiClient';
 	import { get } from 'svelte/store';
+	import { getApi } from 'src/globalStore';
+	import type { ApiFacade } from 'src/apiFacade';
 
 	export let isOpen: boolean; // provided by Modals
 	export let onCreateGroup: (id: string) => void;
 
-	const apiFacade = get(apiFacadeStore);
+	const apiFacade = getApi() as ApiFacade;
 
 	let newGroupData = {
 		name: 'Fsk A',

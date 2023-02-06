@@ -2,10 +2,11 @@
 	export let checked = false;
 	export let color = '#2196F3';
 	export let inactiveColor = '#ccc';
+	export let name = 'switch';
 </script>
 
 <label class="switch" style:--active-color={color} style:--inactive-color={inactiveColor}>
-	<input type="checkbox" bind:checked />
+	<input {name} type="checkbox" bind:checked />
 	<span class="slider" />
 </label>
 
@@ -13,7 +14,7 @@
 	.switch {
 		position: relative;
 		display: inline-block;
-		width: 38px;
+		min-width: 38px;
 		height: 26px;
 	}
 

@@ -1,18 +1,16 @@
 <script lang="ts">
-	import { apiFacade as apiFacadeStore, loggedInUser } from '../../../globalStore';
-	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto, TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
 	import TrainingsTable from '../../../components/trainingsTable.svelte';
 	import TrainingGroupsTable from '../../../components/trainingGroupsTable.svelte';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
+	import { getApi, userStore } from 'src/globalStore';
+	import type { ApiFacade } from 'src/apiFacade';
 
 	// let trainingSummaries: TrainingSummary[] = [];
 
-	const apiFacade = get(apiFacadeStore);
-
-	const loggedInUserInfo = get(loggedInUser);
+	const apiFacade = getApi() as ApiFacade;
 
 	let templates: TrainingTemplateDto[] = [];
 	let trainingsPromise: Promise<TrainingSummaryWithDaysDto[]>;
@@ -38,6 +36,7 @@
 		const chosenTemplate = templates.filter(o => o.id == templateId)[0];
 		if (confirm(`Create class '${groupName}' with ${num} trainings using template '${chosenTemplate.name}' (${chosenTemplate.trainingPlanName})?`)) {
 			//const templates = await apiFacade.trainings.getTemplates();
+			const chosenTemplate = templates.filter((o) => o.id == templateId)[0];
 			if (!chosenTemplate.settings) {
 				chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
 			}
@@ -86,13 +85,14 @@
 	<div>
 		Create class: <input id="className" type="text" value="Fsk A" />
 		num trainings: <input id="numTrainings" style="width:40px;" type="number" min="1" max="30" value="10" />
-		template: <select id="template">
+		template:
+		<select id="template">
 			{#each templates as template}
-				<option value="{template.id}">{template.name}</option>
+				<option value={template.id}>{template.name}</option>
 			{/each}
 		</select>
 		time per day: <input id="timePerDay" style="width:40px;" type="number" min="15" max="45" value="33" />
-		{#if loggedInUserInfo?.role == 'Admin'}
+		{#if $userStore?.role == 'Admin'}
 			create for user: <input id="forUser" type="text" />
 		{/if}
 		<input
