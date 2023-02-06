@@ -6,7 +6,6 @@ import { get } from "svelte/store";
 export async function handleRedirects(routeId: string) {
     await userStore.inited;
     const user = get(userStore);
-    console.log("base", base)
     if (!user) {
         if (routeId !== '/login') {
             goto(base + '/login');

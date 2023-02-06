@@ -7,7 +7,6 @@ import { PUBLIC_LOCAL_SERVER_PATH } from '$env/static/public'
 
 export class Startup {
     init(root: typeof globalThis | Window) {
-        console.log("root", root.location)
         this.setupTopLevelErrorHandling(root);
 
         if (root.location.pathname.toLowerCase().endsWith("index.html")) {
