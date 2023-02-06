@@ -72,6 +72,13 @@ SELECT DISTINCT(account_id) AS id -- [account_id] --, MAX(other_id) as maxDay
   HAVING MAX(other_id) >= 35
   ORDER BY account_id";
 
+                q = @"
+SELECT account_id, MAX(training_day)
+  FROM phases
+  GROUP BY account_id
+  HAVING MAX(training_day) >= 35
+";
+
                 var dbContext = new OldDb.Models.TrainingDbContext();
                 var db = new DbSql(dbContext.Database.GetConnectionString()!);
                 var trainingIds = await db.Read(q, (r, cs) => r.GetInt32(0));
