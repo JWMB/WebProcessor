@@ -56,24 +56,27 @@ namespace Tools
             return phases;
         }
 
+        public IMLFeature CreateFeature(IEnumerable<Phase> phases, TrainingSettings trainingSettings)
+        {
+            return MLFeaturesJulia.FromPhases(trainingSettings, phases, 6, null, 5);
+        }
+
         public async Task Run(CancellationToken cancellation = default)
         {
             var path = @"C:\Users\uzk446\Downloads\";
             var csvFile = Path.Join(path, "AllTrainings.csv");
 
-            var rootType = typeof(MLFeaturesJulia);
-
             if (!File.Exists(csvFile))
             {
-                var q = @"
-SELECT DISTINCT(account_id) AS id -- [account_id] --, MAX(other_id) as maxDay
-  FROM [trainingdb].[dbo].[aggregated_data]
-  WHERE aggregator_id = 2 AND [latest_underlying] > '2017-01-01'
-  GROUP BY account_id
-  HAVING MAX(other_id) >= 35
-  ORDER BY account_id";
+//                var q = @"
+//SELECT DISTINCT(account_id) AS id -- [account_id] --, MAX(other_id) as maxDay
+//  FROM [trainingdb].[dbo].[aggregated_data]
+//  WHERE aggregator_id = 2 AND [latest_underlying] > '2017-01-01'
+//  GROUP BY account_id
+//  HAVING MAX(other_id) >= 35
+//  ORDER BY account_id";
 
-                q = @"
+                var q = @"
 SELECT account_id, MAX(training_day)
   FROM phases
   GROUP BY account_id
@@ -84,20 +87,18 @@ SELECT account_id, MAX(training_day)
                 var db = new DbSql(dbContext.Database.GetConnectionString()!);
                 var trainingIds = await db.Read(q, (r, cs) => r.GetInt32(0));
 
-                //var trainingIds = new List<int> { 84233, 85045, 86250, 88567, 89587, 89598, };
+                var features = new Dictionary<int, IMLFeature>();
 
-                var features = new Dictionary<int, object>();
-
-                //var finalLevels = new List<float>();
                 foreach (var id in trainingIds)
                 {
                     var phases = await GetTrainingPhases(id, Path.Join(path, "Phases"));
                     if (phases.Any() == false)
                         continue;
-                    var row = MLFeaturesJulia.FromPhases(new TrainingSettings(), phases, 6, null, 5);
+                    var row = CreateFeature(phases, new TrainingSettings());
+                    //var row = MLFeaturesJulia.FromPhases(new TrainingSettings(), phases, 6, null, 5);
 
                     if (row.IsValid)
-                        features.Add(id, row.GetRelevantFeatures());
+                        features.Add(id, row);
                 }
 
                 //finalLevels = finalLevels.Order().ToList();
@@ -105,7 +106,9 @@ SELECT account_id, MAX(training_day)
                 //var chunkSize = finalLevels.Count / numChunks;
                 //var limits = finalLevels.Chunk(chunkSize).Take(numChunks).Select(o => o.Last()).ToList();
 
-                if (features.First().Value is JObject jObj)
+                var firstFlat = features.First().Value.GetFlatFeatures();
+
+                if (firstFlat is JObject jObj)
                 {
                     CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
                     var columns = jObj.Properties().Select(o => o.Name).ToList();
@@ -116,7 +119,8 @@ SELECT account_id, MAX(training_day)
 
                         foreach (var kv in features)
                         {
-                            var row = new object[] { kv.Key }.Concat(columns.Select(o => ((JObject)kv.Value).GetValue(o)));
+                            var flat = (JObject)kv.Value.GetFlatFeatures();
+                            var row = new object[] { kv.Key }.Concat(columns.Select(flat.GetValue));
                             writer.WriteLine(Join(row));
                         }
                     }
@@ -142,6 +146,9 @@ SELECT account_id, MAX(training_day)
                     throw new NotImplementedException();
                 }
             }
+
+            //var rootType = typeof(MLFeaturesJulia);
+            var rootType = CreateFeature(new List<Phase>(), new TrainingSettings()).GetType();
 
             var columnTypePerProperty = rootType
                 .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
@@ -196,16 +203,16 @@ SELECT account_id, MAX(training_day)
             var numTable = groups.Select(row => {
                 var grp = groupedByErrors.FirstOrDefault(o => o.Group == row);
                 IEnumerable<decimal> percentages;
-
+                int totalCnt = 0;
                 if (grp != null)
                 {
-                    var totalCnt = grp.Distribution.Sum(o => o.Count);
+                    totalCnt = grp.Distribution.Sum(o => o.Count);
                     percentages = groups.Select(col => 1M * (grp.Distribution.FirstOrDefault(o => o.Predicted == col)?.Count ?? 0) / totalCnt);
                 }
                 else
                     percentages = groups.Select(o => 0M);
 
-                return new[] { (decimal)row }.Concat(percentages.Select(o => Math.Round(o * 100, 2))).ToList();
+                return new[] { (decimal)row, (decimal)totalCnt }.Concat(percentages.Select(o => Math.Round(o * 100, 2))).ToList();
             }).ToList();
 
             var percentTable = string.Join("\n", numTable.Select(o => string.Join("\t", o)));

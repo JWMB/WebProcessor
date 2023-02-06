@@ -24,7 +24,13 @@ namespace ProblemSource.Models.Aggregates
         }
     }
 
-    public class MLFeaturesJulia
+    public interface IMLFeature
+    {
+        object GetFlatFeatures();
+        bool IsValid { get; }
+    }
+
+    public class MLFeaturesJulia : IMLFeature
     {
         public Dictionary<string, FeaturesForExercise> ByExercise { get; set; } = new();
 
@@ -131,7 +137,7 @@ namespace ProblemSource.Models.Aggregates
             };
         }
 
-        public object GetRelevantFeatures()
+        public object GetFlatFeatures()
         {
             var npals = "npals";
             var wmGrid = "WM_grid";
@@ -490,7 +496,7 @@ namespace ProblemSource.Models.Aggregates
                 // Number of exercises: The number of exercises it took to reach the highest level defined above
                 // "Exercise" here means combination of training_day, exercise and level
                 // TODO: just reach level, or with correct answer?
-                // Note: 0-indexed
+                // Note: 0-indexeds
 
                 //stats.NumProblemsToHighestLevel = phases.SelectMany(o => o.problems).ToList().FindIndex(o => (int)o.level == stats.HighestLevelInt);
                 stats.NumProblemsToHighestLevel = allProblems.FindIndex(o => (int)o.level == stats.HighestLevelInt && o.answers.Any(a => a.correct));
