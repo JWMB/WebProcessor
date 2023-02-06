@@ -2,6 +2,7 @@
 using System.Reflection.Emit;
 using System.Reflection;
 using System.Text;
+using static Google.Protobuf.WellKnownTypes.Field.Types;
 
 namespace Tools
 {
@@ -24,6 +25,19 @@ namespace Tools
         //        throw new NullReferenceException($"Could not instantiate dynamic type {type.Name}");
         //    return instance;
         //}
+
+        public static object CreateInstance(Dictionary<string, object> props)
+        {
+            var type = CreateType(props.ToDictionary(o => o.Key, o => o.Value.GetType()));
+            var inst = CreateInstance(type);
+            foreach (var item in props)
+            {
+                var prop = type.GetProperty(item.Key);
+                if (prop == null) throw new NullReferenceException(item.Key);
+                prop.SetValue(inst, item.Value);
+            }
+            return inst;
+        }
 
         public static object CreateInstance(Type type, object values)
         {
@@ -51,6 +65,17 @@ namespace Tools
             if (instance == null)
                 throw new NullReferenceException($"Could not instantiate dynamic type {type.Name}");
             return instance;
+        }
+
+        public static Type CreateType(Dictionary<string, Type> props, AssemblyName? assemblyName = null)
+        {
+            assemblyName ??= new AssemblyName("DynamicInput");
+
+            var dynamicClass = CreateTypeBuilder(assemblyName);
+            CreateConstructor(dynamicClass);
+            foreach (var item in props)
+                CreateProperty(dynamicClass, item.Key, item.Value);
+            return dynamicClass.CreateType();
         }
 
         public static Type CreateType(string[] propertyNames, Type[] Types, AssemblyName? assemblyName = null)

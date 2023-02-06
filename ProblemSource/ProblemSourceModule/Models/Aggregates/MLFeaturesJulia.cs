@@ -47,23 +47,48 @@ namespace ProblemSource.Models.Aggregates
         public bool Age6_7 { get; set; }
 
         [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
-        public float FinalNumberLineLevel { get; set; }
+        public float? FinalNumberLineLevel { get; set; }
 
         [ColumnType(ColumnTypeAttribute.ColumnType.Label)]
         public int Outcome
         {
             get
             {
+                //Spannen är:
+                //0: < 24
+                //1: <= 24 < 38
+                //2: <= 38 < 48
+                //3: <= 48 < 80
+                //4: <= 80 < 95
+                //5: <= 95
                 return FinalNumberLineLevel switch
                 {
-                    < 24 => 0,
-                    < 38 => 1,
-                    < 48 => 2,
-                    < 80 => 3,
-                    < 95 => 4,
-                    _ => 5
+                    < 31 => 0,
+                    < 44 => 1,
+                    < 76 => 2,
+                    < 99 => 3,
+                    _ => 4,
+                    //< 24 => 0,
+                    //< 38 => 1,
+                    //< 48 => 2,
+                    //< 80 => 3,
+                    //< 95 => 4,
+                    //_ => 5
                 };
             }
+        }
+
+        public bool IsValid =>
+            FinalNumberLineLevel != null
+            && ByExercise.ContainsKey("nvr_rp") && ByExercise["nvr_rp"].FractionCorrect.HasValue
+            && ByExercise.ContainsKey("nvr_so") && ByExercise["nvr_so"].FractionCorrect.HasValue;
+
+        public static List<int> ChunkLimits(IEnumerable<MLFeaturesJulia> features, int numChunks)
+        {
+            var finalLevels = features.Select(o => o.FinalNumberLineLevel).OfType<float>().Order().ToList();
+            var chunkSize = finalLevels.Count / numChunks;
+            var limits = finalLevels.Chunk(chunkSize).Take(numChunks).Select(o => o.Last());
+            return limits.Select(o => (int)o).ToList();
         }
 
         [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
@@ -84,14 +109,17 @@ namespace ProblemSource.Models.Aggregates
                     .ToDictionary(o => o.Key, o =>
                         FeaturesForExercise.Create(o.Select(p => p.Phase), exerciseGlobals.SingleOrDefault(p => p.Exercise == o.Key) ?? new ExerciseGlobals()));
 
-            var levelNumberlineAroundDay35 = phases
-                .Where(o => o.exercise.ToLower().StartsWith("numberline"))
-                .Where(o => o.training_day >= 35 && o.training_day <= 37)
+            var levelNumberlineAroundDay35 = phases.Where(o => o.exercise.ToLower().StartsWith("numberline"))
+                .Where(o => o.training_day >= 33 && o.training_day <= 37)
                 .Where(o => o.problems.Any())
                 .GroupBy(o => o.training_day)
                 .Select(o => new { Day = o.Key, MaxLevel = o.Max(phase => phase.problems.Max(p => p.level)) })
-                .OrderBy(o => o.Day)
-                .FirstOrDefault()?.MaxLevel ?? 0;
+                .OrderBy(o =>
+                    {
+                        var diff = o.Day - 35;
+                        return diff < 0 ? -2 * diff : diff;
+                    })
+                .FirstOrDefault()?.MaxLevel ?? null;
 
             return new MLFeaturesJulia
             {
@@ -99,7 +127,7 @@ namespace ProblemSource.Models.Aggregates
                 MeanTimeIncrease = featuresByExercise.Values.Any() ? featuresByExercise.Values.Average(o => o.MeanTimeIncrease) : 0,
                 TrainingTime20Min = trainingSettings.timeLimits.FirstOrDefault() == 20M,
                 Age6_7 = age == 6,
-                FinalNumberLineLevel = (float)levelNumberlineAroundDay35,
+                FinalNumberLineLevel = (float?)levelNumberlineAroundDay35,
             };
         }
 

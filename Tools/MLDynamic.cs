@@ -1,5 +1,7 @@
 ﻿using Microsoft.ML;
 using Microsoft.ML.AutoML;
+using System.Data;
+using static TorchSharp.torch.utils;
 
 namespace Tools
 {
@@ -8,11 +10,15 @@ namespace Tools
         private readonly MLContext ctx;
         public ITransformer? Model { get; private set; }
         public DataViewSchema? Schema { get; private set; }
-        private string? labelColumnName;
+        public IDataView? DataView { get; private set; }
+        public ColumnInformation? ColumnInformation { get; private set; }
+        private ColumnInfo ColInfo { get; set; }
 
-        public MLDynamic()
+        public MLDynamic(ColumnInfo columnInfo)
         {
             ctx = new MLContext(seed: 0);
+
+            ColInfo = columnInfo;
         }
 
         public class ColumnInfo
@@ -22,31 +28,34 @@ namespace Tools
             public IEnumerable<string>? Ignore { get; set; }
         }
 
-        public async Task Train(string[] dataPaths, ColumnInfo columnInfo, string? savedModelPath = null, TimeSpan? trainingTime = null, CancellationToken cancellation = default)
+        public bool TryLoad(string savedModelPath)
         {
-            // https://learn.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/how-to-use-the-automl-api
-
-            labelColumnName = columnInfo.Label;
-
-            if (!string.IsNullOrEmpty(savedModelPath) && File.Exists(savedModelPath))
+            if (File.Exists(savedModelPath))
             {
                 Model = ctx.Model.Load(savedModelPath, out var schema);
                 Schema = schema;
+                return true;
             }
-            else
-            {
-                var (data, colInfo) = LoadData(ctx, dataPaths, columnInfo);
-                Schema = data.Schema;
+            return false;
+        }
 
-                var result = await Train(ctx, data, colInfo, labelColumnName, trainingTime, cancellation);
-                Model = result.Model;
+        public async Task Train(string[] dataPaths, string? savedModelPath = null, TimeSpan? trainingTime = null, CancellationToken cancellation = default)
+        {
+            // https://learn.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/how-to-use-the-automl-api
 
-                var info = $"{nameof(result.Metric)}:{result.Metric}, {nameof(result.Loss)}:{result.Loss}";
-                //CalcFeatureImportance(ctx, model, result.data, labelColumnName);
+            LoadData(dataPaths);
 
-                if (!string.IsNullOrEmpty(savedModelPath))
-                    ctx.Model.Save(Model, Schema, savedModelPath);
-            }
+            if (DataView == null) throw new NullReferenceException(nameof(DataView));
+            if (ColumnInformation == null) throw new NullReferenceException(nameof(ColumnInformation));
+
+            var result = await Train(ctx, DataView, ColumnInformation, ColInfo.Label, trainingTime, cancellation);
+            Model = result.Model;
+
+            var info = $"{nameof(result.Metric)}:{result.Metric}, {nameof(result.Loss)}:{result.Loss}";
+            //CalcFeatureImportance(ctx, model, result.data, labelColumnName);
+
+            if (!string.IsNullOrEmpty(savedModelPath))
+                ctx.Model.Save(Model, Schema, savedModelPath);
         }
 
         public void CalcFeatureImportance(MLContext ctx, ITransformer model, IDataView data, string labelColumnName)
@@ -56,6 +65,14 @@ namespace Tools
             var pfi = ctx.Regression.PermutationFeatureImportance(model, transformedData, permutationCount: 3, labelColumnName: labelColumnName);
             var featureImportance = pfi.Select(x => Tuple.Create(x.Key, x.Value.RSquared))
                 .OrderByDescending(x => x.Item2);
+        }
+
+        public void LoadData(string[] dataPaths)
+        {
+            var (data, colInfo) = LoadData(ctx, dataPaths, ColInfo);
+            DataView = data;
+            Schema = data.Schema;
+            ColumnInformation = colInfo;
         }
 
         private static (IDataView, ColumnInformation) LoadData(MLContext ctx, string[] dataPaths, ColumnInfo columnInfo)
@@ -73,11 +90,7 @@ namespace Tools
             // Column inference may get labelColumn type wrong
             columnInference.TextLoaderOptions.Columns.Single(o => o.Name == columnInfo.Label).DataKind = Microsoft.ML.Data.DataKind.Single;
 
-            //mlContext.Auto().CreateRegressionExperiment(new RegressionExperimentSettings { });
             var loader = ctx.Data.CreateTextLoader(columnInference.TextLoaderOptions);
-            //var data = loader.Load(trainDataPath);
-
-            //var trainValidationDataX = ctx.Data.TrainTestSplit(data, testFraction: 0.2);
             var data = loader.Load(dataPaths);
 
             return (data, columnInference.ColumnInformation);
@@ -97,6 +110,7 @@ namespace Tools
             //var result = ctx.Auto()
             //    .CreateRegressionExperiment(new RegressionExperimentSettings { MaxExperimentTimeInSeconds = maxSeconds })
             //    .Execute(trainData: data, numberOfCVFolds: 4, columnInformation: colInfo, progressHandler: new Progressor());
+            //mlContext.Auto().CreateRegressionExperiment(new RegressionExperimentSettings { });
 
             var pipeline = ctx.Auto()
                 .Featurizer(data, columnInformation: colInfo)
@@ -115,7 +129,8 @@ namespace Tools
             ctx.Log += (_, e) =>
             {
                 //if (e.Kind != Microsoft.ML.Runtime.ChannelMessageKind.Trace)
-                if (e.Source.Equals("AutoMLExperiment") && !e.RawMessage.Contains("current CPU:"))
+                if (e.Source.Equals("AutoMLExperiment") &&
+                    new[] { "current CPU:", "DefaultPerformanceMonitor has been started" }.Any(e.RawMessage.Contains) == false)
                 {
                     var elapsed = DateTime.Now - start;
                     elapsed = new TimeSpan(elapsed.Hours, elapsed.Minutes, elapsed.Seconds);
@@ -177,10 +192,10 @@ namespace Tools
         {
             if (Schema == null) throw new NullReferenceException($"{nameof(Schema)} is null");
             if (Model == null) throw new NullReferenceException($"{nameof(Model)} is null");
-            if (string.IsNullOrEmpty(labelColumnName)) throw new NullReferenceException($"{nameof(labelColumnName)} is null");
+            if (string.IsNullOrEmpty(ColInfo.Label)) throw new NullReferenceException($"{nameof(ColInfo.Label)} is null");
             var predictionType = ClassFactory.CreateType(
                     new[] { "Score" },
-                    new[] { Schema[labelColumnName].Type.RawType });
+                    new[] { Schema[ColInfo.Label].Type.RawType });
             return CreateGenericPrediction(ctx, Schema, Model, inputObject, predictionType);
         }
 
