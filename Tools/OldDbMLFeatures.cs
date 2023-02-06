@@ -1,6 +1,7 @@
 ﻿using AngleSharp.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
+using Microsoft.ML.Data;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OldDbAdapter;
@@ -166,40 +167,66 @@ SELECT account_id, MAX(training_day)
 
             var preview = ml.DataView.Preview(1000);
 
-            var diffs = preview.RowView
-                .Select(r => {
-                    var dict = r.Values.ToDictionary(o => o.Key, o => o.Value);
-                    var forPredict = ClassFactory.CreateInstance(dict);
+            var table = GenerateAccuracyTable(preview, ml, colInfo);
+        }
 
-                    var predicted = ml.Predict(forPredict);
-                    return new {
-                        Id = dict["Id"],
-                        Predicted = predicted,
-                        Actual = dict[colInfo.Label],
-                        Diff = (float)dict[colInfo.Label] - Convert.ToSingle(predicted),
-                        RoundDiff = Convert.ToInt32(dict[colInfo.Label]) - (int)Math.Round(Convert.ToSingle(predicted))
-                    };
-                }).OrderByDescending(o => Math.Abs(o.RoundDiff))
-            .ToList();
+        string GenerateAccuracyTable(DataDebuggerPreview preview, MLDynamic ml, MLDynamic.ColumnInfo colInfo)
+        {
+            var predictedPerRow = preview.RowView.Select(r => {
+                var dict = r.Values.ToDictionary(o => o.Key, o => o.Value);
+                var forPredict = ClassFactory.CreateInstance(dict);
 
-            var totalCount = diffs.Count;
-            Console.WriteLine(string.Join("\n,", diffs.GroupBy(o => o.RoundDiff).ToDictionary(o => o.Key, o => 100 * o.Count() / totalCount)));
+                var predicted = ml.Predict(forPredict);
 
-            var chunkErrors = Enumerable.Range(0, 5)
-                .Select(chunk => { 
-                    var inChunk = diffs.Where(o => Convert.ToInt32(o.Actual) == chunk); 
-                    return new { Chunk = chunk, Errors = inChunk.GroupBy(o => o.RoundDiff).ToDictionary(o => o.Key, o => 100 * o.Count() / inChunk.Count()) };
-                }).ToList();
-            var errSizes = chunkErrors.SelectMany(o => o.Errors.Keys).Distinct().OrderByDescending(Math.Abs);
-
-            var rows = chunkErrors.Select(chunk => {
-                return new[] { chunk.Chunk }.Concat(errSizes.Select(o => chunk.Errors.GetValueOrDefault(o, 0))).ToList();
+                return new
+                {
+                    Row = r,
+                    Predicted = (float)Math.Round(Convert.ToSingle(predicted)),
+                    Actual = Convert.ToInt32(dict[colInfo.Label]),
+                    Values = dict
+                };
             }).ToList();
 
-            var table = string.Join("\n",
-                new[] { errSizes.ToList() }.Concat(rows)
-                    .Select(r => string.Join("\t", r))
-                    );
+            var groupedByErrors = predictedPerRow
+                .GroupBy(o => o.Actual)
+                .Select(o => new { Group = o.Key, Distribution = o.GroupBy(p => (int)Math.Round(p.Predicted)).Select(p => new { Predicted = p.Key, Count = p.Count() }) })
+                .ToList();
+
+            var groups = groupedByErrors.Select(o => o.Group).Order().ToList();
+            var numTable = groups.Select(row => {
+                var grp = groupedByErrors.FirstOrDefault(o => o.Group == row);
+                IEnumerable<decimal> percentages;
+
+                if (grp != null)
+                {
+                    var totalCnt = grp.Distribution.Sum(o => o.Count);
+                    percentages = groups.Select(col => 1M * (grp.Distribution.FirstOrDefault(o => o.Predicted == col)?.Count ?? 0) / totalCnt);
+                }
+                else
+                    percentages = groups.Select(o => 0M);
+
+                return new[] { (decimal)row }.Concat(percentages.Select(o => Math.Round(o * 100, 2))).ToList();
+            }).ToList();
+
+            var percentTable = string.Join("\n", numTable.Select(o => string.Join("\t", o)));
+            return percentTable;
+
+            //var diffs = preview.RowView
+            //    .Select(r => {
+            //        var dict = r.Values.ToDictionary(o => o.Key, o => o.Value);
+            //        var forPredict = ClassFactory.CreateInstance(dict);
+
+            //        var predicted = ml.Predict(forPredict);
+            //        return new
+            //        {
+            //            Id = dict["Id"],
+            //            Predicted = predicted,
+            //            Actual = dict[colInfo.Label],
+            //            Diff = (float)dict[colInfo.Label] - Convert.ToSingle(predicted),
+            //            RoundDiff = Convert.ToInt32(dict[colInfo.Label]) - (int)Math.Round(Convert.ToSingle(predicted))
+            //        };
+            //    }).OrderByDescending(o => Math.Abs(o.RoundDiff))
+            //.ToList();
         }
     }
 }
