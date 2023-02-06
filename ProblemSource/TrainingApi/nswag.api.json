@@ -815,10 +815,14 @@
       ],
       "properties": {
         "username": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 6
         },
         "password": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 14,
+          "minLength": 6
         }
       }
     },

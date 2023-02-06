@@ -1,8 +1,6 @@
 ﻿using Microsoft.ML;
 using Microsoft.ML.AutoML;
 using System.Data;
-using Tensorflow.Operations.Activation;
-using static TorchSharp.torch.utils;
 
 namespace Tools
 {
@@ -54,11 +52,10 @@ namespace Tools
             var experimentType = ctx.Auto().Regression(labelColumnName: ColInfo.Label);
             var configureMetric = (AutoMLExperiment exp) => exp.SetRegressionMetric(RegressionMetric.RSquared, labelColumn: ColInfo.Label);
 
-            var result = await ConfigureExperiment(ctx, DataView, ColumnInformation,
+            var result = await RunExperiment(ctx, DataView, ColumnInformation,
                 experimentType, configureMetric, fold: 4,
                 trainingTime: trainingTime, cancellation);
 
-            //var result = await TrainRegression(ctx, DataView, ColumnInformation, ColInfo.Label, trainingTime, cancellation);
             Model = result.Model;
 
             var info = $"{nameof(result.Metric)}:{result.Metric}, {nameof(result.Loss)}:{result.Loss}";
@@ -114,7 +111,7 @@ namespace Tools
             }
         }
 
-        private static async Task<TrialResult> ConfigureExperiment(MLContext ctx, IDataView data, ColumnInformation colInfo,
+        private static async Task<TrialResult> RunExperiment(MLContext ctx, IDataView data, ColumnInformation colInfo,
             ISweepable<IEstimator<ITransformer>> pipio, Func<AutoMLExperiment, AutoMLExperiment> configureMetric,
             int fold = 4, TimeSpan? trainingTime = null, CancellationToken cancellation = default)
         {
@@ -170,71 +167,6 @@ namespace Tools
                 throw new NullReferenceException(nameof(trialResult));
 
             return trialResult;
-        }
-
-        private static async Task<TrialResult> TrainRegression(MLContext ctx, IDataView data, ColumnInformation colInfo, string labelColumnName, TimeSpan? trainingTime = null, CancellationToken cancellation = default)
-            //, IEnumerable<string>? categoricalColumnNames = null)
-        {
-            var maxSeconds = (uint)(int)(trainingTime ?? TimeSpan.FromSeconds(60)).TotalSeconds;
-            //var result = ctx.Auto()
-            //    .CreateRegressionExperiment(new RegressionExperimentSettings { MaxExperimentTimeInSeconds = maxSeconds })
-            //    .Execute(trainData: data, numberOfCVFolds: 4, columnInformation: colInfo, progressHandler: new Progressor());
-            //mlContext.Auto().CreateRegressionExperiment(new RegressionExperimentSettings { });
-
-            var pipeline = ctx.Auto()
-                .Featurizer(data, columnInformation: colInfo)
-                .Append(ctx.Auto().Regression(labelColumnName: labelColumnName));
-
-            var experiment = ctx.Auto()
-                .CreateExperiment()
-                .SetPipeline(pipeline)
-                .SetRegressionMetric(RegressionMetric.RSquared, labelColumn: labelColumnName)
-                .SetTrainingTimeInSeconds(maxSeconds)
-                //.SetTrialRunner
-                .SetDataset(data, fold: 4);
-
-            var start = DateTime.Now;
-            var messages = new List<string>();
-            ctx.Log += (_, e) =>
-            {
-                //if (e.Kind != Microsoft.ML.Runtime.ChannelMessageKind.Trace)
-                if (e.Source.Equals("AutoMLExperiment") &&
-                    new[] { "current CPU:", "DefaultPerformanceMonitor has been started" }.Any(e.RawMessage.Contains) == false)
-                {
-                    var elapsed = DateTime.Now - start;
-                    elapsed = new TimeSpan(elapsed.Hours, elapsed.Minutes, elapsed.Seconds);
-                    if (e.RawMessage.StartsWith("Update "))
-                    {
-                        messages.Add($"{elapsed}: {e.RawMessage}");
-                    }
-                    Console.WriteLine($"{elapsed}: {(e.RawMessage.Length > 200 ? e.RawMessage.Remove(200) : e.RawMessage)}");
-                }
-                else if (new[] { "Channel started", "Channel finished", "Channel disposed" }.Any(e.RawMessage.Contains))
-                { }
-                else if (new[] {
-                    "[Source=ValueToKeyMappingEstimator",
-                    "[Source=Converter", "[Source=ColumnConcatenatingEstimator",
-                    "[Source=SelectColumnsDataTransform", "[Source=MissingValueReplacingEstimator", 
-                    "[Source=GenerateNumber", "[Source=RangeFilter", "[Source=OneHotEncodingEstimator" }
-                    .Any(e.RawMessage.StartsWith))
-                { }
-                else if (new[] { "[Source=TextLoader" }.Any(e.Message.StartsWith))
-                { }
-                else
-                {
-                    //Console.WriteLine(e.RawMessage);
-                }
-            };
-
-            //experiment.SetTrialRunner
-            var experimentResults = await experiment.RunAsync(cancellation);
-
-            Console.WriteLine(string.Join("\n", messages));
-
-            if (experimentResults == null)
-                throw new NullReferenceException(nameof(experimentResults));
-
-            return experimentResults;
         }
 
         private static bool MoveColumnCollection(ColumnInformation colInfo, string name, Func<ColumnInformation, ICollection<string>> getCollection)

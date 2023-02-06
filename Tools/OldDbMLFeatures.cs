@@ -8,7 +8,6 @@ using OldDbAdapter;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
-using System;
 using System.Globalization;
 using static ProblemSource.Models.Aggregates.ColumnTypeAttribute;
 
@@ -95,7 +94,6 @@ SELECT account_id, MAX(training_day)
                     if (phases.Any() == false)
                         continue;
                     var row = CreateFeature(phases, new TrainingSettings());
-                    //var row = MLFeaturesJulia.FromPhases(new TrainingSettings(), phases, 6, null, 5);
 
                     if (row.IsValid)
                         features.Add(id, row);
@@ -147,7 +145,6 @@ SELECT account_id, MAX(training_day)
                 }
             }
 
-            //var rootType = typeof(MLFeaturesJulia);
             var rootType = CreateFeature(new List<Phase>(), new TrainingSettings()).GetType();
 
             var columnTypePerProperty = rootType
