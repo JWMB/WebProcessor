@@ -21,27 +21,36 @@ namespace TrainingApi
 
         public IFileInfo GetFileInfo(string subpath)
         {
+            // First, this method is called by UseStaticFiles middleware
+            // If the file exists, we return it - otherwise we return the fallback file
             var file = inner.GetFileInfo(subpath);
             return file.Exists ? file : inner.GetFileInfo(fallbackFile);
         }
 
-        public bool ShouldRewriteUrl(IFileInfo file, HttpRequest request, out string rewritten)
+        public bool ShouldRewriteUrl(IFileInfo file, Uri uri, out string rewritten)
         {
+            // Called upon OnPrepareResponse
+            
+            // If file is the fallback file, it's either b/c it was actually requested, or because of the fallback
             // TODO: we currently don't care about fallbackFile path - e.g. /sub/index.html and /index.html are treated the same now
-            var path = request.Path.ToString().ToLower();
+
+            var path = uri.AbsolutePath.ToString().ToLower();
             if (file.Name != fallbackFile || !path.StartsWith(RootPath))
             {
-                rewritten = request.Path.ToString();
+                // Was not the fallback file, so we can serve it directly
+                rewritten = uri.AbsolutePath.ToString();
                 return false;
             }
-            var qp = "?path=";
+
             if (file.Name == fallbackFile && path.EndsWith(fallbackFile)) // request.QueryString.HasValue && request.QueryString.ToString().StartsWith(qp))
             {
-                rewritten = request.Path.ToString();
+                // the fallback file was specifically requested
+                rewritten = uri.AbsolutePath.ToString();
                 return false;
             }
-            var subPath = path.Substring(RootPath.Length);
-            rewritten = $"{RootPath}/{fallbackFile}{qp}{Uri.EscapeDataString(subPath)}";
+
+            var subPathAndQuery = uri.PathAndQuery.Substring(RootPath.Length); //path.Substring(RootPath.Length);
+            rewritten = $"{RootPath}/{fallbackFile}?path={Uri.EscapeDataString(subPathAndQuery)}";
             return true;
         }
 
