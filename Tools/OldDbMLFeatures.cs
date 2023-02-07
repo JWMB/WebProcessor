@@ -1,15 +1,14 @@
 ﻿using AngleSharp.Common;
+using Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OldDbAdapter;
-using Organization;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
-using System.Collections.Generic;
 using System.Globalization;
 using static ProblemSource.Models.Aggregates.ColumnTypeAttribute;
 using static Tools.MLDynamic;
@@ -70,13 +69,13 @@ namespace Tools
 
             if (!File.Exists(csvFile))
             {
-//                var q = @"
-//SELECT DISTINCT(account_id) AS id -- [account_id] --, MAX(other_id) as maxDay
-//  FROM [trainingdb].[dbo].[aggregated_data]
-//  WHERE aggregator_id = 2 AND [latest_underlying] > '2017-01-01'
-//  GROUP BY account_id
-//  HAVING MAX(other_id) >= 35
-//  ORDER BY account_id";
+                //                var q = @"
+                //SELECT DISTINCT(account_id) AS id -- [account_id] --, MAX(other_id) as maxDay
+                //  FROM [trainingdb].[dbo].[aggregated_data]
+                //  WHERE aggregator_id = 2 AND [latest_underlying] > '2017-01-01'
+                //  GROUP BY account_id
+                //  HAVING MAX(other_id) >= 35
+                //  ORDER BY account_id";
 
                 var q = @"
 SELECT account_id, MAX(training_day)
@@ -138,42 +137,31 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
 
                 var firstFlat = features.First().Value.GetFlatFeatures();
 
-                if (firstFlat is JObject jObj)
+                CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+                var columns = firstFlat.Keys.ToList();
+
+                using (var writer = new StreamWriter(csvFile))
                 {
-                    CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-                    var columns = jObj.Properties().Select(o => o.Name).ToList();
+                    writer.WriteLine(Join(new[] { "Id" }.Concat(columns)));
 
-                    using (var writer = new StreamWriter(csvFile))
+                    foreach (var kv in features)
                     {
-                        writer.WriteLine(Join(new[] { "Id" }.Concat(columns)));
-
-                        foreach (var kv in features)
-                        {
-                            var flat = (JObject)kv.Value.GetFlatFeatures();
-                            var row = new object[] { kv.Key }.Concat(columns.Select(flat.GetValue));
-                            writer.WriteLine(Join(row));
-                        }
-                    }
-
-                    string Join(IEnumerable<object?> values) => string.Join(",", values.Select(Render));
-                    string Render(object? value) => ConvertValue(value)?.ToString() ?? "";
-                    object? ConvertValue(object? value)
-                    {
-                        if (value is JValue jv)
-                        {
-                            if (jv.Type == JTokenType.Boolean)
-                                value = jv.Value<bool>();
-                            else if (jv.Type == JTokenType.Float)
-                                value = jv.Value<float>().ToString("0.####");
-                        }
-                        if (value is bool b)
-                            return b ? 1 : 0;
-                        return value;
+                        var flat = kv.Value.GetFlatFeatures();
+                        var row = new object[] { kv.Key }.Concat(columns.Select(o => flat[o]));
+                        writer.WriteLine(Join(row));
                     }
                 }
-                else
+
+                string Join(IEnumerable<object?> values) => string.Join(",", values.Select(Render));
+                string Render(object? value) => ConvertValue(value)?.ToString() ?? "";
+                object? ConvertValue(object? value)
                 {
-                    throw new NotImplementedException();
+                    if (value == null) return null;
+                    if (value is bool b) return b ? 1 : 0;
+                    if (value is float f) return f.ToString("0.####");
+                    if (value is double d) return d.ToString("0.####");
+                    if (value is decimal m) return m.ToString("0.####");
+                    return value;
                 }
             }
 
@@ -248,7 +236,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
         private string GenerateAccuracyTable(List<Dictionary<string, object>> rows, MLDynamic ml, MLDynamic.ColumnInfo colInfo)
         {
             var predictedPerRow = rows.Select(dict => {
-                var forPredict = ClassFactory.CreateInstance(dict);
+                var forPredict = DynamicTypeFactory.CreateInstance(dict);
                 var predicted = ml.Predict(forPredict);
 
                 return new

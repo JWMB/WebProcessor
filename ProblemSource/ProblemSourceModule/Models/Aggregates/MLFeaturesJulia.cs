@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System.ComponentModel;
-using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
+﻿using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
 
 namespace ProblemSource.Models.Aggregates
 {
@@ -27,7 +25,7 @@ namespace ProblemSource.Models.Aggregates
 
     public interface IMLFeature
     {
-        object GetFlatFeatures();
+        Dictionary<string, object?> GetFlatFeatures();
         bool IsValid { get; }
     }
 
@@ -143,8 +141,8 @@ namespace ProblemSource.Models.Aggregates
                 FinalNumberLineLevel = (float?)levelNumberlineAroundDay35,
             };
         }
-
-        public object GetFlatFeatures()
+        
+        public Dictionary<string, object?> GetFlatFeatures()
         {
             var npals = "npals";
             var wmGrid = "WM_grid";
@@ -156,7 +154,7 @@ namespace ProblemSource.Models.Aggregates
             var tangram = "tangram";
             var rotation = "rotation";
 
-            var root = new JObject();
+            var root = new Dictionary<string, object?>();
 
             AddProperties(new[] { npals, wmGrid, numberline, mathTest01, nvr_rp, nvr_so, numberComparison01 },
                 "FrCor", ffe => ffe.FractionCorrect);
@@ -206,9 +204,8 @@ namespace ProblemSource.Models.Aggregates
             void AddProperties(IEnumerable<string> exercises, string columnPrefix, Func<FeaturesForExercise, object?> func)
             {
                 foreach (var exercise in exercises)
-                    root!.Add($"{columnPrefix}_{exercise}", new JValue(func(GetFeatures(exercise))));
+                    root!.Add($"{columnPrefix}_{exercise}", func(GetFeatures(exercise)));
             }
-
             FeaturesForExercise GetFeatures(string exercise) => ByExercise.GetValueOrDefault(exercise.ToLower(), new FeaturesForExercise());
         }
 
