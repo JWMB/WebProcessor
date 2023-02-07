@@ -235,7 +235,8 @@ namespace Tools
 
         private const string DefaultScoreColumn = "Score";
 
-        public object Predict(object inputObject, string scoreColumn = DefaultScoreColumn)
+
+        public IEnumerable<object> Predict(IEnumerable<object> inputObjects, string scoreColumn = DefaultScoreColumn)
         {
             if (Schema == null) throw new NullReferenceException($"{nameof(Schema)} is null");
             if (Model == null) throw new NullReferenceException($"{nameof(Model)} is null");
@@ -244,10 +245,20 @@ namespace Tools
             var predictionType = DynamicTypeFactory.CreateType(
                     new[] { scoreColumn },
                     new[] { Schema[ColInfo.Label].Type.RawType });
-            return CreateGenericPrediction(ctx, Schema, Model, inputObject, predictionType, scoreColumn);
+
+            var inputType = inputObjects.First().GetType(); // CreateType(Schema);
+            return CreateGenericPrediction(ctx, Schema, Model, inputObjects, predictionType, inputType, scoreColumn);
         }
 
-        private static object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model, object inputObject, Type predictionType, string scoreColumn = DefaultScoreColumn)
+        public object Predict(object inputObject, string scoreColumn = DefaultScoreColumn) =>
+            Predict(new[] { inputObject }, scoreColumn).First();
+
+        private static object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model, 
+            object inputObject, Type predictionType, Type? inputType = null, string scoreColumn = DefaultScoreColumn) =>
+            CreateGenericPrediction(mlContext, dataViewSchema, model, new[] { inputObject }, predictionType, inputType, scoreColumn).First();
+
+        private static IEnumerable<object> CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model,
+            IEnumerable<object> inputObjects, Type predictionType, Type? inputType = null, string scoreColumn = DefaultScoreColumn)
         {
             // Create runtime type from fields and types in a DataViewSchema
             var methodName = "CreatePredictionEngine";
@@ -255,21 +266,24 @@ namespace Tools
             if (genericPredictionMethod == null)
                 throw new Exception($"'{methodName}' not found");
 
-            var runtimeType = CreateType(dataViewSchema);
-            if (runtimeType == null)
+            var inputTypeProvided = inputType != null;
+            inputType ??= CreateType(dataViewSchema);
+            if (inputType == null)
                 throw new Exception("Could not create type");
 
-            var predictionMethod = genericPredictionMethod.MakeGenericMethod(runtimeType, predictionType);
+            var predictionMethod = genericPredictionMethod.MakeGenericMethod(inputType, predictionType);
             // InvalidOperationException: Can't bind the IDataView column 'Score' of type 'Vector<Single, 6>' to field or property 'Score' of type 'System.UInt32'.
             dynamic? dynamicPredictionEngine = predictionMethod.Invoke(mlContext.Model, new object[] { model, dataViewSchema });
             if (dynamicPredictionEngine == null)
                 throw new Exception($"Could not create {predictionMethod.Name}");
 
-            var inputInstance = DynamicTypeFactory.CreateInstance(runtimeType, inputObject);
+            var predictMethod = dynamicPredictionEngine.GetType().GetMethod("Predict", new[] { inputType });
 
-            var predictMethod = dynamicPredictionEngine.GetType().GetMethod("Predict", new[] { runtimeType });
-            var predictionResult = predictMethod.Invoke(dynamicPredictionEngine, new[] { inputInstance });
-            return predictionType.GetProperty(scoreColumn)!.GetValue(predictionResult);
+            return inputObjects.Select(o => {
+                var inputInstance = inputTypeProvided ? o : DynamicTypeFactory.CreateInstance(inputType, o);
+                var predictionResult = predictMethod.Invoke(dynamicPredictionEngine, new[] { inputInstance });
+                return predictionType.GetProperty(scoreColumn)!.GetValue(predictionResult);
+            });
         }
 
         public static Type CreateType(DataViewSchema dataViewSchema)

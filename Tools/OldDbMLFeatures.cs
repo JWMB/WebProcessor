@@ -199,33 +199,39 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
                     ml.Save(modelPath);
             }
 
-            var rows = ml.DataView.Preview(100).RowView.Select(CreatePropertyDictFromPreviewRow).ToList();
+            var rows = CreateDictionariesFromCsv(ml.Schema!, csvFile).ToList();
+            //var rows = ml.DataView.Preview(100).RowView.Select(CreatePropertyDictFromPreviewRow).ToList();
             var table = GenerateAccuracyTable(rows, ml, colInfo);
         }
 
-        private void CreateInstancesFromCsv(object exampleInstance, string csvFile)
+        private IEnumerable<Dictionary<string, object?>> CreateDictionariesFromCsv(DataViewSchema schema, string csvFile)
         {
             var rows = File.ReadAllLines(csvFile);
             var columnNames = rows.First().Split(',').ToList();
 
-            Dictionary<string, Type> colToType;
-            if (exampleInstance is JObject jObj)
-            {
-                var props = jObj.Children<JProperty>();
-                colToType = props.ToDictionary(o => o.Name, o => o.Value.GetType());
-            }
-            else
-            {
-                throw new NotImplementedException();
-                //var colToType = columnNames.ToDictionary(o => o, type.GetProperty);
-            }
+            var type = MLDynamic.CreateType(schema);
+            var colToType = schema.ToDictionary(o => o.Name, o => o.Type.RawType);
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
-            foreach (var row in rows.Skip(1))
+            return rows.Skip(1)
+                .Select(row =>
+                {
+                    var vals = row.Split(',').ToList();
+                    return columnNames
+                        .Select((o, i) => new { Key = o, Value = vals[i] })
+                        .ToDictionary(o => o.Key, o => Convert(o.Value, colToType[o.Key]));
+                });
+
+            object? Convert(string? value, Type type)
             {
-                var vals = row.Split(',').ToList();
-                var dict = columnNames
-                    .Select((o, i) => new { Key = o, Value = vals[i] })
-                    .ToDictionary(o => o.Key, o => o.Value);
+                if (string.IsNullOrEmpty(value))
+                {
+                    if (type.IsValueType)
+                        return Activator.CreateInstance(type);
+                    //return type.GetMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
+                    //type = Nullable.GetUnderlyingType(type) ?? type;
+                }
+                return System.Convert.ChangeType(value, type);
             }
         }
 
@@ -235,16 +241,14 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
 
         private string GenerateAccuracyTable(List<Dictionary<string, object>> rows, MLDynamic ml, MLDynamic.ColumnInfo colInfo)
         {
-            var predictedPerRow = rows.Select(dict => {
-                var forPredict = DynamicTypeFactory.CreateInstance(dict);
-                var predicted = ml.Predict(forPredict);
+            var type = CreateType(ml.Schema!);
+            var instances = rows.Select(o => DynamicTypeFactory.CreateInstance(type, o));
+            var predictions = ml.Predict(instances).ToList();
 
-                return new
-                {
-                    Predicted = (float)Math.Round(Convert.ToSingle(predicted)),
-                    Actual = Convert.ToInt32(dict[colInfo.Label]),
-                    Values = dict
-                };
+            var predictedPerRow = rows.Select((o, i) => new {
+                Predicted = (float)Math.Round(Convert.ToSingle(predictions[i])),
+                Actual = Convert.ToInt32(o[colInfo.Label]),
+                Values = o
             }).ToList();
 
             var groupedByErrors = predictedPerRow
@@ -265,7 +269,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
                 else
                     percentages = groups.Select(o => 0M);
 
-                return new[] { (decimal)row, (decimal)totalCnt }.Concat(percentages.Select(o => Math.Round(o * 100, 2))).ToList();
+                return new[] { (decimal)row, (decimal)totalCnt }.Concat(percentages.Select(o => Math.Round(o * 100, 1))).ToList();
             }).ToList();
 
             var percentTable = string.Join("\n", numTable.Select(o => string.Join("\t", o)));

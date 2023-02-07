@@ -6,6 +6,18 @@ namespace Common
 {
     public static class DynamicTypeFactory
     {
+        public static object CreateInstance(Type type, Dictionary<string, object> props)
+        {
+            var inst = CreateInstance(type);
+            foreach (var item in props)
+            {
+                var prop = type.GetProperty(item.Key);
+                if (prop == null) throw new NullReferenceException(item.Key);
+                prop.SetValue(inst, item.Value);
+            }
+            return inst;
+        }
+
         public static object CreateInstance(Dictionary<string, object> props)
         {
             var type = CreateType(props.ToDictionary(o => o.Key, o => o.Value.GetType()));
