@@ -1,6 +1,8 @@
-﻿using Microsoft.ML;
+﻿using Common;
+using Microsoft.ML;
 using Microsoft.ML.AutoML;
 using System.Data;
+using System.Reflection;
 using System.Xml.Serialization;
 
 namespace Tools
@@ -239,7 +241,7 @@ namespace Tools
             if (Model == null) throw new NullReferenceException($"{nameof(Model)} is null");
             if (string.IsNullOrEmpty(ColInfo.Label)) throw new NullReferenceException($"{nameof(ColInfo.Label)} is null");
 
-            var predictionType = ClassFactory.CreateType(
+            var predictionType = DynamicTypeFactory.CreateType(
                     new[] { scoreColumn },
                     new[] { Schema[ColInfo.Label].Type.RawType });
             return CreateGenericPrediction(ctx, Schema, Model, inputObject, predictionType, scoreColumn);
@@ -253,7 +255,7 @@ namespace Tools
             if (genericPredictionMethod == null)
                 throw new Exception($"'{methodName}' not found");
 
-            var runtimeType = ClassFactory.CreateType(dataViewSchema);
+            var runtimeType = CreateType(dataViewSchema);
             if (runtimeType == null)
                 throw new Exception("Could not create type");
 
@@ -263,11 +265,17 @@ namespace Tools
             if (dynamicPredictionEngine == null)
                 throw new Exception($"Could not create {predictionMethod.Name}");
 
-            var inputInstance = ClassFactory.CreateInstance(runtimeType, inputObject);
+            var inputInstance = DynamicTypeFactory.CreateInstance(runtimeType, inputObject);
 
             var predictMethod = dynamicPredictionEngine.GetType().GetMethod("Predict", new[] { runtimeType });
             var predictionResult = predictMethod.Invoke(dynamicPredictionEngine, new[] { inputInstance });
             return predictionType.GetProperty(scoreColumn)!.GetValue(predictionResult);
+        }
+
+        public static Type CreateType(DataViewSchema dataViewSchema)
+        {
+            var propTypes = dataViewSchema.ToDictionary(o => o.Name, o => o.Type.RawType);
+            return DynamicTypeFactory.CreateType(propTypes);
         }
     }
 }

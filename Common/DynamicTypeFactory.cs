@@ -1,11 +1,10 @@
-﻿using Microsoft.ML;
-using System.Reflection.Emit;
+﻿using System.Reflection.Emit;
 using System.Reflection;
 using System.Text;
 
-namespace Tools
+namespace Common
 {
-    public static class ClassFactory
+    public static class DynamicTypeFactory
     {
         public static object CreateInstance(Dictionary<string, object> props)
         {
@@ -66,16 +65,6 @@ namespace Tools
             CreateConstructor(dynamicClass);
             for (int ind = 0; ind < propertyNames.Count(); ind++)
                 CreateProperty(dynamicClass, propertyNames[ind], Types[ind]);
-            return dynamicClass.CreateType();
-        }
-
-        public static Type CreateType(DataViewSchema dataViewSchema, AssemblyName? assemblyName = null)
-        {
-            assemblyName ??= new AssemblyName("DynamicInput");
-            var dynamicClass = CreateTypeBuilder(assemblyName);
-            CreateConstructor(dynamicClass);
-            foreach (var item in dataViewSchema)
-                CreateProperty(dynamicClass, item.Name, item.Type.RawType);
             return dynamicClass.CreateType();
         }
 
