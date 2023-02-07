@@ -5,11 +5,14 @@ using Microsoft.ML.Data;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OldDbAdapter;
+using Organization;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
+using System.Collections.Generic;
 using System.Globalization;
 using static ProblemSource.Models.Aggregates.ColumnTypeAttribute;
+using static Tools.MLDynamic;
 
 namespace Tools
 {
@@ -55,9 +58,9 @@ namespace Tools
             return phases;
         }
 
-        public IMLFeature CreateFeature(IEnumerable<Phase> phases, TrainingSettings trainingSettings)
+        public IMLFeature CreateFeature(IEnumerable<Phase> phases, TrainingSettings trainingSettings, int age)
         {
-            return MLFeaturesJulia.FromPhases(trainingSettings, phases, 6, null, 5);
+            return MLFeaturesJulia.FromPhases(trainingSettings, phases, age, null, 5);
         }
 
         public async Task Run(CancellationToken cancellation = default)
@@ -86,18 +89,47 @@ SELECT account_id, MAX(training_day)
                 var db = new DbSql(dbContext.Database.GetConnectionString()!);
                 var trainingIds = await db.Read(q, (r, cs) => r.GetInt32(0));
 
+                //var renderer = new SqlGroupExpressionRenderer(new SqlGroupExpressionRenderer.M2MTableConfig(), new SqlGroupExpressionRenderer.GroupTableConfig());
+                //var sqlAccountIds = BooleanExpressionTree.ParseAndRender($"\"{group}\"", renderer);
+                //var accountIds = await db.Read(GetSqlForAccountsWithMinNumDays(20, $"AND account_id IN ({sqlAccountIds})"), (rd, cols) => rd.GetInt32(0));
+
+                var qGroups = @"
+SELECT account_id, name FROM accounts_groups
+INNER JOIN groups ON groups.id = accounts_groups.group_id
+  WHERE group_id IN (SELECT id FROM groups WHERE name LIKE '_Ages%')
+  AND account_id IN (
+  SELECT account_id
+  FROM phases
+  GROUP BY account_id
+  HAVING MAX(training_day) >= 35
+)
+ ";
+                var ages = (await db.Read(qGroups, (r, cs) => new { Id = r.GetInt32(0), Ages = r.GetString(1).ToLower().Replace("_ages ", "") }))
+                    .ToDictionary(o => o.Id, o => int.Parse(o.Ages.Remove(o.Ages.IndexOf("-"))));
+                //var ageCounts = ages.GroupBy(o => o.Value).ToDictionary(o => o.Key, o => o.Count());
+
                 var features = new Dictionary<int, IMLFeature>();
 
+                var includedAges = new List<int>();
                 foreach (var id in trainingIds)
                 {
                     var phases = await GetTrainingPhases(id, Path.Join(path, "Phases"));
                     if (phases.Any() == false)
                         continue;
-                    var row = CreateFeature(phases, new TrainingSettings());
 
-                    if (row.IsValid)
-                        features.Add(id, row);
+                    var age = ages.GetValueOrDefault(id, 0);
+                    if (age > 0)
+                    {
+                        var row = CreateFeature(phases, new TrainingSettings(), age);
+                        if (row.IsValid)
+                        {
+                            features.Add(id, row);
+                            includedAges.Add(age);
+                        }
+                    }
                 }
+
+                var ageCounts = includedAges.GroupBy(o => o).OrderBy(o => o.Key).Select(o => new { Age = o.Key, Count = o.Count() });
 
                 //finalLevels = finalLevels.Order().ToList();
                 //var numChunks = 5;
@@ -145,46 +177,82 @@ SELECT account_id, MAX(training_day)
                 }
             }
 
-            var rootType = CreateFeature(new List<Phase>(), new TrainingSettings()).GetType();
+            var rootFeature = CreateFeature(new List<Phase>(), new TrainingSettings(), 0);
+            var rootType = rootFeature.GetType();
+            //CreateInstancesFromCsv(rootFeature.GetFlatFeatures(), csvFile);
 
             var columnTypePerProperty = rootType
                 .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
                 .ToDictionary(o => o.Name, o => (Attribute.GetCustomAttribute(o, typeof(ColumnTypeAttribute)) as ColumnTypeAttribute)?.Type);
 
-            var colInfo = new MLDynamic.ColumnInfo
+            var colInfo = new ColumnInfo
             {
                 Label = columnTypePerProperty.Single(o => o.Value == ColumnType.Label).Key,
                 Categorical = columnTypePerProperty.Where(o => o.Value == ColumnType.Categorical).Select(o => o.Key),
                 Ignore = columnTypePerProperty.Where(o => o.Value == ColumnType.Ignored).Select(o => o.Key),
+                UserId = columnTypePerProperty.SingleOrDefault(o => o.Value == ColumnType.UserId).Key,
             };
             var ml = new MLDynamic(colInfo);
 
-            var modelPath = Path.Join(path, "JuliaMLModel.zip");
-            if (ml.TryLoad(modelPath))
+            var modelPath = Path.Join(path, "JuliaMLModel_Reg.zip");
+
+            IExperimentConfig config = new RegressionExperimentConfig(colInfo);
+            Action<TextLoader.Column[]>? modifyColumns = cols => cols.Single(o => o.Name == colInfo.Label).DataKind = DataKind.Single;
+            //IExperimentConfig config = new MultiClassificationExperimentConfig(colInfo);
+            //Action<TextLoader.Column[]>? modifyColumns = cols => cols.Single(o => o.Name == colInfo.Label).DataKind = DataKind.UInt32;
+
+            // Load data regardless of training - so we can use Preview below
+            ml.LoadData(new[] { csvFile }, modifyColumns);
+            if (ml.TryLoad(modelPath) == false)
             {
-                ml.LoadData(new[] { csvFile });
+                await ml.Train(config, TimeSpan.FromMinutes(60), cancellation);
+
+                if (!string.IsNullOrEmpty(modelPath))
+                    ml.Save(modelPath);
+            }
+
+            var rows = ml.DataView.Preview(100).RowView.Select(CreatePropertyDictFromPreviewRow).ToList();
+            var table = GenerateAccuracyTable(rows, ml, colInfo);
+        }
+
+        private void CreateInstancesFromCsv(object exampleInstance, string csvFile)
+        {
+            var rows = File.ReadAllLines(csvFile);
+            var columnNames = rows.First().Split(',').ToList();
+
+            Dictionary<string, Type> colToType;
+            if (exampleInstance is JObject jObj)
+            {
+                var props = jObj.Children<JProperty>();
+                colToType = props.ToDictionary(o => o.Name, o => o.Value.GetType());
             }
             else
             {
-                await ml.Train(new[] { csvFile }, modelPath, TimeSpan.FromMinutes(60), cancellation);
+                throw new NotImplementedException();
+                //var colToType = columnNames.ToDictionary(o => o, type.GetProperty);
             }
 
-            var preview = ml.DataView.Preview(1000);
-
-            var table = GenerateAccuracyTable(preview, ml, colInfo);
+            foreach (var row in rows.Skip(1))
+            {
+                var vals = row.Split(',').ToList();
+                var dict = columnNames
+                    .Select((o, i) => new { Key = o, Value = vals[i] })
+                    .ToDictionary(o => o.Key, o => o.Value);
+            }
         }
 
-        string GenerateAccuracyTable(DataDebuggerPreview preview, MLDynamic ml, MLDynamic.ColumnInfo colInfo)
-        {
-            var predictedPerRow = preview.RowView.Select(r => {
-                var dict = r.Values.ToDictionary(o => o.Key, o => o.Value);
-                var forPredict = ClassFactory.CreateInstance(dict);
+        private Dictionary<string, object> CreatePropertyDictFromPreviewRow(DataDebuggerPreview.RowInfo row) =>
+            row.Values.ToDictionary(o => o.Key, o => o.Value);
 
+
+        private string GenerateAccuracyTable(List<Dictionary<string, object>> rows, MLDynamic ml, MLDynamic.ColumnInfo colInfo)
+        {
+            var predictedPerRow = rows.Select(dict => {
+                var forPredict = ClassFactory.CreateInstance(dict);
                 var predicted = ml.Predict(forPredict);
 
                 return new
                 {
-                    Row = r,
                     Predicted = (float)Math.Round(Convert.ToSingle(predicted)),
                     Actual = Convert.ToInt32(dict[colInfo.Label]),
                     Values = dict
@@ -214,23 +282,6 @@ SELECT account_id, MAX(training_day)
 
             var percentTable = string.Join("\n", numTable.Select(o => string.Join("\t", o)));
             return percentTable;
-
-            //var diffs = preview.RowView
-            //    .Select(r => {
-            //        var dict = r.Values.ToDictionary(o => o.Key, o => o.Value);
-            //        var forPredict = ClassFactory.CreateInstance(dict);
-
-            //        var predicted = ml.Predict(forPredict);
-            //        return new
-            //        {
-            //            Id = dict["Id"],
-            //            Predicted = predicted,
-            //            Actual = dict[colInfo.Label],
-            //            Diff = (float)dict[colInfo.Label] - Convert.ToSingle(predicted),
-            //            RoundDiff = Convert.ToInt32(dict[colInfo.Label]) - (int)Math.Round(Convert.ToSingle(predicted))
-            //        };
-            //    }).OrderByDescending(o => Math.Abs(o.RoundDiff))
-            //.ToList();
         }
     }
 }

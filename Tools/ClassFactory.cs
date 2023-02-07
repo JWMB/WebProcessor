@@ -2,30 +2,11 @@
 using System.Reflection.Emit;
 using System.Reflection;
 using System.Text;
-using static Google.Protobuf.WellKnownTypes.Field.Types;
 
 namespace Tools
 {
     public static class ClassFactory
     {
-        //private static AssemblyName _assemblyName;
-        //public static object CreateObject(string[] propertyNames, Type[] Types)
-        //{
-        //    var assemblyName = new AssemblyName("DynamicInput");
-        //    if (propertyNames.Length != Types.Length)
-        //        throw new ArgumentException("The number of property names should match their corresponding types number");
-
-        //    var dynamicClass = CreateTypeBuilder(assemblyName);
-        //    CreateConstructor(dynamicClass);
-        //    for (int ind = 0; ind < propertyNames.Count(); ind++)
-        //        CreateProperty(dynamicClass, propertyNames[ind], Types[ind]);
-        //    var type = dynamicClass.CreateType();
-        //    var instance = Activator.CreateInstance(type);
-        //    if (instance == null)
-        //        throw new NullReferenceException($"Could not instantiate dynamic type {type.Name}");
-        //    return instance;
-        //}
-
         public static object CreateInstance(Dictionary<string, object> props)
         {
             var type = CreateType(props.ToDictionary(o => o.Key, o => o.Value.GetType()));
@@ -52,9 +33,6 @@ namespace Tools
                 }
                 prop.SetValue(instance, val);
             }
-
-            //foreach (var item in dataViewSchema)
-            //    runtimeType.GetProperty(item.Name)!.SetValue(inputInstance, inputObject.GetType().GetProperty(item.Name).GetValue(inputObject));
 
             return instance;
         }

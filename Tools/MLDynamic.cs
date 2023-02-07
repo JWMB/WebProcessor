@@ -1,6 +1,7 @@
 ﻿using Microsoft.ML;
 using Microsoft.ML.AutoML;
 using System.Data;
+using System.Xml.Serialization;
 
 namespace Tools
 {
@@ -23,6 +24,7 @@ namespace Tools
         public class ColumnInfo
         {
             public string Label { get; set; } = string.Empty;
+            public string? UserId { get; set; }
             public IEnumerable<string>? Categorical { get; set; }
             public IEnumerable<string>? Ignore { get; set; }
         }
@@ -38,32 +40,72 @@ namespace Tools
             return false;
         }
 
-        public async Task Train(string[] dataPaths, string? savedModelPath = null, TimeSpan? trainingTime = null, CancellationToken cancellation = default)
+        public interface IExperimentConfig
+        {
+            SweepablePipeline ConfigurePipeline(MLContext ctx, SweepablePipeline pipeline);
+            //ISweepable<IEstimator<ITransformer>> Pipio(MLContext ctx);
+            AutoMLExperiment ConfigureMetric(AutoMLExperiment exp);
+        }
+
+        public class RegressionExperimentConfig : IExperimentConfig
+        {
+            private readonly ColumnInfo colInfo;
+            public RegressionExperimentConfig(ColumnInfo colInfo)
+            {
+                this.colInfo = colInfo;
+            }
+            public SweepablePipeline ConfigurePipeline(MLContext ctx, SweepablePipeline pipeline)
+            {
+                return pipeline
+                    .Append(ctx.Auto().Regression(labelColumnName: colInfo.Label));
+            }
+            //public ISweepable<IEstimator<ITransformer>> Pipio(MLContext ctx) => ctx.Auto().Regression(labelColumnName: colInfo.Label);
+            public AutoMLExperiment ConfigureMetric(AutoMLExperiment exp) => exp.SetRegressionMetric(RegressionMetric.RSquared, labelColumn: colInfo.Label);
+        }
+
+        public class MultiClassificationExperimentConfig : IExperimentConfig
+        {
+            private readonly ColumnInfo colInfo;
+            public MultiClassificationExperimentConfig(ColumnInfo colInfo)
+            {
+                this.colInfo = colInfo;
+            }
+            public SweepablePipeline ConfigurePipeline(MLContext ctx, SweepablePipeline pipeline)
+            {
+                return pipeline
+                    .Append(ctx.Transforms.Conversion.MapValueToKey(colInfo.Label))
+                    .Append(ctx.Auto().MultiClassification(labelColumnName: colInfo.Label));
+            }
+            //public ISweepable<IEstimator<ITransformer>> Pipio(MLContext ctx) => ctx.Auto().MultiClassification(labelColumnName: colInfo.Label);
+            public AutoMLExperiment ConfigureMetric(AutoMLExperiment exp) => exp.SetMulticlassClassificationMetric(MulticlassClassificationMetric.LogLoss, labelColumn: colInfo.Label);
+        }
+
+        public async Task Train(IExperimentConfig config, TimeSpan? trainingTime = null, CancellationToken cancellation = default)
         {
             // https://learn.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/how-to-use-the-automl-api
-
-            LoadData(dataPaths);
 
             if (DataView == null) throw new NullReferenceException(nameof(DataView));
             if (ColumnInformation == null) throw new NullReferenceException(nameof(ColumnInformation));
 
-            //var experimentType = ctx.Auto().MultiClassification(labelColumnName: ColInfo.Label);
-            //var configureMetric = (AutoMLExperiment exp) => exp.SetMulticlassClassificationMetric(MulticlassClassificationMetric.LogLoss, labelColumn: ColInfo.Label);
-            var experimentType = ctx.Auto().Regression(labelColumnName: ColInfo.Label);
-            var configureMetric = (AutoMLExperiment exp) => exp.SetRegressionMetric(RegressionMetric.RSquared, labelColumn: ColInfo.Label);
+            var experiment = ConfigureExperiment(ctx, DataView, ColumnInformation,
+                config.ConfigurePipeline, config.ConfigureMetric, fold: 4,
+                trainingTime: trainingTime);
 
-            var result = await RunExperiment(ctx, DataView, ColumnInformation,
-                experimentType, configureMetric, fold: 4,
-                trainingTime: trainingTime, cancellation);
+            var trialResult = await experiment.RunAsync(cancellation);
 
-            Model = result.Model;
+            if (trialResult == null)
+                throw new NullReferenceException(nameof(trialResult));
 
-            var info = $"{nameof(result.Metric)}:{result.Metric}, {nameof(result.Loss)}:{result.Loss}";
+            Model = trialResult.Model;
+
+            var info = $"{nameof(trialResult.Metric)}:{trialResult.Metric}, {nameof(trialResult.Loss)}:{trialResult.Loss}";
 
             //CalcFeatureImportance(ctx, model, result.data, labelColumnName);
+        }
 
-            if (!string.IsNullOrEmpty(savedModelPath))
-                ctx.Model.Save(Model, Schema, savedModelPath);
+        public void Save(string modelPath)
+        {
+            ctx.Model.Save(Model, Schema, modelPath);
         }
 
         public void CalcFeatureImportance(MLContext ctx, ITransformer model, IDataView data, string labelColumnName)
@@ -75,15 +117,15 @@ namespace Tools
                 .OrderByDescending(x => x.Item2);
         }
 
-        public void LoadData(string[] dataPaths)
+        public void LoadData(string[] dataPaths, Action<Microsoft.ML.Data.TextLoader.Column[]>? modifyColumns = null)
         {
-            var (data, colInfo) = LoadData(ctx, dataPaths, ColInfo);
+            var (data, colInfo) = LoadData(ctx, dataPaths, ColInfo, modifyColumns);
             DataView = data;
             Schema = data.Schema;
             ColumnInformation = colInfo;
         }
 
-        private static (IDataView, ColumnInformation) LoadData(MLContext ctx, string[] dataPaths, ColumnInfo columnInfo)
+        private static (IDataView, ColumnInformation) LoadData(MLContext ctx, string[] dataPaths, ColumnInfo columnInfo, Action<Microsoft.ML.Data.TextLoader.Column[]>? modifyColumns = null)
         {
             var columnInference = ctx.Auto().InferColumns(dataPaths.First(), labelColumnName: columnInfo.Label, groupColumns: false);
 
@@ -95,8 +137,13 @@ namespace Tools
                 foreach (var name in columnInfo.Ignore)
                     MoveColumnCollection(columnInference.ColumnInformation, name, ci => ci.IgnoredColumnNames);
 
-            // Column inference may get labelColumn type wrong
-            columnInference.TextLoaderOptions.Columns.Single(o => o.Name == columnInfo.Label).DataKind = Microsoft.ML.Data.DataKind.Single;
+            if (columnInfo.UserId != null)
+                columnInference.ColumnInformation.UserIdColumnName = columnInfo.UserId;
+
+            columnInference.ColumnInformation.LabelColumnName = columnInfo.Label;
+
+            // Column inference may get labelColumn type wrong, modifyColumns provides a way to correct this
+            modifyColumns?.Invoke(columnInference.TextLoaderOptions.Columns);
 
             var loader = ctx.Data.CreateTextLoader(columnInference.TextLoaderOptions);
             var data = loader.Load(dataPaths);
@@ -104,22 +151,22 @@ namespace Tools
             return (data, columnInference.ColumnInformation);
         }
 
-        public class Progressor : IProgress<CrossValidationRunDetail<Microsoft.ML.Data.RegressionMetrics>>
-        {
-            public void Report(CrossValidationRunDetail<Microsoft.ML.Data.RegressionMetrics> value)
-            {
-            }
-        }
+        //public class Progressor : IProgress<CrossValidationRunDetail<Microsoft.ML.Data.RegressionMetrics>>
+        //{
+        //    public void Report(CrossValidationRunDetail<Microsoft.ML.Data.RegressionMetrics> value) { }
+        //}
 
-        private static async Task<TrialResult> RunExperiment(MLContext ctx, IDataView data, ColumnInformation colInfo,
-            ISweepable<IEstimator<ITransformer>> pipio, Func<AutoMLExperiment, AutoMLExperiment> configureMetric,
-            int fold = 4, TimeSpan? trainingTime = null, CancellationToken cancellation = default)
+        private static AutoMLExperiment ConfigureExperiment(MLContext ctx, IDataView data, ColumnInformation colInfo,
+            Func<MLContext, SweepablePipeline, SweepablePipeline> configurePipeline,
+            Func<AutoMLExperiment, AutoMLExperiment> configureMetric,
+            int fold = 4, TimeSpan? trainingTime = null)
         {
             var maxSeconds = (uint)(int)(trainingTime ?? TimeSpan.FromSeconds(60)).TotalSeconds;
 
             var pipeline = ctx.Auto()
-                .Featurizer(data, columnInformation: colInfo)
-                .Append(pipio);
+                .Featurizer(data, columnInformation: colInfo);
+
+            pipeline = configurePipeline(ctx, pipeline);
 
             var experiment = ctx.Auto()
                 .CreateExperiment()
@@ -161,12 +208,7 @@ namespace Tools
                     //Console.WriteLine(e.RawMessage);
                 }
             };
-            var trialResult = await experiment.RunAsync(cancellation);
-
-            if (trialResult == null)
-                throw new NullReferenceException(nameof(trialResult));
-
-            return trialResult;
+            return experiment;
         }
 
         private static bool MoveColumnCollection(ColumnInformation colInfo, string name, Func<ColumnInformation, ICollection<string>> getCollection)
@@ -189,18 +231,21 @@ namespace Tools
             return false;
         }
 
-        public object Predict(object inputObject)
+        private const string DefaultScoreColumn = "Score";
+
+        public object Predict(object inputObject, string scoreColumn = DefaultScoreColumn)
         {
             if (Schema == null) throw new NullReferenceException($"{nameof(Schema)} is null");
             if (Model == null) throw new NullReferenceException($"{nameof(Model)} is null");
             if (string.IsNullOrEmpty(ColInfo.Label)) throw new NullReferenceException($"{nameof(ColInfo.Label)} is null");
+
             var predictionType = ClassFactory.CreateType(
-                    new[] { "Score" },
+                    new[] { scoreColumn },
                     new[] { Schema[ColInfo.Label].Type.RawType });
-            return CreateGenericPrediction(ctx, Schema, Model, inputObject, predictionType);
+            return CreateGenericPrediction(ctx, Schema, Model, inputObject, predictionType, scoreColumn);
         }
 
-        private static object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model, object inputObject, Type predictionType)
+        private static object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model, object inputObject, Type predictionType, string scoreColumn = DefaultScoreColumn)
         {
             // Create runtime type from fields and types in a DataViewSchema
             var methodName = "CreatePredictionEngine";
@@ -213,6 +258,7 @@ namespace Tools
                 throw new Exception("Could not create type");
 
             var predictionMethod = genericPredictionMethod.MakeGenericMethod(runtimeType, predictionType);
+            // InvalidOperationException: Can't bind the IDataView column 'Score' of type 'Vector<Single, 6>' to field or property 'Score' of type 'System.UInt32'.
             dynamic? dynamicPredictionEngine = predictionMethod.Invoke(mlContext.Model, new object[] { model, dataViewSchema });
             if (dynamicPredictionEngine == null)
                 throw new Exception($"Could not create {predictionMethod.Name}");
@@ -221,7 +267,7 @@ namespace Tools
 
             var predictMethod = dynamicPredictionEngine.GetType().GetMethod("Predict", new[] { runtimeType });
             var predictionResult = predictMethod.Invoke(dynamicPredictionEngine, new[] { inputInstance });
-            return predictionType.GetProperty("Score")!.GetValue(predictionResult);
+            return predictionType.GetProperty(scoreColumn)!.GetValue(predictionResult);
         }
     }
 }

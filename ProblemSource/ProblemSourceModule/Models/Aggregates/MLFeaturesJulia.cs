@@ -13,7 +13,8 @@ namespace ProblemSource.Models.Aggregates
             Categorical,
             Ignored,
             ImagePath,
-            Label
+            Label,
+            UserId
         }
 
         public ColumnType Type { get; private set; }
@@ -53,6 +54,10 @@ namespace ProblemSource.Models.Aggregates
         public bool Age6_7 { get; set; }
 
         [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
+        public int Age { get; set; }
+
+
+        [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
         public float? FinalNumberLineLevel { get; set; }
 
         [ColumnType(ColumnTypeAttribute.ColumnType.Label)]
@@ -87,7 +92,8 @@ namespace ProblemSource.Models.Aggregates
         public bool IsValid =>
             FinalNumberLineLevel != null
             && ByExercise.ContainsKey("nvr_rp") && ByExercise["nvr_rp"].FractionCorrect.HasValue
-            && ByExercise.ContainsKey("nvr_so") && ByExercise["nvr_so"].FractionCorrect.HasValue;
+            && ByExercise.ContainsKey("nvr_so") && ByExercise["nvr_so"].FractionCorrect.HasValue
+            && (Age >= 6 && Age <= 7);
 
         public static List<int> ChunkLimits(IEnumerable<MLFeaturesJulia> features, int numChunks)
         {
@@ -133,6 +139,7 @@ namespace ProblemSource.Models.Aggregates
                 MeanTimeIncrease = featuresByExercise.Values.Any() ? featuresByExercise.Values.Average(o => o.MeanTimeIncrease) : 0,
                 TrainingTime20Min = trainingSettings.timeLimits.FirstOrDefault() == 20M,
                 Age6_7 = age == 6,
+                Age = age,
                 FinalNumberLineLevel = (float?)levelNumberlineAroundDay35,
             };
         }
