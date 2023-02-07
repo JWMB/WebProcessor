@@ -253,18 +253,18 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
 
             var groupedByErrors = predictedPerRow
                 .GroupBy(o => o.Actual)
-                .Select(o => new { Group = o.Key, Distribution = o.GroupBy(p => (int)Math.Round(p.Predicted)).Select(p => new { Predicted = p.Key, Count = p.Count() }) })
+                .Select(o => new { Actual = o.Key, PredictionDistribution = o.GroupBy(p => (int)Math.Round(p.Predicted)).Select(p => new { Predicted = p.Key, Count = p.Count() }) })
                 .ToList();
 
-            var groups = groupedByErrors.Select(o => o.Group).Order().ToList();
+            var groups = groupedByErrors.Select(o => o.Actual).Order().ToList();
             var numTable = groups.Select(row => {
-                var grp = groupedByErrors.FirstOrDefault(o => o.Group == row);
+                var grp = groupedByErrors.FirstOrDefault(o => o.Actual == row);
                 IEnumerable<decimal> percentages;
                 int totalCnt = 0;
                 if (grp != null)
                 {
-                    totalCnt = grp.Distribution.Sum(o => o.Count);
-                    percentages = groups.Select(col => 1M * (grp.Distribution.FirstOrDefault(o => o.Predicted == col)?.Count ?? 0) / totalCnt);
+                    totalCnt = grp.PredictionDistribution.Sum(o => o.Count);
+                    percentages = groups.Select(col => 1M * (grp.PredictionDistribution.FirstOrDefault(o => o.Predicted == col)?.Count ?? 0) / totalCnt);
                 }
                 else
                     percentages = groups.Select(o => 0M);
@@ -272,7 +272,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
                 return new[] { (decimal)row, (decimal)totalCnt }.Concat(percentages.Select(o => Math.Round(o * 100, 1))).ToList();
             }).ToList();
 
-            var percentTable = string.Join("\n", numTable.Select(o => string.Join("\t", o)));
+            var percentTable = "Actual value, Count, % predicted to have value: \n" + string.Join("\n", numTable.Select(o => string.Join("\t", o)));
             return percentTable;
         }
     }
