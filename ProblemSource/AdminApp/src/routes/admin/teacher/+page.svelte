@@ -21,7 +21,7 @@
 	let createdTrainingUsernames: string[] = [];
 
 	const clickedGroupRow = (e: CustomEvent<any>) => {
-		trainingsPromise = apiFacade.trainings.getSummaries(getElementValue('forUser').toString().trim(), e.detail.group);
+		trainingsPromise = apiFacade.trainings.getSummaries(e.detail.group, getElementValue('forUser').toString().trim());
 	};
 	const clickedTrainingRow = (e: CustomEvent<any>) => {
 		goto(`${base}/training?id=${e.detail.id}`);
