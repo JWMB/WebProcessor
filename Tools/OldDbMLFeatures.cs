@@ -283,6 +283,9 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
         {
             List<List<int>> chunks;
 
+            //Func<ValuesWithPrediction, int> groupFirstBy = vp => vp.Actual;
+            //Func<ValuesWithPrediction, int> groupThenBy = vp => (int)vp.Predicted;
+
             var allActual = rows.Select(o => o.Actual).Order().ToList();
             var allActualDistinct = allActual.Distinct().Order().ToList();
             if (allActualDistinct.Count <= maxNumGroups)
@@ -331,7 +334,9 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
                     .Concat(percentages.Select(o => Math.Round(o * 100, 1))).ToList();
             }).ToList();
 
-            var info = "Actual chunk, % of total, Count, % predicted to be in chunk: \n" + string.Join(", ", chunks.Select(o => $"<= {o.Last()}"));
+            var info = "Actual chunk, % of total, Count, % predicted to be in chunk: \n" 
+                + string.Join("\t", Enumerable.Range(0, 4).Select(o => ""))
+                + string.Join("\t", chunks.Select(o => $"<= {o.Last()}"));
             var percentTable = info + "\n" + string.Join("\n", numTable.Select(o => string.Join("\t", o)));
             return percentTable;
 
