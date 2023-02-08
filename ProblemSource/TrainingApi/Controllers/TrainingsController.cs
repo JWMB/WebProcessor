@@ -8,7 +8,6 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
-using System.Collections.Generic;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
 
@@ -79,6 +78,22 @@ namespace TrainingApi.Controllers
             return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, dto.TrainingSettings);
         }
 
+        private async Task<User> GetImpersonatedUserOrThrow(string? username)
+        {
+            var currentUser = userProvider.UserOrThrow;
+            if (string.IsNullOrEmpty(username))
+                return currentUser;
+
+            if (currentUser.Role != Roles.Admin)
+                throw new UnauthorizedAccessException();
+
+            var impersonatedUser = await userRepository.Get(username);
+            if (impersonatedUser == null)
+                throw new Exception($"null user '{username}'");
+
+            return impersonatedUser;
+        }
+
         [HttpPost]
         [Route("createclass")]
         [ProducesErrorResponseType(typeof(HttpException))]
@@ -100,14 +115,8 @@ namespace TrainingApi.Controllers
                 }
             }
 
-
             if (string.IsNullOrEmpty(createForUser) == false)
-            {
-                if (user.Role != Roles.Admin)
-                    throw new UnauthorizedAccessException();
-                user = await userRepository.Get(createForUser);
-                if (user == null) throw new Exception($"null user ({nameof(createForUser)}={createForUser})");
-            }
+                user = await GetImpersonatedUserOrThrow(createForUser);
 
             var trainings = new List<Training>();
             for (int i = 0; i < numTrainings; i++)
@@ -178,9 +187,10 @@ namespace TrainingApi.Controllers
 
         [HttpGet]
         [Route("groups")]
-        public async Task<Dictionary<string, List<TrainingSummaryDto>>> GetGroups()
+        public async Task<Dictionary<string, List<TrainingSummaryDto>>> GetGroups(string? impersonateUser = null) // TODO: use a header instead and centralize impersonation ICurrentUserProvider?
         {
-            var groupedTrainings = await GetUserGroups();
+            var user = await GetImpersonatedUserOrThrow(impersonateUser);
+            var groupedTrainings = await GetUserGroups(user: user);
             var trainings = groupedTrainings.SelectMany(o => o.Value).DistinctBy(o => o.Id).ToList();
 
             var summaryDtos = await GetSummaryDtos(trainings);
@@ -213,9 +223,9 @@ namespace TrainingApi.Controllers
 
         [HttpGet]
         [Route("summaries")]
-        public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery] string? group = null)
+        public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery] string? group = null, string? impersonateUser = null)
         {
-            var trainings = await GetUsersTrainings(group);
+            var trainings = await GetUsersTrainings(group: group, user: await GetImpersonatedUserOrThrow(impersonateUser));
             var trainingDayTasks = trainings.Select(o => statisticsProvider.GetTrainingDays(o.Id)).ToList();
 
             IEnumerable<TrainingDayAccount>[] results;
@@ -241,9 +251,9 @@ namespace TrainingApi.Controllers
             ).ToList();
         }
 
-        private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null)
+        private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null, User? user = null)
         {
-            var user = userProvider.UserOrThrow;
+            user = user ?? userProvider.UserOrThrow;
             Dictionary<string, List<Training>> groupToIds = new();
 
             if (user.Trainings.Any() == false && user.Role == Roles.Admin)
@@ -262,9 +272,9 @@ namespace TrainingApi.Controllers
             return groupToIds;
         }
 
-        private async Task<IEnumerable<Training>> GetUsersTrainings(string? group = null)
+        private async Task<IEnumerable<Training>> GetUsersTrainings(string? group = null, User? user = null)
         {
-            return (await GetUserGroups(group)).SelectMany(o => o.Value).DistinctBy(o => o.Id);
+            return (await GetUserGroups(user: user, group: group)).SelectMany(o => o.Value).DistinctBy(o => o.Id);
         }
 
         public class TrainingSummaryDto

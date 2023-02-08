@@ -21,7 +21,7 @@
 	let createdTrainingUsernames: string[] = [];
 
 	const clickedGroupRow = (e: CustomEvent<any>) => {
-		trainingsPromise = apiFacade.trainings.getSummaries(e.detail.group);
+		trainingsPromise = apiFacade.trainings.getSummaries(getElementValue('forUser').toString().trim(), e.detail.group);
 	};
 	const clickedTrainingRow = (e: CustomEvent<any>) => {
 		goto(`${base}/training?id=${e.detail.id}`);
@@ -57,9 +57,10 @@
 			return;
 		}
 		//trainingsPromise = apiFacade.trainings.getSummaries();
+		const impersonate = getElementValue('forUser').toString().trim();
 
 		trainingGroupsPromise2 = new Promise((res) => {
-			apiFacade.trainings.getGroups().then((r) => {
+			apiFacade.trainings.getGroups(impersonate).then((r) => {
 				const asList = Object.entries(r).map((o) => ({ group: o[0], summaries: o[1] }));
 				trainingGroups = asList;
 				res(asList);
@@ -80,6 +81,10 @@
 
 <div>
 	<h2>Classes</h2>
+	{#if $userStore?.role == 'Admin'}
+		Impersonate user: <input id="forUser" type="text" />
+		<input type="button" value="Refresh" on:click={() => getTrainings()} />
+	{/if}
 	<div>
 		Create class: <input id="className" type="text" value="Fsk A" />
 		num trainings: <input id="numTrainings" style="width:40px;" type="number" min="1" max="30" value="10" />
@@ -90,9 +95,6 @@
 			{/each}
 		</select>
 		time per day: <input id="timePerDay" style="width:40px;" type="number" min="15" max="45" value="33" />
-		{#if $userStore?.role == 'Admin'}
-			create for user: <input id="forUser" type="text" />
-		{/if}
 		<input
 			type="button"
 			value="Create"

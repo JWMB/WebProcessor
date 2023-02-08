@@ -746,8 +746,10 @@ export class TrainingsClient {
         return Promise.resolve<TrainingTemplateDto[]>(null as any);
     }
 
-    getGroups(): Promise<{ [key: string]: TrainingSummaryDto[]; }> {
-        let url_ = this.baseUrl + "/api/Trainings/groups";
+    getGroups(impersonateUser: string | null | undefined): Promise<{ [key: string]: TrainingSummaryDto[]; }> {
+        let url_ = this.baseUrl + "/api/Trainings/groups?";
+        if (impersonateUser !== undefined && impersonateUser !== null)
+            url_ += "impersonateUser=" + encodeURIComponent("" + impersonateUser) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -816,10 +818,12 @@ export class TrainingsClient {
         return Promise.resolve<number>(null as any);
     }
 
-    getSummaries(group: string | null | undefined): Promise<TrainingSummaryWithDaysDto[]> {
+    getSummaries(group: string | null | undefined, impersonateUser: string | null | undefined): Promise<TrainingSummaryWithDaysDto[]> {
         let url_ = this.baseUrl + "/api/Trainings/summaries?";
         if (group !== undefined && group !== null)
             url_ += "group=" + encodeURIComponent("" + group) + "&";
+        if (impersonateUser !== undefined && impersonateUser !== null)
+            url_ += "impersonateUser=" + encodeURIComponent("" + impersonateUser) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
