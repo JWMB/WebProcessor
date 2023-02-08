@@ -201,6 +201,8 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
             var rows = CreateDictionariesFromCsv(ml.Schema!, csvFile).ToList();
             var predicted = Predict(rows, ml, colInfo);
             //var rows = ml.DataView.Preview(100).RowView.Select(CreatePropertyDictFromPreviewRow).ToList();
+
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("sv-SE");
             var table = GenerateAccuracyTable(predicted, 10);
 
             var samples = string.Join("\n", predicted.Take(100).Select(o => $"{o.Values["Id"]}\t{o.Actual}\t{o.Predicted}"));
@@ -279,68 +281,77 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
             }).ToList();
         }
 
-        private string GenerateAccuracyTable(List<ValuesWithPrediction> rows, int maxNumGroups = 8) //List<Dictionary<string, object>> rows, MLDynamic ml, MLDynamic.ColumnInfo colInfo)
+        private string GenerateAccuracyTable(List<ValuesWithPrediction> rows, int maxNumGroups = 8, bool percentagesOfAllTrainings = true)
         {
-            List<List<int>> chunks;
+            Func<ValuesWithPrediction, int> groupThenBy = vp => vp.Actual;
+            var groupThenByName = nameof(ValuesWithPrediction.Actual);
+            Func<ValuesWithPrediction, int> groupFirstBy = vp => (int)Math.Round(vp.Predicted);
+            var groupFirstByName = nameof(ValuesWithPrediction.Predicted);
 
-            //Func<ValuesWithPrediction, int> groupFirstBy = vp => vp.Actual;
-            //Func<ValuesWithPrediction, int> groupThenBy = vp => (int)vp.Predicted;
-
-            var allActual = rows.Select(o => o.Actual).Order().ToList();
-            var allActualDistinct = allActual.Distinct().Order().ToList();
-            if (allActualDistinct.Count <= maxNumGroups)
+            List<int> chunks;
+            var allGroup1Keys = rows.Select(groupFirstBy).Order().ToList();
+            var allGroup1Distinct = allGroup1Keys.Distinct().Order().ToList();
+            if (allGroup1Distinct.Count <= maxNumGroups)
             {
-                chunks = allActual.Select(o => new List<int> { o }).ToList();
+                chunks = allGroup1Keys.ToList();
             }
             else
             {
-                var chunkSize = allActual.Count / maxNumGroups;
-                chunks = allActual.Chunk(chunkSize).Select(o => o.Distinct().ToList()).ToList();
-                // there can be overlaps - remove them
-                for (int i = 1; i < chunks.Count; i++)
-                {
-                    if (chunks[i].First() == chunks[i - 1].Last())
-                        chunks[i].RemoveAt(0);
-                }
+                var chunkSize = allGroup1Keys.Count / maxNumGroups;
+                chunks = allGroup1Keys.Chunk(chunkSize).Select(o => o.Distinct().Order().ToList())
+                    .Select(o => o[^1])
+                    .ToList();
 
                 // If we have a small tail, move those into next last chunk
-                var numInLast = allActual.Where(o => chunks[^1].Contains(o)).Count();
+                var numInLast = allGroup1Keys.Where(o => GetChunk(o) == chunks.Count - 1).Count();
                 if (numInLast < chunkSize / 4)
                 {
-                    chunks[^2].AddRange(chunks[^1]);
+                    chunks[^2] = chunks[^1];
                     chunks.RemoveAt(chunks.Count - 1);
                 }
             }
 
             var groupedByErrors = rows
-                .GroupBy(o => GetChunk(o.Actual))
-                .Select(o => new { ActualChunk = o.Key, PredictionDistribution = o.GroupBy(p => GetChunk((int)Math.Round(p.Predicted))).Select(p => new { Predicted = p.Key, Count = p.Count() }) })
+                .GroupBy(o => GetChunk(groupFirstBy(o)))
+                .Select(o => new { Group1 = o.Key, Distribution = o.GroupBy(p => GetChunk(groupThenBy(p))).Select(p => new { Group2 = p.Key, Count = p.Count() }) })
                 .ToList();
 
-            var groups = groupedByErrors.Select(o => o.ActualChunk).Order().ToList();
+            var groups = groupedByErrors.Select(o => o.Group1).Order().ToList();
             var numTable = groups.Select(row => {
-                var grp = groupedByErrors.FirstOrDefault(o => o.ActualChunk == row);
+                var grp = groupedByErrors.FirstOrDefault(o => o.Group1 == row);
                 IEnumerable<decimal> percentages;
-                int totalCnt = 0;
+                int numInGroup = 0;
                 if (grp != null)
                 {
-                    totalCnt = grp.PredictionDistribution.Sum(o => o.Count);
-                    percentages = groups.Select(col => 1M * (grp.PredictionDistribution.FirstOrDefault(o => o.Predicted == col)?.Count ?? 0) / totalCnt);
+                    numInGroup = grp.Distribution.Sum(o => o.Count);
+                    percentages = groups.Select(col => 1M * (grp.Distribution.FirstOrDefault(o => o.Group2 == col)?.Count ?? 0) / (percentagesOfAllTrainings ? rows.Count() : numInGroup));
                 }
                 else
                     percentages = groups.Select(o => 0M);
 
-                return new[] { (decimal)row, Math.Round((decimal)totalCnt * 100 / rows.Count(), 1), (decimal)totalCnt }
+                return new[] { (decimal)row, Math.Round((decimal)numInGroup * 100 / rows.Count(), 1), (decimal)numInGroup }
                     .Concat(percentages.Select(o => Math.Round(o * 100, 1))).ToList();
             }).ToList();
 
-            var info = "Actual chunk, % of total, Count, % predicted to be in chunk: \n" 
-                + string.Join("\t", Enumerable.Range(0, 4).Select(o => ""))
-                + string.Join("\t", chunks.Select(o => $"<= {o.Last()}"));
-            var percentTable = info + "\n" + string.Join("\n", numTable.Select(o => string.Join("\t", o)));
+            var leadingEmptyColumns = string.Join("\t", Enumerable.Range(0, 4).Select(o => ""));
+            var info = $"{groupFirstByName} chunk, % of total, Count, % {groupThenByName} in chunk: \n" 
+                + leadingEmptyColumns + string.Join("\t", chunks.Select(o => $"<= {o}"));
+
+            var countByColumn = rows.GroupBy(o => GetChunk(groupThenBy(o))).ToDictionary(o => o.Key, o => o.Count()); //.Count() ToList
+
+            var percentTable = info + "\n"
+                + string.Join("\n", numTable.Select(o => string.Join("\t", o))) + "\n"
+                + leadingEmptyColumns + string.Join("\t", Enumerable.Range(0, countByColumn.Keys.Max()).Select(o => countByColumn.GetValueOrDefault(o, 0))) + "\n"
+                + leadingEmptyColumns + string.Join("\t", Enumerable.Range(0, countByColumn.Keys.Max()).Select(o => Math.Round((decimal)100M * countByColumn.GetValueOrDefault(o, 0) / rows.Count(), 1)));
+
+
             return percentTable;
 
-            int GetChunk(int value) => chunks.FindIndex(c => c.Contains(value));
+            int GetChunk(int value)
+            {
+                var index = chunks.FindIndex(c => value <= c);
+                return index < 0 ? chunks.Count : index;
+            }
         }
     }
 }
