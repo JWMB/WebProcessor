@@ -184,7 +184,7 @@ namespace Tools
             {
                 //if (e.Kind != Microsoft.ML.Runtime.ChannelMessageKind.Trace)
                 if (e.Source.Equals("AutoMLExperiment") &&
-                    new[] { "current CPU:", "DefaultPerformanceMonitor has been started" }.Any(e.RawMessage.Contains) == false)
+                    new[] { "current CPU:", "DefaultPerformanceMonitor has been started", "trial setting - ", "Update Running Trial - " }.Any(e.RawMessage.Contains) == false)
                 {
                     var elapsed = DateTime.Now - start;
                     elapsed = new TimeSpan(elapsed.Hours, elapsed.Minutes, elapsed.Seconds);

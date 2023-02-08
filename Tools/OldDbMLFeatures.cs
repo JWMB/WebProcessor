@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using OldDbAdapter;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
@@ -12,7 +11,6 @@ using ProblemSource.Services;
 using ProblemSourceModule.Models.Aggregates.ML;
 using System.Globalization;
 using static ProblemSourceModule.Models.Aggregates.ML.ColumnTypeAttribute;
-using static Tools.MLDynamic;
 
 namespace Tools
 {
@@ -174,7 +172,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
                 .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
                 .ToDictionary(o => o.Name, o => (Attribute.GetCustomAttribute(o, typeof(ColumnTypeAttribute)) as ColumnTypeAttribute)?.Type);
 
-            var colInfo = new ColumnInfo
+            var colInfo = new MLDynamic.ColumnInfo
             {
                 Label = columnTypePerProperty.Single(o => o.Value == ColumnType.Label).Key,
                 Categorical = columnTypePerProperty.Where(o => o.Value == ColumnType.Categorical).Select(o => o.Key),
@@ -185,7 +183,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
 
             var modelPath = Path.Join(path, "JuliaMLModel_Reg.zip");
 
-            IExperimentConfig config = new RegressionExperimentConfig(colInfo);
+            MLDynamic.IExperimentConfig config = new MLDynamic.RegressionExperimentConfig(colInfo);
             Action<TextLoader.Column[]>? modifyColumns = cols => cols.Single(o => o.Name == colInfo.Label).DataKind = DataKind.Single;
             //IExperimentConfig config = new MultiClassificationExperimentConfig(colInfo);
             //Action<TextLoader.Column[]>? modifyColumns = cols => cols.Single(o => o.Name == colInfo.Label).DataKind = DataKind.UInt32;
@@ -201,10 +199,29 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
             }
 
             var rows = CreateDictionariesFromCsv(ml.Schema!, csvFile).ToList();
+            var predicted = Predict(rows, ml, colInfo);
             //var rows = ml.DataView.Preview(100).RowView.Select(CreatePropertyDictFromPreviewRow).ToList();
-            var table = GenerateAccuracyTable(rows, ml, colInfo);
+            var table = GenerateAccuracyTable(predicted, 10);
+
+            var samples = string.Join("\n", predicted.Take(100).Select(o => $"{o.Values["Id"]}\t{o.Actual}\t{o.Predicted}"));
             Console.WriteLine(table);
         }
+
+        //private static IEnumerable<T> PickRandom<T>(IEnumerable<T> items, float fraction)
+        //{
+        //    if (fraction <= 1)
+        //        return items;
+
+        //    var step = 1f / fraction;
+        //    var random = new Random();
+        //    var cnt = 0;
+        //    var numItems = fraction * items.Count();
+
+        //    random.NextDouble() * 2
+        //    foreach (var item in items)
+        //    {
+        //    }
+        //}
 
         private IEnumerable<Dictionary<string, object?>> CreateDictionariesFromCsv(DataViewSchema schema, string csvFile)
         {
@@ -241,26 +258,65 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
             row.Values.ToDictionary(o => o.Key, o => o.Value);
 
 
-        private string GenerateAccuracyTable(List<Dictionary<string, object>> rows, MLDynamic ml, MLDynamic.ColumnInfo colInfo)
+        class ValuesWithPrediction
         {
-            var type = CreateType(ml.Schema!);
+            public Dictionary<string, object> Values { get; set; } = new();
+            public float Predicted { get; set; }
+            public int Actual { get; set; }
+        }
+
+        private List<ValuesWithPrediction> Predict(List<Dictionary<string, object>> rows, MLDynamic ml, MLDynamic.ColumnInfo colInfo)
+        {
+            var type = MLDynamic.CreateType(ml.Schema!);
             var instances = rows.Select(o => DynamicTypeFactory.CreateInstance(type, o));
             var predictions = ml.Predict(instances).ToList();
 
-            var predictedPerRow = rows.Select((o, i) => new {
+            return rows.Select((o, i) => new ValuesWithPrediction
+            {
                 Predicted = (float)Math.Round(Convert.ToSingle(predictions[i])),
                 Actual = Convert.ToInt32(o[colInfo.Label]),
                 Values = o
             }).ToList();
+        }
 
-            var groupedByErrors = predictedPerRow
-                .GroupBy(o => o.Actual)
-                .Select(o => new { Actual = o.Key, PredictionDistribution = o.GroupBy(p => (int)Math.Round(p.Predicted)).Select(p => new { Predicted = p.Key, Count = p.Count() }) })
+        private string GenerateAccuracyTable(List<ValuesWithPrediction> rows, int maxNumGroups = 8) //List<Dictionary<string, object>> rows, MLDynamic ml, MLDynamic.ColumnInfo colInfo)
+        {
+            List<List<int>> chunks;
+
+            var allActual = rows.Select(o => o.Actual).Order().ToList();
+            var allActualDistinct = allActual.Distinct().Order().ToList();
+            if (allActualDistinct.Count <= maxNumGroups)
+            {
+                chunks = allActual.Select(o => new List<int> { o }).ToList();
+            }
+            else
+            {
+                var chunkSize = allActual.Count / maxNumGroups;
+                chunks = allActual.Chunk(chunkSize).Select(o => o.Distinct().ToList()).ToList();
+                // there can be overlaps - remove them
+                for (int i = 1; i < chunks.Count; i++)
+                {
+                    if (chunks[i].First() == chunks[i - 1].Last())
+                        chunks[i].RemoveAt(0);
+                }
+
+                // If we have a small tail, move those into next last chunk
+                var numInLast = allActual.Where(o => chunks[^1].Contains(o)).Count();
+                if (numInLast < chunkSize / 4)
+                {
+                    chunks[^2].AddRange(chunks[^1]);
+                    chunks.RemoveAt(chunks.Count - 1);
+                }
+            }
+
+            var groupedByErrors = rows
+                .GroupBy(o => GetChunk(o.Actual))
+                .Select(o => new { ActualChunk = o.Key, PredictionDistribution = o.GroupBy(p => GetChunk((int)Math.Round(p.Predicted))).Select(p => new { Predicted = p.Key, Count = p.Count() }) })
                 .ToList();
 
-            var groups = groupedByErrors.Select(o => o.Actual).Order().ToList();
+            var groups = groupedByErrors.Select(o => o.ActualChunk).Order().ToList();
             var numTable = groups.Select(row => {
-                var grp = groupedByErrors.FirstOrDefault(o => o.Actual == row);
+                var grp = groupedByErrors.FirstOrDefault(o => o.ActualChunk == row);
                 IEnumerable<decimal> percentages;
                 int totalCnt = 0;
                 if (grp != null)
@@ -271,11 +327,15 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
                 else
                     percentages = groups.Select(o => 0M);
 
-                return new[] { (decimal)row, (decimal)totalCnt }.Concat(percentages.Select(o => Math.Round(o * 100, 1))).ToList();
+                return new[] { (decimal)row, Math.Round((decimal)totalCnt * 100 / rows.Count(), 1), (decimal)totalCnt }
+                    .Concat(percentages.Select(o => Math.Round(o * 100, 1))).ToList();
             }).ToList();
 
-            var percentTable = "Actual value, Count, % predicted to have value: \n" + string.Join("\n", numTable.Select(o => string.Join("\t", o)));
+            var info = "Actual chunk, % of total, Count, % predicted to be in chunk: \n" + string.Join(", ", chunks.Select(o => $"<= {o.Last()}"));
+            var percentTable = info + "\n" + string.Join("\n", numTable.Select(o => string.Join("\t", o)));
             return percentTable;
+
+            int GetChunk(int value) => chunks.FindIndex(c => c.Contains(value));
         }
     }
 }
