@@ -1,34 +1,9 @@
-﻿using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
+﻿using Common;
+using ProblemSource.Models;
+using ProblemSource.Models.Aggregates;
 
-namespace ProblemSource.Models.Aggregates
+namespace ProblemSourceModule.Models.Aggregates.ML
 {
-    public class ColumnTypeAttribute : Attribute
-    {
-        public enum ColumnType
-        {
-            Numeric,
-            Text,
-            Categorical,
-            Ignored,
-            ImagePath,
-            Label,
-            UserId
-        }
-
-        public ColumnType Type { get; private set; }
-
-        public ColumnTypeAttribute(ColumnType type)
-        {
-            Type = type;
-        }
-    }
-
-    public interface IMLFeature
-    {
-        Dictionary<string, object?> GetFlatFeatures();
-        bool IsValid { get; }
-    }
-
     public class MLFeaturesJulia : IMLFeature
     {
         public Dictionary<string, FeaturesForExercise> ByExercise { get; set; } = new();
@@ -45,6 +20,8 @@ namespace ProblemSource.Models.Aggregates
         [ColumnType(ColumnTypeAttribute.ColumnType.Categorical)]
         public bool TrainingTime20Min { get; set; }
 
+        public float ActiveTimePerDay { get; set; }
+
         /// <summary>
         /// 13) Age 6 - 7: Dummy coded with a 1 if the age is 6 - 7 and a 0 if the age is 7 - 8(other age groups have been excluded from the data set)
         /// </summary>
@@ -54,11 +31,11 @@ namespace ProblemSource.Models.Aggregates
         [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
         public int Age { get; set; }
 
-
-        [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
+        //[ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
+        [ColumnType(ColumnTypeAttribute.ColumnType.Label)]
         public float? FinalNumberLineLevel { get; set; }
 
-        [ColumnType(ColumnTypeAttribute.ColumnType.Label)]
+        [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
         public int Outcome
         {
             get
@@ -91,7 +68,7 @@ namespace ProblemSource.Models.Aggregates
             FinalNumberLineLevel != null
             && ByExercise.ContainsKey("nvr_rp") && ByExercise["nvr_rp"].FractionCorrect.HasValue
             && ByExercise.ContainsKey("nvr_so") && ByExercise["nvr_so"].FractionCorrect.HasValue
-            && (Age >= 6 && Age <= 7);
+            && Age >= 6 && Age <= 7;
 
         public static List<int> ChunkLimits(IEnumerable<MLFeaturesJulia> features, int numChunks)
         {
@@ -139,9 +116,12 @@ namespace ProblemSource.Models.Aggregates
                 Age6_7 = age == 6,
                 Age = age,
                 FinalNumberLineLevel = (float?)levelNumberlineAroundDay35,
+                ActiveTimePerDay = phases
+                    .Where(o => o.training_day <= dayCutoff)
+                    .SumOrDefault(o => o.problems.SumOrDefault(p => p.answers.SumOrDefault(a => Math.Min(a.response_time, 40)))) * 1f / 1000 / 60 / dayCutoff
             };
         }
-        
+
         public Dictionary<string, object?> GetFlatFeatures()
         {
             var npals = "npals";
@@ -196,6 +176,7 @@ namespace ProblemSource.Models.Aggregates
             // Need to have same name as properties so that the ColumnTypeAttribute values can be used for the JSON properties
             root.Add(nameof(TrainingTime20Min), TrainingTime20Min);
             root.Add(nameof(Age6_7), Age6_7);
+            root.Add(nameof(ActiveTimePerDay), ActiveTimePerDay);
             root.Add(nameof(FinalNumberLineLevel), FinalNumberLineLevel);
             root.Add(nameof(Outcome), Outcome);
 
@@ -328,7 +309,8 @@ namespace ProblemSource.Models.Aggregates
             public static List<ExerciseGlobals> ReadExerciseGlobals()
             {
                 var str = File.ReadAllText(@"C:\Users\uzk446\Desktop\JuliaData\globals.csv");
-                var result = str.Trim().Split('\n').Skip(1).Select(o => {
+                var result = str.Trim().Split('\n').Skip(1).Select(o =>
+                {
                     var items = o.Trim().Split(',');
                     return new ExerciseGlobals { Exercise = CorrectExercise(items[0]), Median = double.Parse(items[1]), StdDev = double.Parse(items[2]) };
                 }).ToList();
@@ -471,7 +453,7 @@ namespace ProblemSource.Models.Aggregates
                 foreach (var kv in responseTimesPerLevel)
                     kv.Value.SetCutoff(globals.Median, globals.StdDev);
 
-                var debugXX = Newtonsoft.Json.JsonConvert.SerializeObject(responseTimesPerLevel.Select(o => new 
+                var debugXX = Newtonsoft.Json.JsonConvert.SerializeObject(responseTimesPerLevel.Select(o => new
                 { o.Value.MinLevel, o.Value.OutlierCutOff, o.Value.Mean, o.Value.MeanNoOutliers, o.Value.StandardDeviationCorrectNoOutliers, o.Value.ResponseTimes.Count, ResponseTimesNoOutliersCount = o.Value.ResponseTimesNoOutliers.Count() }));
 
                 //var debug = responseTimesPerLevel.Select(o => new
@@ -508,7 +490,7 @@ namespace ProblemSource.Models.Aggregates
                 //stats.NumProblemsToHighestLevel = orderedPhases.FindIndex(phase => phase.problems.Any(p => (int)p.level == stats.HighestLevelInt));
                 // Note: in Julias example, outlier trials were filtered out
                 //stats.NumProblemsToHighestLevel = allProblems.Where(o => o.answers.Any(a => responseTimesTotal.IsOutlier(a.response_time) == false)).ToList()
-                    //.FindIndex(o => (int)o.level == stats.HighestLevelInt && o.answers.Any(a => a.correct));
+                //.FindIndex(o => (int)o.level == stats.HighestLevelInt && o.answers.Any(a => a.correct));
 
                 stats.NumProblems = phases.Sum(o => o.problems.Count());
 
@@ -556,8 +538,9 @@ namespace ProblemSource.Models.Aggregates
                 // stats.NumHighResponseTimes = allProblems.Count(problem => problem.answers.Any(answer => isOutlier(answer.response_time)));
                 stats.NumHighResponseTimes = allProblems
                     .GroupBy(problem => (int)problem.level)
-                    .Select(grp => {
-                        var rt = responseTimesPerLevel[(int)grp.Key];
+                    .Select(grp =>
+                    {
+                        var rt = responseTimesPerLevel[grp.Key];
                         return grp.Count(problem => problem.answers.Any(answer => rt.IsOutlier(answer.response_time)));
                     }).Sum();
 
@@ -580,77 +563,6 @@ namespace ProblemSource.Models.Aggregates
                 bool HasCorrectAnswer(Problem problem) => problem.answers.Any(answer => answer.correct);
                 bool HasNoCorrectAnswer(Problem problem) => HasCorrectAnswer(problem) == false;
             }
-        }
-    }
-
-    public static class StatisticsExtensions
-    {
-        public static IEnumerable<TOut> AggregateWithPrevious<TIn, TOut>(this IEnumerable<TIn> values, Func<TIn, TIn, TOut> actOnPreviousAndCurrent)
-        {
-            var prev = values.First();
-            foreach (var item in values.Skip(1))
-            {
-                yield return actOnPreviousAndCurrent(prev, item);
-            }
-        }
-
-        public static object?[] ToObjectArray<T>(this IEnumerable<FeaturesForExercise> values, Func<FeaturesForExercise, T> selector) =>
-            values.Select(selector).Select(o => (object?)o).ToArray();
-
-        public static double? MedianOrNull(this IEnumerable<double> values) => values.Any() ? values.Median() : null;
-        public static decimal? MedianOrNull(this IEnumerable<decimal> values) => values.Any() ? values.Median() : null;
-
-
-        public static decimal Median(this IEnumerable<decimal> values) => (decimal)values.Order().Select(o => (double)o).Median();
-
-        public static double Median(this IEnumerable<double> values)
-        {
-            if (values is not IOrderedEnumerable<double>)
-                values = values.Order().ToArray();
-            var enumerable = values as double[] ?? values.ToArray();
-            var count = enumerable.Count();
-            if (count == 0)
-                return 0;
-            return enumerable[count / 2];
-        }
-
-        public static decimal StdDev(this IEnumerable<decimal> values) => (decimal)values.Select(o => (double)o).StdDev();
-
-        public static double StdDev(this IEnumerable<double> values)
-        {
-            var enumerable = values as double[] ?? values.ToArray();
-            var count = enumerable.Count();
-            if (count <= 1)
-                return 0;
-            var avg = enumerable.Average();
-            var sum = enumerable.Sum(d => (d - avg) * (d - avg));
-            return Math.Sqrt(sum / (count - 1));
-        }
-
-        public static double? Skewness(this IEnumerable<double> values)
-        {
-            var enumerable = values as double[] ?? values.ToArray();
-
-            if (values.Any() == false)
-                return null;
-            var avg = values.Average();
-            var sd = values.StdDev();
-            var cnt = (double)values.Count();
-
-            var skewCum = 0.0d; // the cum part of SKEW formula
-            for (int i = 0; i < enumerable.Length; i++)
-            {
-                var b = (enumerable[i] - avg) / sd;
-                skewCum += b * b * b;
-            }
-            return cnt / (cnt - 1) / (cnt - 2) * skewCum;
-            //var sum = 0d;
-            //for (int i = 0; i < cnt; i++)
-            //{
-            //    var diff = enumerable[i] - values.Average();
-            //    sum += diff * diff * diff;
-            //}
-            //return sum / (sd * sd * sd);
         }
     }
 }

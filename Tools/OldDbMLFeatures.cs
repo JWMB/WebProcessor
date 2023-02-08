@@ -9,8 +9,9 @@ using OldDbAdapter;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
+using ProblemSourceModule.Models.Aggregates.ML;
 using System.Globalization;
-using static ProblemSource.Models.Aggregates.ColumnTypeAttribute;
+using static ProblemSourceModule.Models.Aggregates.ML.ColumnTypeAttribute;
 using static Tools.MLDynamic;
 
 namespace Tools
@@ -202,6 +203,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
             var rows = CreateDictionariesFromCsv(ml.Schema!, csvFile).ToList();
             //var rows = ml.DataView.Preview(100).RowView.Select(CreatePropertyDictFromPreviewRow).ToList();
             var table = GenerateAccuracyTable(rows, ml, colInfo);
+            Console.WriteLine(table);
         }
 
         private IEnumerable<Dictionary<string, object?>> CreateDictionariesFromCsv(DataViewSchema schema, string csvFile)
