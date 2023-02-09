@@ -3,9 +3,7 @@
 	export const ssr = false;
 
 	import { base } from '$app/paths';
-	import { browser } from '$app/environment';
 	import NotificationBar from 'src/components/notificationBar.svelte';
-	import { Startup } from 'src/startup.js';
 	import { Modals, closeModal } from 'svelte-modals';
 	import { getApi, userStore } from 'src/globalStore';
 	import type { PageData } from './$types';
@@ -43,16 +41,36 @@
 
 <style global>
 	body {
-		font-family: monospace;
+		font-family: sans-serif;
 	}
 	input {
-		font-family: monospace;
+		font-family: sans-serif;
+	}
+
+	:global(button) {
+		border: 1px solid #4ba7b2;
+		background: white;
+		color: #4ba7b2;
+		border-radius: 5px;
+		padding: 0px 10px;
+		height: 30px;
+		vertical-align: middle;
+	}
+
+	:global(button.primary) {
+		font-weight: bold;
+		background: #4ba7b2;
+		color: white;
+		border: none;
 	}
 
 	.login-status {
 		position: absolute;
 		top: 10px;
 		right: 10px;
+		display: flex;
+		align-items: center;
+		gap: 11px;
 	}
 
 	.modal-backdrop {
@@ -93,7 +111,7 @@
 
 	[data-tooltip]:before {
 		position: absolute;
-		bottom: 100%;
+		bottom: 120%;
 		left: 50%;
 		margin-bottom: 5px;
 		padding: 7px;
@@ -108,14 +126,16 @@
 		color: #fff;
 		content: attr(data-tooltip);
 		text-align: center;
-		font-size: 14px;
+		font-size: 12px;
+		font-weight: normal;
 		line-height: 1.2;
 		transition: 0.2s ease-out;
+		white-space: break-spaces;
 	}
 
 	[data-tooltip]:after {
 		position: absolute;
-		bottom: 100%;
+		bottom: 120%;
 		left: 50%;
 		width: 0;
 		border-top: 5px solid #000;

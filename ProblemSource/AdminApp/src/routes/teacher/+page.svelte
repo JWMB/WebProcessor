@@ -26,12 +26,12 @@
 			console.error('apiFacade null');
 			return;
 		}
-		const groupsData = await apiFacade.trainings.getGroups();
+		const groupsData = await apiFacade.trainings.getGroups(null);
 		groups = Object.entries(groupsData).map((o) => ({ group: o[0], summaries: o[1] }));
 	}
 
 	async function onSelectGroup(groupId: string) {
-		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId);
+		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId, null);
 	}
 
 	function calculateTrainingStats(data: TrainingSummaryWithDaysDto[], numberOfDays = 7) {
@@ -42,7 +42,7 @@
 		return data.map((t) => {
 			const dateRange = t.days.slice(-numberOfDays);
 			const accuracy = average(dateRange.map((d) => d.numCorrectAnswers / (d.numQuestions || 1))) || 0;
-			const effectiveTime = average(dateRange.map((d) => d.responseMinutes / (t.targetMinutesPerDay || 32))) || 0;
+			const effectiveTime = Math.min(average(dateRange.map((d) => (d.responseMinutes + d.remainingMinutes) / (t.targetMinutesPerDay || 32))) || 0, 1);
 			return {
 				id: t.id,
 				username: t.username,
@@ -50,9 +50,9 @@
 				trainedDaysMax: t.targetDays || 30,
 				accuracy,
 				effectiveTime,
-				isAccuracyLow: accuracy < 0.4,
-				isEffectiveTimeLow: effectiveTime < 0.5,
-				isDaysTrainedLow: false,
+				isAccuracyLow: accuracy < 0.4, // TODO: get value from server
+				isEffectiveTimeLow: effectiveTime < 0.5, // TODO: get value from server
+				isDaysTrainedLow: false, // TODO: get value from server
 				comments: [] as Array<{ type: 'Critical' | 'Warning' | 'Info'; description: string }>
 			};
 		});
@@ -93,12 +93,14 @@
 	{#if trainings && trainings.length > 0}
 		<div class="training-header">
 			<h2>{getString('teacher_training_header')}</h2>
-			<label for="range">
-				{getString('teacher_stats_range_label')}
-				<span class:activeLabel={!showStatsForLast7days}>{getString('teacher_stats_range_all_days')}</span>
-				<Switch name="range" color="#c7a0fc" inactiveColor="#c7a0fc" bind:checked={showStatsForLast7days} />
-				<span class:activeLabel={showStatsForLast7days}>{getString('teacher_stats_range_last_week')}</span>
-			</label>
+			<div class="range-widget-container">
+				<div class="range-widget-label">{getString('teacher_stats_range_label')}</div>
+				<div class="range-switch-container">
+					<span class="switch-label" class:activeLabel={!showStatsForLast7days}>{getString('teacher_stats_range_all_days')}</span>
+					<Switch name="range" color="#52cad8" inactiveColor="#52cad8" bind:checked={showStatsForLast7days} />
+					<span class="switch-label" class:activeLabel={showStatsForLast7days}>{getString('teacher_stats_range_last_week')}</span>
+				</div>
+			</div>
 		</div>
 		<table>
 			<tr>
@@ -122,11 +124,11 @@
 				</th>
 			</tr>
 			{#each trainings as t (t.id)}
-				<tr on:click={() => onSelectTraining(t.id)}>
-					<td>{t.username}</td>
+				<tr on:click={() => onSelectTraining(t.id)} class="training-row">
+					<td class="user-column">{t.username}</td>
 					<td><ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" decimals={0} color={t.isDaysTrainedLow ? '#ff5959' : '#c7a0fc'} /></td>
-					<td><ProgressBar value={t.effectiveTime * 100} max={100} suffix="%" decimals={0} color={t.isEffectiveTimeLow ? '#ff5959' : '#49e280'} /></td>
-					<td><ProgressBar value={t.accuracy * 100} max={100} suffix="%" decimals={0} color={t.isAccuracyLow ? '#ff5959' : '#52cad8'} /></td>
+					<td><ProgressBar value={t.effectiveTime * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={t.isEffectiveTimeLow ? '#ff5959' : '#49e280'} /></td>
+					<td><ProgressBar value={t.accuracy * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={t.isAccuracyLow ? '#ff5959' : '#52cad8'} /></td>
 					<td>
 						{#each t.comments as c}
 							{c.description}
@@ -147,33 +149,51 @@
 		gap: 20px;
 		justify-content: space-between;
 	}
-	.training-header label {
-		display: flex;
-		align-items: center;
-		gap: 5px;
-	}
 	.tooltip {
+		border: 1px solid #4ba7b2;
+		background: white;
 		border-radius: 50%;
 		width: 20px;
 		height: 20px;
 		display: inline-flex;
-		background-color: gray;
-		color: white;
+		color: #4ba7b2;
 		justify-content: center;
 		align-items: center;
+		font-weight: normal;
 	}
-	.activeLabel {
+	.range-widget-label {
+		display: block;
 		font-weight: bold;
+		font-size: 12px;
+		margin-bottom: 6px;
+		margin-top: 4px;
+	}
+	.range-switch-container {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.switch-label {
+		color: rgb(183 182 182);
+	}
+	.switch-label.activeLabel {
+		color: black;
 	}
 	table {
 		height: 100%;
 		text-align: left;
-		width: 100%;
+		width: calc(100% + 20px);
 		border-spacing: 0;
 		border-collapse: collapse;
+		margin-left: -10px;
+		margin-right: -10px;
+	}
+	.training-row:hover {
+		background-color: #e1f1ff;
 	}
 	.user-column {
 		width: 120px;
+		padding-left: 10px;
 	}
 	.days-trained-column {
 		width: 120px;
@@ -191,11 +211,12 @@
 	tr {
 		height: 32px;
 	}
-	tr:hover {
-		background-color: #e1f1ff;
+	th {
+		font-size: 12px;
 	}
 	th,
 	td {
+		white-space: nowrap;
 		margin-right: 10px;
 		padding: 4px 10px 4px 0;
 	}

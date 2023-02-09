@@ -77,6 +77,7 @@
 		top: 0;
 		bottom: 0;
 		left: 8px;
+		font-size: 12px;
 		color: rgba(0, 0, 0, 0.51);
 	}
 </style>

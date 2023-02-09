@@ -28,7 +28,6 @@
 	}
 
 	async function selectTab(tabId: string, changeUrl = true) {
-		console.log('select tab', tabId, changeUrl);
 		if (!tabs.find((t) => t.id === tabId)) {
 			return;
 		}
@@ -61,7 +60,7 @@
 		border-bottom: 1px solid #bebebe;
 		margin-bottom: 5px;
 		display: flex;
-		align-items: center;
+		align-items: top;
 	}
 
 	.tabs-container :global(button) {
