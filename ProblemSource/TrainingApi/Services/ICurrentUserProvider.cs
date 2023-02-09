@@ -2,7 +2,6 @@
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using System.Security.Claims;
-//using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace TrainingApi.Services
 {
@@ -32,7 +31,22 @@ namespace TrainingApi.Services
             this.userRepository = userRepository;
         }
 
-        public User? User => GetUser(userRepository, httpContextAccessor.HttpContext?.User).Result;
+        public User? User => GetUserWithImpersonation().Result;
+
+        public async Task<User?> GetUserWithImpersonation()
+        {
+            var user = await GetUser(userRepository, httpContextAccessor.HttpContext?.User);
+            if (user?.Role == Roles.Admin)
+            {
+                if (httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("Impersonate-User", out var impersonated) == true)
+                {
+                    var name = impersonated.FirstOrDefault();
+                    if (!string.IsNullOrEmpty(name))
+                        return await userRepository.Get(name);
+                }
+            }
+            return user;
+        }
 
         public static string? GetNameClaim(ClaimsPrincipal? principal) => principal?.Claims.Any() == true ? principal?.Claims.First(o => o.Type == ClaimTypes.Name).Value : null;
 

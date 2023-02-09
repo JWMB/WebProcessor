@@ -11,6 +11,11 @@ export function getApi() {
     if (browser) {
         if (!_apiFacade) {
             _apiFacade = new ApiFacade(Startup.resolveLocalServerBaseUrl(window.location));
+            const urlParams = new URLSearchParams(window.location.search);
+            const impersonate = urlParams.get("impersonate");
+            if (impersonate != null) {
+                _apiFacade.impersonateUser = impersonate;
+            }
         }
         return _apiFacade;
     }

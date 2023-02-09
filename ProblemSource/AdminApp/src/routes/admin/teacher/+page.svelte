@@ -84,6 +84,7 @@
 	{#if $userStore?.role == 'Admin'}
 		Impersonate user: <input id="forUser" type="text" />
 		<input type="button" value="Refresh" on:click={() => getTrainings()} />
+		<input type="button" value="Set header" on:click={() => { apiFacade.impersonateUser = getElementValue("forUser"); }} />
 	{/if}
 	<div>
 		Create class: <input id="className" type="text" value="Fsk A" />
