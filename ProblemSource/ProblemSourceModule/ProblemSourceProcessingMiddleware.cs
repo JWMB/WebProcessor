@@ -1,5 +1,4 @@
-﻿using Common;
-using Common.Web;
+﻿using Common.Web;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -11,7 +10,6 @@ using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProblemSource
 {
@@ -178,8 +176,15 @@ namespace ProblemSource
                     // Log incoming data - but remove large State items
                     // Warning: modifying incoming data instead of making a copy
                     root.Events = root.Events.Where(o => LogItem.GetEventClassName(o) != "UserStatePushLogItem").ToArray();
-
                     await dataSink.Log(root.Uuid, root);
+
+                    var errorLogItems = logItems.OfType<ErrorLogItem>().ToList();
+                    if (errorLogItems.Any())
+                    {
+                        var userInfo = $"{training.Id}/'{training.Username}'";
+                        log.LogWarning($"Client {userInfo} errors: {JsonConvert.SerializeObject(errorLogItems)}");
+                        log.LogWarning($"Client {userInfo} info: Version={root.ClientVersion} App={root.ClientApp} Device={JsonConvert.SerializeObject(root.Device)}");
+                    }
                 }
 
                 try
@@ -215,7 +220,7 @@ namespace ProblemSource
             if (trainingPlan == null)
                 throw new Exception($"Training plan '{trainingPlanName}' does not exist");
 
-            var fullState = Newtonsoft.Json.Linq.JObject.FromObject(new UserFullState
+            var fullState = JObject.FromObject(new UserFullState
             {
                 uuid = root.Uuid,
                 training_plan = trainingPlan,
