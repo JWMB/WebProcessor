@@ -36,6 +36,7 @@
 		<div class="contents">
 			{#if createdTrainingUsernames.length === 0}
 				<h2>Create group</h2>
+				<p style="color:darkorange">Creating class trainings will be available shortly - <br/>we are currently finalizing the design of the training plan!</p>
 				<form action="javascript:void(0);">
 					<label>
 						Class/group name
@@ -51,7 +52,7 @@
 					</label> -->
 					<div class="actions">
 						<button class="secondary" on:click={closeModal}>Cancel</button>
-						<button class="primary" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, '')}>Create</button>
+						<button class="primary" disabled style="opacity:0.5" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, '')}>Create</button>
 					</div>
 				</form>
 			{:else}
