@@ -72,7 +72,7 @@ Vi kommer inte spara några personliga data och användandet av appen är godkä
             return new GmailService(app, authSection.SectionToJson(), "/GMail.AuthTokens");
         }
 
-        public async static Task SendInvitations(IConfiguration config, IEnumerable<CreateUserResult> newUsers)
+        public async static Task SendInvitations(IConfiguration config, IEnumerable<CreateUserResult> newUsers, bool actuallySend = false)
         {
             var gmailService = CreateGmailService(config.GetRequiredSection("Gmail"));
 
@@ -87,12 +87,14 @@ Vi kommer inte spara några personliga data och användandet av appen är godkä
             await SendTemplated(gmailService, "jonas.beckeman@gmail.com", "Vektor invitation", newUsers, u => u.User.Email, createReplacements);
         }
 
-        public static async Task SendTemplated<T>(GmailService gmailService, string from, string draftName, IEnumerable<T> items, Func<T, string> getEmail, Func<T, Dictionary<string, string>> createReplacements)
+        public static async Task SendTemplated<T>(GmailService gmailService, string from, string draftName, IEnumerable<T> items, Func<T, string> getEmail,
+            Func<T, Dictionary<string, string>> createReplacements, bool actuallySend = false)
         {
             var draft = (await gmailService.GetTemplates(draftName)).FirstOrDefault();
             if (draft == null)
                 throw new Exception($"Draft not found: '{draftName}'");
 
+            var failedSendingTo = new List<string>();
             foreach (var item in items)
             {
                 var body = draft.Body;
@@ -102,8 +104,26 @@ Vi kommer inte spara några personliga data och användandet av appen är godkä
                 var msg = new MailMessage(from, getEmail(item), draft.Subject, body);
                 msg.IsBodyHtml = draft.IsBodyHtml;
 
-                await gmailService.SendEmail(msg);
+                var wasSent = false;
+                try
+                {
+                    if (actuallySend)
+                    {
+                        wasSent = await gmailService.SendEmail(msg);
+                    }
+                    else
+                        wasSent = true;
+                }
+                catch (Exception ex)
+                {
+                }
+                if (!wasSent)
+                {
+                    failedSendingTo.Add(getEmail(item));
+                }
             }
+            if (failedSendingTo.Any())
+                throw new Exception($"Failed sending to {string.Join(";", failedSendingTo)}");
         }
     }
 }

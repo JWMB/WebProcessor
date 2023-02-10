@@ -25,11 +25,31 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 var serviceProvider = InititalizeServices(config);
 
 
-var emails = new[] { "jonas.beckeman@outlook.com" }; // "jonas.beckeman@outlook.com" //var emails = File.ReadAllLines("").Where(o => o.Length > 0);
-var createdUsersInfo = BatchCreateUsers.CreateDummyUserList(emails);
-//var createdUsersInfo = await serviceProvider.CreateInstance<BatchCreateUsers>().CreateUsers(emails, new Dictionary<string, int> { { "Test", 10 } }, "2018 VT template Default");
-File.WriteAllText("createdUsers.json", JsonConvert.SerializeObject(createdUsersInfo));
-await BatchMail.SendInvitations(config, createdUsersInfo);
+var rootPath = @"C:\Users\uzk446\Downloads\";
+var useJsonFile = $"{rootPath}createdUsers.json";
+List<BatchCreateUsers.CreateUserResult> createdUsersInfo;
+if (File.Exists(useJsonFile))
+    createdUsersInfo = JsonConvert.DeserializeObject<List<BatchCreateUsers.CreateUserResult>>(File.ReadAllText(useJsonFile));
+else
+{
+    //var emails = new[] { "jonas.beckeman@outlook.com" }; // "jonas.beckeman@outlook.com" //var emails = File.ReadAllLines("").Where(o => o.Length > 0);
+    var emails = BatchCreateUsers.ReadEmails($"{rootPath}TeacherEmails.txt").Select(o => o.ToString()).ToList();
+    var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
+    createdUsersInfo = (await creator.CreateUsers(emails, new Dictionary<string, int> { { "Test", 2 } }, "2018 VT template Default")).ToList();
+    File.WriteAllText(useJsonFile.Replace(".json", $"-{DateTime.Now:dd_HH_mm}.json"), JsonConvert.SerializeObject(createdUsersInfo));
+    File.WriteAllText(useJsonFile, JsonConvert.SerializeObject(createdUsersInfo));
+}
+var batchSize = 100;
+var batchNum = 0;
+createdUsersInfo = createdUsersInfo.Chunk(batchSize).Skip(batchNum).First().ToList();
+try
+{
+    await BatchMail.SendInvitations(config, createdUsersInfo);
+}
+catch (Exception ex)
+{
+}
+File.WriteAllText($"{rootPath}Sent-{DateTime.Now:dd_HH_mm}.json", JsonConvert.SerializeObject(createdUsersInfo.Select(o => o.User.Email)));
 
 //await TrainingMod.ModifySettings(tableConfig);
 //await MigrateUserStatesTable.Run(tableConfig);
