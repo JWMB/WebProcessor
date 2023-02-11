@@ -24,7 +24,8 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
 var serviceProvider = InititalizeServices(config);
 
-await serviceProvider.CreateInstance<BatchCreateUsers>().CreateAndEmail(config, actuallyCreate: true);
+//await serviceProvider.CreateInstance<BatchCreateUsers>().CreateAndEmail(config, actuallyCreate: true);
+
 //await TrainingMod.ModifySettings(tableConfig);
 //await MigrateUserStatesTable.Run(tableConfig);
 

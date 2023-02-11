@@ -136,14 +136,14 @@ namespace Tools
                 createdUsersInfo = JsonConvert.DeserializeObject<List<CreateUserResult>>(File.ReadAllText(useJsonFile));
             else
             {
-                //var emails = new[] { "jonas.beckeman@outlook.com" }; // "jonas.beckeman@outlook.com" //var emails = File.ReadAllLines("").Where(o => o.Length > 0);
-                var emails = ReadEmails($"{rootPath}TeacherEmails.txt").Select(o => o.ToString()).ToList();
+                //var emails = ReadEmails($"{rootPath}TeacherEmails.txt").Select(o => o.ToString()).ToList();
+                var emails = new List<string>(); 
                 createdUsersInfo = (await CreateUsers(emails, new Dictionary<string, int> { { "Test", 2 } }, "2018 VT template Default", actuallyCreate)).ToList();
                 File.WriteAllText(useJsonFile.Replace(".json", $"-{DateTime.Now:dd_HH_mm}.json"), JsonConvert.SerializeObject(createdUsersInfo));
                 File.WriteAllText(useJsonFile, JsonConvert.SerializeObject(createdUsersInfo));
             }
             var batchSize = 100;
-            var batchNum = 3; // 0,1,2 done
+            var batchNum = 0;
             createdUsersInfo = createdUsersInfo.Chunk(batchSize).Skip(batchNum).First().ToList();
             try
             {
@@ -152,8 +152,8 @@ namespace Tools
             catch (Exception ex)
             {
             }
-            File.WriteAllText($"{rootPath}Sent-{DateTime.Now:dd_HH_mm}.json", JsonConvert.SerializeObject(createdUsersInfo.Select(o => o.User.Email)));
 
+            File.WriteAllText($"{rootPath}Sent-{DateTime.Now:dd_HH_mm}.json", JsonConvert.SerializeObject(createdUsersInfo.Select(o => o.User.Email)));
         }
     }
 }

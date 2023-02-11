@@ -49,23 +49,6 @@
 </Modals>
 
 <style global>
-	/* attempt to use humany inline, but only show notices section */
-	.humany_admin-notices-ow div[data-name="widget-header"] {
-		display: none;
-	}
-	.humany_admin-notices-ow div[data-name="index-primary-area"] {
-		display: none;
-	}
-	.humany_admin-notices-ow div[data-name="index-secondary-area"] {
-		display: none;
-	}
-	.humany_admin-notices-ow div[data-name="search"] {
-		display: none;
-	}
-	.humany_admin-notices-ow div[data-name="copyright"] {
-		display: none;
-	}
-
 	body {
 		font-family: sans-serif;
 	}
