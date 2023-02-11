@@ -39,8 +39,10 @@
 	</div>
 	<slot />
 {/if}
-		
+
+{#if $userStore}
 <a href="//ki-study.humany.net/teacher">Help</a>
+{/if}
 
 <NotificationBar />
 
