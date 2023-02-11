@@ -1,4 +1,7 @@
-﻿using ProblemSource.Models;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using ProblemSource.Models;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services;
@@ -124,5 +127,33 @@ namespace Tools
                 }).ToList();
         }
 
+        public async Task CreateAndEmail(IConfiguration config, bool actuallyCreate = false)
+        {
+            var rootPath = @"C:\Users\uzk446\Downloads\";
+            var useJsonFile = $"{rootPath}createdUsers.json";
+            List<CreateUserResult> createdUsersInfo;
+            if (File.Exists(useJsonFile))
+                createdUsersInfo = JsonConvert.DeserializeObject<List<CreateUserResult>>(File.ReadAllText(useJsonFile));
+            else
+            {
+                //var emails = new[] { "jonas.beckeman@outlook.com" }; // "jonas.beckeman@outlook.com" //var emails = File.ReadAllLines("").Where(o => o.Length > 0);
+                var emails = ReadEmails($"{rootPath}TeacherEmails.txt").Select(o => o.ToString()).ToList();
+                createdUsersInfo = (await CreateUsers(emails, new Dictionary<string, int> { { "Test", 2 } }, "2018 VT template Default", actuallyCreate)).ToList();
+                File.WriteAllText(useJsonFile.Replace(".json", $"-{DateTime.Now:dd_HH_mm}.json"), JsonConvert.SerializeObject(createdUsersInfo));
+                File.WriteAllText(useJsonFile, JsonConvert.SerializeObject(createdUsersInfo));
+            }
+            var batchSize = 100;
+            var batchNum = 3; // 0,1,2 done
+            createdUsersInfo = createdUsersInfo.Chunk(batchSize).Skip(batchNum).First().ToList();
+            try
+            {
+                await BatchMail.SendInvitations(config, createdUsersInfo, actuallySend: actuallyCreate);
+            }
+            catch (Exception ex)
+            {
+            }
+            File.WriteAllText($"{rootPath}Sent-{DateTime.Now:dd_HH_mm}.json", JsonConvert.SerializeObject(createdUsersInfo.Select(o => o.User.Email)));
+
+        }
     }
 }

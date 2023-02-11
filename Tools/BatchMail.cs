@@ -84,7 +84,7 @@ Vi kommer inte spara några personliga data och användandet av appen är godkä
                     { "createdGroups", u.CreatedTrainingsToString() },
                 };
 
-            await SendTemplated(gmailService, "jonas.beckeman@gmail.com", "Vektor invitation", newUsers, u => u.User.Email, createReplacements);
+            await SendTemplated(gmailService, "jonas.beckeman@gmail.com", "Vektor invitation", newUsers, u => u.User.Email, createReplacements, actuallySend);
         }
 
         public static async Task SendTemplated<T>(GmailService gmailService, string from, string draftName, IEnumerable<T> items, Func<T, string> getEmail,
