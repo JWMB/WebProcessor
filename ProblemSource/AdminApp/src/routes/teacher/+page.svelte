@@ -35,7 +35,6 @@
 	}
 
 	function calculateTrainingStats(data: TrainingSummaryWithDaysDto[], numberOfDays = 7) {
-		console.log('data', data);
 		const average = (arr: number[]) => {
 			return arr.reduce((p, c) => p + c, 0) / arr.length;
 		};
@@ -69,11 +68,6 @@
 				getData();
 			}
 		});
-	}
-
-	function log(t: any) {
-		console.log('test');
-		return 1;
 	}
 </script>
 

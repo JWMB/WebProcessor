@@ -9,6 +9,8 @@
 	import type { PageData } from './$types';
 	import { getString } from 'src/utilities/LanguageService';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { initWidgetImplementationScript } from 'src/humany-embed';
 
 	export let data: PageData;
 
@@ -19,10 +21,15 @@
 	async function login() {
 		goto(base + '/login');
 	}
+
+	onMount(() => {
+		initWidgetImplementationScript();
+	});
 </script>
 
 {#if data.pageInited}
 	<div class="login-status">
+		<!-- <a href="//ki-study.humany.net/admin-notices-ow">Notices</a> -->
 		{#if $userStore}
 			<span> {$userStore?.username}</span>
 			<button on:click={logout}>{getString('navbar_logout_label')}</button>
@@ -32,6 +39,8 @@
 	</div>
 	<slot />
 {/if}
+		
+<a href="//ki-study.humany.net/teacher">Help</a>
 
 <NotificationBar />
 
@@ -40,6 +49,23 @@
 </Modals>
 
 <style global>
+	/* attempt to use humany inline, but only show notices section */
+	.humany_admin-notices-ow div[data-name="widget-header"] {
+		display: none;
+	}
+	.humany_admin-notices-ow div[data-name="index-primary-area"] {
+		display: none;
+	}
+	.humany_admin-notices-ow div[data-name="index-secondary-area"] {
+		display: none;
+	}
+	.humany_admin-notices-ow div[data-name="search"] {
+		display: none;
+	}
+	.humany_admin-notices-ow div[data-name="copyright"] {
+		display: none;
+	}
+
 	body {
 		font-family: sans-serif;
 	}
