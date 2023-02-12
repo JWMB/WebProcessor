@@ -61,6 +61,8 @@ namespace TrainingApi.Controllers
             if (string.IsNullOrEmpty(dto.Password))
                 throw new ArgumentNullException(nameof(dto.Password));
 
+            dto.Normalize();
+
             await userRepository.Add(new User
             {
                 Email = dto.Username,
@@ -153,7 +155,13 @@ namespace TrainingApi.Controllers
     public class CreateUserDto : GetUserDto
     {
         public string Password { get; set; } = "";
+        public void Normalize()
+        {
+            Password = Password.Trim();
+            Username = Username.Trim();
+        }
     }
+
     public class PatchUserDto
     {
         public string? Role { get; set; }
