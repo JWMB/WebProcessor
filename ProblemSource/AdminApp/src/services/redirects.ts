@@ -6,9 +6,13 @@ import { get } from "svelte/store";
 export async function handleRedirects(routeId: string) {
     await userStore.inited;
     const user = get(userStore);
+
     if (!user) {
+        const returnUrl = window.location.pathname.substring(base.length) + window.location.search;
+        const next = base + '/login' + "?returnUrl=" + encodeURIComponent(returnUrl);
+
         if (routeId !== '/login') {
-            goto(base + '/login');
+            goto(next); // TODO: for some reason the url parameters are removed..?
         }
     } else {
         if (routeId === '/login') {

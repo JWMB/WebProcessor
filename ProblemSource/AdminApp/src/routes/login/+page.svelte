@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { getApi, userStore } from 'src/globalStore';
+	import { userStore } from 'src/globalStore';
+	import { initWidgetImplementationScript } from 'src/humany-embed';
 	import { handleRedirects } from 'src/services/redirects';
 	import { getString } from 'src/utilities/LanguageService';
 
@@ -29,7 +29,10 @@
 				.then((r) => {
 					isSuccess = true;
 					isLoading = false;
-					handleRedirects('/login');
+					initWidgetImplementationScript(); // since we don't want to show help widget to non-authorized users
+					// TODO: can't find a way to preserve url parameters (e.g. using ?returnUrl= to get back to the attempted page)
+					window.history.back();
+					//handleRedirects('/login');
 				})
 				.catch((err) => {
 					errors.server = err;
