@@ -46,6 +46,8 @@
 <a href="//ki-study.humany.net/teacher">Help</a>
 {/if}
 
+<div style="opacity:0.01">information</div>
+
 <NotificationBar />
 
 <Modals>
@@ -84,6 +86,7 @@
 		display: flex;
 		align-items: center;
 		gap: 11px;
+		z-index: 2;
 	}
 
 	.modal-backdrop {
