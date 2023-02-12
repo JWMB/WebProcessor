@@ -38,6 +38,8 @@
 		{/if}
 	</div>
 	<slot />
+{:else}
+	<a href="login">Loading...</a>
 {/if}
 
 {#if $userStore}

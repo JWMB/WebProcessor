@@ -62,11 +62,13 @@ export const userStore = (() => {
             if (browser) {
                 getApi()?.accounts.getLoggedInUser()
                     .then(r => {
-                        console.log("logged in with user:", r)
+                        console.log("logged in with user:", r);
                         loggedInUser.set({ username: r.username, loggedIn: true, role: r.role });
-                        setTimeout(() => {
-                            resolve();
-                        }, 1000)
+                        // TODO: why wait?
+                        // setTimeout(() => {
+                        //     resolve();
+                        // }, 1000);
+                        resolve();
                     })
                     .catch(err => {
                         console.log("not logged in", err);
