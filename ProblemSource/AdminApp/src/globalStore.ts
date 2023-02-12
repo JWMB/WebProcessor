@@ -84,7 +84,7 @@ export const userStore = (() => {
         inited,
         login: async (credentials: LoginCredentials) => {
             await getApi()?.accounts.login(credentials);
-            await getLoggedInUser()
+            await getLoggedInUser();
         },
         logout: async () => {
             await getApi()?.accounts.logout();

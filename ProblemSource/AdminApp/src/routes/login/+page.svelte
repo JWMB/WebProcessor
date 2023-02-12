@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { ErrorHandling } from 'src/errorHandling';
 	import { userStore } from 'src/globalStore';
 	import { initWidgetImplementationScript } from 'src/humany-embed';
-	import { handleRedirects } from 'src/services/redirects';
 	import { getString } from 'src/utilities/LanguageService';
 
 	let email = '';
@@ -35,8 +35,8 @@
 					//handleRedirects('/login');
 				})
 				.catch((err) => {
-					errors.server = err;
 					isLoading = false;
+					errors.server = ErrorHandling.getErrorObject(err).message || "Unknown error";
 				});
 		}
 	};

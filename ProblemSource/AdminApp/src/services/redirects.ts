@@ -17,7 +17,7 @@ export async function handleRedirects(routeId: string) {
             goto(next); // TODO: for some reason the url parameters are removed..?
         }
     } else {
-        if (routeId === '/login') {
+        if (routeId === '/login' || routeId === '/') {
             if (user.role === 'Admin') {
                 goto(base + '/admin');
             } else {
