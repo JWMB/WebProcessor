@@ -24,9 +24,10 @@ export async function handleRedirects(routeId: string) {
                 goto(base + '/teacher');
             }
         } else {
-            if (user.role !== 'Admin' && routeId?.indexOf('/admin') !== 0) {
-                goto(base + '/login');
-            }
+            // TODO: why redirect here?
+            // if (user.role !== 'Admin' && routeId?.indexOf('/admin') !== 0) {
+            //     goto(base + '/login');
+            // }
         }
     }
 }
