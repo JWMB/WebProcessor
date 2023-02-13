@@ -108,7 +108,8 @@ namespace TrainingApi.Controllers
             var user = await authenticateUserService.GetUser(credentials.Username, credentials.Password);
             if (user == null)
             {
-                return Unauthorized();
+                log.LogWarning($"Login failed for '{credentials.Username}'. Exists:{(await userRepository.Get(credentials.Username)) != null}");
+                return Unauthorized(new { Title = $"Login failed - please check your spelling" });
             }
 
             var principal = WebUserProvider.CreatePrincipal(user);

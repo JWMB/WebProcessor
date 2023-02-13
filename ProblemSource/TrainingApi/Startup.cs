@@ -123,7 +123,7 @@ namespace TrainingApi
             {
                 app.Use(async (context, next) =>
                 {
-                    if (context.User?.Claims.Any() == false)
+                    if (false && context.User?.Claims.Any() == false)
                     {
                         // For the lazy developer - swagger and test client are automatically authenticated
                         var referer = context.Request.GetTypedHeaders().Referer;
