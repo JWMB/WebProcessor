@@ -66,7 +66,7 @@ namespace ProblemSource
 
             var result = await Process(root, context.User);
             if (result.error!= null)
-                log.LogWarning($"Training login: {result.error}");
+                log.LogWarning($"Training login: (user='{root.Uuid}') {result.error}");
 
             await next.Invoke(context);
 
