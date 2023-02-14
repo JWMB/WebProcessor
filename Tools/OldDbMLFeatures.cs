@@ -1,5 +1,6 @@
 ﻿using AngleSharp.Common;
 using Common;
+using Google.Apis.Discovery;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
 using Microsoft.ML.Data;
@@ -9,6 +10,7 @@ using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
 using ProblemSourceModule.Models.Aggregates.ML;
+using System.Collections.Generic;
 using System.Globalization;
 using static ProblemSourceModule.Models.Aggregates.ML.ColumnTypeAttribute;
 
@@ -166,20 +168,8 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
 
             var rootFeature = CreateFeature(new List<Phase>(), new TrainingSettings(), 0);
             var rootType = rootFeature.GetType();
-            //CreateInstancesFromCsv(rootFeature.GetFlatFeatures(), csvFile);
 
-            var columnTypePerProperty = rootType
-                .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
-                .ToDictionary(o => o.Name, o => (Attribute.GetCustomAttribute(o, typeof(ColumnTypeAttribute)) as ColumnTypeAttribute)?.Type);
-
-            var colInfo = new MLDynamic.ColumnInfo
-            {
-                Label = columnTypePerProperty.Single(o => o.Value == ColumnType.Label).Key,
-                Categorical = columnTypePerProperty.Where(o => o.Value == ColumnType.Categorical).Select(o => o.Key),
-                Ignore = columnTypePerProperty.Where(o => o.Value == ColumnType.Ignored).Select(o => o.Key),
-                UserId = columnTypePerProperty.SingleOrDefault(o => o.Value == ColumnType.UserId).Key,
-            };
-            var ml = new MLDynamic(colInfo);
+            var colInfo = ColumnInfo.Create(rootType);
 
             var modelPath = Path.Join(path, "JuliaMLModel_Reg.zip");
 
@@ -188,18 +178,29 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
             //IExperimentConfig config = new MultiClassificationExperimentConfig(colInfo);
             //Action<TextLoader.Column[]>? modifyColumns = cols => cols.Single(o => o.Name == colInfo.Label).DataKind = DataKind.UInt32;
 
-            // Load data regardless of training - so we can use Preview below
-            ml.LoadData(new[] { csvFile }, modifyColumns);
-            if (ml.TryLoad(modelPath) == false)
+            ITransformer model;
+            DataViewSchema schema;
+            var ctx = new MLContext(seed: 0);
+
+            if (File.Exists(modelPath))
             {
+                model = ctx.Model.Load(modelPath, out schema);
+            }
+            else
+            {
+                var ml = new MLDynamic(colInfo, ctx);
+                ml.LoadData(new[] { csvFile }, modifyColumns);
                 await ml.Train(config, TimeSpan.FromMinutes(60), cancellation);
 
                 if (!string.IsNullOrEmpty(modelPath))
                     ml.Save(modelPath);
+
+                model = ml.Model!;
+                schema = ml.Schema!;
             }
 
-            var rows = CreateDictionariesFromCsv(ml.Schema!, csvFile).ToList();
-            var predicted = Predict(rows, ml, colInfo);
+            var rows = CreateDictionariesFromCsv(schema, csvFile).ToList();
+            var predicted = Predict(rows, model, schema, colInfo);
             //var rows = ml.DataView.Preview(100).RowView.Select(CreatePropertyDictFromPreviewRow).ToList();
 
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("sv-SE");
@@ -230,7 +231,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
             var rows = File.ReadAllLines(csvFile);
             var columnNames = rows.First().Split(',').ToList();
 
-            var type = MLDynamic.CreateType(schema);
+            var type = MLDynamicPredict.CreateType(schema);
             var colToType = schema.ToDictionary(o => o.Name, o => o.Type.RawType);
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
@@ -267,11 +268,28 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
             public int Actual { get; set; }
         }
 
-        private List<ValuesWithPrediction> Predict(List<Dictionary<string, object>> rows, MLDynamic ml, MLDynamic.ColumnInfo colInfo)
+        private float? Predict(IEnumerable<Phase> phases, TrainingSettings trainingSettings, int age, ITransformer model, DataViewSchema schema)
         {
-            var type = MLDynamic.CreateType(ml.Schema!);
+            var feature = CreateFeature(phases, trainingSettings, age);
+            if (!feature.IsValid)
+                return null;
+
+            var colInfo = ColumnInfo.Create(feature.GetType());
+
+            var type = MLDynamicPredict.CreateType(schema);
+            var predictor = new MLDynamicPredict(schema, model, colInfo);
+            var instance = DynamicTypeFactory.CreateInstance(type, feature.GetFlatFeatures());
+
+            var prediction = predictor.Predict(new[] { instance }).First();
+            return (float?)prediction;
+        }
+
+        private List<ValuesWithPrediction> Predict(List<Dictionary<string, object>> rows, ITransformer model, DataViewSchema schema, ColumnInfo colInfo)
+        {
+            var type = MLDynamicPredict.CreateType(schema);
+            var predictor = new MLDynamicPredict(schema, model, colInfo);
             var instances = rows.Select(o => DynamicTypeFactory.CreateInstance(type, o));
-            var predictions = ml.Predict(instances).ToList();
+            var predictions = predictor.Predict(instances).ToList();
 
             return rows.Select((o, i) => new ValuesWithPrediction
             {

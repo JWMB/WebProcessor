@@ -1,12 +1,34 @@
-﻿using Common;
-using Microsoft.ML;
+﻿using Microsoft.ML;
 using Microsoft.ML.AutoML;
+using ProblemSourceModule.Models.Aggregates.ML;
 using System.Data;
-using System.Reflection;
-using System.Xml.Serialization;
+using static ProblemSourceModule.Models.Aggregates.ML.ColumnTypeAttribute;
 
 namespace Tools
 {
+    public class ColumnInfo
+    {
+        public string Label { get; set; } = string.Empty;
+        public string? UserId { get; set; }
+        public IEnumerable<string>? Categorical { get; set; }
+        public IEnumerable<string>? Ignore { get; set; }
+
+        public static ColumnInfo Create(Type type)
+        {
+            var columnTypePerProperty = type
+                .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                .ToDictionary(o => o.Name, o => (Attribute.GetCustomAttribute(o, typeof(ColumnTypeAttribute)) as ColumnTypeAttribute)?.Type);
+
+            return new ColumnInfo
+            {
+                Label = columnTypePerProperty.Single(o => o.Value == ColumnType.Label).Key,
+                Categorical = columnTypePerProperty.Where(o => o.Value == ColumnType.Categorical).Select(o => o.Key),
+                Ignore = columnTypePerProperty.Where(o => o.Value == ColumnType.Ignored).Select(o => o.Key),
+                UserId = columnTypePerProperty.SingleOrDefault(o => o.Value == ColumnType.UserId).Key,
+            };
+        }
+    }
+
     public class MLDynamic
     {
         private readonly MLContext ctx;
@@ -16,36 +38,16 @@ namespace Tools
         public ColumnInformation? ColumnInformation { get; private set; }
         private ColumnInfo ColInfo { get; set; }
 
-        public MLDynamic(ColumnInfo columnInfo)
+        public MLDynamic(ColumnInfo columnInfo, MLContext? ctx = null)
         {
-            ctx = new MLContext(seed: 0);
+            this.ctx = ctx ?? new MLContext(seed: 0);
 
             ColInfo = columnInfo;
-        }
-
-        public class ColumnInfo
-        {
-            public string Label { get; set; } = string.Empty;
-            public string? UserId { get; set; }
-            public IEnumerable<string>? Categorical { get; set; }
-            public IEnumerable<string>? Ignore { get; set; }
-        }
-
-        public bool TryLoad(string savedModelPath)
-        {
-            if (File.Exists(savedModelPath))
-            {
-                Model = ctx.Model.Load(savedModelPath, out var schema);
-                Schema = schema;
-                return true;
-            }
-            return false;
         }
 
         public interface IExperimentConfig
         {
             SweepablePipeline ConfigurePipeline(MLContext ctx, SweepablePipeline pipeline);
-            //ISweepable<IEstimator<ITransformer>> Pipio(MLContext ctx);
             AutoMLExperiment ConfigureMetric(AutoMLExperiment exp);
         }
 
@@ -61,7 +63,6 @@ namespace Tools
                 return pipeline
                     .Append(ctx.Auto().Regression(labelColumnName: colInfo.Label));
             }
-            //public ISweepable<IEstimator<ITransformer>> Pipio(MLContext ctx) => ctx.Auto().Regression(labelColumnName: colInfo.Label);
             public AutoMLExperiment ConfigureMetric(AutoMLExperiment exp) => exp.SetRegressionMetric(RegressionMetric.RSquared, labelColumn: colInfo.Label);
         }
 
@@ -78,7 +79,6 @@ namespace Tools
                     .Append(ctx.Transforms.Conversion.MapValueToKey(colInfo.Label))
                     .Append(ctx.Auto().MultiClassification(labelColumnName: colInfo.Label));
             }
-            //public ISweepable<IEstimator<ITransformer>> Pipio(MLContext ctx) => ctx.Auto().MultiClassification(labelColumnName: colInfo.Label);
             public AutoMLExperiment ConfigureMetric(AutoMLExperiment exp) => exp.SetMulticlassClassificationMetric(MulticlassClassificationMetric.LogLoss, labelColumn: colInfo.Label);
         }
 
@@ -102,7 +102,7 @@ namespace Tools
 
             var info = $"{nameof(trialResult.Metric)}:{trialResult.Metric}, {nameof(trialResult.Loss)}:{trialResult.Loss}";
 
-            //CalcFeatureImportance(ctx, model, result.data, labelColumnName);
+            //CalcFeatureImportance(DataView);
         }
 
         public void Save(string modelPath)
@@ -110,11 +110,11 @@ namespace Tools
             ctx.Model.Save(Model, Schema, modelPath);
         }
 
-        public void CalcFeatureImportance(MLContext ctx, ITransformer model, IDataView data, string labelColumnName)
+        public void CalcFeatureImportance(IDataView data)
         {
             // https://github.com/dotnet/machinelearning-samples/issues/783
-            var transformedData = model.Transform(data);
-            var pfi = ctx.Regression.PermutationFeatureImportance(model, transformedData, permutationCount: 3, labelColumnName: labelColumnName);
+            var transformedData = Model.Transform(data);
+            var pfi = ctx.Regression.PermutationFeatureImportance(Model, transformedData, permutationCount: 3, labelColumnName: ColInfo.Label);
             var featureImportance = pfi.Select(x => Tuple.Create(x.Key, x.Value.RSquared))
                 .OrderByDescending(x => x.Item2);
         }
@@ -231,65 +231,6 @@ namespace Tools
                 return true;
             }
             return false;
-        }
-
-        private const string DefaultScoreColumn = "Score";
-
-
-        public IEnumerable<object> Predict(IEnumerable<object> inputObjects, string scoreColumn = DefaultScoreColumn)
-        {
-            if (Schema == null) throw new NullReferenceException($"{nameof(Schema)} is null");
-            if (Model == null) throw new NullReferenceException($"{nameof(Model)} is null");
-            if (string.IsNullOrEmpty(ColInfo.Label)) throw new NullReferenceException($"{nameof(ColInfo.Label)} is null");
-
-            var predictionType = DynamicTypeFactory.CreateType(
-                    new[] { scoreColumn },
-                    new[] { Schema[ColInfo.Label].Type.RawType });
-
-            var inputType = inputObjects.First().GetType(); // CreateType(Schema);
-            return CreateGenericPrediction(ctx, Schema, Model, inputObjects, predictionType, inputType, scoreColumn);
-        }
-
-        public object Predict(object inputObject, string scoreColumn = DefaultScoreColumn) =>
-            Predict(new[] { inputObject }, scoreColumn).First();
-
-        private static object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model, 
-            object inputObject, Type predictionType, Type? inputType = null, string scoreColumn = DefaultScoreColumn) =>
-            CreateGenericPrediction(mlContext, dataViewSchema, model, new[] { inputObject }, predictionType, inputType, scoreColumn).First();
-
-        private static IEnumerable<object> CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model,
-            IEnumerable<object> inputObjects, Type predictionType, Type? inputType = null, string scoreColumn = DefaultScoreColumn)
-        {
-            // Create runtime type from fields and types in a DataViewSchema
-            var methodName = "CreatePredictionEngine";
-            var genericPredictionMethod = mlContext.Model.GetType().GetMethod(methodName, new[] { typeof(ITransformer), typeof(DataViewSchema) });
-            if (genericPredictionMethod == null)
-                throw new Exception($"'{methodName}' not found");
-
-            var inputTypeProvided = inputType != null;
-            inputType ??= CreateType(dataViewSchema);
-            if (inputType == null)
-                throw new Exception("Could not create type");
-
-            var predictionMethod = genericPredictionMethod.MakeGenericMethod(inputType, predictionType);
-            // InvalidOperationException: Can't bind the IDataView column 'Score' of type 'Vector<Single, 6>' to field or property 'Score' of type 'System.UInt32'.
-            dynamic? dynamicPredictionEngine = predictionMethod.Invoke(mlContext.Model, new object[] { model, dataViewSchema });
-            if (dynamicPredictionEngine == null)
-                throw new Exception($"Could not create {predictionMethod.Name}");
-
-            var predictMethod = dynamicPredictionEngine.GetType().GetMethod("Predict", new[] { inputType });
-
-            return inputObjects.Select(o => {
-                var inputInstance = inputTypeProvided ? o : DynamicTypeFactory.CreateInstance(inputType, o);
-                var predictionResult = predictMethod.Invoke(dynamicPredictionEngine, new[] { inputInstance });
-                return predictionType.GetProperty(scoreColumn)!.GetValue(predictionResult);
-            });
-        }
-
-        public static Type CreateType(DataViewSchema dataViewSchema)
-        {
-            var propTypes = dataViewSchema.ToDictionary(o => o.Name, o => o.Type.RawType);
-            return DynamicTypeFactory.CreateType(propTypes);
         }
     }
 }
