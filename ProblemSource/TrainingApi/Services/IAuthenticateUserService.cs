@@ -19,6 +19,8 @@ namespace TrainingApi.Services
 
         public async Task<User?> GetUser(string username, string password)
         {
+            username = username.Trim();
+            password = password.Trim();
             var user = await userRepository.Get(username);
             if (user == null)
                 return null;

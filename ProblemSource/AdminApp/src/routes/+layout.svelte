@@ -3,14 +3,14 @@
 	export const ssr = false;
 
 	import { base } from '$app/paths';
-	import { browser } from '$app/environment';
 	import NotificationBar from 'src/components/notificationBar.svelte';
-	import { Startup } from 'src/startup.js';
 	import { Modals, closeModal } from 'svelte-modals';
 	import { getApi, userStore } from 'src/globalStore';
 	import type { PageData } from './$types';
 	import { getString } from 'src/utilities/LanguageService';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { initWidgetImplementationScript } from 'src/humany-embed';
 
 	export let data: PageData;
 
@@ -21,10 +21,15 @@
 	async function login() {
 		goto(base + '/login');
 	}
+
+	onMount(() => {
+		initWidgetImplementationScript();
+	});
 </script>
 
 {#if data.pageInited}
 	<div class="login-status">
+		<!-- <a href="//ki-study.humany.net/admin-notices-ow">Notices</a> -->
 		{#if $userStore}
 			<span> {$userStore?.username}</span>
 			<button on:click={logout}>{getString('navbar_logout_label')}</button>
@@ -33,7 +38,15 @@
 		{/if}
 	</div>
 	<slot />
+{:else}
+	<a href="login">Loading...</a>
 {/if}
+
+{#if $userStore}
+<a href="//ki-study.humany.net/teacher">Help</a>
+{/if}
+
+<div style="opacity:0.01">information</div>
 
 <NotificationBar />
 
@@ -43,16 +56,37 @@
 
 <style global>
 	body {
-		font-family: monospace;
+		font-family: sans-serif;
 	}
 	input {
-		font-family: monospace;
+		font-family: sans-serif;
+	}
+
+	:global(button) {
+		border: 1px solid #4ba7b2;
+		background: white;
+		color: #4ba7b2;
+		border-radius: 5px;
+		padding: 0px 10px;
+		height: 30px;
+		vertical-align: middle;
+	}
+
+	:global(button.primary) {
+		font-weight: bold;
+		background: #4ba7b2;
+		color: white;
+		border: none;
 	}
 
 	.login-status {
 		position: absolute;
 		top: 10px;
 		right: 10px;
+		display: flex;
+		align-items: center;
+		gap: 11px;
+		z-index: 2;
 	}
 
 	.modal-backdrop {
@@ -93,7 +127,7 @@
 
 	[data-tooltip]:before {
 		position: absolute;
-		bottom: 100%;
+		bottom: 120%;
 		left: 50%;
 		margin-bottom: 5px;
 		padding: 7px;
@@ -108,14 +142,16 @@
 		color: #fff;
 		content: attr(data-tooltip);
 		text-align: center;
-		font-size: 14px;
+		font-size: 12px;
+		font-weight: normal;
 		line-height: 1.2;
 		transition: 0.2s ease-out;
+		white-space: break-spaces;
 	}
 
 	[data-tooltip]:after {
 		position: absolute;
-		bottom: 100%;
+		bottom: 120%;
 		left: 50%;
 		width: 0;
 		border-top: 5px solid #000;

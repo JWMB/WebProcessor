@@ -53,12 +53,7 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
 var serviceProvider = InititalizeServices(config);
 
-
-var emails = new[] { "jonas.beckeman@outlook.com" }; // "jonas.beckeman@outlook.com" //var emails = File.ReadAllLines("").Where(o => o.Length > 0);
-var createdUsersInfo = BatchCreateUsers.CreateDummyUserList(emails);
-//var createdUsersInfo = await serviceProvider.CreateInstance<BatchCreateUsers>().CreateUsers(emails, new Dictionary<string, int> { { "Test", 10 } }, "2018 VT template Default");
-File.WriteAllText("createdUsers.json", JsonConvert.SerializeObject(createdUsersInfo));
-await BatchMail.SendInvitations(config, createdUsersInfo);
+//await serviceProvider.CreateInstance<BatchCreateUsers>().CreateAndEmail(config, actuallyCreate: true);
 
 //await TrainingMod.ModifySettings(tableConfig);
 //await MigrateUserStatesTable.Run(tableConfig);
@@ -101,21 +96,6 @@ IServiceProvider InititalizeServices(IConfigurationRoot config)
     var serviceProvider = services.BuildServiceProvider();
     module.Configure(new App(serviceProvider));
     return serviceProvider;
-}
-
-public static class IServiceProviderExtensions
-{
-    public static T CreateInstance<T>(this IServiceProvider instance) where T : class
-    {
-        var constructors = typeof(T).GetConstructors();
-
-        var constructor = constructors.First();
-        var parameterInfo = constructor.GetParameters();
-
-        var parameters = parameterInfo.Select(o => instance.GetRequiredService(o.ParameterType)).ToArray();
-
-        return (T)constructor.Invoke(parameters);
-    }
 }
 
 class App : IApplicationBuilder

@@ -62,6 +62,8 @@ namespace TrainingApi.Controllers
             if (string.IsNullOrEmpty(dto.Password))
                 throw new ArgumentNullException(nameof(dto.Password));
 
+            dto.Normalize();
+
             await userRepository.Add(new User
             {
                 Email = dto.Username,
@@ -107,7 +109,8 @@ namespace TrainingApi.Controllers
             var user = await authenticateUserService.GetUser(credentials.Username, credentials.Password);
             if (user == null)
             {
-                return Unauthorized();
+                log.LogWarning($"Login failed for '{credentials.Username}'. Exists:{(await userRepository.Get(credentials.Username)) != null}");
+                return Unauthorized(new { Title = $"Login failed - please check your spelling" });
             }
 
             var principal = WebUserProvider.CreatePrincipal(user);
@@ -158,7 +161,13 @@ namespace TrainingApi.Controllers
     public class CreateUserDto : GetUserDto
     {
         public string Password { get; set; } = "";
+        public void Normalize()
+        {
+            Password = Password.Trim();
+            Username = Username.Trim();
+        }
     }
+
     public class PatchUserDto
     {
         public string? Role { get; set; }

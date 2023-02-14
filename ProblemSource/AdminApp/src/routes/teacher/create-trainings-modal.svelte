@@ -36,6 +36,7 @@
 		<div class="contents">
 			{#if createdTrainingUsernames.length === 0}
 				<h2>Create group</h2>
+				<p style="color:darkorange">Creating class trainings will be available shortly - <br/>we are currently finalizing the design of the training plan!</p>
 				<form action="javascript:void(0);">
 					<label>
 						Class/group name
@@ -50,8 +51,8 @@
 						<input id="timePerDay" required type="number" bind:value={newGroupData.timePerDay} min="15" max="45" />
 					</label> -->
 					<div class="actions">
-						<button class="primary" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, '')}>Create</button>
 						<button class="secondary" on:click={closeModal}>Cancel</button>
+						<button class="primary" disabled style="opacity:0.5" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, '')}>Create</button>
 					</div>
 				</form>
 			{:else}
@@ -78,6 +79,14 @@
 		margin-top: 2px;
 		margin-bottom: 6px;
 		width: 100%;
+		border-radius: 0;
+		border: 1px solid #bebebe;
+		height: 30px;
+	}
+
+	label {
+		font-size: 12px;
+		font-weight: bold;
 	}
 
 	.modal {
