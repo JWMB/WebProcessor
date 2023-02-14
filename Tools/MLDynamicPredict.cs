@@ -1,5 +1,6 @@
 ﻿using Common;
 using Microsoft.ML;
+using ProblemSourceModule.Models.Aggregates.ML;
 using System.Data;
 
 namespace Tools
@@ -36,10 +37,6 @@ namespace Tools
 
         public object Predict(object inputObject, string scoreColumn = DefaultScoreColumn) =>
             Predict(new[] { inputObject }, scoreColumn).First();
-
-        private static object CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model,
-            object inputObject, Type predictionType, Type? inputType = null, string scoreColumn = DefaultScoreColumn) =>
-            CreateGenericPrediction(mlContext, dataViewSchema, model, new[] { inputObject }, predictionType, inputType, scoreColumn).First();
 
         private static IEnumerable<object> CreateGenericPrediction(MLContext mlContext, DataViewSchema dataViewSchema, ITransformer model,
             IEnumerable<object> inputObjects, Type predictionType, Type? inputType = null, string scoreColumn = DefaultScoreColumn)

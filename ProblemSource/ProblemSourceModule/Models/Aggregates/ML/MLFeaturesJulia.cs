@@ -17,7 +17,7 @@ namespace ProblemSourceModule.Models.Aggregates.ML
         /// <summary>
         /// 12) Training time 20 min: Dummy coded with a 1 if the training time is 20 min and 0 if the training time is 33 min per day.
         /// </summary>
-        [ColumnType(ColumnTypeAttribute.ColumnType.Categorical)]
+        [ColumnType(ColumnType.Categorical)]
         public bool TrainingTime20Min { get; set; }
 
         public float ActiveTimePerDay { get; set; }
@@ -25,17 +25,17 @@ namespace ProblemSourceModule.Models.Aggregates.ML
         /// <summary>
         /// 13) Age 6 - 7: Dummy coded with a 1 if the age is 6 - 7 and a 0 if the age is 7 - 8(other age groups have been excluded from the data set)
         /// </summary>
-        [ColumnType(ColumnTypeAttribute.ColumnType.Categorical)]
+        [ColumnType(ColumnType.Categorical)]
         public bool Age6_7 { get; set; }
 
-        [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
+        [ColumnType(ColumnType.Ignored)]
         public int Age { get; set; }
 
         //[ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
-        [ColumnType(ColumnTypeAttribute.ColumnType.Label)]
+        [ColumnType(ColumnType.Label)]
         public float? FinalNumberLineLevel { get; set; }
 
-        [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
+        [ColumnType(ColumnType.Ignored)]
         public int Outcome
         {
             get
@@ -78,7 +78,7 @@ namespace ProblemSourceModule.Models.Aggregates.ML
             return limits.Select(o => (int)o).ToList();
         }
 
-        [ColumnType(ColumnTypeAttribute.ColumnType.Ignored)]
+        [ColumnType(ColumnType.Ignored)]
         public int Id { get; set; }
 
         public static MLFeaturesJulia FromPhases(TrainingSettings trainingSettings, IEnumerable<Phase> phases, int age, List<ExerciseGlobals>? exerciseGlobals = null, int dayCutoff = 5)

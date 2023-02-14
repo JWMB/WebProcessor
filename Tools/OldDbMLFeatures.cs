@@ -1,6 +1,5 @@
 ﻿using AngleSharp.Common;
 using Common;
-using Google.Apis.Discovery;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
 using Microsoft.ML.Data;
@@ -10,9 +9,7 @@ using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
 using ProblemSourceModule.Models.Aggregates.ML;
-using System.Collections.Generic;
 using System.Globalization;
-using static ProblemSourceModule.Models.Aggregates.ML.ColumnTypeAttribute;
 
 namespace Tools
 {
@@ -280,7 +277,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
             var predictor = new MLDynamicPredict(schema, model, colInfo);
             var instance = DynamicTypeFactory.CreateInstance(type, feature.GetFlatFeatures());
 
-            var prediction = predictor.Predict(new[] { instance }).First();
+            var prediction = predictor.Predict(instance);
             return (float?)prediction;
         }
 
