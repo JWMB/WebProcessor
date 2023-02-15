@@ -2,7 +2,6 @@
 using ProblemSource.Models;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
-using System.Runtime.Serialization;
 
 namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
@@ -123,9 +122,17 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 weights[key] = weigthsDefault[key];
 
             var trigger = CreateTrigger(trainingDay);
-            trigger.actionData.properties.weights = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(weights));
+            trigger.actionData.properties.weights = ConvertToDynamicOrThrow(weights);
 
             return trigger;
+        }
+
+        public static dynamic ConvertToDynamicOrThrow(object obj)
+        {
+            var result = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(obj));
+            if (result == null)
+                throw new Exception("Couldn't deserialize");
+            return result;
         }
     }
 }

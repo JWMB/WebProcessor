@@ -42,66 +42,66 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                     return false;
                 }
                 log.LogInformation($"Predicted performance for training {training.Id}: {result.Predicted}/{result.PredictedPerformanceTier}");
+
                 var seedSrc = DateTime.Now;
                 var rnd = new Random(seedSrc.Millisecond * 1000 + seedSrc.Microsecond);
 
-                var plans = new
-                {
-                    NVR_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 38 }, { "NVR", 8 }, { "tangram", 4 } },
-                    WM_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 46 }, { "NVR", 0 }, { "tangram", 4 } },
-                    NVR_High = new Dictionary<string, int> { { "Math", 50 }, { "WM", 20 }, { "NVR", 26 }, { "tangram", 4 } },
-                };
-
-                //TODO: weights within NVR? Rotation?
-                //"tangram#intro": 100,
-                //"tangram": 100,
-                //"nvr_rp": 0,
-                //"nvr_so": 0,
-                //"rotation": 0,
-                //"rotation#intro": 0
-
-                var triggerDay = runAfterDay + 1;
-                dynamic? trigger = null;
-
-                if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.Low)
-                {
-                    trigger = ExperimentalAnalyzer.CreateWeightChangeTrigger(
-                        rnd.NextDouble() < 0.5
-                        ? plans.NVR_Std
-                        : plans.NVR_High, triggerDay);
-
-                    if (rnd.NextDouble() < 0.5)
-                    {
-                        trigger.actionData.properties.phases = new Dictionary<string, object> {
-                        {
-                            "numberline[\\w#]*",
-                            new { problemGeneratorData = new { problemFile = new { path = "blabla.csv" } } } // TODO: will we be using this? If so specify!
-                        } };
-                    }
-                }
-                else if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.High)
-                {
-                    // Randomize WM vs NVR
-                    trigger = ExperimentalAnalyzer.CreateWeightChangeTrigger(
-                        rnd.NextDouble() < 0.5
-                        ? plans.NVR_Std
-                        : plans.WM_Std, triggerDay);
-                }
-                else
-                {
-                    // Standard NVR
-                    return false;
-                }
-
+                var trigger = CreateTrigger(runAfterDay + 1, result.PredictedPerformanceTier, (rnd.NextDouble(), rnd.NextDouble()));
                 if (trigger != null)
                 {
                     ExperimentalAnalyzer.UpdateTrainingOverrides(training, new[] { trigger });
                     return true;
                 }
-
-
             }
             return false;
+        }
+
+        public static dynamic? CreateTrigger(int triggerDay, PredictedNumberlineLevel.PerformanceTier tier, (double, double) rnds)
+        {
+            var plans = new
+            {
+                NVR_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 38 }, { "NVR", 8 }, { "tangram", 4 } },
+                WM_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 46 }, { "NVR", 0 }, { "tangram", 4 } },
+                NVR_High = new Dictionary<string, int> { { "Math", 50 }, { "WM", 20 }, { "NVR", 26 }, { "tangram", 4 } },
+            };
+
+            //TODO: weights within NVR? Rotation?
+            //"tangram": 100, "tangram#intro": 100,
+            //"nvr_rp": 0,
+            //"nvr_so": 0,
+            //"rotation": 0, "rotation#intro": 0
+
+            if (tier == PredictedNumberlineLevel.PerformanceTier.Low)
+            {
+                var trigger = ExperimentalAnalyzer.CreateWeightChangeTrigger(
+                    rnds.Item1 < 0.5
+                    ? plans.NVR_Std
+                    : plans.NVR_High, triggerDay);
+
+                if (rnds.Item2 < 0.5)
+                {
+                    trigger.actionData.properties.phases = ExperimentalAnalyzer.ConvertToDynamicOrThrow(new Dictionary<string, object> {
+                        {
+                            "numberline[\\w#]*",
+                            new { problemGeneratorData = new { problemFile = new { path = "blabla.csv" } } } // TODO: will we be using this? If so specify!
+                        } });
+                }
+                return trigger;
+            }
+            else if (tier == PredictedNumberlineLevel.PerformanceTier.High)
+            {
+                // Randomize WM vs NVR
+                return ExperimentalAnalyzer.CreateWeightChangeTrigger(
+                    rnds.Item1 < 0.5
+                    ? plans.NVR_Std
+                    : plans.WM_Std, triggerDay);
+            }
+            else
+            {
+                // Standard NVR - no change
+            }
+
+            return null;
         }
     }
 

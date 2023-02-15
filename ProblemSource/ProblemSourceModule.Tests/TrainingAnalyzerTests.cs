@@ -11,6 +11,7 @@ using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
 using Microsoft.Extensions.Logging;
 using ProblemSource.Models.Aggregates;
+using Newtonsoft.Json;
 
 namespace ProblemSourceModule.Tests
 {
@@ -20,6 +21,46 @@ namespace ProblemSourceModule.Tests
         public TrainingAnalyzerTests()
         {
             fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
+        }
+
+        [Fact]
+        public void CategorizerDay5_23Q1_Triggers()
+        {
+            var low00 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (0, 0));
+            var low11 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (1, 1));
+
+            $"{low00!.actionData.properties.weights.WM}".ShouldBe("38");
+            $"{low11!.actionData.properties.weights.WM}".ShouldBe("20");
+
+            $"{low00!.actionData.properties.phases}".ShouldContain("numberline[\\\\w#]*");
+            $"{low11!.actionData.properties.phases}".ShouldNotContain("numberline[\\\\w#]*");
+
+
+            var medium = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Medium, (0, 0));
+            var unknown = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Unknown, (0, 0));
+            (medium as object).ShouldBeNull();
+            (unknown as object).ShouldBeNull();
+
+            var high0 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (0, 0));
+            var high1 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (1, 0));
+
+            $"{high0!.actionData.properties.weights.WM}".ShouldBe("38");
+            $"{high1!.actionData.properties.weights.WM}".ShouldBe("46");
+        }
+
+        [Fact]
+        public void ModifyTrigger()
+        {
+            var trigger = ExperimentalAnalyzer.CreateWeightChangeTrigger(new Dictionary<string, int> { { "WM", 1 } }, 5);
+            trigger.actionData.properties.phases = ExperimentalAnalyzer.ConvertToDynamicOrThrow(new Dictionary<string, object> {
+                    {
+                        "numberline[\\w#]*",
+                        new { problemGeneratorData = new { problemFile = new { path = "blabla.csv" } } }
+                    }
+            });
+
+            var serialized = JsonConvert.SerializeObject(trigger);
+            serialized.ShouldContain("""phases":{"numberline[\\w#]*":{"problemGeneratorData""");
         }
 
         [Fact]
