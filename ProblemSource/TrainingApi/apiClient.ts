@@ -632,7 +632,7 @@ export class TrainingsClient {
         return Promise.resolve<Training[]>(null as any);
     }
 
-    postGroup(dto: TrainingCreateDto, groupName: string | null | undefined, numTrainings: number | undefined, ageSpan: string | null | undefined, createForUser: string | null | undefined): Promise<string[]> {
+    postGroup(dto: TrainingCreateDto, groupName: string | null | undefined, numTrainings: number | undefined, createForUser: string | null | undefined): Promise<string[]> {
         let url_ = this.baseUrl + "/api/Trainings/createclass?";
         if (groupName !== undefined && groupName !== null)
             url_ += "groupName=" + encodeURIComponent("" + groupName) + "&";
@@ -640,8 +640,6 @@ export class TrainingsClient {
             throw new Error("The parameter 'numTrainings' cannot be null.");
         else if (numTrainings !== undefined)
             url_ += "numTrainings=" + encodeURIComponent("" + numTrainings) + "&";
-        if (ageSpan !== undefined && ageSpan !== null)
-            url_ += "ageSpan=" + encodeURIComponent("" + ageSpan) + "&";
         if (createForUser !== undefined && createForUser !== null)
             url_ += "createForUser=" + encodeURIComponent("" + createForUser) + "&";
         url_ = url_.replace(/[?&]$/, "");
@@ -1055,6 +1053,7 @@ export interface TrainingCreateDto {
     baseTemplateId: number;
     trainingPlan?: string | undefined;
     trainingSettings: TrainingSettings;
+    ageBracket?: string | undefined;
 }
 
 export interface TrainingSettings {
@@ -1125,6 +1124,7 @@ export interface Training {
     username: string;
     trainingPlanName: string;
     settings?: TrainingSettings | undefined;
+    ageBracket: string;
 }
 
 export interface TrainingTemplateDto {
