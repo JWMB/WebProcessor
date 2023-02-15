@@ -829,14 +829,10 @@
       ],
       "properties": {
         "username": {
-          "type": "string",
-          "maxLength": 50,
-          "minLength": 6
+          "type": "string"
         },
         "password": {
-          "type": "string",
-          "maxLength": 14,
-          "minLength": 6
+          "type": "string"
         }
       }
     },
@@ -1040,6 +1036,9 @@
         },
         "trainingSettings": {
           "$ref": "#/definitions/TrainingSettings"
+        },
+        "ageBracket": {
+          "type": "string"
         }
       }
     },
@@ -1090,12 +1089,6 @@
         },
         "alarmClockInvisible": {
           "type": "boolean"
-        },
-        "analyzers": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },
@@ -1231,7 +1224,7 @@
         "id",
         "username",
         "trainingPlanName",
-        "settings"
+        "ageBracket"
       ],
       "properties": {
         "id": {
@@ -1246,6 +1239,9 @@
         },
         "settings": {
           "$ref": "#/definitions/TrainingSettings"
+        },
+        "ageBracket": {
+          "type": "string"
         }
       }
     },

@@ -85,10 +85,12 @@ export class ErrorHandling {
                         }
                     }
                     details["stack"] = e.reason.stack ?? "";
+                } else if (typeof e.reason === "string") {
+                    message = e.reason;
                 }
                 notification = { text: `${statusPrefix}${message}`, data: e.reason, details: details, severity: SeverityLevel.error };
             } else {
-                notification = { text: "Unknown", data: e, severity: SeverityLevel.error };
+                notification = { text: typeof e === "string" ? e : "Unknown", data: e, severity: SeverityLevel.error };
             }
 
             notificationsStore.add(notification);

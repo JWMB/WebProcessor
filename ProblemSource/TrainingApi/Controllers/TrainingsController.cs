@@ -68,14 +68,14 @@ namespace TrainingApi.Controllers
                 await trainingRepository.RemoveByIdIfExists(id);
         }
 
-        private async Task<Training> CreateTraining(TrainingCreateDto dto)
+        private async Task<Training> CreateTraining(TrainingCreateDto dto, IEnumerable<Training>? templates = null)
         {
-            var templates = await GetTrainingTemplates();
+            templates = templates ?? await GetTrainingTemplates();
             var template = templates.FirstOrDefault(o => o.Id == dto.BaseTemplateId);
             if (template == null)
                 throw new Exception($"Template not found: {dto.BaseTemplateId}");
 
-            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, dto.TrainingSettings);
+            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, dto.TrainingSettings, dto.AgeBracket);
         }
 
         private async Task<User> GetImpersonatedUserOrThrow(string? username)
@@ -124,9 +124,11 @@ namespace TrainingApi.Controllers
             if (string.IsNullOrEmpty(createForUser) == false)
                 user = await GetImpersonatedUserOrThrow(createForUser);
 
+            var templates = await GetTrainingTemplates();
+
             var trainings = new List<Training>();
             for (int i = 0; i < numTrainings; i++)
-                trainings.Add(await CreateTraining(dto));
+                trainings.Add(await CreateTraining(dto, templates));
 
             if (!user.Trainings.TryGetValue(groupName, out var list))
             {
@@ -319,6 +321,7 @@ namespace TrainingApi.Controllers
             public int BaseTemplateId { get; set; }
             public string? TrainingPlan { get; set; }
             public TrainingSettings TrainingSettings { get; set; } = new TrainingSettings();
+            public string? AgeBracket { get; set; }
         }
 
         public class TrainingTemplateDto

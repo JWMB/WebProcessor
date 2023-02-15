@@ -10,7 +10,7 @@ namespace ProblemSourceModule.Services.Storage
     {
         Task<IEnumerable<Training>> GetByIds(IEnumerable<int> ids);
 
-        async Task<Training> Add(ITrainingPlanRepository trainingPlanRepository, ITrainingUsernameService usernameService, string trainingPlan, TrainingSettings? settings)
+        async Task<Training> Add(ITrainingPlanRepository trainingPlanRepository, ITrainingUsernameService usernameService, string trainingPlan, TrainingSettings? settings, string? ageBracket = null)
         {
             var tp = await trainingPlanRepository.Get(trainingPlan);
             if (tp == null)
@@ -20,6 +20,7 @@ namespace ProblemSourceModule.Services.Storage
             {
                 TrainingPlanName = trainingPlan,
                 Settings = settings ?? TrainingSettings.Default,
+                AgeBracket = ageBracket ?? ""
             };
 
             var id = await Add(training);
