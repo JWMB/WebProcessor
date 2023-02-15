@@ -10,7 +10,14 @@
     <None Remove="Resources\2017 HT template Default.json" />
     <None Remove="Resources\2018 VT template Default.json" />
     <None Remove="Resources\2023 VT template JonasTest.json" />
+    <None Remove="Resources\JuliaMLModel_Reg.zip" />
     <None Remove="Resources\testplan.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\JuliaMLModel_Reg.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

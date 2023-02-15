@@ -21,17 +21,18 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
         private async Task<IMLFeature> CreateFeatures(Training training, IUserGeneratedDataRepositoryProvider provider)
         {
-            return MLFeaturesJulia.FromPhases(training.Settings ?? new TrainingSettings(), await provider.Phases.GetAll(), age: 6);
+            if (!int.TryParse(training.AgeBracket.Split('-').Where(o => o.Any()).FirstOrDefault() ?? "6", out var age))
+                age = 6;
+            return MLFeaturesJulia.FromPhases(training.Settings ?? TrainingSettings.Default, await provider.Phases.GetAll(), age: age);
         }
 
         public async Task<bool> Analyze(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
         {
             var runAfterDay = 5;
+            training.Settings ??= TrainingSettings.Default;
 
             if (runAfterDay == await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems))
             {
-                var age = 6; // TODO: where can we get age? Add in TrainingSettings for now?
-
                 var mlFeatures = await CreateFeatures(training, provider);
                 var result = await modelService.Predict(mlFeatures);
 
@@ -40,22 +41,65 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                     log.LogWarning($"Could not predict performance for training {training.Id}: IsValid={mlFeatures.IsValid}");
                     return false;
                 }
-
                 log.LogInformation($"Predicted performance for training {training.Id}: {result.Predicted}/{result.PredictedPerformanceTier}");
+                var seedSrc = DateTime.Now;
+                var rnd = new Random(seedSrc.Millisecond * 1000 + seedSrc.Microsecond);
 
-                training.Settings ??= TrainingSettings.Default;
+                var plans = new
+                {
+                    NVR_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 38 }, { "NVR", 8 }, { "tangram", 4 } },
+                    WM_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 46 }, { "NVR", 0 }, { "tangram", 4 } },
+                    NVR_High = new Dictionary<string, int> { { "Math", 50 }, { "WM", 20 }, { "NVR", 26 }, { "tangram", 4 } },
+                };
+
+                //TODO: weights within NVR? Rotation?
+                //"tangram#intro": 100,
+                //"tangram": 100,
+                //"nvr_rp": 0,
+                //"nvr_so": 0,
+                //"rotation": 0,
+                //"rotation#intro": 0
+
+                var triggerDay = runAfterDay + 1;
+                dynamic? trigger = null;
 
                 if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.Low)
                 {
-                    training.Settings.timeLimits = training.Settings.timeLimits.Select(o => o * 0.9M).ToList();
-                    return true;
+                    trigger = ExperimentalAnalyzer.CreateWeightChangeTrigger(
+                        rnd.NextDouble() < 0.5
+                        ? plans.NVR_Std
+                        : plans.NVR_High, triggerDay);
+
+                    if (rnd.NextDouble() < 0.5)
+                    {
+                        trigger.actionData.properties.phases = new Dictionary<string, object> {
+                        {
+                            "numberline[\\w#]*",
+                            new { problemGeneratorData = new { problemFile = new { path = "blabla.csv" } } } // TODO: will we be using this? If so specify!
+                        } };
+                    }
+                }
+                else if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.High)
+                {
+                    // Randomize WM vs NVR
+                    trigger = ExperimentalAnalyzer.CreateWeightChangeTrigger(
+                        rnd.NextDouble() < 0.5
+                        ? plans.NVR_Std
+                        : plans.WM_Std, triggerDay);
                 }
                 else
                 {
-                    training.Settings.timeLimits = training.Settings.timeLimits.Select(o => o * 1.1M).ToList();
-                    //training.Settings.trainingPlanOverrides = new { AA = 12 };
+                    // Standard NVR
+                    return false;
+                }
+
+                if (trigger != null)
+                {
+                    ExperimentalAnalyzer.UpdateTrainingOverrides(training, new[] { trigger });
                     return true;
                 }
+
+
             }
             return false;
         }

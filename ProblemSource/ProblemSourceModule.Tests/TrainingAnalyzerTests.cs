@@ -41,7 +41,7 @@ namespace ProblemSourceModule.Tests
             var overrides = (JObject)training.Settings.trainingPlanOverrides;
 
             overrides["triggers"]?[0]?["actionData"]?["type"]?.ToString().ShouldBe("TrainingPlanModTriggerAction");
-            overrides["triggers"]?[0]?["actionData"]?["id"]?.ToString().ShouldBe($"modDay0_{trainingDay}");
+            overrides["triggers"]?[0]?["actionData"]?["id"]?.ToString().ShouldBe($"modDay0_{trainingDay + 1}");
         }
 
         [Fact]
