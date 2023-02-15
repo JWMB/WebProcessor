@@ -19,7 +19,8 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             this.log = log;
         }
 
-        private async Task<IMLFeature> CreateFeatures(Training training, IUserGeneratedDataRepositoryProvider provider)
+        //public Func<Training, IUserGeneratedDataRepositoryProvider, Task<IMLFeature>> FuncCreateFeatures { get; set; } = CreateFeatures
+        private static async Task<IMLFeature> CreateFeatures(Training training, IUserGeneratedDataRepositoryProvider provider)
         {
             if (!int.TryParse(training.AgeBracket.Split('-').Where(o => o.Any()).FirstOrDefault() ?? "6", out var age))
                 age = 6;
@@ -33,14 +34,11 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             if (runAfterDay == await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems))
             {
-                var mlFeatures = await CreateFeatures(training, provider);
-                var result = await modelService.Predict(mlFeatures);
+                var result = await Predict(training, provider);
 
                 if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.Unknown)
-                {
-                    log.LogWarning($"Could not predict performance for training {training.Id}: IsValid={mlFeatures.IsValid}");
                     return false;
-                }
+
                 log.LogInformation($"Predicted performance for training {training.Id}: {result.Predicted}/{result.PredictedPerformanceTier}");
 
                 var seedSrc = DateTime.Now;
@@ -54,6 +52,17 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 }
             }
             return false;
+        }
+
+        public async Task<PredictedNumberlineLevel> Predict(Training training, IUserGeneratedDataRepositoryProvider provider)
+        {
+            var mlFeatures = await CreateFeatures(training, provider);
+            var result = await modelService.Predict(mlFeatures);
+            if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.Unknown)
+            {
+                log.LogWarning($"Could not predict performance for training {training.Id}: IsValid={mlFeatures.IsValid}");
+            }
+            return result;
         }
 
         public static dynamic? CreateTrigger(int triggerDay, PredictedNumberlineLevel.PerformanceTier tier, (double, double) rnds)
@@ -173,8 +182,8 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 return Predicted switch
                 {
                     null => PerformanceTier.Unknown,
-                    <= 0.2f => PerformanceTier.Low,
-                    <= 0.8f => PerformanceTier.Medium,
+                    <= 36f => PerformanceTier.Low, // TODO: set limits
+                    <= 87f => PerformanceTier.Medium,
                     _ => PerformanceTier.High,
                 };
             }

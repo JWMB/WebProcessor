@@ -12,6 +12,7 @@ using ProblemSourceModule.Services;
 using Microsoft.Extensions.Logging;
 using ProblemSource.Models.Aggregates;
 using Newtonsoft.Json;
+using ProblemSourceModule.Models.Aggregates.ML;
 
 namespace ProblemSourceModule.Tests
 {
@@ -46,6 +47,22 @@ namespace ProblemSourceModule.Tests
 
             $"{high0!.actionData.properties.weights.WM}".ShouldBe("38");
             $"{high1!.actionData.properties.weights.WM}".ShouldBe("46");
+        }
+
+        [Theory]
+        [InlineData(10, true)]
+        [InlineData(50, false)]
+        [InlineData(100, true)]
+        public async Task CategorizerDay5_23Q1_Modified(float predictedLevel, bool expectedModification)
+        {
+            var predicter = new Mock<IPredictNumberlineLevelService>();
+            predicter.Setup(o => o.Predict(It.IsAny<IMLFeature>())).Returns(Task.FromResult(new PredictedNumberlineLevel { Predicted = predictedLevel }));
+            var i = new CategorizerDay5_23Q1(predicter.Object, fixture.Create<ILogger<CategorizerDay5_23Q1>>());
+            var modified = await i.Analyze(new Training(), fixture.Create<IUserGeneratedDataRepositoryProvider>(), new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = 5 } });
+
+            modified.ShouldBe(expectedModification);
+            //var result = await i.Predict(new Training(), fixture.Create<IUserGeneratedDataRepositoryProvider>());
+            //result.Predicted.ShouldBe(fixedPredictedValue);
         }
 
         [Fact]
