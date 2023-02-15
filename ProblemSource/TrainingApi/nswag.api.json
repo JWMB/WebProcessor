@@ -506,6 +506,12 @@
           },
           {
             "type": "string",
+            "name": "ageSpan",
+            "in": "query",
+            "x-nullable": true
+          },
+          {
+            "type": "string",
             "name": "createForUser",
             "in": "query",
             "x-nullable": true

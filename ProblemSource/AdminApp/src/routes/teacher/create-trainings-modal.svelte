@@ -10,14 +10,28 @@
 
 	const apiFacade = getApi() as ApiFacade;
 
+	const ageSpans = [
+		"",
+		"-4",
+		"4-5",
+		"5-6",
+		"6-7",
+		"7-8",
+		"8-9",
+		"9-10",
+		"10-11",
+		"11-",
+	];
 	let newGroupData = {
 		name: 'Fsk A',
 		noOfTrainings: 10,
-		timePerDay: 33
+		timePerDay: 33,
+		ageSpan: ""
 	};
 
 	let createdTrainingUsernames: string[] = [];
-	async function createTrainings(num: number, groupName: string, numMinutes: number, forUser?: string | null) {
+	async function createTrainings(num: number, groupName: string, numMinutes: number, ageSpan: string, forUser?: string | null) {
+		if (!ageSpan) throw "Age span must be set";
 		const templates = await apiFacade.trainings.getTemplates();
 		const chosenTemplate = templates[0];
 		if (!chosenTemplate.settings) {
@@ -25,7 +39,7 @@
 		}
 		chosenTemplate.settings.timeLimits = [numMinutes];
 		const dto = <TrainingCreateDto>{ trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
-		createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
+		createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, ageSpan, forUser);
 		closeModal;
 		onCreateGroup(groupName);
 	}
@@ -43,6 +57,17 @@
 						<input id="className" type="text" required bind:value={newGroupData.name} />
 					</label>
 					<label>
+						Age span
+						<br/>
+						<select bind:value={newGroupData.ageSpan}>
+							{#each ageSpans as ageSpan}
+							<option value={ageSpan}>{ageSpan}</option>
+							{/each}
+						</select>
+						<br/>
+						<br/>
+					</label>
+					<label>
 						Number of trainings
 						<input id="numTrainings" required bind:value={newGroupData.noOfTrainings} min="1" max="40" />
 					</label>
@@ -52,7 +77,7 @@
 					</label> -->
 					<div class="actions">
 						<button class="secondary" on:click={closeModal}>Cancel</button>
-						<button class="primary" disabled style="opacity:0.5" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, '')}>Create</button>
+						<button class="primary"  style="opacity:0.5" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageSpan, '')}>Create</button>
 					</div>
 				</form>
 			{:else}

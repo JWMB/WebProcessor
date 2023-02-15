@@ -97,7 +97,7 @@ namespace TrainingApi.Controllers
         [HttpPost]
         [Route("createclass")]
         [ProducesErrorResponseType(typeof(HttpException))]
-        public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings, string? createForUser = null)
+        public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings, string ageSpan, string? createForUser = null)
         {
             var user = userProvider.UserOrThrow;
 
