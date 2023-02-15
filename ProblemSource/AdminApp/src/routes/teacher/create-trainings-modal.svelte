@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { closeModal } from 'svelte-modals';
-	import type { TrainingCreateDto } from 'src/apiClient';
-	import { get } from 'svelte/store';
+	import type { TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
 	import { getApi } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
+	import { onMount } from 'svelte';
 
 	export let isOpen: boolean; // provided by Modals
 	export let onCreateGroup: (id: string) => void;
 
 	const apiFacade = getApi() as ApiFacade;
 
-	const ageSpans = [
+	let templates: TrainingTemplateDto[] = [];
+
+	const ageBrackets = [
 		"",
 		"-4",
 		"4-5",
@@ -26,23 +28,31 @@
 		name: 'Fsk A',
 		noOfTrainings: 10,
 		timePerDay: 33,
-		ageSpan: ""
+		ageBracket: ""
 	};
 
 	let createdTrainingUsernames: string[] = [];
-	async function createTrainings(num: number, groupName: string, numMinutes: number, ageSpan: string, forUser?: string | null) {
-		if (!ageSpan) throw "Age span must be set";
-		const templates = await apiFacade.trainings.getTemplates();
+	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string, forUser?: string | null) {
+		if (!ageBracket) throw "Age span must be set";
 		const chosenTemplate = templates[0];
 		if (!chosenTemplate.settings) {
 			chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
 		}
 		chosenTemplate.settings.timeLimits = [numMinutes];
-		const dto = <TrainingCreateDto>{ trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
-		createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, ageSpan, forUser);
+		const dto = <TrainingCreateDto>{ 
+			baseTemplateId: chosenTemplate.id,
+			trainingPlan: chosenTemplate.trainingPlanName,
+			trainingSettings: chosenTemplate.settings,
+			ageBracket: ageBracket
+		};
+		createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
 		closeModal;
 		onCreateGroup(groupName);
 	}
+
+	onMount(async () => {
+		templates = await apiFacade.trainings.getTemplates();
+	});
 </script>
 
 {#if isOpen}
@@ -59,9 +69,9 @@
 					<label>
 						Age span
 						<br/>
-						<select bind:value={newGroupData.ageSpan}>
-							{#each ageSpans as ageSpan}
-							<option value={ageSpan}>{ageSpan}</option>
+						<select bind:value={newGroupData.ageBracket}>
+							{#each ageBrackets as ageBracket}
+							<option value={ageBracket}>{ageBracket}</option>
 							{/each}
 						</select>
 						<br/>
@@ -77,7 +87,7 @@
 					</label> -->
 					<div class="actions">
 						<button class="secondary" on:click={closeModal}>Cancel</button>
-						<button class="primary"  style="opacity:0.5" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageSpan, '')}>Create</button>
+						<button class="primary" disabled style="opacity:0.5" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket, '')}>Create</button>
 					</div>
 				</form>
 			{:else}

@@ -40,7 +40,7 @@
 			}
 			chosenTemplate.settings.timeLimits = [numMinutes];
 			const dto = <TrainingCreateDto>{ baseTemplateId: chosenTemplate.id, trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
-			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, "", forUser);
+			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
 			await getTrainings();
 		}
 	}

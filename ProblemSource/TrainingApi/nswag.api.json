@@ -506,12 +506,6 @@
           },
           {
             "type": "string",
-            "name": "ageSpan",
-            "in": "query",
-            "x-nullable": true
-          },
-          {
-            "type": "string",
             "name": "createForUser",
             "in": "query",
             "x-nullable": true
@@ -1042,6 +1036,9 @@
         },
         "trainingSettings": {
           "$ref": "#/definitions/TrainingSettings"
+        },
+        "ageBracket": {
+          "type": "string"
         }
       }
     },
@@ -1226,7 +1223,8 @@
       "required": [
         "id",
         "username",
-        "trainingPlanName"
+        "trainingPlanName",
+        "ageBracket"
       ],
       "properties": {
         "id": {
@@ -1241,6 +1239,9 @@
         },
         "settings": {
           "$ref": "#/definitions/TrainingSettings"
+        },
+        "ageBracket": {
+          "type": "string"
         }
       }
     },
