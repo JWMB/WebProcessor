@@ -21,7 +21,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
         private async Task<IMLFeature> CreateFeatures(Training training, IUserGeneratedDataRepositoryProvider provider)
         {
-            return MLFeaturesJulia.FromPhases(training.Settings ?? new TrainingSettings(), await provider.Phases.GetAll(), age: age);
+            return MLFeaturesJulia.FromPhases(training.Settings ?? new TrainingSettings(), await provider.Phases.GetAll(), age: 6);
         }
 
         public async Task<bool> Analyze(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
@@ -77,10 +77,17 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
     public class LocalMLPredictNumberlineLevelService : IPredictNumberlineLevelService
     {
+        private readonly string localModelPath;
+
+        public LocalMLPredictNumberlineLevelService(string localModelPath)
+        {
+            this.localModelPath = localModelPath;
+        }
+
         public Task<PredictedNumberlineLevel> Predict(IMLFeature features)
         {
             var predicted = CreatePrediction(features);
-            return Task.FromResult(new PredictedNumberlineLevel { Predicted = 10 });
+            return Task.FromResult(new PredictedNumberlineLevel { Predicted = predicted });
         }
 
         public float? CreatePrediction(IMLFeature feature)
@@ -88,9 +95,12 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             if (!feature.IsValid)
                 return null;
 
-            ITransformer model;
-            DataViewSchema schema;
+            if (!File.Exists(localModelPath))
+                return null;
 
+            var ctx = new MLContext(seed: 0);
+
+            var model = ctx.Model.Load(localModelPath, out DataViewSchema schema);
             var colInfo = ColumnInfo.Create(feature.GetType());
 
             var type = MLDynamicPredict.CreateType(schema);
@@ -102,7 +112,6 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
         }
     }
 
-
     public class PredictedNumberlineLevel
     {
         public enum PerformanceTier
@@ -113,7 +122,20 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             High
         }
 
-        public PerformanceTier PredictedPerformanceTier => PerformanceTier.Low;
+        public PerformanceTier PredictedPerformanceTier
+        {
+            get
+            {
+                return Predicted switch
+                {
+                    null => PerformanceTier.Unknown,
+                    <= 0.2f => PerformanceTier.Low,
+                    <= 0.8f => PerformanceTier.Medium,
+                    _ => PerformanceTier.High,
+                };
+            }
+        }
+
         public float? Predicted { get; set; }
     }
 }
