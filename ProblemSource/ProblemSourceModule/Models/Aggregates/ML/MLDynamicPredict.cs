@@ -1,9 +1,8 @@
 ﻿using Common;
 using Microsoft.ML;
-using ProblemSourceModule.Models.Aggregates.ML;
 using System.Data;
 
-namespace Tools
+namespace ProblemSourceModule.Models.Aggregates.ML
 {
     public class MLDynamicPredict
     {
