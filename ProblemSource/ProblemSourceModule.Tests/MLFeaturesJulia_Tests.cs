@@ -110,7 +110,8 @@ namespace ProblemSourceModule.Tests
                         NumProblemsWithAnswers = 3, NumProblemsToHighestLevel = 2,
                         StandardDeviation = 0, //0.285760205721633m,
                         NumProblems = 3, //447.541680243925m
-                        Skew = double.NaN
+                        Skew = double.NaN,
+                        NumHighResponseTimes = 0,
                         }
                     }
                 },
