@@ -29,7 +29,7 @@ namespace ProblemSource
             add();
         }
         public static void Upsert<TService>(this IServiceCollection services, Action add)
-    where TService : class
+            where TService : class
         {
             services.RemoveService<TService>();
             add();

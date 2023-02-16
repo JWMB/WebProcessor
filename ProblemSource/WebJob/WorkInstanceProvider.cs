@@ -1,4 +1,6 @@
-﻿namespace WebJob
+﻿using ProblemSource;
+
+namespace WebJob
 {
     public class WorkInstanceProvider : IWorkInstanceProvider
     {

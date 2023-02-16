@@ -20,8 +20,15 @@ namespace ProblemSource
             services.AddSingleton<IAggregationService, AggregationService>();
 
             services.AddSingleton<ProblemSourceProcessingMiddleware>();
-            services.AddSingleton<IEnumerable<ITrainingAnalyzer>>(new[] { new ExperimentalAnalyzer() });
+
+            // training analyzers:
+            var analyzers = new[] { typeof(ExperimentalAnalyzer), typeof(CategorizerDay5_23Q1) };
+            services.AddSingleton<IPredictNumberlineLevelService>(sp => new LocalMLPredictNumberlineLevelService(""));
+
+            services.AddSingleton<IEnumerable<ITrainingAnalyzer>>(sp => analyzers.Select(o => (ITrainingAnalyzer)sp.GetOrCreateInstance(o)));
             services.AddSingleton<TrainingAnalyzerCollection>();
+            //services.AddSingleton<TrainingAnalyzerCollection>(sp => new TrainingAnalyzerCollection(new[] { }, sp.GetRequiredService<>));
+
             services.AddSingleton<IEventDispatcher, NullEventDispatcher>();
 
             services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
