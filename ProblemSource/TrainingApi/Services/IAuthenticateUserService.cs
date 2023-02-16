@@ -25,7 +25,7 @@ namespace TrainingApi.Services
             if (user == null)
                 return null;
 
-            if (User.HashPassword(username, password) != user.HashedPassword)
+            if (!user.VerifyPassword(password))
                 return null;
 
             return user;
