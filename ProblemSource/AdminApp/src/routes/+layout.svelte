@@ -29,8 +29,8 @@
 
 {#if data.pageInited}
 	<div class="login-status">
-		<!-- <a href="//ki-study.humany.net/admin-notices-ow">Notices</a> -->
 		{#if $userStore}
+			<a href="//ki-study.humany.net/admin-notices-ow">Notices</a>
 			<span> {$userStore?.username}</span>
 			<button on:click={logout}>{getString('navbar_logout_label')}</button>
 		{:else}
@@ -45,8 +45,6 @@
 {#if $userStore}
 <a href="//ki-study.humany.net/teacher">Help</a>
 {/if}
-
-<div style="opacity:0.01">information</div>
 
 <NotificationBar />
 

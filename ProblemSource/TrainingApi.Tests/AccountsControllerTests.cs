@@ -42,6 +42,5 @@ namespace TrainingApi.Tests
             var response = await client.GetAsync($"/api/accounts/");
             response.StatusCode.ShouldBe(expected);
         }
-
     }
 }

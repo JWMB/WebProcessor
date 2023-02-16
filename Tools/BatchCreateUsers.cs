@@ -68,7 +68,7 @@ namespace Tools
             {
                 Email = email,
                 Role = "Teacher",
-                HashedPassword = User.HashPassword(email, password)
+                PasswordForHashing = password
             };
 
             var createdTrainings = new Dictionary<string, List<string>>();
