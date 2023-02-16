@@ -13,7 +13,7 @@ namespace ProblemSourceModule.Services
 
         public TrainingAnalyzerCollection(IEnumerable<ITrainingAnalyzer> instances, ILogger<TrainingAnalyzerCollection> log)
         {
-            this.instances = instances;
+            this.instances = instances.ToList();
             this.log = log;
         }
 

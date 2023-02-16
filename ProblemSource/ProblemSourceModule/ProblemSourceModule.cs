@@ -1,5 +1,6 @@
 ﻿using Common.Web.Services;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using PluginModuleBase;
 using ProblemSource.Services;
@@ -22,10 +23,16 @@ namespace ProblemSource
             services.AddSingleton<ProblemSourceProcessingMiddleware>();
 
             // training analyzers:
+            // TODO: these should be provided by configuration, not hardcoded!
             var analyzers = new[] { typeof(ExperimentalAnalyzer), typeof(CategorizerDay5_23Q1) };
-            services.AddSingleton<IPredictNumberlineLevelService>(sp => new LocalMLPredictNumberlineLevelService(""));
-
+            var pathToMLModel = "Resources/JuliaMLModel_Reg.zip";
+            services.AddSingleton<IPredictNumberlineLevelService>(sp =>
+                new LocalMLPredictNumberlineLevelService(
+                    sp.GetRequiredService<IWebHostEnvironment>().ContentRootFileProvider.GetFileInfo(pathToMLModel)?.PhysicalPath ?? ""
+                    //Path.Combine(sp.GetRequiredService<IWebHostEnvironment>().ContentRootPath, pathToMLModel)
+                ));
             services.AddSingleton<IEnumerable<ITrainingAnalyzer>>(sp => analyzers.Select(o => (ITrainingAnalyzer)sp.GetOrCreateInstance(o)));
+
             services.AddSingleton<TrainingAnalyzerCollection>();
             //services.AddSingleton<TrainingAnalyzerCollection>(sp => new TrainingAnalyzerCollection(new[] { }, sp.GetRequiredService<>));
 
