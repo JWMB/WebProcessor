@@ -67,17 +67,15 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
         public static dynamic? CreateTrigger(int triggerDay, PredictedNumberlineLevel.PerformanceTier tier, (double, double) rnds)
         {
+            // TK: only nvr_so - rotation, tangram and nvr_rp can be removed from day 6.
             var plans = new
             {
-                NVR_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 38 }, { "NVR", 8 }, { "tangram", 4 } },
-                WM_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 46 }, { "NVR", 0 }, { "tangram", 4 } },
-                NVR_High = new Dictionary<string, int> { { "Math", 50 }, { "WM", 20 }, { "NVR", 26 }, { "tangram", 4 } },
+                NVR_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 38 }, { "NVR", 12 }, { "tangram", 33 }, { "nvr_so", 66 }, { "nvr_rp", 0 }, { "rotation", 0 } }, //{ "NVR", 8 }, { "tangram", 4 } },
+                WM_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 46 }, { "NVR", 4 }, { "tangram", 100 }, { "nvr_so", 0 }, { "nvr_rp", 0 }, { "rotation", 0 } }, //{ "NVR", 0 }, { "tangram", 4 } },
+                NVR_High = new Dictionary<string, int> { { "Math", 50 }, { "WM", 20 }, { "NVR", 30 }, { "tangram", 13 }, { "nvr_so", 87 }, { "nvr_rp", 0 }, { "rotation", 0 } }, // { "NVR", 26 }, { "tangram", 4 } },
             };
 
-            //TODO: weights within NVR? Rotation?
             //"tangram": 100, "tangram#intro": 100,
-            //"nvr_rp": 0,
-            //"nvr_so": 0,
             //"rotation": 0, "rotation#intro": 0
 
             if (tier == PredictedNumberlineLevel.PerformanceTier.Low)
