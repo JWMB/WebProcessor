@@ -33,7 +33,9 @@ namespace WebJob
                 throw new Exception($"Instatiating WorkBase types: {string.Join("\n", errors)}");
             }
 
-            return result.Where(o => o.Instance != null).OfType<WorkBase>();
+            return result
+                .Select(o => o.Instance)
+                .OfType<WorkBase>();
         }
     }
 }

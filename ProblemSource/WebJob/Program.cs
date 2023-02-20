@@ -3,9 +3,11 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Services;
 using WebJob;
+using Microsoft.Azure.WebJobs.Logging.ApplicationInsights;
 
 var builder = new HostBuilder();
 builder.ConfigureWebJobs(b =>
@@ -21,16 +23,20 @@ builder.ConfigureWebJobs(b =>
 })
 .ConfigureLogging((context, b) =>
 {
-    // here we can access context.HostingEnvironment.IsDevelopment() yet
     if (context.Configuration["environment"] == Environments.Development)
     {
-        //b.SetMinimumLevel(LogLevel.Debug);
-        //b.AddConsole();
+        b.SetMinimumLevel(LogLevel.Debug);
+        b.AddConsole();
     }
     else
     {
-        //b.SetMinimumLevel(LogLevel.Information);
+        b.SetMinimumLevel(LogLevel.Information);
+        b.AddConsole();
     }
+
+    var aiConn = context.Configuration.GetValue<string>("ApplicationInsights:ConnectionString");
+    if (!string.IsNullOrEmpty(aiConn))
+        b.AddApplicationInsightsWebJobs(config => config.ConnectionString = aiConn);
 
     // configure CommonLogging to use Serilog
     //var logConfig = new LogConfiguration();
@@ -57,7 +63,6 @@ builder.ConfigureWebJobs(b =>
     new ProblemSource.ProblemSourceModule().ConfigureForAzureTables(services, useCaching: false);
 })
 .UseConsoleLifetime();
-
 
 using (var host = builder.Build())
 {

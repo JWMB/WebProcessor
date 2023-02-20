@@ -1,5 +1,5 @@
-﻿using ProblemSource.Services.Storage;
-using ProblemSourceModule.Models;
+﻿using Microsoft.Extensions.Logging;
+using ProblemSource.Services.Storage;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 
@@ -10,13 +10,16 @@ namespace WebJob.Works
         private readonly TrainingAnalyzerCollection trainingAnalyzers;
         private readonly ITrainingRepository trainingRepository;
         private readonly IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory;
+        private readonly ILogger<RunDayAnalyzersWork> log;
 
-        public RunDayAnalyzersWork(TrainingAnalyzerCollection trainingAnalyzers, ITrainingRepository trainingRepository, IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory)
+        public RunDayAnalyzersWork(TrainingAnalyzerCollection trainingAnalyzers, ITrainingRepository trainingRepository,
+            IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory, ILogger<RunDayAnalyzersWork> log)
         {
             MinInterval = TimeSpan.FromHours(3);
             this.trainingAnalyzers = trainingAnalyzers;
             this.trainingRepository = trainingRepository;
             this.dataRepositoryProviderFactory = dataRepositoryProviderFactory;
+            this.log = log;
         }
 
         public override async Task Run()
@@ -38,6 +41,7 @@ namespace WebJob.Works
                     var modified = await trainingAnalyzers.Execute(training, dataRepositoryProviderFactory.Create(training.Id), null);
                     if (modified)
                     {
+                        log.LogInformation($"Training {training.Id} was modified");
                         await trainingRepository.Update(training);
                     }
                 }
