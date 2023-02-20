@@ -19,7 +19,7 @@ namespace ProblemSourceModule.Services.Storage
             var training = new Training
             {
                 TrainingPlanName = trainingPlan,
-                Settings = settings,
+                Settings = settings ?? TrainingSettings.Default,
                 AgeBracket = ageBracket ?? ""
             };
 

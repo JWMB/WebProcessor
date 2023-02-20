@@ -829,10 +829,14 @@
       ],
       "properties": {
         "username": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 5
         },
         "password": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 14,
+          "minLength": 5
         }
       }
     },
@@ -1089,6 +1093,12 @@
         },
         "alarmClockInvisible": {
           "type": "boolean"
+        },
+        "analyzers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -1224,6 +1234,7 @@
         "id",
         "username",
         "trainingPlanName",
+        "settings",
         "ageBracket"
       ],
       "properties": {

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using ProblemSource.Services.Storage.AzureTables;
+using System.IO;
 using Tools;
 
 var config = CreateConfig();
@@ -18,6 +19,34 @@ if (Console.ReadKey().Key != ConsoleKey.Y)
     Console.WriteLine("kbye");
     return;
 }
+
+var cts = new CancellationTokenSource();
+Console.CancelKeyPress += (s, e) =>
+{
+    Console.WriteLine("Canceling...");
+    cts.Cancel();
+    e.Cancel = true;
+};
+var cancellationToken = cts.Token;
+
+//var path = @"C:\Users\uzk446\Downloads\";
+//var ml = new MLDynamic();
+//await ml.Train(new[] { Path.Join(path, "taxi-fare-train.csv"), Path.Join(path, "taxi-fare-test.csv") },
+//    new MLDynamic.ColumnInfo { Label = "fare_amount", Categorical = new[] { "rate_code", "vendor_id", "payment_type" } },
+//    Path.Join(path, "taxi-fare-model.zip"), TimeSpan.FromMinutes(10));
+//var val = ml.Predict(new
+//{
+//    vendor_id = "CMT",
+//    rate_code = 1,
+//    passenger_count = 1,
+//    trip_time_in_secs = 1271,
+//    trip_distance = 3.8f,
+//    payment_type = "CRD",
+//    fare_amount = 0 //17.5
+//});
+
+await new OldDbMLFeatures().Run(cancellationToken);
+return;
 
 var section = config.GetRequiredSection("AppSettings:AzureTable");
 var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
@@ -55,6 +84,7 @@ IConfigurationRoot CreateConfig()
 
 IServiceProvider InititalizeServices(IConfigurationRoot config)
 {
+    // TODO: we probably want some of these in a central place, as it's used by several applications
     var section = config.GetRequiredSection("AppSettings:AzureTable");
     var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 

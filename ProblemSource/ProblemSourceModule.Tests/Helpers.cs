@@ -6,6 +6,7 @@ using ProblemSource.Services.Storage;
 using ProblemSource.Services;
 using ProblemSourceModule.Services.Storage;
 using Moq;
+using ProblemSourceModule.Services;
 
 namespace ProblemSource.Tests
 {
@@ -53,6 +54,7 @@ namespace ProblemSource.Tests
                 usernameHashing ?? fixture.Create<UsernameHashing>(),
                 mnemoJapanese ?? fixture.Create<MnemoJapanese>(),
                 trainingRepository ?? fixture.Create<ITrainingRepository>(),
+                fixture.Create<TrainingAnalyzerCollection>(),
                 logger ?? fixture.Create<ILogger<ProblemSourceProcessingMiddleware>>()
                 );
         }

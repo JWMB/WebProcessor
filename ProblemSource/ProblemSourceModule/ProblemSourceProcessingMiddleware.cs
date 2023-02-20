@@ -5,10 +5,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PluginModuleBase;
 using ProblemSource.Models;
+using ProblemSource.Models.Aggregates;
 using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 
 namespace ProblemSource
@@ -24,6 +26,7 @@ namespace ProblemSource
         private readonly UsernameHashing usernameHashing;
         private readonly MnemoJapanese mnemoJapanese;
         private readonly ITrainingRepository trainingRepository;
+        private readonly TrainingAnalyzerCollection trainingAnalyzers;
         private readonly ILogger<ProblemSourceProcessingMiddleware> log;
 
         //public bool SupportsMiddlewarePattern => throw new NotImplementedException();
@@ -31,7 +34,7 @@ namespace ProblemSource
         public ProblemSourceProcessingMiddleware(ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
             IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, UsernameHashing usernameHashing, MnemoJapanese mnemoJapanese,
-            ITrainingRepository trainingRepository,
+            ITrainingRepository trainingRepository, TrainingAnalyzerCollection trainingAnalyzers,
             ILogger<ProblemSourceProcessingMiddleware> log)
         {
             this.trainingPlanRepository = trainingPlanRepository;
@@ -43,6 +46,7 @@ namespace ProblemSource
             this.usernameHashing = usernameHashing;
             this.mnemoJapanese = mnemoJapanese;
             this.trainingRepository = trainingRepository;
+            this.trainingAnalyzers = trainingAnalyzers;
             this.log = log;
         }
 
@@ -196,11 +200,11 @@ namespace ProblemSource
                     log.LogError(ex, $"UpdateAggregates");
                 }
 
-                var eod = logItems.OfType<EndOfDayLogItem>().FirstOrDefault();
-                // TODO: also check if stat's TrainingDay has changed
-                if (eod?.training_day == 5)
+                var modified = await trainingAnalyzers.Execute(training, sessionInfo.Session.UserRepositories, logItems);
+                if (modified)
                 {
-
+                    log.LogInformation($"Modified training saved, id = {training.Id}");
+                    await trainingRepository.Update(training);
                 }
             }
 
@@ -224,11 +228,7 @@ namespace ProblemSource
             {
                 uuid = root.Uuid,
                 training_plan = trainingPlan,
-                training_settings = training.Settings ?? new TrainingSettings
-                {
-                    timeLimits = new List<decimal> { 33 },
-                    customData = new CustomData { unlockAllPlanets = false }
-                }
+                training_settings = training.Settings
             });
 
             var typedTrainingPlan = JsonConvert.DeserializeObject<TrainingPlan>(JsonConvert.SerializeObject(trainingPlan));
@@ -244,32 +244,8 @@ namespace ProblemSource
                 fullState["user_data"] = currentStoredState.user_data == null ? null : JObject.FromObject(currentStoredState.user_data);
             }
 
-            // TODO: apply rules engine - should e.g. training plan be modified?
-
             return JsonConvert.SerializeObject(fullState);
         }
-
-        //interface ITrainingModifierEngine
-        //{
-        //    void Run(Training training);
-        //}
-        //class TrainingModifierEngine : ITrainingModifierEngine
-        //{
-        //    public void Run(Training training)
-        //    {
-        //    }
-        //    class Day5Switcher
-        //    {
-        //        public void Run(Training training)
-        //        {
-        //            var trainingDay = 5;
-        //            if (trainingDay == 5)
-        //            {
-        //                //training.Settings.trainingPlanOverrides
-        //            }
-        //        }
-        //    }
-        //}
 
         private static List<LogItem> DeserializeEvents(object[] events, ILogger? log = null)
         {

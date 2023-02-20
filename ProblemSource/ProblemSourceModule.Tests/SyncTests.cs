@@ -10,6 +10,7 @@ using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
 
@@ -48,7 +49,7 @@ namespace ProblemSource.Tests
                 mockClientSessionManager.Object, dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(),
                 TestHelpers.MockDataRepositoryProviderFactory(userStateRepo: userStateRepository),
                 new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
-                mockTrainingRepo.Object,
+                mockTrainingRepo.Object, fixture.Create<TrainingAnalyzerCollection>(),
                 fixture.Create<ILogger<ProblemSourceProcessingMiddleware>>());
         }
 

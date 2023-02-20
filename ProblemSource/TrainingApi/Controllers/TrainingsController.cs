@@ -157,28 +157,16 @@ namespace TrainingApi.Controllers
         private Task<IEnumerable<Training>> GetTrainingTemplates()
         {
             // TODO: use real storage, move to service
-            return Task.FromResult((IEnumerable<Training>)new[] {
-                new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = CreateDefaultSettings() },
-                new Training { Id = 1, Username = "template_Test training", TrainingPlanName = "2017 HT template Default", Settings = CreateDefaultSettings() }
-            });
-        }
 
-        private static TrainingSettings CreateDefaultSettings()
-        {
-            return new TrainingSettings
-            {
-                cultureCode = "sv-SE",
-                alarmClockInvisible = null,
-                customData = null,
-                idleTimeout = null,
-                triggers = null,
-                manuallyUnlockedExercises = null,
-                uniqueGroupWeights = null,
-                trainingPlanOverrides = null,
-                syncSettings = null,
-                pacifistRatio = 0.1M,
-                timeLimits = new List<decimal> { 33 },
-            };
+            var testSettings = TrainingSettings.Default;
+            testSettings.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.ExperimentalAnalyzer) };
+            testSettings.timeLimits = new List<decimal> { 3 };
+            testSettings.customData = new CustomData { allowMultipleLogins = true };
+
+            return Task.FromResult((IEnumerable<Training>)new[] {
+                new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = TrainingSettings.Default },
+                new Training { Id = 2, Username = "template_Test training", TrainingPlanName = "2023 VT template JonasTest", Settings = testSettings }
+            });
         }
 
         [HttpGet]
@@ -189,7 +177,7 @@ namespace TrainingApi.Controllers
                 Id = o.Id,
                 Name = o.Username.Replace("template_", ""),
                 TrainingPlanName = o.TrainingPlanName,
-                Settings = o.Settings ?? CreateDefaultSettings()
+                Settings = o.Settings ?? TrainingSettings.Default
             });
         }
 

@@ -31,7 +31,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tools", "Tools\Tools.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OldDbAdapter", "ProblemSource\OldDbAdapter\OldDbAdapter.csproj", "{6F4A33DF-4519-4236-B92B-2AC3CAADCCF3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmailServices", "EmailServices\EmailServices.csproj", "{B90063E9-5BD2-4B51-9550-E1FA6E333772}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EmailServices", "EmailServices\EmailServices.csproj", "{B90063E9-5BD2-4B51-9550-E1FA6E333772}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebJob", "ProblemSource\WebJob\WebJob.csproj", "{F331CD64-E857-4EAA-AD45-630F6F312C7A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -95,6 +97,10 @@ Global
 		{B90063E9-5BD2-4B51-9550-E1FA6E333772}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B90063E9-5BD2-4B51-9550-E1FA6E333772}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B90063E9-5BD2-4B51-9550-E1FA6E333772}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F331CD64-E857-4EAA-AD45-630F6F312C7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F331CD64-E857-4EAA-AD45-630F6F312C7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F331CD64-E857-4EAA-AD45-630F6F312C7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F331CD64-E857-4EAA-AD45-630F6F312C7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -108,6 +114,7 @@ Global
 		{D8D3E0FE-5627-4643-9004-3A28F6324EAF} = {BAA7D70B-0CA9-4736-BE0E-4EF73C884A21}
 		{7FD82687-B1F9-4C01-851F-00F2BB725396} = {BAA7D70B-0CA9-4736-BE0E-4EF73C884A21}
 		{6F4A33DF-4519-4236-B92B-2AC3CAADCCF3} = {BAA7D70B-0CA9-4736-BE0E-4EF73C884A21}
+		{F331CD64-E857-4EAA-AD45-630F6F312C7A} = {BAA7D70B-0CA9-4736-BE0E-4EF73C884A21}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8C01B588-8D8B-4847-9BC3-C217633B6002}

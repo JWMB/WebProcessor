@@ -8,19 +8,26 @@ namespace OldDbAdapter
 {
     public class RecreateLogFromOldDb
     {
-        public async static Task<List<LogItem>> GetAsLogItems(TrainingDbContext db, int accountId)
+        public async static Task<List<LogItem>> GetAsLogItems(TrainingDbContext db, int accountId, IEnumerable<int>? onlySpecificDays = null)
         {
-            var phases = await GetFullPhases(db, accountId);
+            var phases = await GetFullPhases(db, accountId, onlySpecificDays);
             return ToLogItems(phases);
         }
 
-        public async static Task<List<Phase>> GetFullPhases(TrainingDbContext db, int accountId)
+        public async static Task<List<Phase>> GetFullPhases(TrainingDbContext db, int accountId, IEnumerable<int>? onlySpecificDays = null)
         {
-            return await db.Phases
+            var query = db.Phases
                 .Include(o => o.UserTests)
                 .Include(o => o.Problems)
                 .ThenInclude(o => o.Answers)
-                .Where(o => o.AccountId == accountId).ToListAsync();
+                .Where(o => o.AccountId == accountId);
+            
+            if (onlySpecificDays != null)
+            {
+                query = query.Where(o => onlySpecificDays.Contains(o.TrainingDay));
+            }
+
+            return await query.ToListAsync();
         }
 
         public static List<LogItem> ToLogItems(List<Phase> phasesWithIncludes)
@@ -111,7 +118,9 @@ namespace OldDbAdapter
             var phaseEnd = CreateLogItem(phase.Time, new PhaseEndLogItem());
             if (phase.UserTests.Any())
             {
-                var ut = phase.UserTests.Single();
+                var ut = phase.UserTests.Count > 1 //Should be Single but data can be corrupt
+                    ? phase.UserTests.OrderByDescending(o => o.Questions).First()
+                    : phase.UserTests.Single();
                 phaseEnd.noOfCorrect = ut.Corrects;
                 phaseEnd.noOfIncorrect = ut.Incorrects;
                 phaseEnd.noOfQuestions = ut.Questions;

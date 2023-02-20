@@ -50,20 +50,27 @@ namespace ProblemSource.Models
 
     public class TrainingSettings
     {
-        public List<decimal> timeLimits { get; set; } = new List<decimal>(); //time_limits
+        public List<decimal> timeLimits { get; set; } = new(); //time_limits
         public object? uniqueGroupWeights { get; set; }
         public List<string>? manuallyUnlockedExercises { get; set; }
         public decimal? idleTimeout { get; set; }
         public string cultureCode { get; set; } = "sv-SE";
         public CustomData? customData { get; set; }
         //training_settings: any;
-        public List<TriggerData>? triggers { get; set; }
+        public List<TriggerData>? triggers { get; set; } 
         public decimal? pacifistRatio { get; set; } = 0.1M; //TODO: add to a metaphorSettings structure instead
 
         public object? trainingPlanOverrides { get; set; } //testData [{"id":"WM_grid#\\d+","phases":[{"lvlMgr":{"phaseChange":{"change":-0.8}}}]}]
         public TrainingSyncSettings? syncSettings { get; set; }
         //erase_local_data?: boolean;
         public bool? alarmClockInvisible { get; set; }
+
+        /// <summary>
+        /// Regex patterns of ITrainingAnalyzer type names to execute
+        /// </summary>
+        public List<string>? Analyzers { get; set; } 
+
+        public static TrainingSettings Default => new TrainingSettings { timeLimits = new List<decimal> { 33 } };
     }
 
     public class TrainingSyncSettings

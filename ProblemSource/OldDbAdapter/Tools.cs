@@ -121,7 +121,7 @@ WHERE groups.name LIKE 'Teacher %'";
 
                 if (actuallyWrite)
                 {
-                    await trainingRepo.Upsert(new Training { Id = trainingId, Settings = settings, TrainingPlanName = $"Id_{acc.TrainingPlanId}" });
+                    await trainingRepo.Upsert(new Training { Id = trainingId, Settings = settings ?? TrainingSettings.Default, TrainingPlanName = $"Id_{acc.TrainingPlanId}" });
                     await aggregationService.UpdateAggregates(repos, logItems, trainingId);
                 }
             }

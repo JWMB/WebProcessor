@@ -23,7 +23,7 @@ namespace TrainingApi.Tests.IntegrationHelpers
             {
                 var user = System.Text.Json.JsonSerializer.Deserialize<User>(auth.Substring(auth.IndexOf(" ") + 1));
                 if (user != null)
-                    context.User = WebUserProvider.CreatePrincipal(user);
+                    context.User = WebUserProvider.CreatePrincipal(user, true);
             }
             await next(context);
         }
