@@ -161,6 +161,7 @@ namespace TrainingApi.Controllers
             var testSettings = TrainingSettings.Default;
             testSettings.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.ExperimentalAnalyzer) };
             testSettings.timeLimits = new List<decimal> { 3 };
+            testSettings.customData = new CustomData { allowMultipleLogins = true };
 
             return Task.FromResult((IEnumerable<Training>)new[] {
                 new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = TrainingSettings.Default },

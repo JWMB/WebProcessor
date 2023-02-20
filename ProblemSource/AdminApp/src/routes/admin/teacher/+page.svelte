@@ -106,7 +106,7 @@
 				getElementValue('className'),
 				parseFloat(getElementValue('timePerDay')),
 				parseFloat(getElementValue('template')),
-				loggedInUserInfo?.role == 'Admin' ? getElementValue('forUser') : null)} />
+				$userStore?.role == 'Admin' ? getElementValue('forUser') : null)} />
 
 		{#if createdTrainingUsernames}
 			Created users:

@@ -138,10 +138,10 @@ namespace TrainingApi.Controllers
     public class LoginCredentials
     {
         [Required]
-        [StringLength(50, MinimumLength = 6)]
+        [StringLength(50, MinimumLength = 5)]
         public string Username { get; set; } = string.Empty;
         [Required]
-        [StringLength(14, MinimumLength = 6)]
+        [StringLength(14, MinimumLength = 5)]
         public string Password { get; set; } = string.Empty;
     }
 
