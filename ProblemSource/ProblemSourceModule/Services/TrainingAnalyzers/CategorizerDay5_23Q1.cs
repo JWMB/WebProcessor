@@ -34,6 +34,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             if (runAfterDay == await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems))
             {
+                // TODO: how do we know if this has already been run? Doesn't really matter right now, but might for other types of analyzers.
                 var result = await Predict(training, provider);
 
                 if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.Unknown)
