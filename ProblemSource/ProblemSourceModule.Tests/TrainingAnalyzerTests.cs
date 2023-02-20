@@ -76,7 +76,7 @@ namespace ProblemSourceModule.Tests
                     }
             });
 
-            var serialized = JsonConvert.SerializeObject(trigger);
+            var serialized = (string)JsonConvert.SerializeObject(trigger);
             serialized.ShouldContain("""phases":{"numberline[\\w#]*":{"problemGeneratorData""");
         }
 

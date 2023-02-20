@@ -20,11 +20,15 @@ namespace TrainingApi.Tests
             var trainingRepo = A.Fake<ITrainingRepository>();
             A.CallTo(() => trainingRepo.GetAll()).Returns(new[] { training });
 
+            var usersRepo = A.Fake<IUserRepository>();
+            A.CallTo(() => usersRepo.Get(A<string>.Ignored)).Returns((User?)null);
+
             var ts = new MyTestServer(postConfigureTestServices: services => {
                 services.AddSingleton(trainingRepo);
+                services.AddSingleton(usersRepo);
             });
 
-            var user = new User { Email = "email", Role = Roles.Admin };
+            var user = new User { Email = "tester", Role = Roles.Admin };
 
             var client = ts.CreateClient(user);
 
