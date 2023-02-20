@@ -20,6 +20,12 @@ namespace TrainingApi.RealTime
             if (config.AzureQueueConfig == null)
                 throw new NullReferenceException($"{nameof(config.AzureQueueConfig)}");
 
+            if (string.IsNullOrEmpty(config.AzureQueueConfig.ConnectionString))
+                throw new ArgumentException("null or empty", nameof(config.AzureQueueConfig.ConnectionString));
+
+            if (string.IsNullOrEmpty(config.AzureQueueConfig.QueueName))
+                throw new ArgumentException("null or empty", nameof(config.AzureQueueConfig.QueueName));
+
             client = new QueueClient(config.AzureQueueConfig.ConnectionString, config.AzureQueueConfig.QueueName); // "UseDevelopmentStorage=true", "problemsource-sync");
 
             // TODO: move to some async Init 
