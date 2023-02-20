@@ -262,9 +262,6 @@ MIME-Version: 1.0
 
             string? GetHeaderOrNull(string key) =>
                 message.Payload.Headers.FirstOrDefault(o => o.Name == key)?.Value ?? null;
-
-            //string GetHeaderOrThrow(string key) =>
-            //    message.Payload.Headers.First(o => o.Name == key).Value;
         }
     }
 }

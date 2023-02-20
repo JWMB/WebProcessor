@@ -32,7 +32,7 @@
 			alert('A name is required');
 			return;
 		}
-		console.log("")
+
 		const chosenTemplate = templates.filter(o => o.id == templateId)[0];
 		if (confirm(`Create class '${groupName}' with ${num} trainings using template '${chosenTemplate.name}' (${chosenTemplate.trainingPlanName})?`)) {
 			//const templates = await apiFacade.trainings.getTemplates();

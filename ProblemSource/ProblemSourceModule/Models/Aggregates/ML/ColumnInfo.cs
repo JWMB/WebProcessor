@@ -1,6 +1,4 @@
-﻿using System.Data;
-
-namespace ProblemSourceModule.Models.Aggregates.ML
+﻿namespace ProblemSourceModule.Models.Aggregates.ML
 {
     public class ColumnInfo
     {
