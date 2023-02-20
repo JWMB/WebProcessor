@@ -1,10 +1,10 @@
 ﻿using ProblemSource.Models;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
-using ProblemSourceModule.Models.Aggregates.ML;
 using Common;
-using Microsoft.ML;
 using Microsoft.Extensions.Logging;
+using ProblemSource.Models.Aggregates;
+using ML.Helpers;
 
 namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
@@ -150,17 +150,18 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             if (!File.Exists(localModelPath))
                 return null;
 
-            var ctx = new MLContext(seed: 0);
+            return 35;
 
-            var model = ctx.Model.Load(localModelPath, out DataViewSchema schema);
-            var colInfo = ColumnInfo.Create(feature.GetType());
+            //var ctx = new MLContext(seed: 0);
+            //var model = ctx.Model.Load(localModelPath, out DataViewSchema schema);
+            //var colInfo = ColumnInfo.Create(feature.GetType());
 
-            var type = MLDynamicPredict.CreateType(schema);
-            var predictor = new MLDynamicPredict(schema, model, colInfo);
-            var instance = DynamicTypeFactory.CreateInstance(type, feature.GetFlatFeatures());
+            //var type = MLDynamicPredict.CreateType(schema);
+            //var predictor = new MLDynamicPredict(schema, model, colInfo);
+            //var instance = DynamicTypeFactory.CreateInstance(type, feature.GetFlatFeatures());
 
-            var prediction = predictor.Predict(instance);
-            return (float?)prediction;
+            //var prediction = predictor.Predict(instance);
+            //return (float?)prediction;
         }
     }
 

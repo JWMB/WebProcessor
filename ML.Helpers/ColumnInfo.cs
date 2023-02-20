@@ -1,4 +1,4 @@
-﻿namespace ProblemSourceModule.Models.Aggregates.ML
+﻿namespace ML.Helpers
 {
     public class ColumnInfo
     {

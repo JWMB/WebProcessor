@@ -1,6 +1,4 @@
-﻿using static ProblemSourceModule.Models.Aggregates.ML.MLFeaturesJulia;
-
-namespace ProblemSourceModule.Models.Aggregates.ML
+﻿namespace Common
 {
     public static class StatisticsExtensions
     {
@@ -12,9 +10,6 @@ namespace ProblemSourceModule.Models.Aggregates.ML
                 yield return actOnPreviousAndCurrent(prev, item);
             }
         }
-
-        public static object?[] ToObjectArray<T>(this IEnumerable<FeaturesForExercise> values, Func<FeaturesForExercise, T> selector) =>
-            values.Select(selector).Select(o => (object?)o).ToArray();
 
         public static double? MedianOrNull(this IEnumerable<double> values) => values.Any() ? values.Median() : null;
         public static decimal? MedianOrNull(this IEnumerable<decimal> values) => values.Any() ? values.Median() : null;

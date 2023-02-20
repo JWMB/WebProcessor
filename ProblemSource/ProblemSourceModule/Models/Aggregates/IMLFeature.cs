@@ -1,4 +1,4 @@
-﻿namespace ProblemSourceModule.Models.Aggregates.ML
+﻿namespace ProblemSource.Models.Aggregates
 {
     public interface IMLFeature
     {

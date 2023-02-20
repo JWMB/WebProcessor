@@ -31,6 +31,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EmailServices\EmailServices.csproj" />
+    <ProjectReference Include="..\MLTools\ML.Dynamic.csproj" />
     <ProjectReference Include="..\Organization\Organization.csproj" />
     <ProjectReference Include="..\ProblemSource\OldDbAdapter\OldDbAdapter.csproj" />
     <ProjectReference Include="..\ProblemSource\ProblemSourceModule\ProblemSourceModule.csproj" />

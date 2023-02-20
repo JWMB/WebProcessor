@@ -3,12 +3,13 @@ using Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
 using Microsoft.ML.Data;
+using ML.Dynamic;
+using ML.Helpers;
 using Newtonsoft.Json;
 using OldDbAdapter;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
-using ProblemSourceModule.Models.Aggregates.ML;
 using System.Globalization;
 
 namespace Tools

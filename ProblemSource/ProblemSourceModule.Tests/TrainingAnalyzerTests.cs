@@ -12,7 +12,6 @@ using ProblemSourceModule.Services;
 using Microsoft.Extensions.Logging;
 using ProblemSource.Models.Aggregates;
 using Newtonsoft.Json;
-using ProblemSourceModule.Models.Aggregates.ML;
 
 namespace ProblemSourceModule.Tests
 {

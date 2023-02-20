@@ -1,8 +1,10 @@
 ﻿using Common;
+using ML.Helpers;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
+using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
 
-namespace ProblemSourceModule.Models.Aggregates.ML
+namespace ProblemSource.Models.Aggregates
 {
     public class MLFeaturesJulia : IMLFeature
     {
@@ -564,5 +566,11 @@ namespace ProblemSourceModule.Models.Aggregates.ML
                 bool HasNoCorrectAnswer(Problem problem) => HasCorrectAnswer(problem) == false;
             }
         }
+    }
+
+    public static class StatisticsExtensions
+    {
+        public static object?[] ToObjectArray<T>(this IEnumerable<FeaturesForExercise> values, Func<FeaturesForExercise, T> selector) =>
+        values.Select(selector).Select(o => (object?)o).ToArray();
     }
 }
