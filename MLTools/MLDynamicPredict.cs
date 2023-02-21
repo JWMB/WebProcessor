@@ -21,6 +21,20 @@ namespace ML.Dynamic
             this.model = model;
         }
 
+        public static object? PredictFromModel(string modelPath, ColumnInfo colInfo, Dictionary<string, object?> values)
+        {
+            var ctx = new MLContext(seed: 0);
+            var model = ctx.Model.Load(modelPath, out DataViewSchema schema);
+
+            var type = MLDynamicPredict.CreateType(schema);
+            var instance = DynamicTypeFactory.CreateInstance(type, values);
+
+            var predictor = new MLDynamicPredict(schema, model, colInfo);
+            var prediction = predictor.Predict(instance);
+
+            return prediction;
+        }
+
         public IEnumerable<object> Predict(IEnumerable<object> inputObjects, string scoreColumn = DefaultScoreColumn)
         {
             if (schema == null) throw new NullReferenceException($"{nameof(schema)} is null");

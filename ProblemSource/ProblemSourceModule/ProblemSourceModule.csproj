@@ -55,6 +55,7 @@
     <ProjectReference Include="..\..\Common.Web\Common.Web.csproj" />
     <ProjectReference Include="..\..\Common\Common.csproj" />
     <ProjectReference Include="..\..\ML.Helpers\ML.Helpers.csproj" />
+    <ProjectReference Include="..\..\MLTools\ML.Dynamic.csproj" />
     <ProjectReference Include="..\..\PluginModuleBase\PluginModuleBase.csproj" />
   </ItemGroup>
 

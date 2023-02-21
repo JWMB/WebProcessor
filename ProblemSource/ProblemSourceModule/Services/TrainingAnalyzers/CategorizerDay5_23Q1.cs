@@ -5,6 +5,8 @@ using Common;
 using Microsoft.Extensions.Logging;
 using ProblemSource.Models.Aggregates;
 using ML.Helpers;
+using ML.Dynamic;
+using Newtonsoft.Json.Linq;
 
 namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
@@ -150,18 +152,12 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             if (!File.Exists(localModelPath))
                 return null;
 
-            return 35;
+            var colInfo = ColumnInfo.Create(feature.GetType());
+            var flatFeatures = feature.GetFlatFeatures();
 
-            //var ctx = new MLContext(seed: 0);
-            //var model = ctx.Model.Load(localModelPath, out DataViewSchema schema);
-            //var colInfo = ColumnInfo.Create(feature.GetType());
-
-            //var type = MLDynamicPredict.CreateType(schema);
-            //var predictor = new MLDynamicPredict(schema, model, colInfo);
-            //var instance = DynamicTypeFactory.CreateInstance(type, feature.GetFlatFeatures());
-
-            //var prediction = predictor.Predict(instance);
-            //return (float?)prediction;
+            var prediction = MLDynamicPredict.PredictFromModel(localModelPath, colInfo, flatFeatures);
+            return (float?)prediction;
+            //return 35;
         }
     }
 
