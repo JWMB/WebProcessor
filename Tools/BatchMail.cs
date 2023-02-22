@@ -116,6 +116,7 @@ Vi kommer inte spara några personliga data och användandet av appen är godkä
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine(ex);
                 }
                 if (!wasSent)
                 {

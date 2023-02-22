@@ -131,7 +131,7 @@ namespace Tools
         {
             var rootPath = @"C:\Users\uzk446\Downloads\";
             var useJsonFile = $"{rootPath}createdUsers.json";
-            List<CreateUserResult> createdUsersInfo;
+            List<CreateUserResult>? createdUsersInfo;
             if (File.Exists(useJsonFile))
                 createdUsersInfo = JsonConvert.DeserializeObject<List<CreateUserResult>>(File.ReadAllText(useJsonFile));
             else
@@ -142,6 +142,9 @@ namespace Tools
                 File.WriteAllText(useJsonFile.Replace(".json", $"-{DateTime.Now:dd_HH_mm}.json"), JsonConvert.SerializeObject(createdUsersInfo));
                 File.WriteAllText(useJsonFile, JsonConvert.SerializeObject(createdUsersInfo));
             }
+            if (createdUsersInfo == null)
+                return;
+
             var batchSize = 100;
             var batchNum = 0;
             createdUsersInfo = createdUsersInfo.Chunk(batchSize).Skip(batchNum).First().ToList();
@@ -151,6 +154,7 @@ namespace Tools
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex);
             }
 
             File.WriteAllText($"{rootPath}Sent-{DateTime.Now:dd_HH_mm}.json", JsonConvert.SerializeObject(createdUsersInfo.Select(o => o.User.Email)));

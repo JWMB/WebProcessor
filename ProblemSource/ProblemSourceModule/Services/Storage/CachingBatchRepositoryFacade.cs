@@ -14,7 +14,7 @@ namespace ProblemSource.Services.Storage
         private readonly Func<T, string> createKeySuffix;
         private readonly string cacheKeyPrefix;
         private readonly IMemoryCache cache;
-        private bool isSeeded = false;
+        //private bool isSeeded = false;
 
         public CachingBatchRepositoryFacade(IMemoryCache cache, IBatchRepository<T> repo, string cacheKeyPrefix, Func<T, string> createKeySuffix)
         {

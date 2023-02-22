@@ -88,6 +88,8 @@ namespace Tools
 
         public void CalcFeatureImportance(IDataView data)
         {
+            if (Model == null)
+                throw new NullReferenceException(nameof(Model));
             // https://github.com/dotnet/machinelearning-samples/issues/783
             var transformedData = Model.Transform(data);
             var pfi = ctx.Regression.PermutationFeatureImportance(Model, transformedData, permutationCount: 3, labelColumnName: ColInfo.Label);

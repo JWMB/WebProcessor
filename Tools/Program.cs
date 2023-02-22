@@ -45,8 +45,8 @@ var cancellationToken = cts.Token;
 //    fare_amount = 0 //17.5
 //});
 
-await new OldDbMLFeatures().Run(cancellationToken);
-return;
+//await new OldDbMLFeatures().Run(cancellationToken);
+//return;
 
 var section = config.GetRequiredSection("AppSettings:AzureTable");
 var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
