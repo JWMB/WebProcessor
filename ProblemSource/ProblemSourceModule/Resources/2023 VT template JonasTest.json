@@ -8,37 +8,6 @@
   "isTraining": true,
   "preventSameExerciseTwice": false,
   "triggers": [
-    {
-      "triggerTime": "MAP",
-      "criteriaValues": [
-        {
-          "name": "trainingDay",
-          "value": 0
-        }
-      ],
-      "actionData": {
-        "type": "TrainingPlanModTriggerAction",
-        "id": "modDay0_0",
-        "properties": {
-          "weights": {
-            "Math": 100,
-            "WM": 0,
-            "Reasoning": 0,
-            "tangram#intro": 100,
-            "tangram": 100,
-            "nvr_so": 100,
-            "rotation#intro": 100,
-            "rotation": 100,
-            "nvr_rp": 100
-          },
-          "phases": {
-            "^WM_[\\w#]+": { "medalMode": "ONE_WIN" },
-            "^npals[\\w#]*": { "medalMode": "ONE_WIN" },
-            "^addsub[\\w#]*": { "lvlMgr": { "maxFallFromHighest": 5 } }
-          }
-        }
-      }
-    }
   ],
   "groups": [
     {
@@ -877,7 +846,7 @@
               {
                 "type": "PhaseTangram",
                 "phase": "TEST",
-                "medalMode": "THREE_WINS",
+                "medalMode": "ONE_WIN",
                 "problemGeneratorData": { "problemProps": { "hintDelay": 60 } },
                 "endCriteriaData": {
                   "target": {
@@ -942,7 +911,7 @@
               {
                 "type": "PhaseTangram",
                 "phase": "TEST",
-                "medalMode": "THREE_WINS",
+                "medalMode": "ONE_WIN",
                 "problemGeneratorData": { "problemProps": { "hintDelay": 60 } },
                 "endCriteriaData": {
                   "target": {
