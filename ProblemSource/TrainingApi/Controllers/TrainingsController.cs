@@ -10,6 +10,7 @@ using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TrainingApi.Controllers
 {
@@ -169,10 +170,10 @@ namespace TrainingApi.Controllers
                 new Training { Id = 3, Username = "template_NumberlineTest training", TrainingPlanName = "2023 VT template JonasTest", Settings = CreateSettings(s => {
                     s.customData = new CustomData { 
                         allowMultipleLogins = true,
-                        numberLine = new { skillChangeGood = 0.5 }
+                        numberLine = new { changeSuccess = 0.4, changeFail = -1 } //skillChangeGood = 0.5 }
                     };
                     // TODO: Response serialization doesn't work (probably .NET built-in JSON vs dynamic/JToken)
-                    s.UpdateTrainingOverrides(new[]{ TrainingSettings.CreateWeightChangeTrigger(new Dictionary<string, int> { {"Math", 100}, { "Numberline", 100 } }, 0, 0) });
+                    s.UpdateTrainingOverrides(new[]{ TrainingSettings.CreateWeightChangeTrigger(new Dictionary<string, int> { {"Math", 100}, { "numberline", 100 } }, 0, 0) });
                 }) },
             };
 
