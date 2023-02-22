@@ -35,6 +35,7 @@
 	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string, forUser?: string | null) {
 		if (!ageBracket) throw "Age span must be set";
 		const chosenTemplate = templates[0];
+		// TODO: server-side serializiation of TrainingSettings.trainingPlanOverrides is incorrect, so we can't use it here
 		// if (!chosenTemplate.settings) {
 		// 	chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
 		// }
