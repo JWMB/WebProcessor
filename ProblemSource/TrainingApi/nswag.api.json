@@ -1027,8 +1027,7 @@
     "TrainingCreateDto": {
       "type": "object",
       "required": [
-        "baseTemplateId",
-        "trainingSettings"
+        "baseTemplateId"
       ],
       "properties": {
         "baseTemplateId": {

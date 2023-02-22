@@ -1052,7 +1052,7 @@ export enum LogLevel {
 export interface TrainingCreateDto {
     baseTemplateId: number;
     trainingPlan?: string | undefined;
-    trainingSettings: TrainingSettings;
+    trainingSettings?: TrainingSettings | undefined;
     ageBracket?: string | undefined;
 }
 

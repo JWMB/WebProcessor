@@ -75,6 +75,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                     var serialized = JsonConvert.SerializeObject(value);
                     if (serialized.Length > maxLength)
                     {
+                        // TODO: this could just as well apply to e.g. a string! Splitting should be common to both codepaths
                         var pairs = serialized.SplitByLength(maxLength)
                             .Select((o, i) => new { Key = GetExpandedName(prop.Name, i), Value = o });
                         foreach (var pair in pairs)

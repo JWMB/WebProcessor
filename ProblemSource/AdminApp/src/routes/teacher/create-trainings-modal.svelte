@@ -35,14 +35,14 @@
 	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string, forUser?: string | null) {
 		if (!ageBracket) throw "Age span must be set";
 		const chosenTemplate = templates[0];
-		if (!chosenTemplate.settings) {
-			chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
-		}
+		// if (!chosenTemplate.settings) {
+		// 	chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
+		// }
 		chosenTemplate.settings.timeLimits = [numMinutes];
 		const dto = <TrainingCreateDto>{ 
 			baseTemplateId: chosenTemplate.id,
 			trainingPlan: chosenTemplate.trainingPlanName,
-			trainingSettings: chosenTemplate.settings,
+			// trainingSettings: chosenTemplate.settings,
 			ageBracket: ageBracket
 		};
 		createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);

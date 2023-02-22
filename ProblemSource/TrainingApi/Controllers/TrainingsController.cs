@@ -75,7 +75,8 @@ namespace TrainingApi.Controllers
             if (template == null)
                 throw new Exception($"Template not found: {dto.BaseTemplateId}");
 
-            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, dto.TrainingSettings, dto.AgeBracket);
+            // TODO: use dto.TrainingSettings ?? template.Settings once response serialization works
+            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, template.Settings, dto.AgeBracket);
         }
 
         private async Task<User> GetImpersonatedUserOrThrow(string? username)
@@ -170,6 +171,7 @@ namespace TrainingApi.Controllers
                         allowMultipleLogins = true,
                         numberLine = new { skillChangeGood = 0.5 }
                     };
+                    // TODO: Response serialization doesn't work (probably .NET built-in JSON vs dynamic/JToken)
                     s.UpdateTrainingOverrides(new[]{ TrainingSettings.CreateWeightChangeTrigger(new Dictionary<string, int> { {"Math", 100}, { "Numberline", 100 } }, 0, 0) });
                 }) },
             };
@@ -336,7 +338,7 @@ namespace TrainingApi.Controllers
         {
             public int BaseTemplateId { get; set; }
             public string? TrainingPlan { get; set; }
-            public TrainingSettings TrainingSettings { get; set; } = new TrainingSettings();
+            public TrainingSettings? TrainingSettings { get; set; }
             public string? AgeBracket { get; set; }
         }
 
