@@ -71,7 +71,7 @@ namespace TrainingApi.Controllers
         private async Task<Training> CreateTraining(TrainingCreateDto dto, IEnumerable<Training>? templates = null)
         {
             templates = templates ?? await GetTrainingTemplates();
-            var template = templates.FirstOrDefault(o => o.Id == dto.BaseTemplateId);
+            var template = templates.SingleOrDefault(o => o.Id == dto.BaseTemplateId);
             if (template == null)
                 throw new Exception($"Template not found: {dto.BaseTemplateId}");
 
@@ -157,16 +157,31 @@ namespace TrainingApi.Controllers
         private Task<IEnumerable<Training>> GetTrainingTemplates()
         {
             // TODO: use real storage, move to service
+            var templates = new[] {
+                new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = CreateSettings() },
+                new Training { Id = 2, Username = "template_Test training", TrainingPlanName = "2023 VT template JonasTest", Settings = CreateSettings(s => 
+                {
+                    s.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.ExperimentalAnalyzer) };
+                    s.timeLimits = new List<decimal> { 3 };
+                    s.customData = new CustomData { allowMultipleLogins = true };
+                }) },
+                new Training { Id = 3, Username = "template_NumberlineTest training", TrainingPlanName = "2023 VT template JonasTest", Settings = CreateSettings(s => {
+                    s.customData = new CustomData { 
+                        allowMultipleLogins = true,
+                        numberLine = new { skillChangeGood = 0.5 }
+                    };
+                    s.UpdateTrainingOverrides(new[]{ TrainingSettings.CreateWeightChangeTrigger(new Dictionary<string, int> { {"Math", 100}, { "Numberline", 100 } }, 0, 0) });
+                }) },
+            };
 
-            var testSettings = TrainingSettings.Default;
-            testSettings.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.ExperimentalAnalyzer) };
-            testSettings.timeLimits = new List<decimal> { 3 };
-            testSettings.customData = new CustomData { allowMultipleLogins = true };
+            return Task.FromResult((IEnumerable<Training>)templates);
 
-            return Task.FromResult((IEnumerable<Training>)new[] {
-                new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = TrainingSettings.Default },
-                new Training { Id = 2, Username = "template_Test training", TrainingPlanName = "2023 VT template JonasTest", Settings = testSettings }
-            });
+            TrainingSettings CreateSettings(Action<TrainingSettings>? act = null)
+            {
+                var ts = TrainingSettings.Default;
+                act?.Invoke(ts);
+                return ts;
+            }
         }
 
         [HttpGet]

@@ -50,7 +50,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 var trigger = CreateTrigger(runAfterDay + 1, result.PredictedPerformanceTier, (rnd.NextDouble(), rnd.NextDouble()));
                 if (trigger != null)
                 {
-                    ExperimentalAnalyzer.UpdateTrainingOverrides(training, new[] { trigger });
+                    training.Settings.UpdateTrainingOverrides(new[] { trigger });
                     return true;
                 }
             }
@@ -83,14 +83,14 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             if (tier == PredictedNumberlineLevel.PerformanceTier.Low)
             {
-                var trigger = ExperimentalAnalyzer.CreateWeightChangeTrigger(
+                var trigger = TrainingSettings.CreateWeightChangeTrigger(
                     rnds.Item1 < 0.5
                     ? plans.NVR_Std
                     : plans.NVR_High, triggerDay);
 
                 //if (rnds.Item2 < 0.5)
                 //{
-                //    trigger.actionData.properties.phases = ExperimentalAnalyzer.ConvertToDynamicOrThrow(new Dictionary<string, object> {
+                //    trigger.actionData.properties.phases = TrainingSettings.ConvertToDynamicOrThrow(new Dictionary<string, object> {
                 //        {
                 //            "numberline[\\w#]*",
                 //            new { problemGeneratorData = new { problemFile = new { path = "numberline_easy.csv" } } } // TODO: will we be using this? If so specify!
@@ -101,7 +101,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             else if (tier == PredictedNumberlineLevel.PerformanceTier.High)
             {
                 // Randomize WM vs NVR
-                return ExperimentalAnalyzer.CreateWeightChangeTrigger(
+                return TrainingSettings.CreateWeightChangeTrigger(
                     rnds.Item1 < 0.5
                     ? plans.NVR_Std
                     : plans.WM_Std, triggerDay);

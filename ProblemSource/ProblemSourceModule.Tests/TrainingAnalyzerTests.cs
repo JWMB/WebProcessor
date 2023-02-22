@@ -12,6 +12,7 @@ using ProblemSourceModule.Services;
 using Microsoft.Extensions.Logging;
 using ProblemSource.Models.Aggregates;
 using Newtonsoft.Json;
+using ProblemSource.Models;
 
 namespace ProblemSourceModule.Tests
 {
@@ -67,8 +68,8 @@ namespace ProblemSourceModule.Tests
         [Fact]
         public void ModifyTrigger()
         {
-            var trigger = ExperimentalAnalyzer.CreateWeightChangeTrigger(new Dictionary<string, int> { { "WM", 1 } }, 5);
-            trigger.actionData.properties.phases = ExperimentalAnalyzer.ConvertToDynamicOrThrow(new Dictionary<string, object> {
+            var trigger = TrainingSettings.CreateWeightChangeTrigger(new Dictionary<string, int> { { "WM", 1 } }, 5);
+            trigger.actionData.properties.phases = TrainingSettings.ConvertToDynamicOrThrow(new Dictionary<string, object> {
                     {
                         "numberline[\\w#]*",
                         new { problemGeneratorData = new { problemFile = new { path = "blabla.csv" } } }
