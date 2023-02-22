@@ -111,10 +111,6 @@ namespace ProblemSource.Services.Storage.AzureTables
                     (ex is RequestFailedException rfEx ? rfEx.ErrorCode : null);
                 throw new Exception($"{typeof(T).Name} code:{code} stored:{lengthsInfo}", ex);
             }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
         }
 
         public async Task<Dictionary<string, T?>> GetByRowKeys(IEnumerable<string> rowKeys, string? partitionKey = null)

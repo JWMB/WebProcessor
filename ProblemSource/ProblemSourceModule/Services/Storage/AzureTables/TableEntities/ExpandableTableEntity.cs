@@ -48,14 +48,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                 {
                     if (val is string str)
                     {
-                        try
-                        {
-                            val = JsonConvert.DeserializeObject(str, prop.PropertyType);
-                        }
-                        catch (Exception ex)
-                        {
-                            throw ex;
-                        }
+                        val = JsonConvert.DeserializeObject(str, prop.PropertyType);
                     }
                     else
                     {
