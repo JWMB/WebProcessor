@@ -1,6 +1,7 @@
 ﻿using Common.Web;
 using Common.Web.Services;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
@@ -65,7 +66,9 @@ namespace TrainingApi
             {
                 builder.AddApplicationInsights();
             });
+
             services.AddApplicationInsightsTelemetry();
+            services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

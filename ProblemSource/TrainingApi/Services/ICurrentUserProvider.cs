@@ -75,7 +75,8 @@ namespace TrainingApi.Services
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Email),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role),
             };
             if (isIntegrationTestUser)
                 claims.Add(new Claim(ClaimTypes.Actor, "IntegrationTest"));
