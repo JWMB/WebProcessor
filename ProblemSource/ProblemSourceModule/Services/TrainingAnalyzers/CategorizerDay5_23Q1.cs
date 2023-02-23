@@ -88,14 +88,14 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                     ? plans.NVR_Std
                     : plans.NVR_High, triggerDay);
 
-                //if (rnds.Item2 < 0.5)
-                //{
-                //    trigger.actionData.properties.phases = TrainingSettings.ConvertToDynamicOrThrow(new Dictionary<string, object> {
-                //        {
-                //            "numberline[\\w#]*",
-                //            new { problemGeneratorData = new { problemFile = new { path = "numberline_easy.csv" } } } // TODO: will we be using this? If so specify!
-                //        } });
-                //}
+                if (rnds.Item2 < 0.5)
+                {
+                    trigger.actionData.properties.phases = TrainingSettings.ConvertToDynamicOrThrow(new Dictionary<string, object> {
+                        {
+                            "numberline[\\w#]*",
+                            new { problemGeneratorData = new { problemFile = new { path = "numberline_easy.csv" } } } // TODO: yes, we will we be using this - update client!
+                        } });
+                }
                 return trigger;
             }
             else if (tier == PredictedNumberlineLevel.PerformanceTier.High)
