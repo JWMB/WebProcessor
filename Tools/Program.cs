@@ -1,18 +1,12 @@
 ﻿using Common.Web;
 using EmailServices;
+using Google.Apis.Gmail.v1;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using ProblemSource;
-using ProblemSource.Services;
 using ProblemSource.Services.Storage.AzureTables;
-using ProblemSourceModule.Models.Aggregates;
-using ProblemSourceModule.Services.Storage;
-using ProblemSourceModule.Services.Storage.AzureTables;
-using System.IO;
 using Tools;
 
 var config = CreateConfig();
@@ -34,7 +28,7 @@ Console.CancelKeyPress += (s, e) =>
 };
 var cancellationToken = cts.Token;
 
-//var path = @"C:\Users\uzk446\Downloads\";
+var path = @"C:\Users\uzk446\Downloads\";
 //var ml = new MLDynamic();
 //await ml.Train(new[] { Path.Join(path, "taxi-fare-train.csv"), Path.Join(path, "taxi-fare-test.csv") },
 //    new MLDynamic.ColumnInfo { Label = "fare_amount", Categorical = new[] { "rate_code", "vendor_id", "payment_type" } },
@@ -58,10 +52,13 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
 var serviceProvider = InititalizeServices(config);
 
-var tool = new GetUsersWithSyncedTrainings();
-var result = await tool.Run(serviceProvider);
+//var tool = new GetUsersWithSyncedTrainings();
+//var result = await tool.Run(serviceProvider);
 
-//await serviceProvider.CreateInstance<BatchCreateUsers>().CreateAndEmail(config, actuallyCreate: true);
+//var gmailService = BatchMail.CreateGmailService(config.GetRequiredSection("Gmail"));
+//var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
+//await BatchMail.SendBatch(gmailService, "Vektor - uppdatering", emails, actuallySend: true);
+
 
 //await TrainingMod.ModifySettings(tableConfig);
 //await MigrateUserStatesTable.Run(tableConfig);
