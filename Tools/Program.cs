@@ -6,7 +6,12 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using ProblemSource;
+using ProblemSource.Services;
 using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Models.Aggregates;
+using ProblemSourceModule.Services.Storage;
+using ProblemSourceModule.Services.Storage.AzureTables;
 using System.IO;
 using Tools;
 
@@ -52,6 +57,9 @@ var section = config.GetRequiredSection("AppSettings:AzureTable");
 var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
 var serviceProvider = InititalizeServices(config);
+
+var tool = new GetUsersWithSyncedTrainings();
+var result = await tool.Run(serviceProvider);
 
 //await serviceProvider.CreateInstance<BatchCreateUsers>().CreateAndEmail(config, actuallyCreate: true);
 
