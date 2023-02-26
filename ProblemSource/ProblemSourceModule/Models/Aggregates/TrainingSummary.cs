@@ -37,9 +37,12 @@ namespace ProblemSourceModule.Models.Aggregates
                 result.AvgResponseMinutes = trainingDays.Average(o => 1M * o.ResponseMinutes);
                 result.AvgRemainingMinutes = trainingDays.Average(o => 1M * o.RemainingMinutes);
                 result.AvgAccuracy = trainingDays.Average(o => o.NumRaces == 0 ? 0 : 1M * o.NumRacesWon / o.NumRaces);
-                result.FirstLogin = EnsureSerializableDateTime(trainingDays.Min(o => o.StartTime));
-                result.LastLogin = EnsureSerializableDateTime(trainingDays.Max(o => o.StartTime));
+                result.FirstLogin = trainingDays.Min(o => o.StartTime);
+                result.LastLogin = trainingDays.Max(o => o.StartTime);
             }
+
+            result.FirstLogin = EnsureSerializableDateTime(result.FirstLogin);
+            result.LastLogin = EnsureSerializableDateTime(result.LastLogin);
 
             return result;
 
