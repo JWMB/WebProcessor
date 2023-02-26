@@ -87,6 +87,14 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                     else
                         value = serialized;
                 }
+                else
+                {
+                    if (prop.PropertyType == typeof(DateTimeOffset))
+                    {
+                        // TODO: probably DateTime as well
+                        // TODO: min value cannot be before
+                    }
+                }
                 entity[prop.Name] = value;
             }
 

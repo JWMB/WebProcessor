@@ -37,11 +37,14 @@ namespace ProblemSourceModule.Models.Aggregates
                 result.AvgResponseMinutes = trainingDays.Average(o => 1M * o.ResponseMinutes);
                 result.AvgRemainingMinutes = trainingDays.Average(o => 1M * o.RemainingMinutes);
                 result.AvgAccuracy = trainingDays.Average(o => o.NumRaces == 0 ? 0 : 1M * o.NumRacesWon / o.NumRaces);
-                result.FirstLogin = trainingDays.Min(o => o.StartTime);
-                result.LastLogin = trainingDays.Max(o => o.StartTime);
+                result.FirstLogin = EnsureSerializableDateTime(trainingDays.Min(o => o.StartTime));
+                result.LastLogin = EnsureSerializableDateTime(trainingDays.Max(o => o.StartTime));
             }
 
             return result;
+
+            // TODO: this is a quick fix - move this to ExpandableTableEntityConverter (AzureTable-specific handling logic)
+            DateTimeOffset EnsureSerializableDateTime(DateTimeOffset value) => value.Year >= 1900 ? value : new DateTimeOffset(1900, 1, 1, 0, 0, 0, TimeSpan.Zero);
         }
     }
 }
