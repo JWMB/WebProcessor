@@ -103,12 +103,6 @@ namespace TrainingApi.Controllers
         {
             var user = userProvider.UserOrThrow;
 
-            // Temporary until we've decided on training plan / settings
-            if (user.Role != Roles.Admin)
-            {
-                throw new UnauthorizedAccessException($"Creating classes is currently disabled - we're finalizing the design of the optimal training settings!");
-            }
-
             // TODO: standard validation
             if (numTrainings < 1 || numTrainings > 30) throw new HttpException($"{nameof(numTrainings)} exceeds accepted range", StatusCodes.Status400BadRequest);
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);

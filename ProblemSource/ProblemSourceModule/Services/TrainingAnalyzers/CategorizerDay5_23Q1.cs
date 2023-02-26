@@ -93,7 +93,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                     trigger.actionData.properties.phases = TrainingSettings.ConvertToDynamicOrThrow(new Dictionary<string, object> {
                         {
                             "numberline[\\w#]*",
-                            new { problemGeneratorData = new { problemFile = new { path = "numberline_easy.csv" } } } // TODO: yes, we will we be using this - update client!
+                            new { problemGeneratorData = new { problemFile = new { path = "numberline_easy_ola_q123.csv" } } } // Note: client updated to include this file
                         } });
                 }
                 return trigger;

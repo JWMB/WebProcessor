@@ -23,7 +23,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             trigger.actionData.properties.phases = TrainingSettings.ConvertToDynamicOrThrow(new Dictionary<string, object> {
             {
                 "numberline[\\w#]*",
-                new { problemGeneratorData = new { problemFile = new { path = "numberline_jonastest.csv" } } }
+                new { problemGeneratorData = new { problemFile = new { path = "numberline_easy_ola_q123.csv" } } }
             } });
             var overrides = new
             {
