@@ -4,6 +4,7 @@
 	import { getApi } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
 	import { onMount } from 'svelte';
+	import { ErrorHandling } from 'src/errorHandling';
 
 	export let isOpen: boolean; // provided by Modals
 	export let onCreateGroup: (id: string) => void;
@@ -11,6 +12,7 @@
 	const apiFacade = getApi() as ApiFacade;
 
 	let templates: TrainingTemplateDto[] = [];
+	let error: string | null = null;
 
 	const ageBrackets = [
 		"",
@@ -33,20 +35,26 @@
 
 	let createdTrainingUsernames: string[] = [];
 	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string, forUser?: string | null) {
-		if (!ageBracket) throw "Age span must be set";
-		const chosenTemplate = templates[0];
-		// TODO: server-side serializiation of TrainingSettings.trainingPlanOverrides is incorrect, so we can't use it here
-		// if (!chosenTemplate.settings) {
-		// 	chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
-		// }
-		chosenTemplate.settings.timeLimits = [numMinutes];
-		const dto = <TrainingCreateDto>{ 
-			baseTemplateId: chosenTemplate.id,
-			trainingPlan: chosenTemplate.trainingPlanName,
-			// trainingSettings: chosenTemplate.settings,
-			ageBracket: ageBracket
-		};
-		createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
+		error = null;
+		try {
+			if (!ageBracket) throw "Age span must be set";
+			const chosenTemplate = templates[0];
+			// TODO: server-side serializiation of TrainingSettings.trainingPlanOverrides is incorrect, so we can't use it here
+			// if (!chosenTemplate.settings) {
+			// 	chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
+			// }
+			chosenTemplate.settings.timeLimits = [numMinutes];
+			const dto = <TrainingCreateDto>{ 
+				baseTemplateId: chosenTemplate.id,
+				trainingPlan: chosenTemplate.trainingPlanName,
+				// trainingSettings: chosenTemplate.settings,
+				ageBracket: ageBracket
+			};
+			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
+		} catch (err) {
+			error = ErrorHandling.getErrorObject(err).message;
+			throw err;
+		}
 		closeModal;
 		onCreateGroup(groupName);
 	}
@@ -85,9 +93,12 @@
 						Time per day
 						<input id="timePerDay" required type="number" bind:value={newGroupData.timePerDay} min="15" max="45" />
 					</label> -->
+					{#if !!error}
+						<div style="color:red">{error}</div>
+					{/if}
 					<div class="actions">
 						<button class="secondary" on:click={closeModal}>Cancel</button>
-						<button class="primary" style="opacity:0.5" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket, '')}>Create</button>
+						<button class="primary" style="opacity:1" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket, '')}>Create</button>
 					</div>
 				</form>
 			{:else}

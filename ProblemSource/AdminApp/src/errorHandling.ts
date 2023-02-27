@@ -46,7 +46,10 @@ export class ErrorHandling {
                 result.stack = err.stack || null;
                 result.cause = err.cause;
             }
+        } else if (typeof err === "string") {
+            result.message = err;
         }
+
         return result;
     }
 
