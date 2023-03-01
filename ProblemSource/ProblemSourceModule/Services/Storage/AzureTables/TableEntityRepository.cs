@@ -134,12 +134,12 @@ namespace ProblemSource.Services.Storage.AzureTables
 
         private async Task<IEnumerable<T>> GetWithFilter(string filter)
         {
+            //System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
             var query = tableClient.QueryAsync<TTableEntity>(filter);
             var result = new List<T>();
             await foreach (var entity in query)
             {
                 result.Add(toBusinessObject(entity));
-                //var str = AzureTableConfig.GetLongString(entity);
             }
             return result;
         }
