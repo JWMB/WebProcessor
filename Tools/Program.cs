@@ -52,8 +52,9 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
 var serviceProvider = InititalizeServices(config);
 
-//var tool = new GetUsersWithSyncedTrainings();
-//var result = await tool.Run(serviceProvider);
+var tool = new GetUsersWithSyncedTrainings(serviceProvider);
+await tool.OverallStats();
+//var result = await tool.Run();
 
 //var gmailService = BatchMail.CreateGmailService(config.GetRequiredSection("Gmail"));
 //var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));

@@ -1,13 +1,99 @@
-﻿using ProblemSource;
+﻿using Azure.Data.Tables;
+using Common.Web.Services;
+using Google.Apis.Gmail.v1.Data;
+using Microsoft.Extensions.DependencyInjection;
+using ProblemSource;
+using ProblemSource.Models;
 using ProblemSource.Services;
+using ProblemSource.Services.Storage;
+using ProblemSource.Services.Storage.AzureTables;
+using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models.Aggregates;
+using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
+using System.Collections.Concurrent;
 
 namespace Tools
 {
     internal class GetUsersWithSyncedTrainings
     {
-        public async Task<List<string>> Run(IServiceProvider serviceProvider)
+        private readonly IServiceProvider serviceProvider;
+
+        public GetUsersWithSyncedTrainings(IServiceProvider serviceProvider)
+        {
+            this.serviceProvider = serviceProvider;
+        }
+        public async Task OverallStats()
+        {
+            var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();
+            //var trainings = await trainingRepository.GetAll();
+
+            var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
+
+
+            var states = await GetTrainingStates();
+            var trainingDayById = states.ToDictionary(o => o.Key, o => o.Value.exercise_stats.trainingDay);
+
+            var phasesById = await GetPhases($"training_day gt 4");
+            var maxDays = phasesById.Select(o => new { Id = o.Key, MaxDay = o.Value.Max(o => o.training_day), MaxDayState = trainingDayById.GetValueOrDefault(o.Key, 0) }).ToList();
+
+            string? partitionKey = null;
+            var trainingSummaries = new Lazy<IBatchRepository<TrainingSummary>>(() =>
+                Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
+                new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
+                t => partitionKey));
+            var allSummaries = await trainingSummaries.Value.GetAll();
+
+            var statisticsProvider = serviceProvider.CreateInstance<StatisticsProvider>();
+
+            var toInvestigate = allSummaries.Where(o => o.TrainedDays > 1).OrderByDescending(o => o.Id).ToList();
+            foreach (var item in toInvestigate)
+            {
+                var phaseStatistics = await statisticsProvider.GetPhaseStatistics(item.Id);
+                var byExercise = phaseStatistics.GroupBy(o => o.exercise).ToDictionary(o => o.Key, o => o.OrderBy(p => p.training_day).ToList());
+
+                var aa = byExercise.Select(o => new { Exercise = o.Key, LevelSpan = string.Join(",", o.Value.Select(o => $"{o.training_day}:{(int)o.level_min}-{(int)o.level_max}")) }).ToList();
+            }
+        }
+
+        private async Task<Dictionary<int, List<PhaseTableEntity>>> GetPhases(string filter)
+        {
+            var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
+
+            var query = tableClientFactory.Phases.QueryAsync<PhaseTableEntity>(filter);
+            var phasesById = new Dictionary<int, List<PhaseTableEntity>>();
+            await foreach (var entity in query)
+            {
+                var trainingId = int.Parse(entity.PartitionKey.TrimStart('0'));
+                if (!phasesById.TryGetValue(trainingId, out var list))
+                {
+                    list = new List<PhaseTableEntity>();
+                    phasesById[trainingId] = list;
+                }
+                list.Add(entity);
+            }
+            return phasesById;
+        }
+
+        private async Task<Dictionary<int, UserGeneratedState>> GetTrainingStates()
+        {
+            string? partitionKey = null;
+            var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
+            var queryStates = tableClientFactory.UserStates.QueryAsync<TableEntity>();
+            var converter = new ExpandableTableEntityConverter<UserGeneratedState>(t => new TableFilter("none", partitionKey));
+            var stateById = new Dictionary<int, UserGeneratedState>();
+            await foreach (var entity in queryStates)
+            {
+                var converted = converter.ToPoco(entity);
+                //var userStats = converted.exercise_stats;
+                stateById.Add(int.Parse(entity.RowKey.TrimStart('0')), converted);
+            }
+            return stateById;
+        }
+
+        private IBatchRepository<T> Create<T>(IBatchRepository<T> inner, Func<T, string> createKey) => inner;
+
+        public async Task<List<string>> Run()
         {
             var userRepo = serviceProvider.CreateInstance<AzureTableUserRepository>();
             var users = await userRepo.GetAll();
