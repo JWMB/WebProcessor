@@ -22,7 +22,14 @@ namespace ProblemSourceModule.Models.Aggregates
                 return (decimal)TrainedDays / diff * 7;
             }
         }
-        
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || obj is TrainingSummary typed == false)
+                return false;
+            return TrainedDays == typed.TrainedDays && LastLogin == typed.LastLogin && Id == typed.Id;
+        }
+
 
         internal static TrainingSummary Create(int userId, IEnumerable<TrainingDayAccount> trainingDays)
         {

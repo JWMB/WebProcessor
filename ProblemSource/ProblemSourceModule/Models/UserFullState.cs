@@ -36,6 +36,13 @@ namespace ProblemSource.Models
         public object? user_data { get; set; }
 
         public object? syncInfo { get; set; } // TODO: what is this?
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || obj is UserGeneratedState typed == false)
+                return false;
+            return exercise_stats.trainingDay == typed.exercise_stats.trainingDay && exercise_stats.lastTimeStamp == typed.exercise_stats.lastTimeStamp;
+        }
     }
 
     public class UserFullState : IUserServerSettings, IUserGeneratedState
