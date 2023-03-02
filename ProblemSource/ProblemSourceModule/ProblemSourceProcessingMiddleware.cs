@@ -212,14 +212,21 @@ namespace ProblemSource
                 // client wants TrainingPlan, stats for trained exercises, training day number etc
                 result.state = await CreateClientState(root, training, currentStoredState);
 
-                var trainingDays = await sessionInfo.Session.UserRepositories.TrainingDays.GetAll();
-                if (trainingDays.Any() && currentStoredState != null)
+                try
                 {
-                    var fromTrainingDays = trainingDays.Max(o => o.TrainingDay);
-                    if (currentStoredState.exercise_stats.trainingDay != fromTrainingDays)
+                    var trainingDays = await sessionInfo.Session.UserRepositories.TrainingDays.GetAll();
+                    if (trainingDays.Any() && currentStoredState != null)
                     {
-                        log.LogWarning($"Training day mismatch - state:{currentStoredState.exercise_stats.trainingDay} td table:{fromTrainingDays}");
+                        var fromTrainingDays = trainingDays.Max(o => o.TrainingDay);
+                        if (currentStoredState.exercise_stats.trainingDay != fromTrainingDays)
+                        {
+                            log.LogWarning($"Training id={training.Id} day mismatch - state:{currentStoredState.exercise_stats.trainingDay} td table:{fromTrainingDays}");
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    log.LogError(ex, $"Compare days error Training id={training.Id}");
                 }
             }
 

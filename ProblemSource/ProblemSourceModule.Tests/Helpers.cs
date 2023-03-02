@@ -74,6 +74,10 @@ namespace ProblemSource.Tests
 
             var mockRepoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
             mockRepoProvider.Setup(o => o.UserStates).Returns(userStateRepo);
+            if (dataProvider != null)
+            {
+                mockRepoProvider.Setup(o => o.TrainingDays).Returns(dataProvider.TrainingDays);
+            }
 
             var mockRepoProviderFactory = new Mock<IUserGeneratedDataRepositoryProviderFactory>();
             mockRepoProviderFactory.Setup(o => o.Create(It.IsAny<int>())).Returns(mockRepoProvider.Object);
