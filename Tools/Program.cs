@@ -53,7 +53,7 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 var serviceProvider = InititalizeServices(config);
 
 var tool = new GetUsersWithSyncedTrainings(serviceProvider);
-await tool.OverallStats();
+await tool.GetDevices();
 //var result = await tool.Run();
 
 //var gmailService = BatchMail.CreateGmailService(config.GetRequiredSection("Gmail"));

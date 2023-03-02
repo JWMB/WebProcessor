@@ -2,6 +2,7 @@
 using Common.Web.Services;
 using Google.Apis.Gmail.v1.Data;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 using ProblemSource;
 using ProblemSource.Models;
 using ProblemSource.Services;
@@ -23,6 +24,18 @@ namespace Tools
         {
             this.serviceProvider = serviceProvider;
         }
+
+        public async Task GetDevices()
+        {
+            var states = await GetTrainingStates();
+            var devices = states.Select(o => o.Value.exercise_stats.device.model)
+                .Where(o => o.Any())
+                .Select(JObject.Parse)
+                .ToList();
+
+            var userAgents = devices.Select(o => o.Value<string>("userAgent")).ToList();
+        }
+
         public async Task OverallStats()
         {
             var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();
