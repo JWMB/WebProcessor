@@ -84,9 +84,6 @@ namespace ProblemSource.Services.Storage
 
             // TODO: this is a workaround for Azure table upsert not responding with updated or inserted
 
-            foreach (var kv in lookupByKey)
-                cache.Set(kv.Key, kv.Value, CreateCacheOptions());
-
             var added = lookupByKey.ExceptBy(cachedKeys, o => o.Key);
             await repo.Upsert(added.Select(o => o.Value));
 
@@ -104,6 +101,9 @@ namespace ProblemSource.Services.Storage
                 }
             }
             await repo.Upsert(modified);
+
+            foreach (var kv in lookupByKey)
+                cache.Set(kv.Key, kv.Value, CreateCacheOptions());
 
             return (added.Select(o => o.Value).ToList(), updated.Select(o => o.Value).ToList());
 

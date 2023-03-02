@@ -5,7 +5,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PluginModuleBase;
 using ProblemSource.Models;
-using ProblemSource.Models.Aggregates;
 using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
@@ -212,6 +211,16 @@ namespace ProblemSource
             {
                 // client wants TrainingPlan, stats for trained exercises, training day number etc
                 result.state = await CreateClientState(root, training, currentStoredState);
+
+                var trainingDays = await sessionInfo.Session.UserRepositories.TrainingDays.GetAll();
+                if (trainingDays.Any() && currentStoredState != null)
+                {
+                    var fromTrainingDays = trainingDays.Max(o => o.TrainingDay);
+                    if (currentStoredState.exercise_stats.trainingDay != fromTrainingDays)
+                    {
+                        log.LogWarning($"Training day mismatch - state:{currentStoredState.exercise_stats.trainingDay} td table:{fromTrainingDays}");
+                    }
+                }
             }
 
             return result;
