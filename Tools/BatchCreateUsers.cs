@@ -127,7 +127,7 @@ namespace Tools
                 }).ToList();
         }
 
-        public async Task CreateAndEmail(IConfiguration config, bool actuallyCreate = false)
+        public async Task CreateAndEmail(IConfiguration config, IEnumerable<string> emails, bool actuallyCreate = false)
         {
             var rootPath = @"C:\Users\uzk446\Downloads\";
             var useJsonFile = $"{rootPath}createdUsers.json";
@@ -137,7 +137,6 @@ namespace Tools
             else
             {
                 //var emails = ReadEmails($"{rootPath}TeacherEmails.txt").Select(o => o.ToString()).ToList();
-                var emails = new List<string>(); 
                 createdUsersInfo = (await CreateUsers(emails, new Dictionary<string, int> { { "Test", 2 } }, "2018 VT template Default", actuallyCreate)).ToList();
                 File.WriteAllText(useJsonFile.Replace(".json", $"-{DateTime.Now:dd_HH_mm}.json"), JsonConvert.SerializeObject(createdUsersInfo));
                 File.WriteAllText(useJsonFile, JsonConvert.SerializeObject(createdUsersInfo));

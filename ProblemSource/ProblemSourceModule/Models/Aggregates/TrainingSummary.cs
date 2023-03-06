@@ -1,4 +1,5 @@
 ﻿using ProblemSource.Models.Aggregates;
+using System.Diagnostics;
 
 namespace ProblemSourceModule.Models.Aggregates
 {
@@ -22,6 +23,8 @@ namespace ProblemSourceModule.Models.Aggregates
                 return (decimal)TrainedDays / diff * 7;
             }
         }
+
+        public override string ToString() => $"{Id}: days:{TrainedDays} first:{FirstLogin:MM-dd HH:mm} last:{LastLogin:MM-dd HH:mm}";
 
         public override bool Equals(object? obj)
         {

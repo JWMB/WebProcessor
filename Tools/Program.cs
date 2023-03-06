@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ProblemSource;
 using ProblemSource.Services.Storage.AzureTables;
 using Tools;
 
@@ -52,13 +53,17 @@ var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
 var serviceProvider = InititalizeServices(config);
 
-var tool = new GetUsersWithSyncedTrainings(serviceProvider);
-await tool.GetDevices();
-//var result = await tool.Run();
+//var tool = new TrainingStatsTools(serviceProvider);
+//await tool.OverallStats();
+//var result = await tool.GetUsersWithSyncedTrainings();
+
+//var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
+
+//var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
+//await creator.CreateAndEmail(config, emails, true);
 
 //var gmailService = BatchMail.CreateGmailService(config.GetRequiredSection("Gmail"));
-//var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
-//await BatchMail.SendBatch(gmailService, "Vektor - uppdatering", emails, actuallySend: true);
+//await BatchMail.SendBatch(gmailService, "Vektor invitation", emails, actuallySend: true); //Vektor - uppdatering
 
 
 //await TrainingMod.ModifySettings(tableConfig);

@@ -1,6 +1,5 @@
 ﻿using Common;
 using EmailServices;
-using Google.Apis.Gmail.v1.Data;
 using Microsoft.Extensions.Configuration;
 using System.Net.Mail;
 using System.Text.RegularExpressions;

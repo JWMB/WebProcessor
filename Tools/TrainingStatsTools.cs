@@ -1,6 +1,4 @@
 ﻿using Azure.Data.Tables;
-using Common.Web.Services;
-using Google.Apis.Gmail.v1.Data;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using ProblemSource;
@@ -12,15 +10,14 @@ using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
-using System.Collections.Concurrent;
 
 namespace Tools
 {
-    internal class GetUsersWithSyncedTrainings
+    internal class TrainingStatsTools
     {
         private readonly IServiceProvider serviceProvider;
 
-        public GetUsersWithSyncedTrainings(IServiceProvider serviceProvider)
+        public TrainingStatsTools(IServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
         }
@@ -43,7 +40,6 @@ namespace Tools
 
             var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
 
-
             var states = await GetTrainingStates();
             var trainingDayById = states.ToDictionary(o => o.Key, o => o.Value.exercise_stats.trainingDay);
 
@@ -57,16 +53,19 @@ namespace Tools
                 t => partitionKey));
             var allSummaries = await trainingSummaries.Value.GetAll();
 
-            var statisticsProvider = serviceProvider.CreateInstance<StatisticsProvider>();
+            var dateWhenAdjustedClientWasReleased = DateTimeOffset.Parse("2023-03-01");
+            var idsStartedWithAdjustedClient = allSummaries.Where(o => o.FirstLogin >= dateWhenAdjustedClientWasReleased).ToList();
 
-            var toInvestigate = allSummaries.Where(o => o.TrainedDays > 1).OrderByDescending(o => o.Id).ToList();
-            foreach (var item in toInvestigate)
-            {
-                var phaseStatistics = await statisticsProvider.GetPhaseStatistics(item.Id);
-                var byExercise = phaseStatistics.GroupBy(o => o.exercise).ToDictionary(o => o.Key, o => o.OrderBy(p => p.training_day).ToList());
 
-                var aa = byExercise.Select(o => new { Exercise = o.Key, LevelSpan = string.Join(",", o.Value.Select(o => $"{o.training_day}:{(int)o.level_min}-{(int)o.level_max}")) }).ToList();
-            }
+            //var statisticsProvider = serviceProvider.CreateInstance<StatisticsProvider>();
+            //var toInvestigate = allSummaries.Where(o => o.TrainedDays > 1).OrderByDescending(o => o.Id).ToList();
+            //foreach (var item in toInvestigate)
+            //{
+            //    var phaseStatistics = await statisticsProvider.GetPhaseStatistics(item.Id);
+            //    var byExercise = phaseStatistics.GroupBy(o => o.exercise).ToDictionary(o => o.Key, o => o.OrderBy(p => p.training_day).ToList());
+
+            //    var aa = byExercise.Select(o => new { Exercise = o.Key, LevelSpan = string.Join(",", o.Value.Select(o => $"{o.training_day}:{(int)o.level_min}-{(int)o.level_max}")) }).ToList();
+            //}
         }
 
         private async Task<Dictionary<int, List<PhaseTableEntity>>> GetPhases(string filter)
@@ -106,7 +105,7 @@ namespace Tools
 
         private IBatchRepository<T> Create<T>(IBatchRepository<T> inner, Func<T, string> createKey) => inner;
 
-        public async Task<List<string>> Run()
+        public async Task<List<string>> GetUsersWithSyncedTrainings()
         {
             var userRepo = serviceProvider.CreateInstance<AzureTableUserRepository>();
             var users = await userRepo.GetAll();
