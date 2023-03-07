@@ -37,10 +37,10 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 // TODO: how do we know if this has already been run? Doesn't really matter right now, but might for other types of analyzers.
                 var result = await Predict(training, provider);
 
+                log.LogInformation($"Predicted performance for training {training.Id}: {result.Predicted}/{result.PredictedPerformanceTier}");
+
                 if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.Unknown)
                     return false;
-
-                log.LogInformation($"Predicted performance for training {training.Id}: {result.Predicted}/{result.PredictedPerformanceTier}");
 
                 var seedSrc = DateTime.Now;
                 var rnd = new Random(seedSrc.Millisecond * 1000 + seedSrc.Microsecond);
@@ -48,6 +48,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 var trigger = CreateTrigger(runAfterDay + 1, result.PredictedPerformanceTier, (rnd.NextDouble(), rnd.NextDouble()));
                 if (trigger != null)
                 {
+                    log.LogInformation($"ML-generated trigger added for training {training.Id}");
                     training.Settings.UpdateTrainingOverrides(new[] { trigger });
                     return true;
                 }
