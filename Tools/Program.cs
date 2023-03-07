@@ -6,7 +6,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProblemSource;
+using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Services.Storage;
+using ProblemSourceModule.Services.TrainingAnalyzers;
 using Tools;
 
 var config = CreateConfig();
@@ -38,17 +41,29 @@ var path = @"C:\Users\uzk446\Downloads\";
 //await new OldDbMLFeatures().Run(cancellationToken);
 //return;
 
+{
+    var trainingRepo = serviceProvider.GetRequiredService<ITrainingRepository>();
+    var training = await trainingRepo.Get(865640);
+    if (training == null)
+        throw new Exception("");
+    var factory = serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>();
+    var pathToModel = @"C:\Users\uzk446\source\repos\Trainer\WebProcessor\ProblemSource\ProblemSourceModule\Resources\JuliaMLModel_Reg.zip";
+    var analyzer = new CategorizerDay5_23Q1(new LocalMLPredictNumberlineLevelService(pathToModel), serviceProvider.GetRequiredService<ILogger<CategorizerDay5_23Q1>>());
+    var predicted = await analyzer.Predict(training, factory.Create(training.Id));
+}
 
 {
     var copier = serviceProvider.CreateInstance<TrainingDataCopier>();
 
     var srcTableConfig = serviceProvider.GetRequiredService<AzureTableConfig>();
-    srcTableConfig.ConnectionString = "someotherconnectionstring";
+    srcTableConfig.ConnectionString = "";
     var srcProviderFactory = new AzureTableUserGeneratedDataRepositoriesProviderFactory(new TypedTableClientFactory(srcTableConfig));
-    var dstId = 865640; //10606
+    var dstId = 865640; //10606 865640
     var srcId = 2153;
     await copier.CopyPhases(srcProviderFactory.Create(srcId), dstId, p => p.training_day <= 4, deleteInDst: p => true);
 }
+
+
 
 //var tool = new TrainingStatsTools(serviceProvider);
 //await tool.OverallStats();

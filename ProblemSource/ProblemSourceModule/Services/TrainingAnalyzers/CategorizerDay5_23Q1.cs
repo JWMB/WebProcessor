@@ -34,10 +34,17 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             if (runAfterDay == await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems))
             {
-                // TODO: how do we know if this has already been run? Doesn't really matter right now, but might for other types of analyzers.
-                var result = await Predict(training, provider);
-
-                log.LogInformation($"Predicted performance for training {training.Id}: {result.Predicted}/{result.PredictedPerformanceTier}");
+                var result = new PredictedNumberlineLevel { Predicted = null };
+                try
+                {
+                    // TODO: how do we know if this has already been run? Doesn't really matter right now, but might for other types of analyzers.
+                    result = await Predict(training, provider);
+                    log.LogInformation($"Predicted performance for training {training.Id}: {result.Predicted}/{result.PredictedPerformanceTier}");
+                }
+                catch (Exception ex)
+                {
+                    log.LogError(ex, $"Error predicting for training {training.Id}");
+                }
 
                 if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.Unknown)
                     return false;
@@ -149,7 +156,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 return null;
 
             if (!File.Exists(localModelPath))
-                return null;
+                throw new Exception($"Model not found at: {localModelPath}");
 
             var colInfo = ColumnInfo.Create(feature.GetType());
             var flatFeatures = feature.GetFlatFeatures();
