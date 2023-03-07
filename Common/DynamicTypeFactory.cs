@@ -11,9 +11,24 @@ namespace Common
             var inst = CreateInstance(type);
             foreach (var item in props)
             {
+                var value = item.Value;
+                if (value == null)
+                    continue;
                 var prop = type.GetProperty(item.Key);
-                if (prop == null) throw new NullReferenceException(item.Key);
-                prop.SetValue(inst, item.Value);
+                
+                if (prop == null)
+                    throw new NullReferenceException(item.Key);
+
+                if (!prop.PropertyType.IsAssignableFrom(value.GetType()))
+                {
+                    // TODO: stop-gap fix, find source of problem
+                    if (prop.PropertyType == typeof(float))
+                        value = Convert.ToSingle(value);
+                    else
+                        throw new Exception($"Incorrect type for '{item.Key}' - expected {prop.PropertyType.Name}, got {value.GetType().Name}");
+                }
+
+                prop.SetValue(inst, value);
             }
             return inst;
         }
