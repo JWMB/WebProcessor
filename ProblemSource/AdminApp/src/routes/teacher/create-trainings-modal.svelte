@@ -14,6 +14,10 @@
 	let templates: TrainingTemplateDto[] = [];
 	let error: string | null = null;
 
+	const timePerDayValues = [
+		20,
+		33
+	];
 	const ageBrackets = [
 		"",
 		"-4",
@@ -39,15 +43,16 @@
 		try {
 			if (!ageBracket) throw "Age span must be set";
 			const chosenTemplate = templates[0];
-			// TODO: server-side serializiation of TrainingSettings.trainingPlanOverrides is incorrect, so we can't use it here
 			// if (!chosenTemplate.settings) {
 			// 	chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
 			// }
+			// TODO: server-side serializiation of TrainingSettings.trainingPlanOverrides is incorrect, so we can't use it here
+			chosenTemplate.settings.trainingPlanOverrides = null;
 			chosenTemplate.settings.timeLimits = [numMinutes];
 			const dto = <TrainingCreateDto>{ 
 				baseTemplateId: chosenTemplate.id,
 				trainingPlan: chosenTemplate.trainingPlanName,
-				// trainingSettings: chosenTemplate.settings,
+				trainingSettings: chosenTemplate.settings,
 				ageBracket: ageBracket
 			};
 			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
@@ -89,10 +94,16 @@
 						Number of trainings
 						<input id="numTrainings" required bind:value={newGroupData.noOfTrainings} min="1" max="40" />
 					</label>
-					<!-- <label>
+					<label>
 						Time per day
-						<input id="timePerDay" required type="number" bind:value={newGroupData.timePerDay} min="15" max="45" />
-					</label> -->
+						<br/>
+						<select id="timePerDay" bind:value={newGroupData.timePerDay}>
+							{#each timePerDayValues as tpd}
+							<option value="{tpd}">{tpd} minutes</option>
+							{/each}
+						</select>
+						<!-- <input id="timePerDay" required type="number" bind:value={newGroupData.timePerDay} min="15" max="45" /> -->
+					</label>
 					{#if !!error}
 						<div style="color:red">{error}</div>
 					{/if}

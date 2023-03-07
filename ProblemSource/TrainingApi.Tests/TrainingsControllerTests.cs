@@ -1,5 +1,6 @@
 ﻿using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
@@ -11,6 +12,24 @@ namespace TrainingApi.Tests
 {
     public class TrainingsControllerTests
     {
+        [Fact]
+        public async Task GetTemplates_Serialization()
+        {
+            // Arrange
+            var ts = new MyTestServer();
+
+            var user = new User { Email = "tester", Role = Roles.Admin };
+            var client = ts.CreateClient(user);
+
+            // Act
+            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"/api/trainings/templates");
+
+            // Assert
+            var template = response!.Single(o => o.Name == "NumberlineTest training");
+            template.Settings.trainingPlanOverrides.ShouldNotBeNull();
+            template.Settings.trainingPlanOverrides!.ToString()!.ShouldContain("[[[]]"); //TODO: ShouldNotContain
+        }
+
         [Fact]
         public async Task TrainingsSummaryDoesNotSkipWhenNoTrainedDays()
         {

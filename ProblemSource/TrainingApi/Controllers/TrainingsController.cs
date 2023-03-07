@@ -10,7 +10,6 @@ using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TrainingApi.Controllers
 {
@@ -75,8 +74,9 @@ namespace TrainingApi.Controllers
             var template = templates.SingleOrDefault(o => o.Id == dto.BaseTemplateId);
             if (template == null)
                 throw new Exception($"Template not found: {dto.BaseTemplateId}");
-
-            // TODO: use dto.TrainingSettings ?? template.Settings once response serialization works
+            dto.TrainingSettings ??= template.Settings;
+            // TODO: trainingPlanOverrides is incorrectly serialized, so we can't use the one from the DTO
+            dto.TrainingSettings.trainingPlanOverrides = template.Settings.trainingPlanOverrides;
             return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, template.Settings, dto.AgeBracket);
         }
 
