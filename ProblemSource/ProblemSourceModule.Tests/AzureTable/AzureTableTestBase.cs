@@ -40,6 +40,5 @@ namespace ProblemSourceModule.Tests.AzureTable
         }
 
         public void EnableNonDebugSkip() => Skip.If(!System.Diagnostics.Debugger.IsAttached);
-
     }
 }

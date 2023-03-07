@@ -51,6 +51,7 @@ namespace ProblemSource.Services.Storage.AzureTables
 
         private async Task<List<Response>> UpsertBatch(IEnumerable<ITableEntity> entities)
         {
+            // TODO: use SubmitTransactionsBatched instead
             //Note: UpsertMerge keeps old columns
             var batch = new List<TableTransactionAction>(entities.Select(f => new TableTransactionAction(TableTransactionActionType.UpsertReplace, f)));
 

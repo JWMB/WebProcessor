@@ -6,6 +6,7 @@ using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
+using ProblemSourceModule.Services.Storage.AzureTables;
 
 namespace Tools
 {
@@ -45,7 +46,7 @@ namespace Tools
                 if (toDelete.Any())
                 {
                     var tx = toDelete.Select(o => new TableTransactionAction(TableTransactionActionType.Delete, PhaseTableEntity.FromBusinessObject(o, dstId)));
-                    await tableClientFactory.Phases.SubmitTransactionAsync(tx);
+                    await tableClientFactory.Phases.SubmitTransactionsBatched(tx); // SubmitTransactionAsync(tx);
                 }
 
                 if (updateAggregates)
