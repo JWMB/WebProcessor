@@ -1,7 +1,5 @@
 ﻿using Common;
 using ML.Helpers;
-using ProblemSource.Models;
-using ProblemSource.Models.Aggregates;
 using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
 
 namespace ProblemSource.Models.Aggregates
@@ -71,6 +69,34 @@ namespace ProblemSource.Models.Aggregates
             && ByExercise.ContainsKey("nvr_rp") && ByExercise["nvr_rp"].FractionCorrect.HasValue
             && ByExercise.ContainsKey("nvr_so") && ByExercise["nvr_so"].FractionCorrect.HasValue
             && Age >= 6 && Age <= 7;
+
+        public Dictionary<string, string> InvalidReasons
+        {
+            get
+            {
+                var result = new Dictionary<string, string>();
+
+                if (FinalNumberLineLevel == null)
+                    result.Add("FinalNumberLineLevel", "null");
+
+                AddFractionCorrectError("nvr_rp");
+                AddFractionCorrectError("nvr_so");
+
+                if (!(Age >= 6 && Age <= 7))
+                    result.Add("Age", $"{Age}");
+
+                return result;
+
+                void AddFractionCorrectError(string exercise)
+                {
+                    var val = GetFractionCorrect(exercise);
+                    if (val == null)
+                        result.Add(exercise, $"fractionCorrect null {ByExercise.ContainsKey(exercise)}");
+                }
+                decimal? GetFractionCorrect(string exercise) =>
+                    ByExercise.ContainsKey(exercise) ? ByExercise[exercise].FractionCorrect : null;
+            }
+        }
 
         public static List<int> ChunkLimits(IEnumerable<MLFeaturesJulia> features, int numChunks)
         {

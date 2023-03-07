@@ -62,7 +62,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             var result = await modelService.Predict(mlFeatures);
             if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.Unknown)
             {
-                log.LogWarning($"Could not predict performance for training {training.Id}: IsValid={mlFeatures.IsValid}");
+                log.LogWarning($"Could not predict performance for training {training.Id}: IsValid={mlFeatures.IsValid} Reasons={string.Join(",", mlFeatures.InvalidReasons.Select(o => $"{o.Key}:{o.Value}")}");
             }
             return result;
         }
