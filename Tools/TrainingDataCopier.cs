@@ -1,4 +1,5 @@
 ﻿using Azure.Data.Tables;
+using Force.DeepCloner;
 using Microsoft.Data.Analysis;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
@@ -64,8 +65,9 @@ namespace Tools
                 var trainingSummary = (await dstProvider.TrainingSummaries.GetAll()).Single();
 
                 var state = (await dstProvider.UserStates.GetAll()).Single();
-                state.exercise_stats.trainingDay = trainingSummary.TrainedDays; // data.Max(o => o.training_day);
-                await dstProvider.UserStates.Upsert(new[] { state });
+                var copy = state.DeepClone();
+                copy.exercise_stats.trainingDay = trainingSummary.TrainedDays; // data.Max(o => o.training_day);
+                await dstProvider.UserStates.Upsert(new[] { copy });
             }
         }
     }
