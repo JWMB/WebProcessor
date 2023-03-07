@@ -1,4 +1,5 @@
 ﻿using Common;
+using Microsoft.Extensions.Logging;
 using ML.Helpers;
 using static ProblemSource.Models.Aggregates.MLFeaturesJulia;
 
@@ -65,8 +66,7 @@ namespace ProblemSource.Models.Aggregates
         }
 
         public bool IsValid =>
-            FinalNumberLineLevel != null
-            && ByExercise.ContainsKey("nvr_rp") && ByExercise["nvr_rp"].FractionCorrect.HasValue
+            ByExercise.ContainsKey("nvr_rp") && ByExercise["nvr_rp"].FractionCorrect.HasValue
             && ByExercise.ContainsKey("nvr_so") && ByExercise["nvr_so"].FractionCorrect.HasValue
             && Age >= 6 && Age <= 7;
 
@@ -75,9 +75,6 @@ namespace ProblemSource.Models.Aggregates
             get
             {
                 var result = new Dictionary<string, string>();
-
-                if (FinalNumberLineLevel == null)
-                    result.Add("FinalNumberLineLevel", "null");
 
                 AddFractionCorrectError("nvr_rp");
                 AddFractionCorrectError("nvr_so");
@@ -109,7 +106,8 @@ namespace ProblemSource.Models.Aggregates
         [ColumnType(ColumnType.Ignored)]
         public int Id { get; set; }
 
-        public static MLFeaturesJulia FromPhases(TrainingSettings trainingSettings, IEnumerable<Phase> phases, int age, List<ExerciseGlobals>? exerciseGlobals = null, int dayCutoff = 5)
+        public static MLFeaturesJulia FromPhases(TrainingSettings trainingSettings, IEnumerable<Phase> phases, int age, List<ExerciseGlobals>? exerciseGlobals = null, int dayCutoff = 5,
+            ILogger<MLFeaturesJulia>? log = null)
         {
             exerciseGlobals ??= ExerciseGlobals.GetDefaults();
 

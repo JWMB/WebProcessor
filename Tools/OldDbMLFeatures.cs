@@ -66,6 +66,11 @@ namespace Tools
             var path = @"C:\Users\uzk446\Downloads\";
             var csvFile = Path.Join(path, "AllTrainings.csv");
 
+            var rootFeature = CreateFeature(new List<Phase>(), new TrainingSettings(), 0);
+            var rootType = rootFeature.GetType();
+
+            var colInfo = ColumnInfo.Create(rootType);
+
             if (!File.Exists(csvFile))
             {
                 //                var q = @"
@@ -121,8 +126,12 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
                         var row = CreateFeature(phases, new TrainingSettings(), age);
                         if (row.IsValid)
                         {
-                            features.Add(id, row);
-                            includedAges.Add(age);
+                            // when using for creating the model, we also need the outcome measure - skip if not present
+                            if (row.GetFlatFeatures()[colInfo.Label] != null)
+                            {
+                                features.Add(id, row);
+                                includedAges.Add(age);
+                            }
                         }
                     }
                 }
@@ -163,11 +172,6 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
                     return value;
                 }
             }
-
-            var rootFeature = CreateFeature(new List<Phase>(), new TrainingSettings(), 0);
-            var rootType = rootFeature.GetType();
-
-            var colInfo = ColumnInfo.Create(rootType);
 
             var modelPath = Path.Join(path, "JuliaMLModel_Reg.zip");
 
