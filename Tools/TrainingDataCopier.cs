@@ -41,8 +41,11 @@ namespace Tools
                 var existing = await dstProvider.Phases.GetAll();
                 var toDelete = existing.Where(deleteInDst);
 
-                var tx = toDelete.Select(o => new TableTransactionAction(TableTransactionActionType.Delete, PhaseTableEntity.FromBusinessObject(o, dstId)));
-                await tableClientFactory.Phases.SubmitTransactionAsync(tx);
+                if (toDelete.Any())
+                {
+                    var tx = toDelete.Select(o => new TableTransactionAction(TableTransactionActionType.Delete, PhaseTableEntity.FromBusinessObject(o, dstId)));
+                    await tableClientFactory.Phases.SubmitTransactionAsync(tx);
+                }
 
                 if (updateAggregates)
                 {
@@ -62,7 +65,7 @@ namespace Tools
 
                 var state = (await dstProvider.UserStates.GetAll()).Single();
                 state.exercise_stats.trainingDay = trainingSummary.TrainedDays; // data.Max(o => o.training_day);
-                //state.exercise_stats.gameRuns
+                await dstProvider.UserStates.Upsert(new[] { state });
             }
         }
     }
