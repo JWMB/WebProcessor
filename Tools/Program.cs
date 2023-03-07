@@ -1,19 +1,23 @@
 ﻿using Common.Web;
-using EmailServices;
-using Google.Apis.Gmail.v1;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ProblemSource;
 using ProblemSource.Services.Storage.AzureTables;
 using Tools;
 
 var config = CreateConfig();
 
+//var azureTableSection = config.GetRequiredSection("AppSettings:AzureTable");
+//var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(azureTableSection);
+var serviceProvider = InititalizeServices(config);
+
 Console.WriteLine("Run tooling?");
-Console.WriteLine("-----MAKE SURE secrets.json IS NOT INADVERTEDLY USING PRODUCTION SETTINGS!----");
+if (!serviceProvider.GetRequiredService<AzureTableConfig>().ConnectionString.ToLower().Contains("usedevelopmentstorage"))
+    Console.WriteLine("-----secrets.json has non-local settings - MAKE SURE THIS IS INTENDED!----");
 if (Console.ReadKey().Key != ConsoleKey.Y)
 {
     Console.WriteLine("kbye");
@@ -30,28 +34,21 @@ Console.CancelKeyPress += (s, e) =>
 var cancellationToken = cts.Token;
 
 var path = @"C:\Users\uzk446\Downloads\";
-//var ml = new MLDynamic();
-//await ml.Train(new[] { Path.Join(path, "taxi-fare-train.csv"), Path.Join(path, "taxi-fare-test.csv") },
-//    new MLDynamic.ColumnInfo { Label = "fare_amount", Categorical = new[] { "rate_code", "vendor_id", "payment_type" } },
-//    Path.Join(path, "taxi-fare-model.zip"), TimeSpan.FromMinutes(10));
-//var val = ml.Predict(new
-//{
-//    vendor_id = "CMT",
-//    rate_code = 1,
-//    passenger_count = 1,
-//    trip_time_in_secs = 1271,
-//    trip_distance = 3.8f,
-//    payment_type = "CRD",
-//    fare_amount = 0 //17.5
-//});
 
 //await new OldDbMLFeatures().Run(cancellationToken);
 //return;
 
-var section = config.GetRequiredSection("AppSettings:AzureTable");
-var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
-var serviceProvider = InititalizeServices(config);
+{
+    var copier = serviceProvider.CreateInstance<TrainingDataCopier>();
+
+    var srcTableConfig = serviceProvider.GetRequiredService<AzureTableConfig>();
+    srcTableConfig.ConnectionString = "someotherconnectionstring";
+    var srcProviderFactory = new AzureTableUserGeneratedDataRepositoriesProviderFactory(new TypedTableClientFactory(srcTableConfig));
+    var dstId = 865640; //10606
+    var srcId = 2153;
+    await copier.CopyPhases(srcProviderFactory.Create(srcId), dstId, p => p.training_day <= 4, deleteInDst: p => true);
+}
 
 //var tool = new TrainingStatsTools(serviceProvider);
 //await tool.OverallStats();
@@ -96,12 +93,23 @@ IConfigurationRoot CreateConfig()
 IServiceProvider InititalizeServices(IConfigurationRoot config)
 {
     // TODO: we probably want some of these in a central place, as it's used by several applications
-    var section = config.GetRequiredSection("AppSettings:AzureTable");
-    var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
-
     IServiceCollection services = new ServiceCollection();
     services.AddSingleton(config);
-    services.AddSingleton(tableConfig);
+
+    //TypedConfiguration.ConfigureTypedConfiguration<AzureTableConfig>(services, config, "AppSettings:AzureTable");
+    var section = config.GetRequiredSection("AppSettings:AzureTable");
+    //var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
+    //services.AddSingleton(tableConfig);
+    services.AddTransient(sp => TypedConfiguration.Bind<AzureTableConfig>(section));
+
+    var loggerFactory = LoggerFactory.Create(builder =>
+    {
+        builder.AddSimpleConsole(); // i => i.ColorBehavior = LoggerColorBehavior.Disabled);
+    });
+    services.AddSingleton(loggerFactory);
+    //services.AddSingleton(typeof(ILogger<>), sp => sp.GetRequiredService<ILoggerFactory>().CreateLogger<>());
+    services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
+
     var module = new ProblemSource.ProblemSourceModule();
     module.ConfigureServices(services);
     var serviceProvider = services.BuildServiceProvider();
