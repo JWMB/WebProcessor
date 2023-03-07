@@ -199,6 +199,12 @@ namespace ProblemSource
                     log.LogError(ex, $"UpdateAggregates");
                 }
 
+                if (training.Settings.Analyzers?.Any() == true)
+                {
+                    log.LogInformation($"Info: TrainingAnalyzers: {training.Id}");
+                    log.LogWarning($"Warning: TrainingAnalyzers: { training.Id}");
+                }
+
                 var modified = await trainingAnalyzers.Execute(training, sessionInfo.Session.UserRepositories, logItems);
                 if (modified)
                 {
