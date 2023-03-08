@@ -21,16 +21,18 @@ namespace ProblemSource
             services.AddSingleton<IAggregationService, AggregationService>();
 
             services.AddSingleton<ProblemSourceProcessingMiddleware>();
+            services.AddHttpClient();
 
             // training analyzers:
             // TODO: these should be provided by configuration, not hardcoded!
             var analyzers = new[] { typeof(ExperimentalAnalyzer), typeof(CategorizerDay5_23Q1) };
+            
             var pathToMLModel = "Resources/JuliaMLModel_Reg.zip";
             services.AddSingleton<IPredictNumberlineLevelService>(sp =>
-                new LocalMLPredictNumberlineLevelService(
+                //new MLPredictNumberlineLevelService(new RemoteMLPredictor("", sp.GetRequiredService<IHttpClientFactory>())
+                new MLPredictNumberlineLevelService(new LocalMLPredictor(
                     sp.GetRequiredService<IWebHostEnvironment>().ContentRootFileProvider.GetFileInfo(pathToMLModel)?.PhysicalPath ?? ""
-                    //Path.Combine(sp.GetRequiredService<IWebHostEnvironment>().ContentRootPath, pathToMLModel)
-                ));
+                )));
             services.AddSingleton<IEnumerable<ITrainingAnalyzer>>(sp => analyzers.Select(o => (ITrainingAnalyzer)sp.GetOrCreateInstance(o)));
 
             services.AddSingleton<TrainingAnalyzerCollection>();

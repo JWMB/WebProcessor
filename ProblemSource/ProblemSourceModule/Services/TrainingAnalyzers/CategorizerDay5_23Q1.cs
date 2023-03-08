@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using ProblemSource.Models.Aggregates;
 using ML.Helpers;
 using ML.Dynamic;
+using Newtonsoft.Json;
 
 namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
@@ -34,6 +35,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             if (runAfterDay == await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems, logStr => log.LogInformation(logStr)))
             {
+                log.LogInformation($"Running prediction for training {training.Id}");
                 var result = new PredictedNumberlineLevel { Predicted = null };
                 try
                 {
@@ -135,35 +137,76 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
         }
     }
 
-    public class LocalMLPredictNumberlineLevelService : IPredictNumberlineLevelService
+    public class MLPredictNumberlineLevelService : IPredictNumberlineLevelService
     {
-        private readonly string localModelPath;
+        private readonly IMLPredictor predictor;
 
-        public LocalMLPredictNumberlineLevelService(string localModelPath)
+        public MLPredictNumberlineLevelService(IMLPredictor predictor)
         {
-            this.localModelPath = localModelPath;
+            this.predictor = predictor;
         }
 
-        public Task<PredictedNumberlineLevel> Predict(IMLFeature features)
-        {
-            var predicted = CreatePrediction(features);
-            return Task.FromResult(new PredictedNumberlineLevel { Predicted = predicted });
-        }
-
-        public float? CreatePrediction(IMLFeature feature)
+        public async Task<PredictedNumberlineLevel> Predict(IMLFeature feature)
         {
             if (!feature.IsValid)
-                return null;
-
-            if (!File.Exists(localModelPath))
-                throw new Exception($"Model not found at: {localModelPath}");
+                return new PredictedNumberlineLevel { Predicted = null };
 
             var colInfo = ColumnInfo.Create(feature.GetType());
             var flatFeatures = feature.GetFlatFeatures();
 
-            var prediction = MLDynamicPredict.PredictFromModel(localModelPath, colInfo, flatFeatures);
-            return (float?)prediction;
-            //return 35;
+            return new PredictedNumberlineLevel { Predicted = await predictor.Predict(colInfo, flatFeatures) };
+        }
+    }
+
+    public class RemoteMLPredictor : IMLPredictor
+    {
+        private readonly string endpoint;
+        private readonly IHttpClientFactory httpClientFactory;
+
+        public RemoteMLPredictor(string endpoint, IHttpClientFactory httpClientFactory)
+        {
+            this.endpoint = endpoint;
+            this.httpClientFactory = httpClientFactory;
+        }
+
+        public async Task<float?> Predict(ColumnInfo colInfo, Dictionary<string, object?> parameters)
+        {
+            var client = httpClientFactory.CreateClient();
+
+            var body = new
+            {
+                ColumnInfo = colInfo,
+                Parameters = parameters
+            };
+
+            var response = await client.PostAsync(endpoint, new StringContent(JsonConvert.SerializeObject(body), new System.Net.Http.Headers.MediaTypeHeaderValue("application/json")));
+
+            if (!response.IsSuccessStatusCode)
+                throw new Exception($"");
+
+            var result = await response.Content.ReadAsStringAsync();
+            if (result == null)
+                throw new Exception($"");
+
+            if (float.TryParse(result, out var value))
+                return value;
+
+            return null;
+        }
+    }
+
+    public class LocalMLPredictor : IMLPredictor
+    {
+        private readonly string localModelPath;
+
+        public LocalMLPredictor(string localModelPath)
+        {
+            this.localModelPath = localModelPath;
+        }
+        public Task<float?> Predict(ColumnInfo colInfo, Dictionary<string, object?> parameters)
+        {
+            var prediction = MLDynamicPredict.PredictFromModel(localModelPath, colInfo, parameters);
+            return Task.FromResult((float?)prediction);
         }
     }
 
