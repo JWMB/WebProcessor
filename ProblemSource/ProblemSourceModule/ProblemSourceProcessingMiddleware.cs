@@ -81,8 +81,11 @@ namespace ProblemSource
             // TODO: use regular model validation
             if (string.IsNullOrEmpty(root.Uuid))
             {
-                throw new ArgumentNullException($"{nameof(root.Uuid)}");
+                return new SyncResult { error = $"Username not found ({root.Uuid})" };
             }
+            // Handle some common user input problems:
+            root.Uuid = root.Uuid.Trim().Replace("  ", " ");
+
             //if (user?.Claims.Any() == false &&  // anonymous access for "validate" request
             if (root.SessionToken == "validate") // TODO: co-opting SessionToken for now
             {
