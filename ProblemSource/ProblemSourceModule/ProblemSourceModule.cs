@@ -1,6 +1,8 @@
-﻿using Common.Web.Services;
+﻿using Common;
+using Common.Web.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PluginModuleBase;
 using ProblemSource.Services;
@@ -26,13 +28,14 @@ namespace ProblemSource
             // training analyzers:
             // TODO: these should be provided by configuration, not hardcoded!
             var analyzers = new[] { typeof(ExperimentalAnalyzer), typeof(CategorizerDay5_23Q1) };
-            
-            var pathToMLModel = "Resources/JuliaMLModel_Reg.zip";
+
+            //var pathToMLModel = "Resources/JuliaMLModel_Reg.zip";
             services.AddSingleton<IPredictNumberlineLevelService>(sp =>
-                //new MLPredictNumberlineLevelService(new RemoteMLPredictor("", sp.GetRequiredService<IHttpClientFactory>())
-                new MLPredictNumberlineLevelService(new LocalMLPredictor(
-                    sp.GetRequiredService<IWebHostEnvironment>().ContentRootFileProvider.GetFileInfo(pathToMLModel)?.PhysicalPath ?? ""
-                )));
+                new MLPredictNumberlineLevelService(new RemoteMLPredictor(sp.GetRequiredService<IConfiguration>().GetOrThrow<string>("MLPredictionEndpoint"), sp.GetRequiredService<IHttpClientFactory>()))
+                //new MLPredictNumberlineLevelService(new LocalMLPredictor(
+                //    sp.GetRequiredService<IWebHostEnvironment>().ContentRootFileProvider.GetFileInfo(pathToMLModel)?.PhysicalPath ?? ""
+                //))
+                );
             services.AddSingleton<IEnumerable<ITrainingAnalyzer>>(sp => analyzers.Select(o => (ITrainingAnalyzer)sp.GetOrCreateInstance(o)));
 
             services.AddSingleton<TrainingAnalyzerCollection>();
