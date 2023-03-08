@@ -7,6 +7,7 @@ using ProblemSource.Services;
 using ProblemSourceModule.Services.Storage;
 using Moq;
 using ProblemSourceModule.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace ProblemSource.Tests
 {
@@ -31,6 +32,15 @@ namespace ProblemSource.Tests
 
     public class TestHelpers
     {
+        public static IConfigurationRoot CreateConfig()
+        {
+            return new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddUserSecrets<TestHelpers>()
+                .Build();
+        }
+
         public static ProblemSourceProcessingMiddleware CreateMiddleware(IFixture fixture,
             ITrainingPlanRepository? trainingPlanRepository = null,
             IClientSessionManager? clientSessionManager = null,

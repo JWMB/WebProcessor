@@ -27,22 +27,29 @@ namespace ML.AzureFunction
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
 
-            float? result = null;
-            var body = req.ReadFromJsonAsync<Body>().Result;
+            var content = req.ReadAsString();
+            if (content == null)
+                throw new ArgumentException($"Body was empty");
+
+            var body = JsonConvert.DeserializeObject<Body>(content); //req.ReadFromJsonAsync<Body>().Result;
             if (body == null)
-            {
-                _logger.LogError($"Could not deserialize body: '{req.ReadAsString()}'");
-            }
-            else
-            {
-                result = predictor.Predict(body.ColumnInfo, body.Parameters).Result;
-            }
+                throw new ArgumentException($"Could not deserialize body: '{content}'");
 
-            response.WriteString($"{result}");
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            //response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+            response.Headers.Add("Content-Type", "application/json; charset=utf-8");
 
+            try
+            {
+                var result = predictor.Predict(body.ColumnInfo, body.Parameters).Result;
+                response.WriteString(JsonConvert.SerializeObject(new { Predicted = result }));
+                //response.WriteAsJsonAsync(new { Result = result }) //;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to predict. Data={JsonConvert.SerializeObject(body)}", ex);
+            }
             return response;
         }
     }

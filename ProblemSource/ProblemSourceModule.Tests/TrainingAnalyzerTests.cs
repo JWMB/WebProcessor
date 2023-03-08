@@ -13,6 +13,9 @@ using Microsoft.Extensions.Logging;
 using ProblemSource.Models.Aggregates;
 using Newtonsoft.Json;
 using ProblemSource.Models;
+using System.Net.Http.Json;
+using ML.Helpers;
+using ProblemSource.Tests;
 
 namespace ProblemSourceModule.Tests
 {
@@ -182,6 +185,44 @@ namespace ProblemSourceModule.Tests
             else justCompletedDay.ShouldBeNull();
         }
 
+        [Fact]
+        public async Task RemoteMLPredictor_Integration()
+        {
+            var feature = new MLFeaturesJulia
+            {
+                Id = 1,
+
+                ActiveTimePerDay = 10,
+                Age = 6,
+                Age6_7 = true,
+                MeanTimeIncrease = 2,
+                TrainingTime20Min = true,
+                ByExercise = new Dictionary<string, MLFeaturesJulia.FeaturesForExercise>
+                {
+                    { "numberline", new MLFeaturesJulia.FeaturesForExercise { FractionCorrect = 0.5M, HighestLevelInt = 10, NumProblems = 20 } },
+                    { "npals", new MLFeaturesJulia.FeaturesForExercise { FractionCorrect = 0.5M, HighestLevelInt = 10, NumProblems = 20 } },
+                    { "nvr_so", new MLFeaturesJulia.FeaturesForExercise { FractionCorrect = 0.5M, MedianLevel = 5 } },
+                    { "nvr_rp", new MLFeaturesJulia.FeaturesForExercise { FractionCorrect = 0.5M, MedianLevel = 5 } }
+                },
+
+                FinalNumberLineLevel = null,
+            };
+
+            if (feature.InvalidReasons.Any())
+                throw new Exception($"Invalid features: {string.Join(",", feature.InvalidReasons)}");
+
+            var colInfo = ColumnInfo.Create(feature.GetType());
+            var flatFeatures = feature.GetFlatFeatures();
+
+            var config = TestHelpers.CreateConfig();
+            var url = config["MLPredictUrl"];
+            var predictor = new RemoteMLPredictor(url!, new TestHttpClientFactory());
+
+            var result = await predictor.Predict(colInfo, flatFeatures);
+
+            result.ShouldNotBeNull();
+        }
+
         private IUserGeneratedDataRepositoryProvider MockIUserGeneratedDataRepositoryProvider(TrainingSummary summary, int totalMinutesTrained = 33)
         {
             var repoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
@@ -201,6 +242,11 @@ namespace ProblemSourceModule.Tests
             repoProvider.Setup(o => o.TrainingDays).Returns(trainingDaySummaries.Object);
 
             return repoProvider.Object;
+        }
+
+        public class TestHttpClientFactory : IHttpClientFactory
+        {
+            public HttpClient CreateClient(string name) => new HttpClient();
         }
     }
 }

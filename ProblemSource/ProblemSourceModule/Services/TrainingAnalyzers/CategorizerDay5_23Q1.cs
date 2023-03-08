@@ -6,6 +6,7 @@ using ProblemSource.Models.Aggregates;
 using ML.Helpers;
 using ML.Dynamic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
@@ -182,16 +183,19 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             var response = await client.PostAsync(endpoint, new StringContent(JsonConvert.SerializeObject(body), new System.Net.Http.Headers.MediaTypeHeaderValue("application/json")));
 
             if (!response.IsSuccessStatusCode)
-                throw new Exception($"");
+                throw new Exception($"Predict endpoint response: {(int)response.StatusCode}/{response.ReasonPhrase}");
 
             var result = await response.Content.ReadAsStringAsync();
             if (result == null)
-                throw new Exception($"");
+                throw new Exception($"Predict response empty");
 
             if (float.TryParse(result, out var value))
                 return value;
 
-            return null;
+            var json = JsonConvert.DeserializeObject<JObject>(result);
+            var valuex = json?["Predicted"]?.Value<float?>();
+
+            return valuex;
         }
     }
 
