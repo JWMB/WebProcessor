@@ -32,7 +32,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             var runAfterDay = 5;
             training.Settings ??= TrainingSettings.Default;
 
-            if (runAfterDay == await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems))
+            if (runAfterDay == await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems, logStr => log.LogInformation(logStr)))
             {
                 var result = new PredictedNumberlineLevel { Predicted = null };
                 try
