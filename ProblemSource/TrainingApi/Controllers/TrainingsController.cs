@@ -103,16 +103,21 @@ namespace TrainingApi.Controllers
             var user = userProvider.UserOrThrow;
 
             // TODO: standard validation
-            if (numTrainings < 1 || numTrainings > 30) throw new HttpException($"{nameof(numTrainings)} exceeds accepted range", StatusCodes.Status400BadRequest);
+            var maxTrainingsInGroup = 30;
+            if (numTrainings < 1)
+                throw new HttpException($"{nameof(numTrainings)}:{numTrainings} exceeds accepted range", StatusCodes.Status400BadRequest);
+            else if (numTrainings > maxTrainingsInGroup)
+                throw new HttpException($"{nameof(numTrainings)}:{numTrainings} cannot exceed {maxTrainingsInGroup}", StatusCodes.Status400BadRequest);
+
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);
 
             if (user.Role != Roles.Admin)
             {
                 var currentNumTrainings = user.Trainings.Sum(o => o.Value.Count());
-                var max = 50;
-                if (numTrainings + currentNumTrainings > max)
+                var maxTotalTrainings = 60;
+                if (numTrainings + currentNumTrainings > maxTotalTrainings)
                 {
-                    throw new HttpException($"We currently allow max {max} trainings per account. You have {Math.Max(0, max - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
+                    throw new HttpException($"We currently allow max {maxTotalTrainings} trainings per account. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
                 }
             }
 
