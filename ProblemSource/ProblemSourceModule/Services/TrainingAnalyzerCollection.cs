@@ -35,6 +35,7 @@ namespace ProblemSourceModule.Services
                 {
                     log.LogInformation($"Training {training.Id}: Executing {item.GetType().Name}");
                     modified |= await item.Analyze(training, provider, latestLogItems);
+                    log.LogInformation($"Training {training.Id}: Executed {item.GetType().Name}");
                 }
                 catch (Exception ex)
                 {

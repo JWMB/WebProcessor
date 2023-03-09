@@ -34,6 +34,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             var runAfterDay = 5;
             training.Settings ??= TrainingSettings.Default;
 
+            log.LogInformation($"Check if should run for {training.Id}");
             if (runAfterDay == await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems, logStr => log.LogInformation(logStr)))
             {
                 log.LogInformation($"Running prediction for training {training.Id}");
@@ -63,6 +64,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                     return true;
                 }
             }
+            log.LogInformation($"No training modifications for {training.Id}");
             return false;
         }
 

@@ -42,7 +42,9 @@ namespace ML.AzureFunction
 
             try
             {
+                _logger.LogInformation($"Predict '{body.ColumnInfo.Label}' for {body.Parameters.Count} parameters");
                 var result = predictor.Predict(body.ColumnInfo, body.Parameters).Result;
+                _logger.LogInformation($"Predict result: {result}");
                 response.WriteString(JsonConvert.SerializeObject(new { Predicted = result }));
                 //response.WriteAsJsonAsync(new { Result = result }) //;
             }
