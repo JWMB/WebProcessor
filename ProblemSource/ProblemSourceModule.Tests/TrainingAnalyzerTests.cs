@@ -194,7 +194,6 @@ namespace ProblemSourceModule.Tests
             logs.LogItems.Count(o => o.Item2.Contains("WasDayJustCompleted")).ShouldBe(1);
         }
 
-
         [Theory]
         [InlineData(false, 2, true)]
         [InlineData(false, 0, false)]
