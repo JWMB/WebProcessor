@@ -1,5 +1,6 @@
 ﻿using Common.Web;
 using Common.Web.Services;
+using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -63,7 +64,17 @@ namespace TrainingApi
                 builder.AddApplicationInsights();
             });
 
-            services.AddApplicationInsightsTelemetry();
+            services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
+            {
+                var builder = telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
+                telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder
+                    .UseAdaptiveSampling(maxTelemetryItemsPerSecond:5, excludedTypes: "Trace;Request;Exception");
+            });
+            services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
+            {
+                EnableAdaptiveSampling = false,
+            });
+
             services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
         }
 
