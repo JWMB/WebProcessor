@@ -36,7 +36,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             var dayJustCompleted = await ITrainingAnalyzer.WasDayJustCompleted(training, provider, latestLogItems, logStr => log.LogInformation(logStr));
 
-            log.LogInformation($"Should run for {training.Id}? dayJustCompleted {dayJustCompleted} == {runAfterDay}?");
+            log.LogInformation($"Should run for {training.Id}? dayJustCompleted '{dayJustCompleted}' == {runAfterDay}?");
             if (runAfterDay == dayJustCompleted)
             {
                 log.LogInformation($"Running prediction for training {training.Id}");

@@ -27,7 +27,6 @@ namespace TrainingApi.Controllers
         private readonly IAggregationService aggregationService;
         private readonly IUserGeneratedDataRepositoryProviderFactory dataRepoFactory;
 
-        //private readonly IUserStateRepository userStateRepository;
         private readonly ILogger<AggregatesController> log;
 
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
@@ -154,7 +153,10 @@ namespace TrainingApi.Controllers
         {
             // TODO: use real storage, move to service
             var templates = new[] {
-                new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = CreateSettings() },
+                new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = CreateSettings(s =>
+                {
+                    s.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.CategorizerDay5_23Q1) };
+                }) },
                 new Training { Id = 2, Username = "template_Test training", TrainingPlanName = "2023 VT template JonasTest", Settings = CreateSettings(s => 
                 {
                     s.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.ExperimentalAnalyzer) };
