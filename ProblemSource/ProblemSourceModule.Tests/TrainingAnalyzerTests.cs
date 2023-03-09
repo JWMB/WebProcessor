@@ -13,7 +13,6 @@ using Microsoft.Extensions.Logging;
 using ProblemSource.Models.Aggregates;
 using Newtonsoft.Json;
 using ProblemSource.Models;
-using System.Net.Http.Json;
 using ML.Helpers;
 using ProblemSource.Tests;
 
@@ -61,7 +60,7 @@ namespace ProblemSourceModule.Tests
             var predicter = new Mock<IPredictNumberlineLevelService>();
             predicter.Setup(o => o.Predict(It.IsAny<IMLFeature>())).Returns(Task.FromResult(new PredictedNumberlineLevel { Predicted = predictedLevel }));
             var i = new CategorizerDay5_23Q1(predicter.Object, fixture.Create<ILogger<CategorizerDay5_23Q1>>());
-            var modified = await i.Analyze(new Training(), fixture.Create<IUserGeneratedDataRepositoryProvider>(), new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = 5 } });
+            var modified = await i.Analyze(new Training(), fixture.Create<IUserGeneratedDataRepositoryProvider>(), new List<LogItem> { new EndOfDayLogItem { training_day = 5 } });
 
             modified.ShouldBe(expectedModification);
             //var result = await i.Predict(new Training(), fixture.Create<IUserGeneratedDataRepositoryProvider>());
@@ -90,7 +89,7 @@ namespace ProblemSourceModule.Tests
             var trainingDay = 5;
             var analyzer = new ExperimentalAnalyzer();
             var training = new Training { };
-            var logItems = new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = trainingDay } };
+            var logItems = new List<LogItem> { new EndOfDayLogItem { training_day = trainingDay } };
 
             // Act
             var modified = await analyzer.Analyze(training, fixture.Create<IUserGeneratedDataRepositoryProvider>(), logItems);
@@ -114,7 +113,7 @@ namespace ProblemSourceModule.Tests
 
             for (int i = 0; i < 3; i++)
             {
-                var logItems = new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = i } };
+                var logItems = new List<LogItem> { new EndOfDayLogItem { training_day = i } };
                 // Act
                 var modified = await analyzer.Analyze(training, fixture.Create<IUserGeneratedDataRepositoryProvider>(), logItems);
 
@@ -140,12 +139,12 @@ namespace ProblemSourceModule.Tests
             var analyzers = new ITrainingAnalyzer[] { new ExperimentalAnalyzer() };
             var collection = new TrainingAnalyzerCollection(analyzers, fixture.Create<ILogger<TrainingAnalyzerCollection>>());
 
-            var training = new Training { Settings = new ProblemSource.Models.TrainingSettings { 
+            var training = new Training { Settings = new TrainingSettings { 
                 Analyzers = isEnabled ? analyzers.Select(o => o.GetType().Name).ToList() : new List<string>()
             }};
 
             // Act
-            var result = await collection.Execute(training, fixture.Create<IUserGeneratedDataRepositoryProvider>(), new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = 1 } }.ToList());
+            var result = await collection.Execute(training, fixture.Create<IUserGeneratedDataRepositoryProvider>(), new List<LogItem> { new EndOfDayLogItem { training_day = 1 } }.ToList());
 
             // Assert
             result.ShouldBe(isEnabled);
@@ -156,13 +155,45 @@ namespace ProblemSourceModule.Tests
         {
             // Arrange
             var trainingDay = 5;
-            var logItems = new List<ProblemSource.Models.LogItem> { new EndOfDayLogItem { training_day = trainingDay} };
+            var logItems = new List<LogItem> { new EndOfDayLogItem { training_day = trainingDay} };
             var training = new Training();
 
             var justCompletedDay = await ITrainingAnalyzer.WasDayJustCompleted(training, fixture.Create<IUserGeneratedDataRepositoryProvider>(), logItems);
 
             justCompletedDay.ShouldBe(trainingDay);
         }
+
+
+        [Fact]
+        public async Task WasDayJustCompleted_Logging()
+        {
+            // Stupid test, but something's not working with WasDayJustCompleted logging...
+            var trainingDay = 5;
+            var logItems = new List<LogItem> { new EndOfDayLogItem { training_day = trainingDay } };
+
+            var logs = new List<string>();
+            var justCompletedDay = await ITrainingAnalyzer.WasDayJustCompleted(new Training(), fixture.Create<IUserGeneratedDataRepositoryProvider>(), logItems, logStr => logs.Add(logStr));
+
+            logs.Count.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task WasDayJustCompleted_Logging_From_CategorizerDay5_23Q1()
+        {
+            // Stupid test, but something's not working with WasDayJustCompleted logging...
+            var trainingDay = 5;
+            var logItems = new List<LogItem> { new EndOfDayLogItem { training_day = trainingDay } };
+
+            // https://codeburst.io/unit-testing-with-net-core-ilogger-t-e8c16c503a80#0b05
+            var logs = new InMemoryLogger<CategorizerDay5_23Q1>();
+
+            var analyzer = new CategorizerDay5_23Q1(new NullPredictNumberlineLevelService(), logs);
+            await analyzer.Analyze(new Training(), new Mock<IUserGeneratedDataRepositoryProvider>().Object, logItems);
+
+            logs.LogItems.Count.ShouldBe(4);
+            logs.LogItems.Count(o => o.Item2.Contains("WasDayJustCompleted")).ShouldBe(1);
+        }
+
 
         [Theory]
         [InlineData(false, 2, true)]
@@ -247,6 +278,19 @@ namespace ProblemSourceModule.Tests
         public class TestHttpClientFactory : IHttpClientFactory
         {
             public HttpClient CreateClient(string name) => new HttpClient();
+        }
+
+        public class InMemoryLogger<T> : ILogger<T>
+        {
+            public List<(LogLevel, string, Exception?)> LogItems { get; set; } = new();
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+            public bool IsEnabled(LogLevel logLevel) => true;
+
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            {
+                LogItems.Add((logLevel, $"{state}", exception));
+            }
         }
     }
 }
