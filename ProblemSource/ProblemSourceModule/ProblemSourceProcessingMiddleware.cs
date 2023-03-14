@@ -68,8 +68,11 @@ namespace ProblemSource
                 throw new ArgumentException("input: incorrect format");
 
             var result = await Process(root, context.User);
-            if (result.error!= null)
-                log.LogWarning($"Training login: (user='{root.Uuid}') {result.error}");
+            if (result.error != null)
+            {
+                var (training, error) = await GetTrainingFromInput(root);
+                log.LogWarning($"Training id={training?.Id} (user='{root.Uuid}') login: {result.error}");
+            }
 
             await next.Invoke(context);
 
@@ -170,7 +173,7 @@ namespace ProblemSource
                     var pushedStateItem = userStates.Last();
                     log.LogInformation($"Training {training.Id}/'{training.Username}' - day {pushedStateItem.exercise_stats.trainingDay}");
                     if (currentStoredState != null && pushedStateItem.exercise_stats.trainingDay < currentStoredState.exercise_stats.trainingDay)
-                        log.LogWarning($"({training.Id}) Latest trainingDay in stored data: {currentStoredState.exercise_stats.trainingDay}, incoming: {pushedStateItem.exercise_stats.trainingDay}");
+                        log.LogWarning($"Training id={training.Id} Latest trainingDay in stored data: {currentStoredState.exercise_stats.trainingDay}, incoming: {pushedStateItem.exercise_stats.trainingDay}");
                     else
                     {
                         currentStoredState = new UserGeneratedState { exercise_stats = pushedStateItem.exercise_stats, user_data = pushedStateItem.user_data };
@@ -187,9 +190,9 @@ namespace ProblemSource
                     var errorLogItems = logItems.OfType<ErrorLogItem>().ToList();
                     if (errorLogItems.Any())
                     {
-                        var userInfo = $"{training.Id}/'{training.Username}'";
-                        log.LogWarning($"Client {userInfo} errors: {JsonConvert.SerializeObject(errorLogItems)}");
-                        log.LogWarning($"Client {userInfo} info: Version={root.ClientVersion} App={root.ClientApp} Device={JsonConvert.SerializeObject(root.Device)}");
+                        var userInfo = $"Training id={training.Id}";
+                        log.LogWarning($"{userInfo} errors: {JsonConvert.SerializeObject(errorLogItems)}");
+                        log.LogWarning($"{userInfo} info: Version={root.ClientVersion} App={root.ClientApp} Device={JsonConvert.SerializeObject(root.Device)}");
                     }
                 }
 
