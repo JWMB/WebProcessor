@@ -38,7 +38,9 @@
             var decoded = ToInt(value);
             if (decoded == null)
                 return null;
-            return int.Parse(decoded.Value.ToString().Substring(numRandomDigits));
+            if (decoded.Value.ToString().Length <= numRandomDigits)
+                return null;
+            return int.TryParse(decoded.Value.ToString().Substring(numRandomDigits), out var result) ? result : null;
         }
 
         public static string FromInt(int value)
