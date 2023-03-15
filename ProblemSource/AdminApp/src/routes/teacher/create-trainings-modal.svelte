@@ -131,7 +131,8 @@
 		margin-top: 0;
 	}
 
-	input {
+	input,
+	select {
 		display: block;
 		margin-top: 2px;
 		margin-bottom: 6px;

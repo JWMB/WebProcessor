@@ -97,10 +97,16 @@
 		margin: auto 0;
 	}
 
-	input {
+	input,
+	select {
 		display: block;
 		width: 100%;
+		height: 30px;
 		margin-bottom: 10px;
+		margin-top: 4px;
+		border-radius: 0;
+		border: 1px solid #bebebe;
+		height: 30px;
 	}
 	button {
 		margin-bottom: 10px;
