@@ -4,40 +4,58 @@ using ProblemSource;
 using ProblemSourceModule.Services.Storage.AzureTables;
 using System.Text.RegularExpressions;
 using ProblemSource.Models;
+using ProblemSourceModule.Services.Storage;
 
 namespace Tools
 {
     internal class TrainingMod
     {
-        public static async Task ModifySettings(AzureTableConfig tableConfig)
-        {
-            var trainingRepo = new AzureTableTrainingRepository(new TypedTableClientFactory(tableConfig));
-            var ids = Enumerable.Range(32, 30);
-            var trainings = await trainingRepo.GetByIds(ids);
+        private readonly ITrainingRepository trainingRepository;
+        private readonly IUserRepository userRepository;
 
-            var ts = new TrainingSettings
-            {
-                cultureCode = "sv-SE",
-                alarmClockInvisible = null,
-                customData = null,
-                idleTimeout = null,
-                triggers = null,
-                manuallyUnlockedExercises = null,
-                uniqueGroupWeights = null,
-                trainingPlanOverrides = null,
-                syncSettings = null,
-                pacifistRatio = 0.1M,
-                timeLimits = new List<decimal> { 15 }, // 33
-            };
+        public TrainingMod(ITrainingRepository trainingRepository, IUserRepository userRepository)
+        {
+            this.trainingRepository = trainingRepository;
+            this.userRepository = userRepository;
+        }
+
+
+        public async Task<IEnumerable<int>> GetTrainingsForTeacher(string email, IEnumerable<string>? groups = null)
+        {
+            var user = await userRepository.Get(email);
+            if (user == null) throw new Exception($"User not found");
+            if (user.Trainings.Any() == false)
+                return Enumerable.Empty<int>();
+
+            return groups?.Any() == true
+                ? user.Trainings.Where(o => groups?.Contains(o.Key) == true).SelectMany(o => o.Value)
+                : user.Trainings.SelectMany(o => o.Value);
+        }
+            
+        public async Task ModifySettings(IEnumerable<int> ids)
+        {
+            var trainings = await trainingRepository.GetByIds(ids);
+
+            //var ts = new TrainingSettings
+            //{
+            //    cultureCode = "sv-SE",
+            //    alarmClockInvisible = null,
+            //    customData = null,
+            //    idleTimeout = null,
+            //    triggers = null,
+            //    manuallyUnlockedExercises = null,
+            //    uniqueGroupWeights = null,
+            //    trainingPlanOverrides = null,
+            //    syncSettings = null,
+            //    pacifistRatio = 0.1M,
+            //    timeLimits = new List<decimal> { 15 }, // 33
+            //};
 
             foreach (var training in trainings)
             {
-                training.Settings = ts;
-                await trainingRepo.Update(training);
+                training.Settings.timeLimits = new List<decimal> { 20 };
+                await trainingRepository.Update(training);
             }
-
-            await Task.Delay(1);
-            return;
         }
 
         public static async Task AddTrainingUsername(AzureTableConfig tableConfig)

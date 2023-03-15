@@ -69,11 +69,18 @@ var path = @"C:\Users\uzk446\Downloads\";
 //await tool.OverallStats();
 //var result = await tool.GetUsersWithSyncedTrainings();
 
+
+//var trainingMod = serviceProvider.CreateInstance<TrainingMod>();
+//var ids = await trainingMod.GetTrainingsForTeacher("namn@domain.se", new[] { "2B"});
+//await trainingMod.ModifySettings(ids);
+
+
 //var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
-var emails = @"
-".Split('\n').Select(o => o.Trim().ToLower()).Where(o => o.Any());
-var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
-await creator.CreateAndEmail(config, emails, true);
+//var emails = @"
+//".Split('\n').Select(o => o.Trim().ToLower()).Where(o => o.Any());
+//var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
+//await creator.CreateAndEmail(config, emails, true);
+
 
 //var gmailService = BatchMail.CreateGmailService(config.GetRequiredSection("Gmail"));
 //await BatchMail.SendBatch(gmailService, "Vektor invitation", emails, actuallySend: true); //Vektor - uppdatering
