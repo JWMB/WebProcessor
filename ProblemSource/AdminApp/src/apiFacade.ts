@@ -7,10 +7,20 @@ export class ApiFacade {
     private trainingsClient: TrainingsClient;
     private testingClient: TestingClient;
 
+    impersonateUser: string | null = null;
+
     constructor(baseUrl: string) {
-        const http =
-            // { fetch: fetch };
-            { fetch: (r: Request, init?: RequestInit) => fetch(RequestAdapter.createFetchArguments(r, init)) }
+        const http = {
+            fetch: (r: Request, init?: RequestInit) => {
+                init = init || <RequestInit>{};
+                if (!!this.impersonateUser) {
+                    const headers = new Headers(init.headers);
+                    headers.set("Impersonate-User", this.impersonateUser);
+                    init.headers = headers;
+                }
+                return fetch(RequestAdapter.createFetchArguments(r, init));
+            }
+        };
         this.aggregatesClient = new AggregatesClient(baseUrl, http);
         this.accountsClient = new AccountsClient(baseUrl, http);
         this.trainingsClient = new TrainingsClient(baseUrl, http);

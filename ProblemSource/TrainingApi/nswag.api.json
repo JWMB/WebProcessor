@@ -829,10 +829,14 @@
       ],
       "properties": {
         "username": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 5
         },
         "password": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 14,
+          "minLength": 5
         }
       }
     },
@@ -1023,8 +1027,7 @@
     "TrainingCreateDto": {
       "type": "object",
       "required": [
-        "baseTemplateId",
-        "trainingSettings"
+        "baseTemplateId"
       ],
       "properties": {
         "baseTemplateId": {
@@ -1036,6 +1039,9 @@
         },
         "trainingSettings": {
           "$ref": "#/definitions/TrainingSettings"
+        },
+        "ageBracket": {
+          "type": "string"
         }
       }
     },
@@ -1086,6 +1092,12 @@
         },
         "alarmClockInvisible": {
           "type": "boolean"
+        },
+        "analyzers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -1220,7 +1232,9 @@
       "required": [
         "id",
         "username",
-        "trainingPlanName"
+        "trainingPlanName",
+        "settings",
+        "ageBracket"
       ],
       "properties": {
         "id": {
@@ -1235,6 +1249,9 @@
         },
         "settings": {
           "$ref": "#/definitions/TrainingSettings"
+        },
+        "ageBracket": {
+          "type": "string"
         }
       }
     },

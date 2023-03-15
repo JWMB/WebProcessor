@@ -136,12 +136,16 @@
             if (!IsHashed(hashed_username))
                 return null;
 
+            var original = hashed_username;
             hashed_username = hashed_username.Replace(" ", "");
 
             var hashString = hashed_username.Substring(0, numHashCharacters);
             var hashValue = MnemoJapanese.ToInt(hashString);
             if (hashValue == null)
                 return null;
+
+            if (hashed_username.Length <= numHashCharacters)
+                throw new ArgumentException($"hashed_username too short after truncation: '{hashed_username}' (org: '{original}')");
 
             var username = hashed_username.Substring(numHashCharacters);
             var id = mnemoJapanese.ToIntWithRandom(username);

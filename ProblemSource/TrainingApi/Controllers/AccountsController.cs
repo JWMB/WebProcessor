@@ -6,6 +6,7 @@ using System.Security.Claims;
 using ProblemSourceModule.Services.Storage;
 using TrainingApi.Services;
 using ProblemSourceModule.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace TrainingApi.Controllers
 {
@@ -61,12 +62,14 @@ namespace TrainingApi.Controllers
             if (string.IsNullOrEmpty(dto.Password))
                 throw new ArgumentNullException(nameof(dto.Password));
 
+            dto.Normalize();
+
             await userRepository.Add(new User
             {
                 Email = dto.Username,
                 Role = dto.Role,
                 Trainings = new(),
-                HashedPassword = ProblemSourceModule.Models.User.HashPassword(dto.Username, dto.Password)
+                PasswordForHashing = dto.Password
             });
         }
 
@@ -79,7 +82,7 @@ namespace TrainingApi.Controllers
             if (user == null)
                 return NotFound();
             if (dto.Role != null) user.Role = dto.Role;
-            if (dto.Password != null) user.HashedPassword = ProblemSourceModule.Models.User.HashPassword(id, dto.Password);
+            if (dto.Password != null) user.PasswordForHashing = dto.Password;
             if (dto.Trainings != null) user.Trainings = dto.Trainings;
 
             await userRepository.Update(user);
@@ -106,7 +109,8 @@ namespace TrainingApi.Controllers
             var user = await authenticateUserService.GetUser(credentials.Username, credentials.Password);
             if (user == null)
             {
-                return Unauthorized();
+                log.LogWarning($"Login failed for '{credentials.Username}'. Exists:{(await userRepository.Get(credentials.Username)) != null}");
+                return Unauthorized(new { Title = $"Login failed - please check your spelling" });
             }
 
             var principal = WebUserProvider.CreatePrincipal(user);
@@ -133,7 +137,11 @@ namespace TrainingApi.Controllers
 
     public class LoginCredentials
     {
+        [Required]
+        [StringLength(50, MinimumLength = 5)]
         public string Username { get; set; } = string.Empty;
+        [Required]
+        [StringLength(14, MinimumLength = 5)]
         public string Password { get; set; } = string.Empty;
     }
 
@@ -153,7 +161,13 @@ namespace TrainingApi.Controllers
     public class CreateUserDto : GetUserDto
     {
         public string Password { get; set; } = "";
+        public void Normalize()
+        {
+            Password = Password.Trim();
+            Username = Username.Trim();
+        }
     }
+
     public class PatchUserDto
     {
         public string? Role { get; set; }

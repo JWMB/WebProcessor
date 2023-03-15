@@ -1,15 +1,15 @@
 ﻿using Common.Web;
 using Common.Web.Services;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using PluginModuleBase;
+using ProblemSource.Services;
 using System.Data;
 using System.Text;
 using TrainingApi.ErrorHandling;
@@ -63,7 +63,19 @@ namespace TrainingApi
             {
                 builder.AddApplicationInsights();
             });
-            services.AddApplicationInsightsTelemetry();
+
+            services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
+            {
+                var builder = telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
+                telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder
+                    .UseAdaptiveSampling(maxTelemetryItemsPerSecond:5, excludedTypes: "Trace;Request;Exception");
+            });
+            services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
+            {
+                EnableAdaptiveSampling = false,
+            });
+
+            services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -121,7 +133,7 @@ namespace TrainingApi
             {
                 app.Use(async (context, next) =>
                 {
-                    if (context.User?.Claims.Any() == false)
+                    if (false && context.User?.Claims.Any() == false)
                     {
                         // For the lazy developer - swagger and test client are automatically authenticated
                         var referer = context.Request.GetTypedHeaders().Referer;
@@ -189,6 +201,21 @@ namespace TrainingApi
         {
             services.AddSwaggerGen(c =>
             {
+                //var apiinfo = new OpenApiInfo
+                //{
+                //    Title = "theta-CandidateAPI",
+                //    Version = "v1",
+                //    Description = "Candidate API for thetalentbot",
+                //    Contact = new OpenApiContact { Name = "thetalentbot", Url = new Uri("https://thetalentbot.com/developers/contact") },
+                //    License = new OpenApiLicense() { Name = "Commercial", Url = new Uri("https://thetalentbot.com/developers/license") }
+                //};
+                //c.SwaggerDoc(apiinfo.Version, apiinfo);
+                // https://dev.to/timothymcgrath/til-generate-required-optional-parameters-with-nswag-3g61
+                //services.AddOpenApiDocument(settings =>
+                //{
+                //    settings.DefaultReferenceTypeNullHandling = NJsonSchema.Generation.ReferenceTypeNullHandling.NotNull;
+                //});
+
                 c.AddSecurityDefinition("jwt_auth", new OpenApiSecurityScheme()
                 {
                     Name = "Bearer",

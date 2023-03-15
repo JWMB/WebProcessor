@@ -2,6 +2,7 @@
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
+using ProblemSourceModule.Models.Aggregates;
 using Shouldly;
 
 namespace ProblemSourceModule.Tests.AzureTable
@@ -22,6 +23,25 @@ namespace ProblemSourceModule.Tests.AzureTable
             var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableClientFactory, userId);
 
             await Should.NotThrowAsync(async () => await userRepos.Phases.Upsert(phases));
+        }
+
+        [SkippableTheory]
+        [InlineData("0001-01-01T00:00:00+00:00", true)]
+        [InlineData("1601-01-01T00:00:00+00:00", false)]
+        public async Task InvalidDateTimeOffset(string dateTimeString, bool expectFailure)
+        {
+            await Init();
+
+            var userId = 1;
+            var userRepos = new AzureTableUserGeneratedDataRepositoryProvider(tableClientFactory, userId);
+
+            var dateTime = DateTimeOffset.Parse(dateTimeString);
+
+            var action = async () => await userRepos.TrainingSummaries.Upsert(new[] { new TrainingSummary { FirstLogin = dateTime, LastLogin = dateTime } });
+            if (expectFailure)
+                await Should.ThrowAsync(action(), typeof(Exception));
+            else
+                await Should.NotThrowAsync(action());
         }
 
         [SkippableFact]

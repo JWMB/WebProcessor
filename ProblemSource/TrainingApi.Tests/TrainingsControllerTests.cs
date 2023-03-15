@@ -1,5 +1,6 @@
 ﻿using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
@@ -12,6 +13,24 @@ namespace TrainingApi.Tests
     public class TrainingsControllerTests
     {
         [Fact]
+        public async Task GetTemplates_Serialization()
+        {
+            // Arrange
+            var ts = new MyTestServer();
+
+            var user = new User { Email = "tester", Role = Roles.Admin };
+            var client = ts.CreateClient(user);
+
+            // Act
+            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"/api/trainings/templates");
+
+            // Assert
+            var template = response!.Single(o => o.Name == "NumberlineTest training");
+            template.Settings.trainingPlanOverrides.ShouldNotBeNull();
+            template.Settings.trainingPlanOverrides!.ToString()!.ShouldContain("[[[]]"); //TODO: ShouldNotContain
+        }
+
+        [Fact]
         public async Task TrainingsSummaryDoesNotSkipWhenNoTrainedDays()
         {
             // Arrange
@@ -20,11 +39,15 @@ namespace TrainingApi.Tests
             var trainingRepo = A.Fake<ITrainingRepository>();
             A.CallTo(() => trainingRepo.GetAll()).Returns(new[] { training });
 
+            var usersRepo = A.Fake<IUserRepository>();
+            A.CallTo(() => usersRepo.Get(A<string>.Ignored)).Returns((User?)null);
+
             var ts = new MyTestServer(postConfigureTestServices: services => {
                 services.AddSingleton(trainingRepo);
+                services.AddSingleton(usersRepo);
             });
 
-            var user = new User { Email = "email", Role = Roles.Admin };
+            var user = new User { Email = "tester", Role = Roles.Admin };
 
             var client = ts.CreateClient(user);
 

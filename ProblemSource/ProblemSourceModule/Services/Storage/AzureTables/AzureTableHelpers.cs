@@ -1,4 +1,5 @@
-﻿using Azure.Data.Tables;
+﻿using Azure;
+using Azure.Data.Tables;
 
 namespace ProblemSourceModule.Services.Storage.AzureTables
 {
@@ -19,6 +20,23 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
                 var lastCnt = cnt;
                 cnt += page.Values.Count;
             }
+        }
+    }
+
+    public static class AzureTableExtensions
+    {
+        public static async Task<List<Response>> SubmitTransactionsBatched(this TableClient tableClient, IEnumerable<TableTransactionAction> transactions)
+        {
+            // TODO: the 100 limit makes it no longer a transaction >:(
+            var result = new List<Response>();
+            foreach (var chunk in transactions.Chunk(100))
+            {
+                var response = await tableClient.SubmitTransactionAsync(chunk); // Not supported type System.Collections.Generic.Dictionary`2[System.String,System.Int32]
+                if (response.Value.Any(o => o.IsError))
+                    throw new Exception($"SubmitTransaction errors: {string.Join("\n", response.Value.Where(o => o.IsError).Select(o => o.ReasonPhrase))}");
+                result.AddRange(response.Value);
+            }
+            return result;
         }
     }
 }

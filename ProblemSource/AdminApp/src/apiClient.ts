@@ -1052,7 +1052,8 @@ export enum LogLevel {
 export interface TrainingCreateDto {
     baseTemplateId: number;
     trainingPlan?: string | undefined;
-    trainingSettings: TrainingSettings;
+    trainingSettings?: TrainingSettings | undefined;
+    ageBracket?: string | undefined;
 }
 
 export interface TrainingSettings {
@@ -1067,6 +1068,7 @@ export interface TrainingSettings {
     trainingPlanOverrides?: any | undefined;
     syncSettings?: TrainingSyncSettings | undefined;
     alarmClockInvisible?: boolean | undefined;
+    analyzers?: string[] | undefined;
 }
 
 export interface CustomData {
@@ -1122,7 +1124,8 @@ export interface Training {
     id: number;
     username: string;
     trainingPlanName: string;
-    settings?: TrainingSettings | undefined;
+    settings: TrainingSettings;
+    ageBracket: string;
 }
 
 export interface TrainingTemplateDto {

@@ -32,6 +32,13 @@ namespace ProblemSource.Models.Aggregates
         public bool? won_race { get; set; }
         public bool? completed_planet { get; set; }
 
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || obj is PhaseStatistics typed == false)
+                return false;
+            return training_day == typed.training_day && exercise == typed.exercise && phase_type == typed.phase_type && timestamp == typed.timestamp;
+        }
+
         //Score,Target score,Planet target score
         public static string UniqueIdWithinUser(PhaseStatistics p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{p.timestamp.ToUnixTimestamp()}";
 

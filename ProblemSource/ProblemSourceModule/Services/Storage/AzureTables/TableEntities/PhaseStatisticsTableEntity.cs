@@ -23,8 +23,8 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
         public int num_correct_answers { get; set; }
         public int num_incorrect_answers { get; set; }
 
-        public decimal level_min { get; set; }
-        public decimal level_max { get; set; }
+        public double level_min { get; set; }  // TableEntity doesn't support decimal
+        public double level_max { get; set; }
 
         public int response_time_avg { get; set; }
         public int response_time_total { get; set; }
@@ -52,8 +52,8 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                 num_correct_answers = num_correct_answers,
                 num_incorrect_answers = num_incorrect_answers,
 
-                level_min = level_min,
-                level_max = level_max,
+                level_min = (decimal)level_min, // TableEntity doesn't support decimal
+                level_max = (decimal)level_max,
 
                 response_time_avg = response_time_avg,
                 response_time_total = response_time_total,
@@ -81,8 +81,8 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
             num_correct_answers = p.num_correct_answers,
             num_incorrect_answers = p.num_incorrect_answers,
 
-            level_min = p.level_min,
-            level_max = p.level_max,
+            level_min = (double)p.level_min, // TableEntity doesn't support decimal
+            level_max = (double)p.level_max,
 
             response_time_avg = p.response_time_avg,
             response_time_total = p.response_time_total,

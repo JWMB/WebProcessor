@@ -1,34 +1,72 @@
 <script lang="ts">
 	import { closeModal } from 'svelte-modals';
-	import type { TrainingCreateDto } from 'src/apiClient';
-	import { get } from 'svelte/store';
+	import type { TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
 	import { getApi } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
+	import { onMount } from 'svelte';
+	import { ErrorHandling } from 'src/errorHandling';
 
 	export let isOpen: boolean; // provided by Modals
 	export let onCreateGroup: (id: string) => void;
 
 	const apiFacade = getApi() as ApiFacade;
 
+	let templates: TrainingTemplateDto[] = [];
+	let error: string | null = null;
+
+	const timePerDayValues = [
+		20,
+		33
+	];
+	const ageBrackets = [
+		"",
+		"-4",
+		"4-5",
+		"5-6",
+		"6-7",
+		"7-8",
+		"8-9",
+		"9-10",
+		"10-11",
+		"11-",
+	];
 	let newGroupData = {
 		name: 'Fsk A',
 		noOfTrainings: 10,
-		timePerDay: 33
+		timePerDay: 33,
+		ageBracket: ""
 	};
 
 	let createdTrainingUsernames: string[] = [];
-	async function createTrainings(num: number, groupName: string, numMinutes: number, forUser?: string | null) {
-		const templates = await apiFacade.trainings.getTemplates();
-		const chosenTemplate = templates[0];
-		if (!chosenTemplate.settings) {
-			chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
+	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string, forUser?: string | null) {
+		error = null;
+		try {
+			if (!ageBracket) throw "Age span must be set";
+			const chosenTemplate = templates[0];
+			// if (!chosenTemplate.settings) {
+			// 	chosenTemplate.settings = { timeLimits: [33], cultureCode: 'sv-SE' };
+			// }
+			// TODO: server-side serializiation of TrainingSettings.trainingPlanOverrides is incorrect, so we can't use it here
+			chosenTemplate.settings.trainingPlanOverrides = null;
+			chosenTemplate.settings.timeLimits = [numMinutes];
+			const dto = <TrainingCreateDto>{ 
+				baseTemplateId: chosenTemplate.id,
+				trainingPlan: chosenTemplate.trainingPlanName,
+				trainingSettings: chosenTemplate.settings,
+				ageBracket: ageBracket
+			};
+			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
+		} catch (err) {
+			error = ErrorHandling.getErrorObject(err).message;
+			throw err;
 		}
-		chosenTemplate.settings.timeLimits = [numMinutes];
-		const dto = <TrainingCreateDto>{ trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
-		createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
 		closeModal;
 		onCreateGroup(groupName);
 	}
+
+	onMount(async () => {
+		templates = await apiFacade.trainings.getTemplates();
+	});
 </script>
 
 {#if isOpen}
@@ -42,16 +80,36 @@
 						<input id="className" type="text" required bind:value={newGroupData.name} />
 					</label>
 					<label>
+						Age span
+						<br/>
+						<select bind:value={newGroupData.ageBracket}>
+							{#each ageBrackets as ageBracket}
+							<option value={ageBracket}>{ageBracket}</option>
+							{/each}
+						</select>
+						<br/>
+						<br/>
+					</label>
+					<label>
 						Number of trainings
 						<input id="numTrainings" required bind:value={newGroupData.noOfTrainings} min="1" max="40" />
 					</label>
-					<!-- <label>
+					<label>
 						Time per day
-						<input id="timePerDay" required type="number" bind:value={newGroupData.timePerDay} min="15" max="45" />
-					</label> -->
+						<br/>
+						<select id="timePerDay" bind:value={newGroupData.timePerDay}>
+							{#each timePerDayValues as tpd}
+							<option value="{tpd}">{tpd} minutes</option>
+							{/each}
+						</select>
+						<!-- <input id="timePerDay" required type="number" bind:value={newGroupData.timePerDay} min="15" max="45" /> -->
+					</label>
+					{#if !!error}
+						<div style="color:red">{error}</div>
+					{/if}
 					<div class="actions">
 						<button class="secondary" on:click={closeModal}>Cancel</button>
-						<button class="primary" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, '')}>Create</button>
+						<button class="primary" style="opacity:1" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket, '')}>Create</button>
 					</div>
 				</form>
 			{:else}

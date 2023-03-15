@@ -1,4 +1,5 @@
 ﻿using ProblemSource.Models.Aggregates;
+using System.Diagnostics;
 
 namespace ProblemSourceModule.Models.Aggregates
 {
@@ -22,7 +23,16 @@ namespace ProblemSourceModule.Models.Aggregates
                 return (decimal)TrainedDays / diff * 7;
             }
         }
-        
+
+        public override string ToString() => $"{Id}: days:{TrainedDays} first:{FirstLogin:MM-dd HH:mm} last:{LastLogin:MM-dd HH:mm}";
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || obj is TrainingSummary typed == false)
+                return false;
+            return TrainedDays == typed.TrainedDays && LastLogin == typed.LastLogin && Id == typed.Id;
+        }
+
 
         internal static TrainingSummary Create(int userId, IEnumerable<TrainingDayAccount> trainingDays)
         {
@@ -41,7 +51,13 @@ namespace ProblemSourceModule.Models.Aggregates
                 result.LastLogin = trainingDays.Max(o => o.StartTime);
             }
 
+            result.FirstLogin = EnsureSerializableDateTime(result.FirstLogin);
+            result.LastLogin = EnsureSerializableDateTime(result.LastLogin);
+
             return result;
+
+            // TODO: this is a quick fix - move this to ExpandableTableEntityConverter (AzureTable-specific handling logic)
+            DateTimeOffset EnsureSerializableDateTime(DateTimeOffset value) => value.Year >= 1900 ? value : new DateTimeOffset(1900, 1, 1, 0, 0, 0, TimeSpan.Zero);
         }
     }
 }

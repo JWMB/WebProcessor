@@ -11,6 +11,11 @@ export function getApi() {
     if (browser) {
         if (!_apiFacade) {
             _apiFacade = new ApiFacade(Startup.resolveLocalServerBaseUrl(window.location));
+            const urlParams = new URLSearchParams(window.location.search);
+            const impersonate = urlParams.get("impersonate");
+            if (impersonate != null) {
+                _apiFacade.impersonateUser = impersonate;
+            }
         }
         return _apiFacade;
     }
@@ -57,11 +62,13 @@ export const userStore = (() => {
             if (browser) {
                 getApi()?.accounts.getLoggedInUser()
                     .then(r => {
-                        console.log("logged in with user:", r)
+                        console.log("logged in with user:", r);
                         loggedInUser.set({ username: r.username, loggedIn: true, role: r.role });
-                        setTimeout(() => {
-                            resolve();
-                        }, 1000)
+                        // TODO: why wait?
+                        // setTimeout(() => {
+                        //     resolve();
+                        // }, 1000);
+                        resolve();
                     })
                     .catch(err => {
                         console.log("not logged in", err);
@@ -77,7 +84,7 @@ export const userStore = (() => {
         inited,
         login: async (credentials: LoginCredentials) => {
             await getApi()?.accounts.login(credentials);
-            await getLoggedInUser()
+            await getLoggedInUser();
         },
         logout: async () => {
             await getApi()?.accounts.logout();

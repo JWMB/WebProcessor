@@ -15,6 +15,14 @@ namespace ProblemSource.Models.Aggregates
         public List<Problem> problems { get; set; } = new(); 
         public UserTest? user_test { get; set; }
 
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || obj is Phase typed == false)
+                return false;
+            return training_day == typed.training_day && exercise == typed.exercise && phase_type == typed.phase_type && time == typed.time && problems.Count() == typed.problems.Count();
+        }
+
+
         public static Phase Create(NewPhaseLogItem newPhase) //, string userId)
         {
             return new Phase

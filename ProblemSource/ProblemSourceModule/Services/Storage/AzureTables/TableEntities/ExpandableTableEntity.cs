@@ -48,14 +48,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                 {
                     if (val is string str)
                     {
-                        try
-                        {
-                            val = JsonConvert.DeserializeObject(str, prop.PropertyType);
-                        }
-                        catch (Exception ex)
-                        {
-                            throw ex;
-                        }
+                        val = JsonConvert.DeserializeObject(str, prop.PropertyType);
                     }
                     else
                     {
@@ -82,6 +75,7 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                     var serialized = JsonConvert.SerializeObject(value);
                     if (serialized.Length > maxLength)
                     {
+                        // TODO: this could just as well apply to e.g. a string! Splitting should be common to both codepaths
                         var pairs = serialized.SplitByLength(maxLength)
                             .Select((o, i) => new { Key = GetExpandedName(prop.Name, i), Value = o });
                         foreach (var pair in pairs)
@@ -92,6 +86,14 @@ namespace ProblemSource.Services.Storage.AzureTables.TableEntities
                     }
                     else
                         value = serialized;
+                }
+                else
+                {
+                    if (prop.PropertyType == typeof(DateTimeOffset))
+                    {
+                        // TODO: probably DateTime as well
+                        // TODO: min value cannot be before
+                    }
                 }
                 entity[prop.Name] = value;
             }

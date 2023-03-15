@@ -35,7 +35,6 @@
 	}
 
 	function calculateTrainingStats(data: TrainingSummaryWithDaysDto[], numberOfDays = 7) {
-		console.log('data', data);
 		const average = (arr: number[]) => {
 			return arr.reduce((p, c) => p + c, 0) / arr.length;
 		};
@@ -70,11 +69,6 @@
 			}
 		});
 	}
-
-	function log(t: any) {
-		console.log('test');
-		return 1;
-	}
 </script>
 
 <div class="teacher-view">
@@ -87,8 +81,10 @@
 				return { id: g.group };
 			})}
 			on:selected={(e) => onSelectGroup(e.detail)}
-			><button on:click={onCreateGroup}>{getString('teacher_create_group_label')}</button>
-		</Tabs>
+			><button on:click={onCreateGroup}>
+				{getString('teacher_create_group_label')}
+			</button>
+	</Tabs>
 	{/if}
 	{#if trainings && trainings.length > 0}
 		<div class="training-header">

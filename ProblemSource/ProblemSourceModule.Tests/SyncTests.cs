@@ -6,10 +6,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PluginModuleBase;
 using ProblemSource.Models;
+using ProblemSource.Models.Aggregates;
 using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
 
@@ -32,8 +34,8 @@ namespace ProblemSource.Tests
             var mockUserStateRepo = new Mock<IBatchRepository<UserGeneratedState>>();
             userStateRepository = mockUserStateRepo.Object;
 
-            //var mockRepoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
-            //mockRepoProvider.Setup(o => o.UserStates).Returns(mockUserStateRepo.Object);
+            var mockRepoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
+            mockRepoProvider.Setup(o => o.TrainingDays).Returns(new Mock<IBatchRepository<TrainingDayAccount>>().Object);
 
             //var mockRepoProviderFactory = new Mock<IUserGeneratedDataRepositoryProviderFactory>();
             //mockRepoProviderFactory.Setup(o => o.Create(It.IsAny<int>())).Returns(mockRepoProvider.Object);
@@ -46,9 +48,9 @@ namespace ProblemSource.Tests
 
             pipeline = new ProblemSourceProcessingMiddleware(new EmbeddedTrainingPlanRepository(),
                 mockClientSessionManager.Object, dataSink, fixture.Create<IEventDispatcher>(), fixture.Create<IAggregationService>(),
-                TestHelpers.MockDataRepositoryProviderFactory(userStateRepo: userStateRepository),
+                TestHelpers.MockDataRepositoryProviderFactory(userStateRepo: userStateRepository, dataProvider: mockRepoProvider.Object),
                 new UsernameHashing(new MnemoJapanese(2), 2), new MnemoJapanese(2),
-                mockTrainingRepo.Object,
+                mockTrainingRepo.Object, fixture.Create<TrainingAnalyzerCollection>(),
                 fixture.Create<ILogger<ProblemSourceProcessingMiddleware>>());
         }
 

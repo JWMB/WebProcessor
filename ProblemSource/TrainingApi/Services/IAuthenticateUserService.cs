@@ -19,11 +19,13 @@ namespace TrainingApi.Services
 
         public async Task<User?> GetUser(string username, string password)
         {
+            username = username.Trim();
+            password = password.Trim();
             var user = await userRepository.Get(username);
             if (user == null)
                 return null;
 
-            if (User.HashPassword(username, password) != user.HashedPassword)
+            if (!user.VerifyPassword(password))
                 return null;
 
             return user;

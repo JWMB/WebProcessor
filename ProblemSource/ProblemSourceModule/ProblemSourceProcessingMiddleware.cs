@@ -9,6 +9,7 @@ using ProblemSource.Models.LogItems;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 
 namespace ProblemSource
@@ -24,6 +25,7 @@ namespace ProblemSource
         private readonly UsernameHashing usernameHashing;
         private readonly MnemoJapanese mnemoJapanese;
         private readonly ITrainingRepository trainingRepository;
+        private readonly TrainingAnalyzerCollection trainingAnalyzers;
         private readonly ILogger<ProblemSourceProcessingMiddleware> log;
 
         //public bool SupportsMiddlewarePattern => throw new NotImplementedException();
@@ -31,7 +33,7 @@ namespace ProblemSource
         public ProblemSourceProcessingMiddleware(ITrainingPlanRepository trainingPlanRepository,
             IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
             IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, UsernameHashing usernameHashing, MnemoJapanese mnemoJapanese,
-            ITrainingRepository trainingRepository,
+            ITrainingRepository trainingRepository, TrainingAnalyzerCollection trainingAnalyzers,
             ILogger<ProblemSourceProcessingMiddleware> log)
         {
             this.trainingPlanRepository = trainingPlanRepository;
@@ -43,6 +45,7 @@ namespace ProblemSource
             this.usernameHashing = usernameHashing;
             this.mnemoJapanese = mnemoJapanese;
             this.trainingRepository = trainingRepository;
+            this.trainingAnalyzers = trainingAnalyzers;
             this.log = log;
         }
 
@@ -66,7 +69,7 @@ namespace ProblemSource
 
             var result = await Process(root, context.User);
             if (result.error!= null)
-                log.LogWarning($"Training login: {result.error}");
+                log.LogWarning($"Training login: (user='{root.Uuid}') {result.error}");
 
             await next.Invoke(context);
 
@@ -78,8 +81,11 @@ namespace ProblemSource
             // TODO: use regular model validation
             if (string.IsNullOrEmpty(root.Uuid))
             {
-                throw new ArgumentNullException($"{nameof(root.Uuid)}");
+                return new SyncResult { error = $"Username not found ({root.Uuid})" };
             }
+            // Handle some common user input problems:
+            root.Uuid = root.Uuid.Trim().Replace("  ", " ");
+
             //if (user?.Claims.Any() == false &&  // anonymous access for "validate" request
             if (root.SessionToken == "validate") // TODO: co-opting SessionToken for now
             {
@@ -196,11 +202,11 @@ namespace ProblemSource
                     log.LogError(ex, $"UpdateAggregates");
                 }
 
-                var eod = logItems.OfType<EndOfDayLogItem>().FirstOrDefault();
-                // TODO: also check if stat's TrainingDay has changed
-                if (eod?.training_day == 5)
+                var modified = await trainingAnalyzers.Execute(training, sessionInfo.Session.UserRepositories, logItems);
+                if (modified)
                 {
-
+                    log.LogInformation($"Modified training saved, id = {training.Id}");
+                    await trainingRepository.Update(training);
                 }
             }
 
@@ -208,6 +214,23 @@ namespace ProblemSource
             {
                 // client wants TrainingPlan, stats for trained exercises, training day number etc
                 result.state = await CreateClientState(root, training, currentStoredState);
+
+                try
+                {
+                    var trainingDays = await sessionInfo.Session.UserRepositories.TrainingDays.GetAll();
+                    if (trainingDays.Any() && currentStoredState != null)
+                    {
+                        var fromTrainingDays = trainingDays.Max(o => o.TrainingDay);
+                        if (currentStoredState.exercise_stats.trainingDay != fromTrainingDays)
+                        {
+                            log.LogWarning($"Training id={training.Id} day mismatch - state:{currentStoredState.exercise_stats.trainingDay} td table:{fromTrainingDays}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.LogError(ex, $"Compare days error Training id={training.Id}");
+                }
             }
 
             return result;
@@ -224,11 +247,7 @@ namespace ProblemSource
             {
                 uuid = root.Uuid,
                 training_plan = trainingPlan,
-                training_settings = training.Settings ?? new TrainingSettings
-                {
-                    timeLimits = new List<decimal> { 33 },
-                    customData = new CustomData { unlockAllPlanets = false }
-                }
+                training_settings = training.Settings
             });
 
             var typedTrainingPlan = JsonConvert.DeserializeObject<TrainingPlan>(JsonConvert.SerializeObject(trainingPlan));
@@ -244,32 +263,8 @@ namespace ProblemSource
                 fullState["user_data"] = currentStoredState.user_data == null ? null : JObject.FromObject(currentStoredState.user_data);
             }
 
-            // TODO: apply rules engine - should e.g. training plan be modified?
-
             return JsonConvert.SerializeObject(fullState);
         }
-
-        //interface ITrainingModifierEngine
-        //{
-        //    void Run(Training training);
-        //}
-        //class TrainingModifierEngine : ITrainingModifierEngine
-        //{
-        //    public void Run(Training training)
-        //    {
-        //    }
-        //    class Day5Switcher
-        //    {
-        //        public void Run(Training training)
-        //        {
-        //            var trainingDay = 5;
-        //            if (trainingDay == 5)
-        //            {
-        //                //training.Settings.trainingPlanOverrides
-        //            }
-        //        }
-        //    }
-        //}
 
         private static List<LogItem> DeserializeEvents(object[] events, ILogger? log = null)
         {

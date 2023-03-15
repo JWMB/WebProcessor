@@ -9,6 +9,8 @@
 	import type { PageData } from './$types';
 	import { getString } from 'src/utilities/LanguageService';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { initWidgetImplementationScript } from 'src/humany-embed';
 
 	export let data: PageData;
 
@@ -19,11 +21,16 @@
 	async function login() {
 		goto(base + '/login');
 	}
+
+	onMount(() => {
+		initWidgetImplementationScript();
+	});
 </script>
 
 {#if data.pageInited}
 	<div class="login-status">
 		{#if $userStore}
+			<a href="//ki-study.humany.net/admin-notices-ow">Notices</a>
 			<span> {$userStore?.username}</span>
 			<button on:click={logout}>{getString('navbar_logout_label')}</button>
 		{:else}
@@ -31,6 +38,12 @@
 		{/if}
 	</div>
 	<slot />
+{:else}
+	<a href="login">Loading...</a>
+{/if}
+
+{#if $userStore}
+<a href="//ki-study.humany.net/teacher">Help</a>
 {/if}
 
 <NotificationBar />
@@ -71,6 +84,7 @@
 		display: flex;
 		align-items: center;
 		gap: 11px;
+		z-index: 2;
 	}
 
 	.modal-backdrop {

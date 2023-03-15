@@ -50,4 +50,22 @@
         public string autoConnectType { get; set; } = "THREE-WAY"; // ConnectionType
         public List<LinearGameDefinition> tests { get; set; } = new List<LinearGameDefinition>(); //LinearExerciseDefinition[];
     }
+
+    public class DynamicTrainingPlan : TrainingPlan
+    {
+        public enum ValueTypeEnum
+        {
+            Runs,
+            Time,
+            Wins,
+            Level,
+        }
+        public ValueTypeEnum valueType { get; set; } = ValueTypeEnum.Runs;
+
+        public int minUnlockedExercises { get; set; } = 1;
+        public int maxUnlockedExercises { get; set; } = 1;
+
+        public List<GameDefinition> hiddenExercises { get; set; } = new();
+        public bool preventSameExerciseTwice { get; set; }
+    }
 }

@@ -27,7 +27,6 @@ namespace TrainingApi.Controllers
         private readonly IAggregationService aggregationService;
         private readonly IUserGeneratedDataRepositoryProviderFactory dataRepoFactory;
 
-        //private readonly IUserStateRepository userStateRepository;
         private readonly ILogger<AggregatesController> log;
 
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
@@ -68,14 +67,16 @@ namespace TrainingApi.Controllers
                 await trainingRepository.RemoveByIdIfExists(id);
         }
 
-        private async Task<Training> CreateTraining(TrainingCreateDto dto)
+        private async Task<Training> CreateTraining(TrainingCreateDto dto, IEnumerable<Training>? templates = null)
         {
-            var templates = await GetTrainingTemplates();
-            var template = templates.FirstOrDefault(o => o.Id == dto.BaseTemplateId);
+            templates = templates ?? await GetTrainingTemplates();
+            var template = templates.SingleOrDefault(o => o.Id == dto.BaseTemplateId);
             if (template == null)
                 throw new Exception($"Template not found: {dto.BaseTemplateId}");
-
-            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, dto.TrainingSettings);
+            dto.TrainingSettings ??= template.Settings;
+            // TODO: trainingPlanOverrides is incorrectly serialized, so we can't use the one from the DTO
+            dto.TrainingSettings.trainingPlanOverrides = template.Settings.trainingPlanOverrides;
+            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, template.Settings, dto.AgeBracket);
         }
 
         private async Task<User> GetImpersonatedUserOrThrow(string? username)
@@ -99,28 +100,35 @@ namespace TrainingApi.Controllers
         [ProducesErrorResponseType(typeof(HttpException))]
         public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings, string? createForUser = null)
         {
-            // TODO: standard validation
-            if (numTrainings < 1 || numTrainings > 30) throw new HttpException($"{nameof(numTrainings)} exceeds accepted range", StatusCodes.Status400BadRequest);
-            if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);
-
             var user = userProvider.UserOrThrow;
+
+            // TODO: standard validation
+            var maxTrainingsInGroup = 30;
+            if (numTrainings < 1)
+                throw new HttpException($"{nameof(numTrainings)}:{numTrainings} exceeds accepted range", StatusCodes.Status400BadRequest);
+            else if (numTrainings > maxTrainingsInGroup)
+                throw new HttpException($"{nameof(numTrainings)}:{numTrainings} cannot exceed {maxTrainingsInGroup}", StatusCodes.Status400BadRequest);
+
+            if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);
 
             if (user.Role != Roles.Admin)
             {
                 var currentNumTrainings = user.Trainings.Sum(o => o.Value.Count());
-                var max = 50;
-                if (numTrainings + currentNumTrainings > max)
+                var maxTotalTrainings = 60;
+                if (numTrainings + currentNumTrainings > maxTotalTrainings)
                 {
-                    throw new HttpException($"We currently allow max {max} trainings per account. You have {Math.Max(0, max - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
+                    throw new HttpException($"We currently allow max {maxTotalTrainings} trainings per account. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
                 }
             }
 
             if (string.IsNullOrEmpty(createForUser) == false)
                 user = await GetImpersonatedUserOrThrow(createForUser);
 
+            var templates = await GetTrainingTemplates();
+
             var trainings = new List<Training>();
             for (int i = 0; i < numTrainings; i++)
-                trainings.Add(await CreateTraining(dto));
+                trainings.Add(await CreateTraining(dto, templates));
 
             if (!user.Trainings.TryGetValue(groupName, out var list))
             {
@@ -149,28 +157,35 @@ namespace TrainingApi.Controllers
         private Task<IEnumerable<Training>> GetTrainingTemplates()
         {
             // TODO: use real storage, move to service
-            return Task.FromResult((IEnumerable<Training>)new[] {
-                new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = CreateDefaultSettings() },
-                new Training { Id = 1, Username = "template_Test training", TrainingPlanName = "2017 HT template Default", Settings = CreateDefaultSettings() }
-            });
-        }
-
-        private static TrainingSettings CreateDefaultSettings()
-        {
-            return new TrainingSettings
-            {
-                cultureCode = "sv-SE",
-                alarmClockInvisible = null,
-                customData = null,
-                idleTimeout = null,
-                triggers = null,
-                manuallyUnlockedExercises = null,
-                uniqueGroupWeights = null,
-                trainingPlanOverrides = null,
-                syncSettings = null,
-                pacifistRatio = 0.1M,
-                timeLimits = new List<decimal> { 33 },
+            var templates = new[] {
+                new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = CreateSettings(s =>
+                {
+                    s.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.CategorizerDay5_23Q1) };
+                }) },
+                new Training { Id = 2, Username = "template_Test training", TrainingPlanName = "2023 VT template JonasTest", Settings = CreateSettings(s => 
+                {
+                    s.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.ExperimentalAnalyzer) };
+                    s.timeLimits = new List<decimal> { 3 };
+                    s.customData = new CustomData { allowMultipleLogins = true };
+                }) },
+                new Training { Id = 3, Username = "template_NumberlineTest training", TrainingPlanName = "2023 VT template JonasTest", Settings = CreateSettings(s => {
+                    s.customData = new CustomData { 
+                        allowMultipleLogins = true,
+                        numberLine = new { changeSuccess = 0.4, changeFail = -1 } //skillChangeGood = 0.5 }
+                    };
+                    // TODO: Response serialization doesn't work (probably .NET built-in JSON vs dynamic/JToken)
+                    s.UpdateTrainingOverrides(new[]{ TrainingSettings.CreateWeightChangeTrigger(new Dictionary<string, int> { {"Math", 100}, { "numberline", 100 } }, 0, 0) });
+                }) },
             };
+
+            return Task.FromResult((IEnumerable<Training>)templates);
+
+            TrainingSettings CreateSettings(Action<TrainingSettings>? act = null)
+            {
+                var ts = TrainingSettings.Default;
+                act?.Invoke(ts);
+                return ts;
+            }
         }
 
         [HttpGet]
@@ -181,7 +196,7 @@ namespace TrainingApi.Controllers
                 Id = o.Id,
                 Name = o.Username.Replace("template_", ""),
                 TrainingPlanName = o.TrainingPlanName,
-                Settings = o.Settings ?? CreateDefaultSettings()
+                Settings = o.Settings ?? TrainingSettings.Default
             });
         }
 
@@ -325,7 +340,8 @@ namespace TrainingApi.Controllers
         {
             public int BaseTemplateId { get; set; }
             public string? TrainingPlan { get; set; }
-            public TrainingSettings TrainingSettings { get; set; } = new TrainingSettings();
+            public TrainingSettings? TrainingSettings { get; set; }
+            public string? AgeBracket { get; set; }
         }
 
         public class TrainingTemplateDto

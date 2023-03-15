@@ -25,6 +25,13 @@ namespace ProblemSource.Models.Aggregates
             return $"{TrainingDay} {StartTime} rTime:{ResponseMinutes} #corr:{NumCorrectAnswers} #q:{NumQuestions} #racewon:{NumRacesWon}";
         }
 
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || obj is TrainingDayAccount typed == false)
+                return false;
+            return TrainingDay == typed.TrainingDay && EndTimeStamp == typed.EndTimeStamp && NumRaces == typed.NumRaces;
+        }
+
         public static List<TrainingDayAccount> Create(int accountId, IEnumerable<Phase> multiDayPhases)
         {
             return multiDayPhases.GroupBy(o => o.training_day).Select(dayAndPhases =>

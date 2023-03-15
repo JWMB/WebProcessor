@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Azure.Data.Tables;
 using Common;
+using Microsoft.AspNetCore.Mvc.DataAnnotations;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models;
@@ -21,14 +22,21 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
             repo = new TableEntityRepository<User, TableEntity>(tableClient, converter.ToPoco, converter.FromPoco, new TableFilter(staticPartitionKey));
         }
 
-        private string ConvertToKey(string email) => TableKeyEncoding.Encode(email);
-        //private string ConvertFromKey(string key) => TableKeyEncoding.Decode(key);
+        // TODO: always normalize once DB has been normalized (needs some care since pwd hash is using non-normalized email)
+        private string ConvertToKey(string email, bool normalize = true) => TableKeyEncoding.Encode(normalize ? User.NormalizeEmail(email) : email);
 
-        public async Task<User?> Get(string email) => await repo.Get(ConvertToKey(email));
+        // TODO: remove retry logic after DB normalization
+        public async Task<User?> Get(string email)
+        {
+            var found = await repo.Get(ConvertToKey(email));
+            return found ?? await repo.Get(ConvertToKey(email, false));
+        }
+        //public async Task<User?> Get(string email) => await repo.Get(ConvertToKey(email));
 
         private object _lock = new object();
         public Task<string> Add(User item)
         {
+            item.Email = User.NormalizeEmail(item.Email);
             // Warning: multi-instance concurrency 
             lock (_lock)
             {

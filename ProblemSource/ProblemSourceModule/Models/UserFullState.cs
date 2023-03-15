@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using Newtonsoft.Json;
+using ProblemSourceModule.Models;
+using System.Text.Json;
 
 namespace ProblemSource.Models
 {
@@ -34,6 +36,13 @@ namespace ProblemSource.Models
         public object? user_data { get; set; }
 
         public object? syncInfo { get; set; } // TODO: what is this?
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || obj is UserGeneratedState typed == false)
+                return false;
+            return exercise_stats.trainingDay == typed.exercise_stats.trainingDay && exercise_stats.lastTimeStamp == typed.exercise_stats.lastTimeStamp;
+        }
     }
 
     public class UserFullState : IUserServerSettings, IUserGeneratedState
@@ -50,20 +59,112 @@ namespace ProblemSource.Models
 
     public class TrainingSettings
     {
-        public List<decimal> timeLimits { get; set; } = new List<decimal>(); //time_limits
+        public List<decimal> timeLimits { get; set; } = new(); //time_limits
         public object? uniqueGroupWeights { get; set; }
         public List<string>? manuallyUnlockedExercises { get; set; }
         public decimal? idleTimeout { get; set; }
         public string cultureCode { get; set; } = "sv-SE";
         public CustomData? customData { get; set; }
         //training_settings: any;
-        public List<TriggerData>? triggers { get; set; }
+        public List<TriggerData>? triggers { get; set; } 
         public decimal? pacifistRatio { get; set; } = 0.1M; //TODO: add to a metaphorSettings structure instead
 
         public object? trainingPlanOverrides { get; set; } //testData [{"id":"WM_grid#\\d+","phases":[{"lvlMgr":{"phaseChange":{"change":-0.8}}}]}]
         public TrainingSyncSettings? syncSettings { get; set; }
         //erase_local_data?: boolean;
         public bool? alarmClockInvisible { get; set; }
+
+        /// <summary>
+        /// Regex patterns of ITrainingAnalyzer type names to execute
+        /// </summary>
+        public List<string>? Analyzers { get; set; } 
+
+        public static TrainingSettings Default => new TrainingSettings { timeLimits = new List<decimal> { 33 } };
+
+
+        public void UpdateTrainingOverrides(IEnumerable<object> triggers, bool removePreExistingOverrides = true)
+        {
+            dynamic overrides;
+            if (trainingPlanOverrides == null || removePreExistingOverrides)
+            {
+                overrides = new
+                {
+                    triggers = triggers.ToArray()
+                };
+            }
+            else
+            {
+                overrides = trainingPlanOverrides;
+                overrides.triggers = triggers.ToArray();
+            }
+
+            trainingPlanOverrides = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(overrides));
+        }
+
+        public static dynamic CreateTrigger(int trainingDay)
+        {
+            var def = """
+{
+    "triggerTime": "MAP",
+    "criteriaValues": [
+    {
+        "name": "trainingDay",
+        "value": "{trainingDay}"
+    }
+    ],
+    "actionData": {
+        "type": "TrainingPlanModTriggerAction",
+        "id": "modDay0_{trainingDay}",
+        "properties": {
+            "weights": {
+            },
+            "phases": {
+            }
+        }
+    }
+}
+""".Replace("{trainingDay}", trainingDay.ToString());
+
+            //"phases": {
+            //    "^WM_[\\w#]+": { "medalMode": "ONE_WIN" },
+            //    "^addsub[\\w#]*": { "lvlMgr": { "maxFallFromHighest": 5 } }
+            //}
+
+            var obj = JsonConvert.DeserializeObject<dynamic>(def);
+            if (obj == null)
+                throw new Exception("Couldn't deserialize trigger");
+            return obj;
+        }
+
+        public static dynamic CreateWeightChangeTrigger(Dictionary<string, int> weights, int trainingDay, int defaultWeight = 100)
+        {
+            //var knownGroups = new[] { "Math", "WM", "Reasoning" };
+            //var knownExercises = new[] { "tangram#intro", "tangram", "rotation#intro", "rotation", "nvr_so", "nvr_rp" };
+            //var weigthsDefault = knownGroups.Concat(knownExercises).ToDictionary(o => o, o => defaultWeight);
+
+            var groupedExercises = new[] {
+                new { Group = "Math", Exercises = new[] { "addsub", "npals", "numberline" } },
+                new { Group = "WM", Exercises = new[] { "WM_grid#intro", "WM_grid", "WM_crush", "WM_3dgrid", "WM_circle", "WM_numbers#intro", "WM_numbers", "WM_moving" } },
+                new { Group = "Reasoning", Exercises = new[] { "tangram#intro", "tangram", "rotation#intro", "rotation", "nvr_so", "nvr_rp", "boolean" } },
+            };
+            var weigthsDefault = groupedExercises.SelectMany(o => o.Exercises.Concat(new[] { o.Group })).ToDictionary(o => o, o => defaultWeight);
+
+            foreach (var key in weigthsDefault.Keys.Except(weights.Keys))
+                weights[key] = weigthsDefault[key];
+
+            var trigger = CreateTrigger(trainingDay);
+            trigger.actionData.properties.weights = ConvertToDynamicOrThrow(weights);
+
+            return trigger;
+        }
+
+        public static dynamic ConvertToDynamicOrThrow(object obj)
+        {
+            var result = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(obj));
+            if (result == null)
+                throw new Exception("Couldn't deserialize");
+            return result;
+        }
     }
 
     public class TrainingSyncSettings
@@ -147,6 +248,8 @@ namespace ProblemSource.Models
         public object? metaphorData { get; set; }
         public TrainingPlanSettings trainingPlanSettings { get; set; } = new TrainingPlanSettings();
         public Dictionary<string, object> gameCustomData { get; set; } = new Dictionary<string, object>();
+
+        public List<object>? planetInfos { get; set; }
     }
 
     public class TrainingPlanSettings

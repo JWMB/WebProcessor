@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProblemSource.Models.Aggregates;
-using TrainingApi.Services;
+using ProblemSource.Services;
 
 namespace TrainingApi.Controllers
 {

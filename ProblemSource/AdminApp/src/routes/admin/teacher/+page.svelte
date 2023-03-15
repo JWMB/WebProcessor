@@ -32,7 +32,9 @@
 			alert('A name is required');
 			return;
 		}
-		if (confirm(`Create class '${groupName}' with ${num} trainings?`)) {
+
+		const chosenTemplate = templates.filter(o => o.id == templateId)[0];
+		if (confirm(`Create class '${groupName}' with ${num} trainings using template '${chosenTemplate.name}' (${chosenTemplate.trainingPlanName})?`)) {
 			//const templates = await apiFacade.trainings.getTemplates();
 			const chosenTemplate = templates.filter((o) => o.id == templateId)[0];
 			if (!chosenTemplate.settings) {
@@ -84,6 +86,7 @@
 	{#if $userStore?.role == 'Admin'}
 		Impersonate user: <input id="forUser" type="text" />
 		<input type="button" value="Refresh" on:click={() => getTrainings()} />
+		<input type="button" value="Set header" on:click={() => { apiFacade.impersonateUser = getElementValue("forUser"); }} />
 	{/if}
 	<div>
 		Create class: <input id="className" type="text" value="Fsk A" />
@@ -98,14 +101,12 @@
 		<input
 			type="button"
 			value="Create"
-			on:click={() =>
-				createTrainings(
-					parseFloat(getElementValue('numTrainings')),
-					getElementValue('className'),
-					parseFloat(getElementValue('timePerDay')),
-					parseFloat(getElementValue('template')),
-					getElementValue('forUser')
-				)} />
+			on:click={() => createTrainings(
+				parseFloat(getElementValue('numTrainings')),
+				getElementValue('className'),
+				parseFloat(getElementValue('timePerDay')),
+				parseFloat(getElementValue('template')),
+				$userStore?.role == 'Admin' ? getElementValue('forUser') : null)} />
 
 		{#if createdTrainingUsernames}
 			Created users:

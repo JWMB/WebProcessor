@@ -51,6 +51,7 @@ namespace ProblemSource.Services.Storage.AzureTables
 
         private async Task<List<Response>> UpsertBatch(IEnumerable<ITableEntity> entities)
         {
+            // TODO: use SubmitTransactionsBatched instead
             //Note: UpsertMerge keeps old columns
             var batch = new List<TableTransactionAction>(entities.Select(f => new TableTransactionAction(TableTransactionActionType.UpsertReplace, f)));
 
@@ -111,10 +112,6 @@ namespace ProblemSource.Services.Storage.AzureTables
                     (ex is RequestFailedException rfEx ? rfEx.ErrorCode : null);
                 throw new Exception($"{typeof(T).Name} code:{code} stored:{lengthsInfo}", ex);
             }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
         }
 
         public async Task<Dictionary<string, T?>> GetByRowKeys(IEnumerable<string> rowKeys, string? partitionKey = null)
@@ -138,12 +135,12 @@ namespace ProblemSource.Services.Storage.AzureTables
 
         private async Task<IEnumerable<T>> GetWithFilter(string filter)
         {
+            //System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
             var query = tableClient.QueryAsync<TTableEntity>(filter);
             var result = new List<T>();
             await foreach (var entity in query)
             {
                 result.Add(toBusinessObject(entity));
-                //var str = AzureTableConfig.GetLongString(entity);
             }
             return result;
         }
