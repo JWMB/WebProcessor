@@ -20,16 +20,17 @@ namespace Tools
         }
 
 
-        public async Task<IEnumerable<int>> GetTrainingsForTeacher(string email, IEnumerable<string>? groups = null)
+        public async Task<List<int>> GetTrainingsForTeacher(string email, IEnumerable<string>? groups = null)
         {
             var user = await userRepository.Get(email);
             if (user == null) throw new Exception($"User not found");
             if (user.Trainings.Any() == false)
-                return Enumerable.Empty<int>();
+                return new List<int>();
 
-            return groups?.Any() == true
+            return (groups?.Any() == true
                 ? user.Trainings.Where(o => groups?.Contains(o.Key) == true).SelectMany(o => o.Value)
-                : user.Trainings.SelectMany(o => o.Value);
+                : user.Trainings.SelectMany(o => o.Value)
+                ).ToList();
         }
             
         public async Task ModifySettings(IEnumerable<int> ids)
