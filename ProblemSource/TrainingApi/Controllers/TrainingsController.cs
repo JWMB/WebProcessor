@@ -76,7 +76,7 @@ namespace TrainingApi.Controllers
             dto.TrainingSettings ??= template.Settings;
             // TODO: trainingPlanOverrides is incorrectly serialized, so we can't use the one from the DTO
             dto.TrainingSettings.trainingPlanOverrides = template.Settings.trainingPlanOverrides;
-            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, template.Settings, dto.AgeBracket);
+            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, dto.TrainingSettings, dto.AgeBracket);
         }
 
         private async Task<User> GetImpersonatedUserOrThrow(string? username)
