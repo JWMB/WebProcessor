@@ -32,7 +32,7 @@ namespace Tools
                 : user.Trainings.SelectMany(o => o.Value)
                 ).ToList();
         }
-            
+
         public async Task ModifySettings(IEnumerable<int> ids)
         {
             var trainings = await trainingRepository.GetByIds(ids);

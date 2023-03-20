@@ -63,17 +63,15 @@ var path = @"C:\Users\uzk446\Downloads\";
 //    await copier.CopyPhases(srcProviderFactory.Create(srcId), dstId, p => p.training_day <= 4, deleteInDst: p => true);
 //}
 
-
-
 //var tool = new TrainingStatsTools(serviceProvider);
-//await tool.OverallStats();
+//await tool.OverallStats(5);
 //var result = await tool.GetUsersWithSyncedTrainings();
 
 
 //var trainingMod = serviceProvider.CreateInstance<TrainingMod>();
-//var ids = await trainingMod.GetTrainingsForTeacher("namn@domain.se", new[] { "2B"});
+//var ids = await trainingMod.GetTrainingsForTeacher("name@domain.se");
+//var trainings = await (serviceProvider.GetRequiredService<ITrainingRepository>().GetByIds(ids));
 //await trainingMod.ModifySettings(ids);
-
 
 //var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
 //var emails = @"

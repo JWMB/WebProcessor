@@ -33,20 +33,16 @@ namespace Tools
             var userAgents = devices.Select(o => o.Value<string>("userAgent")).ToList();
         }
 
-        public async Task OverallStats()
+        public async Task OverallStats(int minTrainedDays)
         {
-            var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();
-            //var trainings = await trainingRepository.GetAll();
+            //var states = await GetTrainingStates();
+            //var trainingDayById = states.ToDictionary(o => o.Key, o => o.Value.exercise_stats.trainingDay);
 
-            var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
-
-            var states = await GetTrainingStates();
-            var trainingDayById = states.ToDictionary(o => o.Key, o => o.Value.exercise_stats.trainingDay);
-
-            var phasesById = await GetPhases($"training_day gt 4");
-            var maxDays = phasesById.Select(o => new { Id = o.Key, MaxDay = o.Value.Max(o => o.training_day), MaxDayState = trainingDayById.GetValueOrDefault(o.Key, 0) }).ToList();
+            //var phasesById = await GetPhases($"training_day ge {minTrainedDays}");
+            //var maxDays = phasesById.Select(o => new { Id = o.Key, MaxDay = o.Value.Max(o => o.training_day), MaxDayState = trainingDayById.GetValueOrDefault(o.Key, 0) }).ToList();
 
             string? partitionKey = null;
+            var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
             var trainingSummaries = new Lazy<IBatchRepository<TrainingSummary>>(() =>
                 Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
                 new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
@@ -54,8 +50,24 @@ namespace Tools
             var allSummaries = await trainingSummaries.Value.GetAll();
 
             var dateWhenAdjustedClientWasReleased = DateTimeOffset.Parse("2023-03-01");
-            var idsStartedWithAdjustedClient = allSummaries.Where(o => o.FirstLogin >= dateWhenAdjustedClientWasReleased).ToList();
+            var withAdjustedClient = allSummaries
+                .Where(o => o.FirstLogin >= dateWhenAdjustedClientWasReleased)
+                .Where(o => o.TrainedDays >= minTrainedDays)
+                .ToList();
 
+            var ids = withAdjustedClient.Select(o => o.Id).ToList();
+            var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();
+            var trainings = (await trainingRepository.GetAll())
+                .Where(o => ids.Contains(o.Id))
+                .ToList();
+            var info = trainings.Select(o =>
+            {
+                var summary = withAdjustedClient.Single(p => p.Id == o.Id);
+                return new { Id = o.Id, Days = summary.TrainedDays, Age = o.AgeBracket, Overrides = o.Settings.trainingPlanOverrides };
+            }).ToList();
+
+            var byAge = info.GroupBy(o => o.Age).ToDictionary(o => o.Key, o => o.Count());
+            var byOverrides = info.GroupBy(o => o.Overrides != null).ToDictionary(o => o.Key, o => o.Count());
 
             //var statisticsProvider = serviceProvider.CreateInstance<StatisticsProvider>();
             //var toInvestigate = allSummaries.Where(o => o.TrainedDays > 1).OrderByDescending(o => o.Id).ToList();
@@ -113,7 +125,6 @@ namespace Tools
             var trainingToUsers = userToTrainings.SelectMany(o => o.Value.Select(p => new { TrainingId = p, User = o.Key }))
                 .GroupBy(o => o.TrainingId).Select(o => new { TrainingId = o.Key, Users = o.Select(p => p.User).ToList() })
                 .ToDictionary(o => o.TrainingId, o => o.Users);
-            ;
 
             var allTrainingsToCheck = userToTrainings.Values.SelectMany(o => o).ToList();
 
