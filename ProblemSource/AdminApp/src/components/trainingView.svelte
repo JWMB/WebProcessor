@@ -69,7 +69,7 @@
 	trainingPlan: {training.trainingPlanName}
 	</div>
 	<div>
-	settings: {training.settings}
+	settings: {JSON.stringify(training.settings)}
 	</div>
 	{/if}
 	<TrainingDaysChart data={singleTrainingDays} />
