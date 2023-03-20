@@ -22,14 +22,17 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
 
         public async Task<Training?> Get(int id) => await repo.Get(AzureTableConfig.IdToKey(id));
 
+        private static int latestMax = 0; // TODO: ugly performance hack while waiting to port to SQL
         private object _lock = new object();
         public Task<int> Add(Training item)
         {
             // Warning: multi-instance concurrency 
             lock (_lock)
             {
-                var max = tableClient.Query<TableEntity>().OrderByDescending(o => o.RowKey).FirstOrDefault(); //.OrderBy(o => o.).LastOrDefault;
+                string? q = latestMax > 0 ? $"RowKey ge '{AzureTableConfig.IdToKey(latestMax)}'" : null;
+                var max = tableClient.Query<TableEntity>(q).OrderByDescending(o => o.RowKey).FirstOrDefault();
                 item.Id = int.Parse(max?.RowKey ?? "0") + 1;
+                latestMax = item.Id;
                 return Task.FromResult(int.Parse(repo.Add(item).Result));
             }
         }
