@@ -66,6 +66,6 @@
 
 <main>
 	<div>
-		<canvas id="chart_timePerExercise" width="800" height="400" />
+		<canvas id="chart_timePerExercise" width="800" height="150" />
 	</div>
 </main>

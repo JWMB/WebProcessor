@@ -52,6 +52,6 @@
 
 <main>
 	<div>
-		<canvas id="myChart" width="800" height="400" />
+		<canvas id="myChart" width="800" height="150" />
 	</div>
 </main>

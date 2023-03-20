@@ -21,7 +21,7 @@
 	let createdTrainingUsernames: string[] = [];
 
 	const clickedGroupRow = (e: CustomEvent<any>) => {
-		trainingsPromise = apiFacade.trainings.getSummaries(e.detail.group, getElementValue('forUser').toString().trim());
+		trainingsPromise = apiFacade.trainings.getSummaries(e.detail.group, null); // getElementValue('forUser').toString().trim());
 	};
 	const clickedTrainingRow = (e: CustomEvent<any>) => {
 		goto(`${base}/training?id=${e.detail.id}`);
@@ -47,9 +47,15 @@
 		}
 	}
 
-	function getElementValue(id: string) {
+	function getElementValue(id: string, fallback?: string) {
 		const el = document.getElementById(id);
-		if (el == null) throw `Element not found: ${id}`;
+		if (el == null) {
+			if (!!fallback) {
+				return fallback;
+			} else {
+				throw `Element not found: ${id}`;
+			}
+		}
 		return (<HTMLInputElement>el).value;
 	}
 
@@ -106,7 +112,7 @@
 				getElementValue('className'),
 				parseFloat(getElementValue('timePerDay')),
 				parseFloat(getElementValue('template')),
-				$userStore?.role == 'Admin' ? getElementValue('forUser') : null)} />
+				$userStore?.role == 'Admin' ? getElementValue('forUser', "") : null)} />
 
 		{#if createdTrainingUsernames}
 			Created users:

@@ -97,5 +97,5 @@
 </script>
 
 <main>
-	<canvas id="chart_{data.exercise}" width="800" height="200" />
+	<canvas id="chart_{data.exercise}" width="800" height="100" />
 </main>
