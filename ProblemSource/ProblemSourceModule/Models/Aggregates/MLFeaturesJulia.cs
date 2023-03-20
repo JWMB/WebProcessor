@@ -65,10 +65,7 @@ namespace ProblemSource.Models.Aggregates
             }
         }
 
-        public bool IsValid =>
-            ByExercise.ContainsKey("nvr_rp") && ByExercise["nvr_rp"].FractionCorrect.HasValue
-            && ByExercise.ContainsKey("nvr_so") && ByExercise["nvr_so"].FractionCorrect.HasValue
-            && Age >= 6 && Age <= 7;
+        public bool IsValid => InvalidReasons.Any();
 
         public Dictionary<string, string> InvalidReasons
         {
@@ -79,8 +76,8 @@ namespace ProblemSource.Models.Aggregates
                 AddFractionCorrectError("nvr_rp");
                 AddFractionCorrectError("nvr_so");
 
-                if (!(Age >= 6 && Age <= 7))
-                    result.Add("Age", $"{Age}");
+                //if (!(Age >= 6 && Age <= 7))
+                //    result.Add("Age", $"{Age}");
 
                 return result;
 
