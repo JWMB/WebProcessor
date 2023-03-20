@@ -59,10 +59,10 @@
 			return;
 		}
 		//trainingsPromise = apiFacade.trainings.getSummaries();
-		const impersonate = getElementValue('forUser').toString().trim();
+		// const impersonate = getElementValue('forUser').toString().trim();
 
 		trainingGroupsPromise2 = new Promise((res) => {
-			apiFacade.trainings.getGroups(impersonate).then((r) => {
+			apiFacade.trainings.getGroups(null).then((r) => {
 				const asList = Object.entries(r).map((o) => ({ group: o[0], summaries: o[1] }));
 				trainingGroups = asList;
 				res(asList);

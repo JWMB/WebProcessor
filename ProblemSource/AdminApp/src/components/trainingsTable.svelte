@@ -148,7 +148,7 @@
 						headerName: 'Username',
 						field: 'uuid',
 						cellRenderer: (params: any) => {
-							return `<a href="${base}/?id=${params.data.id}">${params.value}</a>`;
+							return `<a href="${base}/training?id=${params.data.id}">${params.value}</a>`;
 						}
 					},
 					{ headerName: 'Days', headerTooltip: 'Days trained', field: 'totalDays' },

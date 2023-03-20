@@ -2,7 +2,7 @@
 	import { get } from 'svelte/store';
 	import Chart from 'chart.js/auto'; // automatically register plugins so we don't have to elsewhere
 	//import { Chart, registerables } from 'chart.js' // see https://stackoverflow.com/questions/67060070/chart-js-core-js6162-error-error-line-is-not-a-registered-controller
-	import type { PhaseStatistics, TrainingDayAccount } from '../apiClient';
+	import type { PhaseStatistics, Training, TrainingDayAccount } from '../apiClient';
 	import TimePerExerciseAndDayChart from './timePerExerciseAndDayChart.svelte';
 	import { groupBy, max } from '../arrayUtils';
 	import ExerciseChart from './exerciseChart.svelte';
@@ -22,10 +22,15 @@
 	let phaseStatistics: PhaseStatistics[];
 	let trainingDays: TrainingDayAccount[];
 	let singleTrainingDays: TrainingDayAccount[];
+	let training: Training;
 
 	export let accountId: number;
 	const loadData = async () => {
-		[trainingDays, phaseStatistics] = await Promise.all([apiFacade.aggregates.trainingDayAccount(accountId), apiFacade.aggregates.phaseStatistics(accountId)]);
+		[trainingDays, phaseStatistics, training] = await Promise.all([
+				apiFacade.aggregates.trainingDayAccount(accountId),
+				apiFacade.aggregates.phaseStatistics(accountId),
+				apiFacade.trainings.getById(accountId)
+			]);
 
 		const byDay = groupBy(trainingDays, (o) => `${o.trainingDay}`);
 		singleTrainingDays = Object.keys(byDay).map((key) => byDay[key][0]);
@@ -56,6 +61,17 @@
 </script>
 
 <main>
+	{#if training}
+	<div>
+	username: {training.username}
+	</div>
+	<div>
+	trainingPlan: {training.trainingPlanName}
+	</div>
+	<div>
+	settings: {training.settings}
+	</div>
+	{/if}
 	<TrainingDaysChart data={singleTrainingDays} />
 	<TimePerExerciseAndDayChart data={phaseStatistics} />
 
