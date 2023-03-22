@@ -25,7 +25,7 @@ export class Assistant {
 
     private static async searchGuide(phrase: string) {
         // const url = `https://ki-study.humany.net/teacher/guides?client=bf8d9822-7929-1010-8e57-385304987de4&funnel=teacher&site=%2F%2Fkistudysync.azurewebsites.net%2Fadmin%2Fteacher&categories=&phrase=${phrase}&skip=0&take=10&sorting.type=popularity&sorting.direction=descending&p.LastGuideId=100`;
-        const url = `https://ki-study.humany.net/teacher/guides?client=bf8d9822-7929-1010-8e57-385304987de4&phrase=${phrase}&skip=0&take=10&sorting.type=popularity&sorting.direction=descending`;
+        const url = `https://ki-study.humany.net/${Assistant.widgetId}/guides?client=bf8d9822-7929-1010-8e57-385304987de4&phrase=${phrase}&skip=0&take=10&sorting.type=popularity&sorting.direction=descending`;
 
         const result = await fetch(url, {
             "headers": {
