@@ -3,6 +3,7 @@ import { get, writable } from 'svelte/store';
 import type { LoginCredentials } from './apiClient';
 import { ApiFacade } from './apiFacade';
 import type { CurrentUserInfo } from './currentUserInfo';
+import { Assistant } from './services/assistant';
 import { Startup } from './startup';
 import { SeverityLevel, type NotificationItem } from './types';
 
@@ -53,6 +54,10 @@ export const notificationsStore = (() => {
         add: add,
         removeAt: removeAt
     }
+})();
+
+export const assistanStore = (() => {
+    return new Assistant("teacher");
 })();
 
 export const userStore = (() => {

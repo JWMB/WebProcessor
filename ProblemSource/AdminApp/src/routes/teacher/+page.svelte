@@ -6,10 +6,9 @@
 	import CreateTrainingsModal from './create-trainings-modal.svelte';
 	import { openModal } from 'svelte-modals';
 	import Switch from 'src/components/switch.svelte';
-	import { getApi } from 'src/globalStore';
+	import { assistanStore, getApi } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
 	import { getString } from 'src/utilities/LanguageService';
-	import { Assistant } from 'src/services/assistant';
 
 	const apiFacade = getApi() as ApiFacade;
 
@@ -89,7 +88,7 @@
 			</button>
 			<!-- svelte-ignore a11y-invalid-attribute -->
 			<span class="tooltip">
-				<a href="#" on:click={() => Assistant.openWidgetWithFirstSearchHit("limit")}>?</a>
+				<a href="#" on:click={() => assistanStore.openWidgetWithFirstSearchHit("limit")}>?</a>
 			</span>
 	</Tabs>
 	{/if}
@@ -113,17 +112,17 @@
 				<th class="days-trained-column">
 					{getString('teacher_trainings_column_header_days_trained')}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_days_trained')} on:click={() => Assistant.openWidgetWithFirstSearchHit("statistics")}>?</span>
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_days_trained')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span>
 				</th>
 				<th class="effective-time-column">
 					{getString('teacher_trainings_column_header_effective_time')}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_effective_time')} on:click={() => Assistant.openWidgetWithFirstSearchHit("statistics")}>?</span>
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_effective_time')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span>
 				</th>
 				<th class="accuracy-column">
 					{getString('teacher_trainings_column_header_accuracy')}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')} on:click={() => Assistant.openWidgetWithFirstSearchHit("statistics")}>?</span>
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span>
 				</th>
 				<th class="notes-column">
 					{getString('teacher_trainings_column_header_notes')}

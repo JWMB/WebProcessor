@@ -1,31 +1,31 @@
 export class Assistant {
-    private static widgetId = "teacher";
-    static openWidgetOnGuide(guideId: number, uriName: string) {
-        Assistant.openWidgetAndExecuteRouting(Assistant.widgetId, router => router.navigate("guide", { guide: guideId.toString(), uriName: uriName }));
+    constructor(private widgetId: string) {
     }
 
-    static openWidgetWithSearch(phrase: string) {
-        Assistant.openWidgetAndExecuteRouting(Assistant.widgetId, router => router.navigate("index", { phrase: phrase }));
+    openWidgetOnGuide(guideId: number, uriName: string) {
+        this.openWidgetAndExecuteRouting(router => router.navigate("guide", { guide: guideId.toString(), uriName: uriName }));
     }
 
-    static openWidgetWithFirstSearchHit(phrase: string) {
-        Assistant.searchGuide(phrase).then(o => {
+    openWidgetWithSearch(phrase: string) {
+        this.openWidgetAndExecuteRouting(router => router.navigate("index", { phrase: phrase }));
+    }
+
+    openWidgetWithFirstSearchHit(phrase: string) {
+        Assistant.searchGuide(phrase, this.widgetId, "ki-study.humany.net").then(o => {
             if (!o?.id || !o?.relativeUrl) return;
-            Assistant.openWidgetOnGuide(o.id, o.relativeUrl);
+            this.openWidgetOnGuide(o.id, o.relativeUrl);
         });
     }
 
-
-    private static openWidgetAndExecuteRouting(widgetId: string, routerCall: (router: any) => void) {
-        const widget = (<any>window).humany.widgets.find(widgetId);
+    private openWidgetAndExecuteRouting(routerCall: (router: any) => void) {
+        const widget = (<any>window).humany.widgets.find(this.widgetId);
         widget.invoke("open").then(() => {
             widget.container.getAsync('router').then((router: any) => routerCall(router));
         });
     }
 
-    private static async searchGuide(phrase: string) {
-        // const url = `https://ki-study.humany.net/teacher/guides?client=bf8d9822-7929-1010-8e57-385304987de4&funnel=teacher&site=%2F%2Fkistudysync.azurewebsites.net%2Fadmin%2Fteacher&categories=&phrase=${phrase}&skip=0&take=10&sorting.type=popularity&sorting.direction=descending&p.LastGuideId=100`;
-        const url = `https://ki-study.humany.net/${Assistant.widgetId}/guides?client=bf8d9822-7929-1010-8e57-385304987de4&phrase=${phrase}&skip=0&take=10&sorting.type=popularity&sorting.direction=descending`;
+    private static async searchGuide(phrase: string, widgetId: string, domain: string) {
+        const url = `https://${domain}/${widgetId}/guides?client=bf8d9822-7929-1010-8e57-385304987de4&phrase=${phrase}&skip=0&take=10&sorting.type=popularity&sorting.direction=descending`;
 
         const result = await fetch(url, {
             "headers": {
