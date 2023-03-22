@@ -66,7 +66,7 @@ namespace Tools
             var dateWhenAdjustedClientWasReleased = DateTimeOffset.Parse("2023-03-01");
             var withAdjustedClient = allSummaries
                 .Where(o => o.FirstLogin >= dateWhenAdjustedClientWasReleased)
-                .Where(o => o.TrainedDays >= minTrainedDays)
+                //.Where(o => o.TrainedDays >= minTrainedDays)
                 .ToList();
 
             var ids = withAdjustedClient.Select(o => o.Id).ToList();
@@ -80,7 +80,8 @@ namespace Tools
                 return new { Id = o.Id, Days = summary.TrainedDays, Age = o.AgeBracket, Overrides = o.Settings.trainingPlanOverrides };
             }).ToList();
 
-            var byAge = info.GroupBy(o => o.Age).ToDictionary(o => o.Key, o => o.Count());
+            var byAge = info.GroupBy(o => o.Age).Select(o => new { o.Key, Count = o.Count() }).OrderBy(o => o.Key);
+            var byDays = info.GroupBy(o => o.Days).Select(o => new { o.Key, Count = o.Count() }).OrderBy(o => o.Key);
             var byOverrides = info.GroupBy(o => o.Overrides != null).ToDictionary(o => o.Key, o => o.Count());
 
             //var statisticsProvider = serviceProvider.CreateInstance<StatisticsProvider>();

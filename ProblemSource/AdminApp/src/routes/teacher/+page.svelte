@@ -9,6 +9,7 @@
 	import { getApi } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
 	import { getString } from 'src/utilities/LanguageService';
+	import { Assistant } from 'src/services/assistant';
 
 	const apiFacade = getApi() as ApiFacade;
 
@@ -81,9 +82,15 @@
 				return { id: g.group };
 			})}
 			on:selected={(e) => onSelectGroup(e.detail)}
-			><button on:click={onCreateGroup}>
+			>
+
+			<button on:click={onCreateGroup}>
 				{getString('teacher_create_group_label')}
 			</button>
+			<!-- svelte-ignore a11y-invalid-attribute -->
+			<span class="tooltip">
+				<a href="#" on:click={() => Assistant.openWidgetOnGuide(100, "g100-why-is-there-a-limit-on-the-number-of-trainings-i-can-create")}>?</a>
+			</span>
 	</Tabs>
 	{/if}
 	{#if trainings && trainings.length > 0}
@@ -105,15 +112,18 @@
 				</th>
 				<th class="days-trained-column">
 					{getString('teacher_trainings_column_header_days_trained')}
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_days_trained')}>?</span>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_days_trained')} on:click={() => Assistant.openWidgetOnGuide(83, "g83-what-do-the-bars-in-the-training-view-mean")}>?</span>
 				</th>
 				<th class="effective-time-column">
 					{getString('teacher_trainings_column_header_effective_time')}
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_effective_time')}>?</span>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_effective_time')} on:click={() => Assistant.openWidgetOnGuide(83, "g83-what-do-the-bars-in-the-training-view-mean")}>?</span>
 				</th>
 				<th class="accuracy-column">
 					{getString('teacher_trainings_column_header_accuracy')}
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')}>?</span>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')} on:click={() => Assistant.openWidgetOnGuide(83, "g83-what-do-the-bars-in-the-training-view-mean")}>?</span>
 				</th>
 				<th class="notes-column">
 					{getString('teacher_trainings_column_header_notes')}
