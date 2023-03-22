@@ -70,7 +70,8 @@
 			firstDate: firstDay ? getDateString(new Date(firstDay.startTime)) : "",
 			latestDate: firstDay ? getDateString(new Date(training.days[training.days.length - 1].startTime)) : "",
 			daysPerWeek: training.days.length / (daysSinceStart / 7),
-			days: withDayIndex
+			days: withDayIndex,
+			targetTime: training.targetMinutesPerDay
 		};
 	};
 
@@ -148,7 +149,7 @@
 						headerName: 'Username',
 						field: 'uuid',
 						cellRenderer: (params: any) => {
-							return `<a href="${base}/training?id=${params.data.id}">${params.value}</a>`;
+							return `${params.value} (${params.data.id}) <a href="${base}/training?id=${params.data.id}">Open</a>`;
 						}
 					},
 					{ headerName: 'Days', headerTooltip: 'Days trained', field: 'totalDays' },
@@ -159,7 +160,8 @@
 						cellRenderer: (params: any) => params.value.toFixed(1)
 					},
 					{ headerName: 'First', headerTooltip: 'First training', field: 'firstDate' },
-					{ headerName: 'Latest', headerTooltip: 'Latest training', field: 'latestDate' }
+					{ headerName: 'Latest', headerTooltip: 'Latest training', field: 'latestDate' },
+					{ headerName: 'TargetTime', headerTooltip: '', field: 'targetTime' }
 				]
 			},
 			{
@@ -168,7 +170,7 @@
 			}
 		],
 		rowData: trainings,
-		onRowClicked: (e) => dispatch('clickedRow', { id: e.data.id })
+		//onRowClicked: (e) => dispatch('clickedRow', { id: e.data.id })
 	};
 
 	onMount(() => {

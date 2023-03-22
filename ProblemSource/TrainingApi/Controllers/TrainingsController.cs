@@ -220,7 +220,11 @@ namespace TrainingApi.Controllers
         private async Task<List<TrainingSummaryDto>> GetSummaryDtos(IEnumerable<Training> trainings)
         {
             var summaries = await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id));
-            return trainings.Select(training => TrainingSummaryDto.Create<TrainingSummaryDto>(trainings.Single(t => t.Id == training.Id), summaries.FirstOrDefault(s => s?.Id == training.Id))).ToList();
+            return trainings.Select(training => 
+                TrainingSummaryDto.Create<TrainingSummaryDto>(
+                    trainings.Single(t => t.Id == training.Id),
+                    summaries.FirstOrDefault(s => s?.Id == training.Id))
+                ).ToList();
         }
 
         [HttpPost]
