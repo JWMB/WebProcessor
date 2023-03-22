@@ -65,7 +65,7 @@ namespace ProblemSource.Models.Aggregates
             }
         }
 
-        public bool IsValid => InvalidReasons.Any();
+        public bool IsValid => InvalidReasons.Any() == false;
 
         public Dictionary<string, string> InvalidReasons
         {

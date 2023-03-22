@@ -43,14 +43,30 @@ var path = @"C:\Users\uzk446\Downloads\";
 
 //{
 //    var trainingRepo = serviceProvider.GetRequiredService<ITrainingRepository>();
-//    var training = await trainingRepo.Get(865640);
-//    if (training == null)
-//        throw new Exception("");
+
+//    var ids = @"
+//";
 //    var factory = serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>();
 //    var pathToModel = @"C:\Users\uzk446\source\repos\Trainer\WebProcessor\ProblemSource\ProblemSourceModule\Resources\JuliaMLModel_Reg.zip";
-//    var analyzer = new CategorizerDay5_23Q1(new LocalMLPredictNumberlineLevelService(pathToModel), serviceProvider.GetRequiredService<ILogger<CategorizerDay5_23Q1>>());
-//    var predicted = await analyzer.Predict(training, factory.Create(training.Id));
+//    var analyzer = new CategorizerDay5_23Q1(new MLPredictNumberlineLevelService(new LocalMLPredictor(pathToModel)), serviceProvider.GetRequiredService<ILogger<CategorizerDay5_23Q1>>());
+
+//    foreach (var id in ids.Split('\n').Select(o => o.Trim()).Where(o => o.Any()).Select(int.Parse))
+//    {
+//        var training = await trainingRepo.Get(id);
+//        if (training == null)
+//            throw new Exception("Training does not exist");
+//        var dataProvider = factory.Create(training.Id);
+//        var predicted = await analyzer.Predict(training, dataProvider);
+//        if (predicted.PredictedPerformanceTier != PredictedNumberlineLevel.PerformanceTier.Unknown)
+//        {
+//            if (await analyzer.Analyze(training, dataProvider, null))
+//            {
+//                await trainingRepo.Update(training);
+//            }
+//        }
+//    }
 //}
+
 
 //{
 //    var copier = serviceProvider.CreateInstance<TrainingDataCopier>();
