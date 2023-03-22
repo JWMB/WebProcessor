@@ -33,6 +33,20 @@ namespace Tools
             var userAgents = devices.Select(o => o.Value<string>("userAgent")).ToList();
         }
 
+        public async Task<Dictionary<string, Dictionary<string, List<int>>>> GetTrainingIdsToTeachers(IEnumerable<int> trainingIds)
+        {
+            var allUsers = await serviceProvider.GetRequiredService<IUserRepository>().GetAll();
+            var users = allUsers
+                .Select(o => new
+                {
+                    User = o,
+                    Trainings = o.Trainings.Select(p => new { Key = p.Key, Value = p.Value.Intersect(trainingIds) }).Where(o => o.Value.Any()).ToDictionary(o => o.Key, o => o.Value.ToList())
+                })
+                .Where(o => o.Trainings.Any())
+                .ToDictionary(o => o.User.Email, o => o.Trainings);
+            return users;
+        }
+
         public async Task OverallStats(int minTrainedDays)
         {
             //var states = await GetTrainingStates();
