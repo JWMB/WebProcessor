@@ -89,7 +89,7 @@
 			</button>
 			<!-- svelte-ignore a11y-invalid-attribute -->
 			<span class="tooltip">
-				<a href="#" on:click={() => Assistant.openWidgetOnGuide(100, "g100-why-is-there-a-limit-on-the-number-of-trainings-i-can-create")}>?</a>
+				<a href="#" on:click={() => Assistant.openWidgetWithFirstSearchHit("limit")}>?</a>
 			</span>
 	</Tabs>
 	{/if}
@@ -113,17 +113,17 @@
 				<th class="days-trained-column">
 					{getString('teacher_trainings_column_header_days_trained')}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_days_trained')} on:click={() => Assistant.openWidgetOnGuide(83, "g83-what-do-the-bars-in-the-training-view-mean")}>?</span>
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_days_trained')} on:click={() => Assistant.openWidgetWithFirstSearchHit("statistics")}>?</span>
 				</th>
 				<th class="effective-time-column">
 					{getString('teacher_trainings_column_header_effective_time')}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_effective_time')} on:click={() => Assistant.openWidgetOnGuide(83, "g83-what-do-the-bars-in-the-training-view-mean")}>?</span>
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_effective_time')} on:click={() => Assistant.openWidgetWithFirstSearchHit("statistics")}>?</span>
 				</th>
 				<th class="accuracy-column">
 					{getString('teacher_trainings_column_header_accuracy')}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')} on:click={() => Assistant.openWidgetOnGuide(83, "g83-what-do-the-bars-in-the-training-view-mean")}>?</span>
+					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')} on:click={() => Assistant.openWidgetWithFirstSearchHit("statistics")}>?</span>
 				</th>
 				<th class="notes-column">
 					{getString('teacher_trainings_column_header_notes')}
