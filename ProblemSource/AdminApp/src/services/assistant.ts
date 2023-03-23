@@ -2,8 +2,8 @@ export class Assistant {
     constructor(private widgetId: string) {
     }
 
-    openWidgetOnGuide(guideId: number, uriName: string) {
-        this.openWidgetAndExecuteRouting(router => router.navigate("guide", { guide: guideId.toString(), uriName: uriName }));
+    openWidgetOnGuide(guideId: number) {
+        this.openWidgetAndExecuteRouting(router => router.navigate("guide", { guide: guideId.toString(), uriName: "ABC" }));
     }
 
     openWidgetWithSearch(phrase: string) {
@@ -11,9 +11,12 @@ export class Assistant {
     }
 
     openWidgetWithFirstSearchHit(phrase: string) {
-        Assistant.searchGuide(phrase, this.widgetId, "ki-study.humany.net").then(o => {
-            if (!o?.id || !o?.relativeUrl) return;
-            this.openWidgetOnGuide(o.id, o.relativeUrl);
+        Assistant.searchGuide(phrase, this.widgetId, "ki-study.humany.net").then(id => {
+            if (!id) {
+                console.warn(`No guide "${phrase}" found`);
+                return;
+            }
+            this.openWidgetOnGuide(id);
         });
     }
 
@@ -41,6 +44,6 @@ export class Assistant {
         });
         const json = await result.json();
         const firstHit = json["Matches"][0] || {};
-        return { id: firstHit["Id"], relativeUrl: firstHit["RelativeUrl"] };
+        return firstHit["Id"]; //{ id: firstHit["Id"], relativeUrl: firstHit["RelativeUrl"] };
     }
 }
