@@ -215,6 +215,7 @@ namespace ProblemSource
 
             if (root.RequestState)
             {
+                log.LogInformation($"Training id={training.Id} ({training.Username}) RequestState");
                 // client wants TrainingPlan, stats for trained exercises, training day number etc
                 result.state = await CreateClientState(root, training, currentStoredState);
 

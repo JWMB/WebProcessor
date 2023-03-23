@@ -1,5 +1,4 @@
 ﻿using ProblemSource.Models.Aggregates;
-using System.Diagnostics;
 
 namespace ProblemSourceModule.Models.Aggregates
 {
