@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { CreateUserDto, GetUserDto, PatchUserDto } from 'src/apiClient';
-	import type { ApiFacade } from 'src/apiFacade';
-	import { getApi } from 'src/globalStore';
+	import type { CreateUserDto, GetUserDto, PatchUserDto } from '../../apiClient';
+	import type { ApiFacade } from '../../apiFacade';
+	import { getApi } from '../../globalStore';
 	import { onMount } from 'svelte';
 
 	const apiFacade = getApi() as ApiFacade;

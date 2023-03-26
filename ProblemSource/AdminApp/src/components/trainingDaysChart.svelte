@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Chart } from 'chart.js';
-	import type { TrainingDayAccount } from 'src/apiClient';
+	import type { TrainingDayAccount } from '../apiClient';
 	import { onMount } from 'svelte';
 
 	export let data: TrainingDayAccount[];
@@ -35,6 +35,8 @@
 
 	onMount(() => {
 		const context = (<HTMLCanvasElement>document.getElementById('myChart')).getContext('2d');
+		if (context == null) return;
+		
 		chart = new Chart(context, {
 			type: 'line',
 			data: { labels: [], datasets: [] },
