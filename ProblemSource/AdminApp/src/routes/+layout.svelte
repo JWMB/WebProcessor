@@ -3,14 +3,14 @@
 	export const ssr = false;
 
 	import { base } from '$app/paths';
-	import NotificationBar from 'src/components/notificationBar.svelte';
+	import NotificationBar from '../components/notificationBar.svelte';
 	import { Modals, closeModal } from 'svelte-modals';
-	import { getApi, userStore } from 'src/globalStore';
+	import { getApi, userStore } from '../globalStore';
 	import type { PageData } from './$types';
-	import { getString } from 'src/utilities/LanguageService';
+	import { getString } from '../utilities/LanguageService';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { initWidgetImplementationScript } from 'src/humany-embed';
+	import { initWidgetImplementationScript } from '../humany-embed';
 
 	export let data: PageData;
 

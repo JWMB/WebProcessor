@@ -17,7 +17,12 @@ export class Startup {
         }
     }
 
-    static resolveLocalServerBaseUrl(location: Location) {
-        return PUBLIC_LOCAL_SERVER_PATH || location.origin;
-    }
+    // // TODO: moved to separate export b/c bizarre "Cannot access 'Startup' before initialization"
+    // static resolveLocalServerBaseUrl(location: Location) {
+    //     return PUBLIC_LOCAL_SERVER_PATH || location.origin;
+    // }
+}
+
+export function resolveLocalServerBaseUrl(location: Location) {
+    return PUBLIC_LOCAL_SERVER_PATH || location.origin;
 }

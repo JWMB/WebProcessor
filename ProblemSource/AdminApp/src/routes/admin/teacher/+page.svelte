@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto, TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
+	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto, TrainingCreateDto, TrainingTemplateDto } from '../../../apiClient';
 	import TrainingsTable from '../../../components/trainingsTable.svelte';
 	import TrainingGroupsTable from '../../../components/trainingGroupsTable.svelte';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
-	import { getApi, userStore } from 'src/globalStore';
-	import type { ApiFacade } from 'src/apiFacade';
+	import { getApi, userStore } from '../../../globalStore';
+	import type { ApiFacade } from '../../../apiFacade';
 
 	// let trainingSummaries: TrainingSummary[] = [];
 

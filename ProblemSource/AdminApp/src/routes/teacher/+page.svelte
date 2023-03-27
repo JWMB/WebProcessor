@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto } from 'src/apiClient';
-	import Tabs from 'src/components/tabs.svelte';
+	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto } from '../../apiClient';
+	import Tabs from '../../components/tabs.svelte';
 	import ProgressBar from './progress-bar.svelte';
 	import CreateTrainingsModal from './create-trainings-modal.svelte';
 	import { openModal } from 'svelte-modals';
-	import Switch from 'src/components/switch.svelte';
-	import { assistanStore, getApi } from 'src/globalStore';
-	import type { ApiFacade } from 'src/apiFacade';
-	import { getString } from 'src/utilities/LanguageService';
+	import Switch from '../../components/switch.svelte';
+	import { assistanStore, getApi } from '../../globalStore';
+	import type { ApiFacade } from '../../apiFacade';
+	import { getString } from '../../utilities/LanguageService';
 
 	const apiFacade = getApi() as ApiFacade;
 

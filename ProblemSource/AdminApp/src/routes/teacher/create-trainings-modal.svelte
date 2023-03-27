@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { closeModal } from 'svelte-modals';
-	import type { TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
-	import { getApi } from 'src/globalStore';
-	import type { ApiFacade } from 'src/apiFacade';
+	import type { TrainingCreateDto, TrainingTemplateDto } from '../../apiClient';
+	import { getApi } from '../../globalStore';
+	import type { ApiFacade } from '../../apiFacade';
 	import { onMount } from 'svelte';
-	import { ErrorHandling } from 'src/errorHandling';
+	import { ErrorHandling } from '../../errorHandling';
 
 	export let isOpen: boolean; // provided by Modals
 	export let onCreateGroup: (id: string) => void;

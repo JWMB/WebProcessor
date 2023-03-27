@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SeverityLevel, type NotificationItem } from 'src/types.js';
+	import { SeverityLevel, type NotificationItem } from '../types.js';
 	import { onDestroy } from 'svelte';
 	import { notificationsStore } from '../globalStore.js';
 
