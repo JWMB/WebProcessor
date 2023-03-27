@@ -40,7 +40,8 @@ jobs:
       run: mkdir TrainingApi/publish/StaticFiles/Admin
       working-directory: ProblemSource
     - name: Copy admin
-      run: mv -v AdminApp/build/* TrainingApi/publish/StaticFiles/Admin
+      # run: mv -v AdminApp/build/* TrainingApi/publish/StaticFiles/Admin
+      run: mv -v AdminApp/.svelte-kit/output/client/* TrainingApi/publish/StaticFiles/Admin
       shell: bash
       working-directory: ProblemSource
     - name: Deploy to Azure WebApp
