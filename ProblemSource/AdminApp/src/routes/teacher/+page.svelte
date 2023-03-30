@@ -49,6 +49,7 @@
 				trainedDaysMax: t.targetDays || 30,
 				accuracy,
 				effectiveTime,
+				targetMinutesPerDay: t.targetMinutesPerDay,
 				isAccuracyLow: accuracy < 0.4, // TODO: get value from server
 				isEffectiveTimeLow: effectiveTime < 0.5, // TODO: get value from server
 				isDaysTrainedLow: false, // TODO: get value from server
@@ -131,9 +132,15 @@
 			{#each trainings as t (t.id)}
 				<tr on:click={() => onSelectTraining(t.id)} class="training-row">
 					<td class="user-column">{t.username}</td>
-					<td><ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" decimals={0} color={t.isDaysTrainedLow ? '#ff5959' : '#c7a0fc'} /></td>
-					<td><ProgressBar value={t.effectiveTime * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={t.isEffectiveTimeLow ? '#ff5959' : '#49e280'} /></td>
-					<td><ProgressBar value={t.accuracy * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={t.isAccuracyLow ? '#ff5959' : '#52cad8'} /></td>
+					<td>
+						<ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" decimals={0} color={t.isDaysTrainedLow ? '#ff5959' : '#c7a0fc'} />
+					</td>
+					<td title="Target: {t.targetMinutesPerDay} minutes">
+						<ProgressBar value={t.effectiveTime * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={t.isEffectiveTimeLow ? '#ff5959' : '#49e280'}/>
+					</td>
+					<td>
+						<ProgressBar value={t.accuracy * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={t.isAccuracyLow ? '#ff5959' : '#52cad8'} />
+					</td>
 					<td>
 						{#each t.comments as c}
 							{c.description}
