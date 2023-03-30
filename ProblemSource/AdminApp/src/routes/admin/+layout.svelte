@@ -3,7 +3,7 @@
 	import { base } from '$app/paths';
 	import { Realtime } from '../../services/realtime.js';
 	import { onDestroy } from 'svelte';
-	import { Startup } from '../../startup.js';
+	import { resolveLocalServerBaseUrl, Startup } from '../../startup.js';
 	import type { TrainingUpdateMessage } from '../../types.js';
 
 	const realtime = new Realtime<TrainingUpdateMessage>();
@@ -28,7 +28,7 @@
 			};
 			realtimeConnected = null;
 			try {
-				await realtime.connect(Startup.resolveLocalServerBaseUrl(window.location));
+				await realtime.connect(resolveLocalServerBaseUrl(window.location));
 			} catch (err) {
 				console.log('error connecting', err);
 			}
