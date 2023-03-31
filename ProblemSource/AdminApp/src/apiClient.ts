@@ -313,12 +313,12 @@ export class AggregatesClient {
         this.baseUrl = baseUrl !== undefined && baseUrl !== null ? baseUrl : "";
     }
 
-    trainingDayAccount(accountId: number | undefined): Promise<TrainingDayAccount[]> {
+    trainingDayAccount(trainingId: number | undefined): Promise<TrainingDayAccount[]> {
         let url_ = this.baseUrl + "/api/Aggregates/TrainingDayAccount?";
-        if (accountId === null)
-            throw new Error("The parameter 'accountId' cannot be null.");
-        else if (accountId !== undefined)
-            url_ += "accountId=" + encodeURIComponent("" + accountId) + "&";
+        if (trainingId === null)
+            throw new Error("The parameter 'trainingId' cannot be null.");
+        else if (trainingId !== undefined)
+            url_ += "trainingId=" + encodeURIComponent("" + trainingId) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -350,12 +350,12 @@ export class AggregatesClient {
         return Promise.resolve<TrainingDayAccount[]>(null as any);
     }
 
-    phaseStatistics(accountId: number | undefined): Promise<PhaseStatistics[]> {
+    phaseStatistics(trainingId: number | undefined): Promise<PhaseStatistics[]> {
         let url_ = this.baseUrl + "/api/Aggregates/PhaseStatistics?";
-        if (accountId === null)
-            throw new Error("The parameter 'accountId' cannot be null.");
-        else if (accountId !== undefined)
-            url_ += "accountId=" + encodeURIComponent("" + accountId) + "&";
+        if (trainingId === null)
+            throw new Error("The parameter 'trainingId' cannot be null.");
+        else if (trainingId !== undefined)
+            url_ += "trainingId=" + encodeURIComponent("" + trainingId) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {

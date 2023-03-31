@@ -251,7 +251,7 @@
         "parameters": [
           {
             "type": "integer",
-            "name": "accountId",
+            "name": "trainingId",
             "in": "query",
             "format": "int32",
             "x-nullable": false
@@ -285,7 +285,7 @@
         "parameters": [
           {
             "type": "integer",
-            "name": "accountId",
+            "name": "trainingId",
             "in": "query",
             "format": "int32",
             "x-nullable": false
