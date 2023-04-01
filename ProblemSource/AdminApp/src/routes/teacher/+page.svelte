@@ -131,7 +131,7 @@
 			</tr>
 			{#each trainings as t (t.id)}
 				<tr on:click={() => onSelectTraining(t.id)} class="training-row">
-					<td class="user-column">{t.username}</td>
+					<td class="user-column">{t.username}&nbsp;<a href="/admin/teacher/training?id={t.id.toString()}" title="id={t.id.toString()}" target="_blank">^</a></td>
 					<td>
 						<ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" decimals={0} color={t.isDaysTrainedLow ? '#ff5959' : '#c7a0fc'} />
 					</td>

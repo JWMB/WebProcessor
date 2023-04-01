@@ -7,7 +7,21 @@ export class DateUtils {
         }
     }
     public static toIsoDate(val: string | Date | number) {
+        const date = DateUtils.toObject(val);
+        return `${date.year}-${DateUtils.pad2(date.month)}-${DateUtils.pad2(date.day)}`;
+    }
+
+    public static toObject(val: string | Date | number) {
         const date = DateUtils.toDate(val);
-        return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2,'0')}-${(date.getDate() + 1).toString().padStart(2, '0')}`;
+        return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() + 1, hour: date.getHours(), minute: date.getMinutes(), second: date.getSeconds(), millisecond: date.getMilliseconds() };
+    }
+
+    public static pad2(val: string | number) {
+        return val.toString().padStart(2, '0');
+    }
+
+    public static toDayMonth(val: string | Date | number) {
+        const date = DateUtils.toObject(val);
+        return `${date.day}/${date.month}`;
     }
 }
