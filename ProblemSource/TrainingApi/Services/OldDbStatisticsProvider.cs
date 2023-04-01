@@ -15,6 +15,8 @@ namespace TrainingApi.Services
             this.dbContext = dbContext;
         }
 
+        public Task<List<TrainingSummary>> GetAllTrainingSummaries() => throw new NotImplementedException();
+
         public async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int trainingId)
         {
             var rows = await dbContext.AggregatedData.Where(o => o.AggregatorId == 1 && o.AccountId == trainingId)

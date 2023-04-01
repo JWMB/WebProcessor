@@ -217,13 +217,13 @@ namespace TrainingApi.Controllers
                 o => o.Value.Select(id => summaryDtos.FirstOrDefault(o => o.Id == id)).OfType<TrainingSummaryDto>().ToList());
         }
 
-        private async Task<List<TrainingSummaryDto>> GetSummaryDtos(IEnumerable<Training> trainings)
+        private async Task<List<TrainingSummaryDto>> GetSummaryDtos(IEnumerable<Training> trainings, IEnumerable<TrainingSummary>? summaries = null)
         {
-            var summaries = await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id));
+            summaries ??= (await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id))).OfType<TrainingSummary>();
+            var summariesAsDict = summaries.ToDictionary(o => o.Id, o => o);
+
             return trainings.Select(training => 
-                TrainingSummaryDto.Create<TrainingSummaryDto>(
-                    trainings.Single(t => t.Id == training.Id),
-                    summaries.FirstOrDefault(s => s?.Id == training.Id))
+                TrainingSummaryDto.Create<TrainingSummaryDto>(training, summariesAsDict.GetValueOrDefault(training.Id, null))
                 ).ToList();
         }
 
@@ -240,6 +240,16 @@ namespace TrainingApi.Controllers
             return trainingIds.Any() ? trainingIds.FirstOrDefault() : 0;
         }
 
+        [Authorize(Roles = RolesRequirement.Admin)]
+        [HttpGet]
+        [Route("allsummaries")]
+        public async Task<List<TrainingSummaryDto>> GetAllSummaries()
+        {
+            var trainings = (await trainingRepository.GetAll()).ToList();
+            var summaries = await statisticsProvider.GetAllTrainingSummaries();
+            return await GetSummaryDtos(trainings, summaries);
+        }
+        
         [HttpGet]
         [Route("summaries")]
         public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery] string? group = null, string? impersonateUser = null)
