@@ -3,8 +3,8 @@
 	import { base } from '$app/paths';
 	import { Realtime } from '../../services/realtime.js';
 	import { onDestroy } from 'svelte';
-	import { Startup } from 'src/startup.js';
-	import type { TrainingUpdateMessage } from 'src/types.js';
+	import { Startup } from '../../startup.js';
+	import type { TrainingUpdateMessage } from '../../types.js';
 
 	const realtime = new Realtime<TrainingUpdateMessage>();
 	let realtimeConnected: boolean | null = false;
@@ -45,6 +45,7 @@
 		<a href="{base}/">Home</a>
 		<a href="{base}/admin">Admin</a>
 		<a href="{base}/admin/teacher">Teacher</a>
+		<a href="{base}/admin/overview">Overview</a>
 		<a href="{base}/teacher">Teacher2</a>
 		<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? 'Disconnect' : 'Connect'}</button>
 	{/if}
