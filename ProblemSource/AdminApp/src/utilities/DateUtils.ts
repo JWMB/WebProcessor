@@ -47,7 +47,13 @@ export class DateUtils {
     public static addDays(val: string | Date | number, days: number) {
 		return new Date(DateUtils.toDate(val).valueOf() + days * 24 * 60 * 60 * 1000);
     }
-    
+
+    public static getIntDaysBetween(dateStart: string | Date | number, dateEnd: string | Date | number) {
+        const diff = DateUtils.getDatePart(DateUtils.toDate(dateEnd)).valueOf() - DateUtils.getDatePart(DateUtils.toDate(dateStart)).valueOf();
+        const days = diff / 1000 / 60 / 60 / 24;
+        return Math.round(days);
+	}
+
     public static getDaysBetween(dateStart: string | Date | number, dateEnd: string | Date | number, floor:boolean = true) {
         const diff = DateUtils.toDate(dateEnd).valueOf() - DateUtils.toDate(dateStart).valueOf();
         const days = diff / 1000 / 60 / 60 / 24;

@@ -42,8 +42,10 @@
 			return '';
 		}
 
-		const timeActiveFract = dayData.timeActive / dayData.timeTarget;
-		const timeTotalFract = dayData.timeTotal / dayData.timeTarget;
+		const targetTime = params.data.targetTime || 33;
+		const timeActiveFract = dayData.timeActive / targetTime;
+		const timeTotalFract = dayData.timeTotal / targetTime;
+
 		const circleRadius = 9;
 		const green = '#5a5';
 		const red = '#bdb';
@@ -59,7 +61,7 @@
 		const correct = `
 <g transform="translate(30,13)">
 	<rect x="0" width="${rectSize.x}" height="${rectSize.y}" rx="2" fill="${gray}" stroke="black" stroke-width="0.5" />
-	<rect x="0" width="${dayData.winRate * rectSize.x}" height="${rectSize.y}" rx="2" fill="${green}" />
+	<rect x="0" width="${(dayData.winRate || 0) * rectSize.x}" height="${rectSize.y}" rx="2" fill="${green}" />
 </g>
 `.trim();
 		return `<svg viewBox="0 0 60 30">${time}${correct}</svg>`;
@@ -93,7 +95,7 @@
 						headerName: 'Username',
 						field: 'uuid',
 						cellRenderer: (params: any) => {
-							return `${params.value} (${params.data.id}) <a href="${base}/training?id=${params.data.id}">Open</a>`;
+							return `${params.value} (${params.data.id}) <a href="${base}/training?id=${params.data.id}" target="_blank">Open</a>`;
 						}
 					},
 					{ headerName: 'Days', headerTooltip: 'Days trained', field: 'totalDays' },

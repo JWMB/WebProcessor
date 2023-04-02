@@ -9,14 +9,17 @@ export interface XX {
 export class TrainingDayTools {
     public static getLatestNumDaysStats(numDays: number, trainingSummaries: TrainingSummaryWithDaysDto[]) {
         const latestTimestamp = max(trainingSummaries.map((ts) => max(ts.days.filter(d => d.numQuestions > 0).map(d => new Date(d.startTime).valueOf()))));
+        //console.log("latest", new Date(latestTimestamp), trainingSummaries.filter(t => t.days.filter(d => DateUtils.equals(d.startTime, latestTimestamp, 1000 * 60 * 60))));
 
         let fromDate = DateUtils.getDatePart(DateUtils.addDays(latestTimestamp, -numDays + 1));
+        // console.log("fromDate", fromDate);
 
         const mappedTrainings = trainingSummaries.map(training => {
             const withDayIndex = training.days
                 .filter((d) => new Date(d.startTime) >= fromDate)
                 .map((d) => ({
-                    dayIndex: DateUtils.getDaysBetween(fromDate, DateUtils.getDatePart(d.startTime)),
+                    dayIndex: DateUtils.getIntDaysBetween(fromDate, DateUtils.getDatePart(d.startTime)),
+                    startTime: DateUtils.toDate(d.startTime),
                     timeActive: d.responseMinutes,
                     timeTotal: d.remainingMinutes + d.responseMinutes,
                     timeTotalOfTargetPercent: Math.round(100 * (d.remainingMinutes + d.responseMinutes) / (training.targetMinutesPerDay || 10000)),
@@ -29,7 +32,8 @@ export class TrainingDayTools {
             // const lastDay = training.days[training.days.length - 1] || firstDay;
             const uuid = training.username; // firstDay.accountUuid;
             const daysSinceStart = firstDay ? DateUtils.getDaysBetween(new Date(firstDay.startTime), new Date(latestTimestamp)) : 1;
-            // console.log(uuid, training.days.length, daysSinceStart);
+
+            // console.log(uuid, training.days.length, training.days, withEmptyDays);
             return {
                 id: training.id,
                 uuid: uuid,
