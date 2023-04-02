@@ -61,12 +61,12 @@ namespace TrainingApi.Services
             if (request.Query.TryGetValue("impersonate", out var fromQuery))
             {
                 var name = fromQuery.FirstOrDefault();
-                if (string.IsNullOrEmpty(name)) return name;
+                if (!string.IsNullOrEmpty(name)) return name;
             }
             if (request.Headers.TryGetValue("Impersonate-User", out var fromHeader))
             {
                 var name = fromHeader.FirstOrDefault();
-                if (string.IsNullOrEmpty(name)) return name;
+                if (!string.IsNullOrEmpty(name)) return name;
             }
             return null;
         }
