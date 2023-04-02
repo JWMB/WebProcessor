@@ -9,11 +9,17 @@
 	import { assistanStore, getApi } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
 	import { getString } from 'src/utilities/LanguageService';
+	import { TrainingDayTools } from 'src/services/trainingDayTools';
+	import { DateUtils } from 'src/utilities/DateUtils';
 
 	const apiFacade = getApi() as ApiFacade;
 
 	let detailedTrainingsData: TrainingSummaryWithDaysDto[] = [];
 	let showStatsForLast7days = false;
+
+	const trainingDayDetailsNumDaysBack = 7;
+	let trainingDayDetails = TrainingDayTools.getLatestNumDaysStats(0, []);
+
 	$: noOfDays = showStatsForLast7days ? 7 : 9999;
 
 	$: trainings = calculateTrainingStats(detailedTrainingsData, noOfDays);
@@ -34,7 +40,19 @@
 		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId, null);
 	}
 
+	function getAccuracyWarningLevel(training: { accuracyWarningThreshold: number }, accuracy: number) {
+		return accuracy < training.accuracyWarningThreshold ? 1 : 0;
+	}
+	function getTimeWarningLevel(training: { effectiveTimeWarningThreshold: number }, minutes: number) {
+		return minutes < training.effectiveTimeWarningThreshold ? 1 : 0;
+	}
+	function gettimeTotalOfTargetPercent(training: {latestDays?: { timeTotalOfTargetPercent: number}[]}, dayOffset: number) {
+		return ((training.latestDays || [])[dayOffset] ||{}).timeTotalOfTargetPercent || 0;
+	}
+
 	function calculateTrainingStats(data: TrainingSummaryWithDaysDto[], numberOfDays = 7) {
+		trainingDayDetails = TrainingDayTools.getLatestNumDaysStats(7, detailedTrainingsData);
+
 		const average = (arr: number[]) => {
 			return arr.reduce((p, c) => p + c, 0) / arr.length;
 		};
@@ -49,10 +67,11 @@
 				trainedDaysMax: t.targetDays || 30,
 				accuracy,
 				effectiveTime,
+				accuracyWarningThreshold: 0.4, // TODO: part of TrainingSummaryWithDaysDto
+				effectiveTimeWarningThreshold: 0.5, // TODO: part of TrainingSummaryWithDaysDto
 				targetMinutesPerDay: t.targetMinutesPerDay,
-				isAccuracyLow: accuracy < 0.4, // TODO: get value from server
-				isEffectiveTimeLow: effectiveTime < 0.5, // TODO: get value from server
 				isDaysTrainedLow: false, // TODO: get value from server
+				latestDays: trainingDayDetails.trainings.find(o => o.id == t.id)?.days,
 				comments: [] as Array<{ type: 'Critical' | 'Warning' | 'Info'; description: string }>
 			};
 		});
@@ -125,6 +144,9 @@
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span>
 				</th>
+				{#each Array.from(Array(trainingDayDetailsNumDaysBack).keys()) as dayOffset}
+				<th class="training-day-column" title="{DateUtils.toIsoDate(DateUtils.addDays(trainingDayDetails.startDate, dayOffset))}">{DateUtils.getWeekDayName(DateUtils.addDays(trainingDayDetails.startDate, dayOffset))[0]}</th>
+				{/each}
 				<th class="notes-column">
 					{getString('teacher_trainings_column_header_notes')}
 				</th>
@@ -136,15 +158,21 @@
 						<ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" decimals={0} color={t.isDaysTrainedLow ? '#ff5959' : '#c7a0fc'} />
 					</td>
 					<td title="Target: {t.targetMinutesPerDay} minutes">
-						<ProgressBar value={t.effectiveTime * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={t.isEffectiveTimeLow ? '#ff5959' : '#49e280'}/>
+						<ProgressBar value={t.effectiveTime * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={getTimeWarningLevel(t, t.effectiveTime) == 1 ? '#ff5959' : '#49e280'}/>
 					</td>
 					<td>
-						<ProgressBar value={t.accuracy * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={t.isAccuracyLow ? '#ff5959' : '#52cad8'} />
+						<ProgressBar value={t.accuracy * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={getAccuracyWarningLevel(t, t.accuracy) == 1 ? '#ff5959' : '#52cad8'} />
 					</td>
+					{#each Array.from(Array(trainingDayDetailsNumDaysBack).keys()) as dayOffset}
+					<td title="{gettimeTotalOfTargetPercent(t, dayOffset)}% of {t.targetMinutesPerDay} minutes">
+						<ProgressBar value={gettimeTotalOfTargetPercent(t, dayOffset)} showValueAs="None" max={100} suffix="%" decimals={0} color={getTimeWarningLevel(t, 0.01 * gettimeTotalOfTargetPercent(t, dayOffset)) == 1 ? '#fc9a9a' : '#77eda1'}/>
+					</td>
+					{/each}
 					<td>
-						{#each t.comments as c}
-							{c.description}
-						{/each}</td>
+					{#each t.comments as c}
+						{c.description}
+					{/each}
+					</td>
 				</tr>
 			{/each}
 		</table>
@@ -206,6 +234,10 @@
 	.user-column {
 		width: 120px;
 		padding-left: 10px;
+	}
+	.training-day-column {
+		width: 55px;
+		padding-left: 5px;
 	}
 	.days-trained-column {
 		width: 120px;

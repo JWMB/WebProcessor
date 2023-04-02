@@ -1,81 +1,25 @@
 <script lang="ts">
 	import type { TrainingSummaryWithDaysDto } from 'src/apiClient';
 	import { base } from '$app/paths';
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { Grid, type GridOptions } from 'ag-grid-community';
 
 	import 'ag-grid-community/styles/ag-grid.css';
 	import 'ag-grid-community/styles/ag-theme-alpine.css';
-	import { max } from '../arrayUtils';
-	import { identity } from 'svelte/internal';
+	import { DateUtils } from 'src/utilities/DateUtils';
+	import { TrainingDayTools } from 'src/services/trainingDayTools';
 
 	export let trainingSummaries: TrainingSummaryWithDaysDto[] = [];
-	export let numDays = 10;
-
-	const dispatch = createEventDispatcher<{ clickedRow: { id: number } }>();
-
-	function getDateString(date: Date) {
-		const str = date.toISOString();
-		const index = str.indexOf('T');
-		return str.substring(0, index);
-	}
-	function getDatePart(date: Date) {
-		const msOfTime = date.getHours() * 60 * 60 * 1000 + date.getMinutes() * 60 * 1000 + date.getSeconds() * 1000 + date.getMilliseconds();
-		return new Date(date.valueOf() - msOfTime);
-	}
-	function getDaysBetween(dateStart: Date, dateEnd: Date) {
-		const diff = dateEnd.valueOf() - dateStart.valueOf();
-		return Math.floor(diff / 1000 / 60 / 60 / 24);
-	}
-	function addDays(date: Date, days: number) {
-		return new Date(date.valueOf() + days * 24 * 60 * 60 * 1000);
-	}
 
 	function getDateHeader(date: Date) {
 		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 		const weekday = date.getDay();
 		return days[weekday].substring(0, 1);
-		// return `<span>${days[weekday].substring(0, 1)}</span>`;
 	}
 
-	//console.log("trainingSummaries", trainingSummaries.length, numDays);
-	const latestTimestamp = max(trainingSummaries.map((ts) => max(ts.days.map((d) => new Date(d.startTime).valueOf()))));
+    export let numDays = 10;
 
-	let fromDate = new Date(getDatePart(addDays(new Date(latestTimestamp), -numDays)));
-
-	const formatTraining = (training: TrainingSummaryWithDaysDto) => {
-		const targetTime = 20;
-
-		const withDayIndex = training.days
-			.filter((d) => new Date(d.startTime) >= fromDate)
-			.map((d) => ({
-				dayIndex: getDaysBetween(fromDate, getDatePart(new Date(d.startTime))),
-				timeTarget: targetTime,
-				timeActive: d.responseMinutes,
-				timeTotal: d.remainingMinutes + d.responseMinutes,
-				correct: d.numCorrectAnswers / d.numQuestions,
-				winRate: d.numRacesWon / d.numRaces
-			}));
-
-		const firstDay = training.days[0]; // || { accountUuid: 'N/A', startTime: new Date() };
-		// const lastDay = training.days[training.days.length - 1] || firstDay;
-		const uuid = training.username; // firstDay.accountUuid;
-		const daysSinceStart = firstDay ? getDaysBetween(new Date(firstDay.startTime), new Date(latestTimestamp)) : 1;
-		// console.log(uuid, training.days.length, daysSinceStart);
-		return {
-			id: training.id,
-			uuid: uuid,
-			startDate: firstDay ? firstDay.startTime : null,
-			totalDays: training.days.length,
-			firstDate: firstDay ? getDateString(new Date(firstDay.startTime)) : "",
-			latestDate: firstDay ? getDateString(new Date(training.days[training.days.length - 1].startTime)) : "",
-			daysPerWeek: training.days.length / (daysSinceStart / 7),
-			days: withDayIndex,
-			targetTime: training.targetMinutesPerDay
-		};
-	};
-
-	const trainings = trainingSummaries.map(formatTraining);
+	const {trainings, startDate} = TrainingDayTools.getLatestNumDaysStats(numDays, trainingSummaries);
 
 	const dayRenderer = (params: any) => {
 		function describeArc(x: number, y: number, radius: number, startAngle: number, endAngle: number) {
@@ -122,10 +66,10 @@
 	};
 
 	const dayColumns = new Array(numDays + 1).fill(0).map((_, i) => {
-		const d = new Date(fromDate.valueOf() + i * 24 * 60 * 60 * 1000);
+		const d = DateUtils.addDays(startDate, i);
 		return {
 			headerName: getDateHeader(d),
-			headerTooltip: getDateString(d),
+			headerTooltip: DateUtils.toIsoDate(d),
 			dayIndex: i,
 			sortable: false,
 			resizable: false,
@@ -165,7 +109,7 @@
 				]
 			},
 			{
-				headerName: `Sessions ${getDateString(fromDate)} - ${getDateString(addDays(fromDate, numDays))}`,
+				headerName: `Sessions ${DateUtils.toIsoDate(startDate)} - ${DateUtils.toIsoDate(DateUtils.addDays(startDate, numDays))}`,
 				children: dayColumns
 			}
 		],
