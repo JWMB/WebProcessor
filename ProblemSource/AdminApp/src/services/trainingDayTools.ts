@@ -2,10 +2,6 @@ import type { TrainingSummaryWithDaysDto } from "src/apiClient";
 import { max } from "src/arrayUtils";
 import { DateUtils } from "src/utilities/DateUtils";
 
-export interface XX {
-
-}
-
 export class TrainingDayTools {
     public static getLatestNumDaysStats(numDays: number, trainingSummaries: TrainingSummaryWithDaysDto[]) {
         const latestTimestamp = max(trainingSummaries.map((ts) => max(ts.days.filter(d => d.numQuestions > 0).map(d => new Date(d.startTime).valueOf()))));
