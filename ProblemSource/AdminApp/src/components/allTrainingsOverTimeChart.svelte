@@ -8,7 +8,7 @@
 
     Chart.register(Title,Tooltip,Legend,BarElement,CategoryScale,LinearScale, BarController);
     export let data: TrainingSummaryDto[] = [];
-    const weeksBack = 7;
+    const weeksBack = 10;
     const now = Date.now();
     const weekMs = 1000 * 60 * 60 * 24 * 7;
 
