@@ -73,7 +73,7 @@ namespace Tools
 
             if (!File.Exists(csvFile))
             {
-                //                var q = @"
+                //var q = @"
                 //SELECT DISTINCT(account_id) AS id -- [account_id] --, MAX(other_id) as maxDay
                 //  FROM [trainingdb].[dbo].[aggregated_data]
                 //  WHERE aggregator_id = 2 AND [latest_underlying] > '2017-01-01'
@@ -114,6 +114,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
                 var features = new Dictionary<int, IMLFeature>();
 
                 var includedAges = new List<int>();
+                var invalidReasons = new Dictionary<string, List<int>>();
                 foreach (var id in trainingIds)
                 {
                     var phases = await GetTrainingPhases(id, Path.Join(path, "Phases"));
@@ -124,7 +125,18 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
                     if (age > 0)
                     {
                         var row = CreateFeature(phases, new TrainingSettings(), age);
-                        if (row.IsValid)
+                        if (!row.IsValid)
+                        {
+                            row = CreateFeature(phases, new TrainingSettings(), age);
+                            var key = string.Join(" ", row.InvalidReasons.OrderBy(o => o.Key).Select(o => $"{o.Key}:{o.Value}"));
+                            if (!invalidReasons.TryGetValue(key, out var ids))
+                            {
+                                ids = new List<int>();
+                                invalidReasons.Add(key, ids);
+                            }
+                            ids.Add(id);
+                        }
+                        else
                         {
                             // when using for creating the model, we also need the outcome measure - skip if not present
                             if (row.GetFlatFeatures()[colInfo.Label] != null)

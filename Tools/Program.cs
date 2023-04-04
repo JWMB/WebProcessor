@@ -60,9 +60,7 @@ var path = @"C:\Users\uzk446\Downloads\";
 //        if (predicted.PredictedPerformanceTier != PredictedNumberlineLevel.PerformanceTier.Unknown)
 //        {
 //            if (await analyzer.Analyze(training, dataProvider, null))
-//            {
 //                await trainingRepo.Update(training);
-//            }
 //        }
 //    }
 //}
