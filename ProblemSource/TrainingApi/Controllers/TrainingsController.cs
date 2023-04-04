@@ -176,6 +176,11 @@ namespace TrainingApi.Controllers
                     // TODO: Response serialization doesn't work (probably .NET built-in JSON vs dynamic/JToken)
                     s.UpdateTrainingOverrides(new[]{ TrainingSettings.CreateWeightChangeTrigger(new Dictionary<string, int> { {"Math", 100}, { "numberline", 100 } }, 0, 0) });
                 }) },
+                new Training { Id = 4, Username = "template_Test unlocked", TrainingPlanName = "DebugPlan", Settings = CreateSettings(s =>
+                {
+                    s.timeLimits = new List<decimal> { 30 };
+                    s.customData = new CustomData { allowMultipleLogins = true, unlockAllPlanets = true, canEnterCompleted = true };
+                }) },
             };
 
             return Task.FromResult((IEnumerable<Training>)templates);
