@@ -7,9 +7,13 @@ using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
+using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
+using System.Collections.Concurrent;
+using System.Reflection;
+using System.Security.Cryptography;
 
 namespace Tools
 {
@@ -47,6 +51,18 @@ namespace Tools
             return users;
         }
 
+        private IBatchRepository<TrainingSummary> CreateTrainingSummaryRepo()
+        {
+            string? partitionKey = null;
+
+            var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
+            var trainingSummaries = new Lazy<IBatchRepository<TrainingSummary>>(() =>
+                Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
+            new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
+            t => partitionKey));
+            return trainingSummaries.Value;
+        }
+
         public async Task OverallStats(int minTrainedDays)
         {
             //var states = await GetTrainingStates();
@@ -55,13 +71,14 @@ namespace Tools
             //var phasesById = await GetPhases($"training_day ge {minTrainedDays}");
             //var maxDays = phasesById.Select(o => new { Id = o.Key, MaxDay = o.Value.Max(o => o.training_day), MaxDayState = trainingDayById.GetValueOrDefault(o.Key, 0) }).ToList();
 
-            string? partitionKey = null;
-            var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
-            var trainingSummaries = new Lazy<IBatchRepository<TrainingSummary>>(() =>
-                Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
-                new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
-                t => partitionKey));
-            var allSummaries = await trainingSummaries.Value.GetAll();
+            //string? partitionKey = null;
+            //var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
+            //var trainingSummaries = new Lazy<IBatchRepository<TrainingSummary>>(() =>
+            //    Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
+            //    new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
+            //    t => partitionKey));
+            //var allSummaries = await trainingSummaries.Value.GetAll();
+            var allSummaries = await CreateTrainingSummaryRepo().GetAll();
 
             var dateWhenAdjustedClientWasReleased = DateTimeOffset.Parse("2023-03-01");
             var withAdjustedClient = allSummaries
@@ -150,6 +167,110 @@ namespace Tools
             var allUsersWithSummaries = summaryToUser.SelectMany(o => o.Users).Distinct().ToList();
 
             return allUsersWithSummaries;
+        }
+
+        public async Task ExportTrainingsKIFormat()
+        {
+            var allSummaries = await CreateTrainingSummaryRepo().GetAll();
+            var includedSummaries = allSummaries.Where(o => o.TrainedDays >= 15).ToList();
+
+            var trainingIds = includedSummaries.Select(o => o.Id).ToList();
+
+            Console.WriteLine($"Including {trainingIds.Count} trainings");
+
+            var trainingsRepo = serviceProvider.CreateInstance<AzureTableTrainingRepository>();
+            //var allTrainings = (await trainingsRepo.GetAll()).ToList(); //(await trainingsRepo.GetByIds(new[] { 12 })).ToList();
+            var allTrainings = (await trainingsRepo.GetByIds(trainingIds)).ToList();
+
+            var overrides = allTrainings.Where(training => training.Settings.trainingPlanOverrides != null).ToList();
+            allTrainings = overrides;
+
+            var xrepo = serviceProvider.CreateInstance<AzureTableUserGeneratedDataRepositoriesProviderFactory>();
+            var properties = new List<PropertyInfo>();
+
+            using var fileStream = File.OpenWrite(@"C:\temp\_aaa.csv");
+            using var writer = new StreamWriter(fileStream);
+
+            foreach (var training in allTrainings)
+            {
+                var rows = await KITrainingExport(training, xrepo.Create(training.Id));
+
+                if (rows.Count < 100)
+                    continue;
+
+                if (!properties.Any())
+                {
+                    var row = rows[0];
+                    properties = row.GetType().GetProperties().ToList();
+
+                    await writer.WriteAsync(string.Join(",", properties.Select(o => o.Name)));
+                    await writer.WriteAsync("\n");
+                }
+
+                await writer.WriteAsync(
+                    string.Join("\n", 
+                    rows.Select(row => string.Join(",", properties.Select(o => o.GetValue(row)?.ToString())))
+                    ));
+                await writer.FlushAsync();
+
+                Console.WriteLine($"{training.Id} ({100 * allTrainings.IndexOf(training) / allTrainings.Count} {allTrainings.Count})");
+            }
+        }
+
+        private async Task<List<object>> KITrainingExport(Training training, IUserGeneratedDataRepositoryProvider provider)
+        {
+            var phases = await provider.Phases.GetAll();
+
+            var numberlineModEasy = false;
+            var weightMod = "";
+            var settings = training.Settings ?? new TrainingSettings();
+            if (settings.trainingPlanOverrides != null)
+            {
+                dynamic overrides = settings.trainingPlanOverrides;
+                if (overrides.triggers != null && overrides.triggers[0] != null && overrides.triggers[0].actionData != null)
+                {
+                    dynamic props = overrides.triggers[0].actionData.properties;
+                    if (props != null)
+                    {
+                        var weights = props.weights as JObject;
+                        if (weights != null)
+                        {
+                            weightMod = string.Join("", new[] { "WM", "Math", "NVR" }.Select(o => $"{o[0]}{weights[o]?.Value<int>() ?? 0}"));
+                        }
+
+                        var phasesx = props.phases as JObject;
+                        if (phasesx != null)
+                        {
+                            var numberlineMod = phasesx.Children().OfType<JProperty>()
+                                .FirstOrDefault(o => o.Name.StartsWith("numberline"))?
+                                .Descendants().OfType<JProperty>().FirstOrDefault(o => o.Name == "path")?
+                                .FirstOrDefault()?.Value<string>() ?? "";
+                            numberlineModEasy = numberlineMod.Contains("easy_ola");
+                        }
+                    }
+                }
+            }
+            return phases.OrderBy(o => o.training_day).ThenBy(o => o.time).SelectMany(phase =>
+                phase.problems.OrderBy(o => o.time).SelectMany(problem =>
+                    problem.answers.OrderBy(o => o.time).Select(answer =>
+                    (object)new
+                    {
+                        account_id = training.Id,
+                        exercice = phase.exercise.Replace("#intro", ""),
+                        correct = answer.correct ? 1 : 0,
+                        problem_time = answer.time,
+                        problem_string = $"\"{problem.problem_string.Replace("\"", "'")}\"",
+                        level = problem.level.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture.NumberFormat),
+                        training_plan_id = 0,
+                        targetTime = settings.timeLimits.FirstOrDefault(),
+                        phase.training_day,
+                        answer.response_time,
+                        answer.tries,
+                        is_intro = phase.exercise.EndsWith("#intro") ? 1 : 0,
+                        numberline_mod = numberlineModEasy ? 1 : 0,
+                        weight_mod = weightMod,
+                    })))
+                .ToList();
         }
     }
 }
