@@ -121,10 +121,9 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             }
             else
             {
-                // Standard NVR - no change
+                // Standard NVR
+                return TrainingSettings.CreateWeightChangeTrigger(plans.NVR_Std, triggerDay);
             }
-
-            return null;
         }
     }
 
