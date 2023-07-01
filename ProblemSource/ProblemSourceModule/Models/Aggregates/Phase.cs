@@ -49,7 +49,7 @@ namespace ProblemSource.Models.Aggregates
 
         public static string GetExerciseCommonName(string exercise) => Regex.Replace(exercise, @"#\d+", ""); // TODO: #intro as well?
 
-        public static string UniqueIdWithinUser(Phase p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{p.time}";
+        public static string UniqueIdWithinUser(Phase p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{Math.Abs(p.time)}";
 
         public static Phase CreateForTest(int suffix)
         {
