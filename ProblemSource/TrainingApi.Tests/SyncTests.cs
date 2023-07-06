@@ -66,7 +66,7 @@ namespace TrainingApi.Tests
             return await client.SendAsync(request);
         }
 
-        private string GenerateToken(string signingKey = "somereallylongkeygoeshere", string audience = "logsink_client", string pipeline = "problemsource")
+        private string GenerateToken(string signingKey = "somereallyreallyreallylongkeygoeshere", string audience = "logsink_client", string pipeline = "problemsource")
         {
             var (_, tokenString) = TokenHelper.CreateToken(
                 signingKey,

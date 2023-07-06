@@ -75,14 +75,23 @@ namespace ProblemSource
                 case "syncunauthorized":
                 case "sync":
                     var root = await ParseBodyOrThrow(context.Request);
-                    result = Sync(root, context.User);
+                    var isValidationOnly = root.SessionToken == "validate";
+                    if (!TryGetTrainingIdFromUsername(root.Uuid, isValidationOnly, out var trainingId2)) // TODO: co-opting SessionToken for now
+                    {
+                        result = new SyncResult { error = $"Username not found ({root.Uuid})" };
+                    }
+                    else
+                    {
+                        result = isValidationOnly
+                            ? new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" }
+                            : await Sync(root, context.User);
+                    }
                     break;
 
                 default:
                     result = new SyncResult { error = $"Unknown action: '{action}'" };
                     break;
             }
-
 
             await next.Invoke(context);
 
@@ -91,7 +100,7 @@ namespace ProblemSource
 
         public async Task<SyncResult> Sync(SyncInput root, ClaimsPrincipal user)
         {
-            if (!TryGetTrainingIdFromUsername(root.Uuid, root.SessionToken == "validate", out var trainingId2)) // TODO: co-opting SessionToken for now
+            if (!TryGetTrainingIdFromUsername(root.Uuid, false, out var trainingId2)) // TODO: co-opting SessionToken for now
             {
                 return new SyncResult { error = $"Username not found ({root.Uuid})" };
             }
