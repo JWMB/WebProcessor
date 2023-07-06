@@ -1,10 +1,9 @@
 ﻿using Azure.Data.Tables;
+using AzureTableGenerics;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
-using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models.Aggregates;
-using System.Collections.Concurrent;
 
 namespace ProblemSource.Services
 {
@@ -39,7 +38,7 @@ namespace ProblemSource.Services
         public async Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds)
         {
             var result = new List<TrainingSummary?>();
-            foreach (var chunk in trainingIds.Chunk(10))
+            foreach (var chunk in IEnumerableExtensions.Chunk(trainingIds, 10))
             {
                 var tasks = chunk.Select(o => GetDataProvider(o).TrainingSummaries.GetAll());
                 var resolved = await Task.WhenAll(tasks);

@@ -31,29 +31,25 @@ namespace ProblemSourceModule.Tests
         {
             var low00 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (0, 0));
             var low11 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (1, 1));
-
-            $"{low00!.actionData.properties.weights.WM}".ShouldBe("38");
-            $"{low11!.actionData.properties.weights.WM}".ShouldBe("20");
-
-            $"{low00!.actionData.properties.phases}".ShouldContain("numberline[\\\\w#]*");
-            $"{low11!.actionData.properties.phases}".ShouldNotContain("numberline[\\\\w#]*");
-
-
             var medium = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Medium, (0, 0));
             var unknown = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Unknown, (0, 0));
-            (medium as object).ShouldBeNull();
-            (unknown as object).ShouldBeNull();
-
             var high0 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (0, 0));
             var high1 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (1, 0));
 
+            $"{low00!.actionData.properties.weights.WM}".ShouldBe("38");
+            $"{low11!.actionData.properties.weights.WM}".ShouldBe("20");
+            $"{medium!.actionData.properties.weights.WM}".ShouldBe("38"); // (medium as object).ShouldBeNull();
+            $"{unknown!.actionData.properties.weights.WM}".ShouldBe("38"); //(unknown as object).ShouldBeNull();
             $"{high0!.actionData.properties.weights.WM}".ShouldBe("38");
             $"{high1!.actionData.properties.weights.WM}".ShouldBe("46");
+
+            $"{low00!.actionData.properties.phases}".ShouldContain("numberline[\\\\w#]*");
+            $"{low11!.actionData.properties.phases}".ShouldNotContain("numberline[\\\\w#]*");
         }
 
         [Theory]
         [InlineData(10, true)]
-        [InlineData(50, false)]
+        [InlineData(50, true)] // medium prediction should now also have changes
         [InlineData(100, true)]
         public async Task CategorizerDay5_23Q1_Modified(float predictedLevel, bool expectedModification)
         {
@@ -229,6 +225,7 @@ namespace ProblemSourceModule.Tests
                 TrainingTime20Min = true,
                 ByExercise = new Dictionary<string, MLFeaturesJulia.FeaturesForExercise>
                 {
+                    { "wm_grid", new MLFeaturesJulia.FeaturesForExercise { FractionCorrect = 0.5M, HighestLevelInt = 10, NumProblems = 20 } },
                     { "numberline", new MLFeaturesJulia.FeaturesForExercise { FractionCorrect = 0.5M, HighestLevelInt = 10, NumProblems = 20 } },
                     { "npals", new MLFeaturesJulia.FeaturesForExercise { FractionCorrect = 0.5M, HighestLevelInt = 10, NumProblems = 20 } },
                     { "nvr_so", new MLFeaturesJulia.FeaturesForExercise { FractionCorrect = 0.5M, MedianLevel = 5 } },

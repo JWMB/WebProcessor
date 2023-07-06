@@ -1,4 +1,5 @@
 ﻿using Azure.Data.Tables;
+using AzureTableGenerics;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
@@ -19,21 +20,21 @@ namespace ProblemSource.Services.Storage.AzureTables
             var partitionKey = AzureTableConfig.IdToKey(userId);
 
             phases = new Lazy<IBatchRepository<Phase>>(() =>
-                Create(new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases,
+                Create(new TableEntityRepositoryBatch<Phase, PhaseTableEntity>(tableClientFactory.Phases,
                 p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), new TableFilter(partitionKey)),
                 Phase.UniqueIdWithinUser));
             //Phases = Create(new TableEntityRepository<Phase, PhaseTableEntity>(tableClientFactory.Phases,
             //    p => p.ToBusinessObject(), p => PhaseTableEntity.FromBusinessObject(p, userId), new TableFilter(partitionKey)),
             //    Phase.UniqueIdWithinUser);
             trainingDays = new Lazy<IBatchRepository<TrainingDayAccount>>(() =>
-                Create(new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays,
+                Create(new TableEntityRepositoryBatch<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays,
                 p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), new TableFilter(partitionKey)),
                 o => o.TrainingDay.ToString()));
             //TrainingDays = Create(new TableEntityRepository<TrainingDayAccount, TrainingDayTableEntity>(tableClientFactory.TrainingDays,
             //    p => p.ToBusinessObject(), p => TrainingDayTableEntity.FromBusinessObject(p), new TableFilter(partitionKey)),
             //    o => o.TrainingDay.ToString());
             phaseStatistics = new Lazy<IBatchRepository<PhaseStatistics>>(() =>
-                Create(new TableEntityRepository<PhaseStatistics, PhaseStatisticsTableEntity>(tableClientFactory.PhaseStatistics,
+                Create(new TableEntityRepositoryBatch<PhaseStatistics, PhaseStatisticsTableEntity>(tableClientFactory.PhaseStatistics,
                 p => p.ToBusinessObject(), p => PhaseStatisticsTableEntity.FromBusinessObject(p, userId), new TableFilter(partitionKey)),
                 Models.Aggregates.PhaseStatistics.UniqueIdWithinUser));
             //PhaseStatistics = Create(new TableEntityRepository<PhaseStatistics, PhaseStatisticsTableEntity>(tableClientFactory.PhaseStatistics, 
@@ -41,13 +42,13 @@ namespace ProblemSource.Services.Storage.AzureTables
             //    Models.Aggregates.PhaseStatistics.UniqueIdWithinUser);
 
             trainingSummaries = new Lazy<IBatchRepository<TrainingSummary>>(() =>
-                Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
+                Create(new AutoConvertTableEntityRepositoryBatch<TrainingSummary>(tableClientFactory.TrainingSummaries,
                 new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
                 t => partitionKey));
             //TrainingSummaries = Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
             //    new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
             //    t => partitionKey);
-            userStates = new Lazy<IBatchRepository<UserGeneratedState>>(() => Create(new AutoConvertTableEntityRepository<UserGeneratedState>(tableClientFactory.UserStates,
+            userStates = new Lazy<IBatchRepository<UserGeneratedState>>(() => Create(new AutoConvertTableEntityRepositoryBatch<UserGeneratedState>(tableClientFactory.UserStates,
                 new ExpandableTableEntityConverter<UserGeneratedState>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
                 t => partitionKey));
             //UserStates = Create(new AutoConvertTableEntityRepository<UserGeneratedState>(tableClientFactory.UserStates,

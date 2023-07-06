@@ -77,7 +77,7 @@ namespace ProblemSource.Tests
             };
 
             // Act
-            var _ = await pipeline.Sync(input);
+            var _ = await pipeline.Sync(input, new System.Security.Claims.ClaimsPrincipal());
 
             // Assert
             Mock.Get(userStateRepository).Verify(x =>
@@ -100,7 +100,7 @@ namespace ProblemSource.Tests
             };
 
             // Act
-            var result = await pipeline.Sync(input);
+            var result = await pipeline.Sync(input, new System.Security.Claims.ClaimsPrincipal());
 
             // Assert
             var state = JsonConvert.DeserializeObject<UserFullState>(result.state);

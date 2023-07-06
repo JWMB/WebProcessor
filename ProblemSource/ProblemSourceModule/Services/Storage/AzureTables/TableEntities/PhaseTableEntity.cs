@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using AzureTableGenerics;
+using Newtonsoft.Json;
 using ProblemSource.Models.Aggregates;
 
 namespace ProblemSource.Services.Storage.AzureTables.TableEntities

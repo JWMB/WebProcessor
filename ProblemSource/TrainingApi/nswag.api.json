@@ -1,5 +1,5 @@
 {
-  "x-generator": "NSwag v13.18.2.0 (NJsonSchema v10.8.0.0 (Newtonsoft.Json v13.0.0.0))",
+  "x-generator": "NSwag v13.19.0.0 (NJsonSchema v10.9.0.0 (Newtonsoft.Json v13.0.0.0))",
   "swagger": "2.0",
   "info": {
     "title": "My Title",
@@ -74,7 +74,7 @@
             "type": "string",
             "name": "id",
             "in": "query",
-            "x-nullable": true
+            "x-nullable": false
           }
         ],
         "responses": {
@@ -104,7 +104,7 @@
             "type": "string",
             "name": "id",
             "in": "query",
-            "x-nullable": true
+            "x-nullable": false
           },
           {
             "type": "string",
@@ -141,7 +141,7 @@
             "type": "string",
             "name": "id",
             "in": "query",
-            "x-nullable": true
+            "x-nullable": false
           },
           {
             "name": "dto",
@@ -316,7 +316,7 @@
             "type": "string",
             "name": "uuid",
             "in": "query",
-            "x-nullable": true
+            "x-nullable": false
           }
         ],
         "responses": {
@@ -495,7 +495,7 @@
             "type": "string",
             "name": "groupName",
             "in": "query",
-            "x-nullable": true
+            "x-nullable": false
           },
           {
             "type": "integer",
@@ -767,6 +767,27 @@
           }
         }
       }
+    },
+    "/api/Sync/DeleteData": {
+      "get": {
+        "tags": [
+          "Sync"
+        ],
+        "operationId": "Sync_DeleteData",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "uuid",
+            "in": "query",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -1029,7 +1050,7 @@
     },
     "LogLevel": {
       "type": "integer",
-      "description": "Defines logging severity levels.",
+      "description": "",
       "x-enumNames": [
         "Trace",
         "Debug",
