@@ -258,7 +258,7 @@ namespace Tools
                         var weights = props.weights as JObject;
                         if (weights != null)
                         {
-                            weightMod = string.Join("", new[] { "WM", "Math", "NVR" }.Select(o => $"{o[0]}{weights[o]?.Value<int>() ?? 0}"));
+                            weightMod = string.Join("", new[] { "WM", "Math", "NVR", "Reasoning" }.Select(o => $"{o[0]}{weights[o]?.Value<int>() ?? 0}"));
                         }
 
                         var phasesx = props.phases as JObject;

@@ -61,6 +61,13 @@ namespace TrainingApi.Tests
         }
 
         [SkippableFact]
+        public async Task CreateToken()
+        {
+            var token = GenerateToken(expiry: TimeSpan.FromDays(365 * 5));
+        }
+
+
+        [SkippableFact]
         public async Task Sync_ProblemSource_XXX()
         {
             var uuid = "nesi kipomebi";
@@ -104,7 +111,7 @@ namespace TrainingApi.Tests
             return await client.SendAsync(request);
         }
 
-        private string GenerateToken(string signingKey = "somereallyreallyreallylongkeygoeshere", string audience = "logsink_client", string pipeline = "problemsource")
+        private string GenerateToken(string signingKey = "somereallyreallyreallylongkeygoeshere", string audience = "logsink_client", string pipeline = "problemsource", TimeSpan? expiry = null)
         {
             var (_, tokenString) = TokenHelper.CreateToken(
                 signingKey,
@@ -112,7 +119,7 @@ namespace TrainingApi.Tests
                 {
                     Issuer = "jwmb",
                     Audience = audience,
-                    Expiry = DateTime.UtcNow.AddHours(1),
+                    Expiry = DateTime.UtcNow.Add(expiry ?? TimeSpan.FromHours(1)),
                     ClaimsDictionary = new Dictionary<string, string> {
                         { "sub", "klingberglab" },
                         { "pipeline", pipeline },
