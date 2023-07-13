@@ -209,7 +209,7 @@ namespace ProblemSource.Models
     {
         public string? type { get; set; }
         public TriggerTimeType triggerTime { get; set; } //string
-        public object[] criteriaValues { get; set; } = new object[0];
+        public object[] criteriaValues { get; set; } = new object[0]; // TODO: use "name" to get the correct ICriteria implementation
         public TriggerActionData actionData { get; set; } = new TriggerActionData();
     }
 
@@ -250,6 +250,55 @@ namespace ProblemSource.Models
         public Dictionary<string, object> gameCustomData { get; set; } = new Dictionary<string, object>();
 
         public List<object>? planetInfos { get; set; }
+
+
+        public class GameStats
+        {
+            private GameRunStats[] gameRuns;
+            public GameStats(IEnumerable<GameRunStats> gameRuns)
+            {
+                this.gameRuns = gameRuns.ToArray();
+            }
+            public int numRuns => gameRuns.Length;
+
+            public decimal highestLevel => gameRuns.Any() ? gameRuns.Max(o => o.highestLevel) : 0M;
+            public decimal lastLevel => gameRuns.Any() ? gameRuns[^1].lastLevel : 0M;
+            public bool lastWon => gameRuns.Any() ? gameRuns[^1].won : false;
+            public long trainingTime => gameRuns.Any() ? gameRuns.Sum(o => o.trainingTime) : 0L;
+        }
+
+        public static string getSharedId(string id) => id.Split("#").First();
+
+        public GameStats GetGameStats(string gameId, bool includeCancelledRuns = false)
+        {
+            //TODO: make sure it's always sorted (should be)
+            return new GameStats(gameRuns.Where(_ => _.gameId == gameId && (includeCancelledRuns ? true : !_.cancelled)));
+            throw new NotImplementedException();
+        }
+
+        public GameStats GetGameStatsSharedId(string sharedGameId, bool includeCancelledRuns = false)
+        {
+            //TODO: make sure it's always sorted (should be)
+            return new GameStats(gameRuns.Where(_ => getSharedId(_.gameId) == getSharedId(sharedGameId) && (includeCancelledRuns ? true : !_.cancelled)));
+            throw new NotImplementedException();
+        }
+
+
+        public Dictionary<string, List<GameRunStats>> GetAllGameStats()
+        {
+            var perSharedId = new Dictionary<string, List<GameRunStats>>();
+            foreach (var run in gameRuns)
+            {
+                var baseId = (string)ExerciseStats.getSharedId(run.gameId);
+                if (!perSharedId.TryGetValue(baseId, out var list))
+                {
+                    list = new();
+                    perSharedId.Add(baseId, list);
+                }
+                list.Add(run);
+            }
+            return perSharedId;
+        }
     }
 
     public class TrainingPlanSettings
@@ -297,5 +346,7 @@ namespace ProblemSource.Models
         public long started_at { get; set; } = 0;
 
         public bool cancelled { get; set; } = false;
+
+        public override string ToString() => $"{gameId} {trainingDay} {highestLevel} {won} {trainingTime}";
     }
 }

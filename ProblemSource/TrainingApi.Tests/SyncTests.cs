@@ -1,5 +1,11 @@
 ﻿using Common;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using ProblemSource.Models;
+using ProblemSourceModule.Models;
 using Shouldly;
+using System.Net.Http.Json;
+using System.Text.Json;
 using TrainingApi.Tests.IntegrationHelpers;
 
 namespace TrainingApi.Tests
@@ -50,8 +56,40 @@ namespace TrainingApi.Tests
                 Uuid = uuid
             });
             response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK);
-            var doc = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             doc.RootElement.GetProperty("error").GetString().ShouldBe($"Username not found ({uuid})");
+        }
+
+        [SkippableFact]
+        public async Task Sync_ProblemSource_XXX()
+        {
+            var uuid = "nesi kipomebi";
+            var response = await Post("/api/sync/sync", new SyncInput
+            {
+                Uuid = uuid,
+                RequestState = true,
+            });
+
+            var result = await response.Content.ReadFromJsonAsync<SyncResult>();
+            if (result == null)
+                throw new Exception("");
+
+            var fullState = JsonConvert.DeserializeObject<UserFullState>(result.state);
+            if (fullState == null)
+                throw new Exception("");
+
+            var dp = DynamicTrainingPlan.Create((JObject)JObject.Parse(result.state)["training_plan"]!);
+
+            PlanetBundler.init();
+            var planets = PlanetBundler.getPlanets(fullState.exercise_stats, fullState.training_settings, dp, true)
+                .OrderBy(o => o.lastUsed);
+
+            var definedGames = dp.getDefinedGames();
+            var availableGames = dp.getAvailableGames(fullState.exercise_stats);
+            var proposed = dp.getProposedGames(new List<string>(), fullState.exercise_stats);
+
+            var tpOverrides = fullState.training_settings.trainingPlanOverrides;
+            dp.changeWeights(fullState.exercise_stats, new Dictionary<string, decimal> { });
         }
 
         private async Task<HttpResponseMessage> Post(string uri, object content, string? bearerToken = null)
