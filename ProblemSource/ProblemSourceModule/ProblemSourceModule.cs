@@ -55,6 +55,7 @@ namespace ProblemSource
 
             services.AddMemoryCache();
 
+            services.AddSingleton<ITrainingTemplateRepository, StaticTrainingTemplateRepository>();
             ConfigureForAzureTables(services);
             ConfigureUsernameHashing(services);
         }
