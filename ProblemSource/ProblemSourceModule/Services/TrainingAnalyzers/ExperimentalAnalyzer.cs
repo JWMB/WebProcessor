@@ -68,7 +68,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             var trainingDay = justFinishedDay.Value;
 
-            if (trainingDay == 2)
+            if (trainingDay == 5)
                 Execute(training, trainingDay);
 
             return true;
@@ -78,8 +78,14 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
         {
             var trainingDayForChange = trainingDay + 1;
 
-            var groupWeights = new Dictionary<string, int> { { GroupNames.WM, 10 }, { GroupNames.Reasoning, 80 }, { GroupNames.Math, 10 },
-                { "tangram", 33 }, { "nvr_so", 66 }, { "nvr_rp", 0 }, { "rotation", 0 }, { "boolean", 0 } };
+            var groupWeights = new Dictionary<string, int> {
+                { GroupNames.WM, 10 },
+
+                { GroupNames.Reasoning, 10 },
+                { "tangram", 33 }, { "nvr_so", 66 }, { "nvr_rp", 0 }, { "rotation", 0 }, { "boolean", 0 },
+                
+                { GroupNames.Math, 80 },
+            };
             var trigger = TrainingSettings.CreateWeightChangeTrigger(groupWeights, trainingDayForChange);
             var overrides = new
             {
