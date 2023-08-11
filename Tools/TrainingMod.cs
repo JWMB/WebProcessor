@@ -5,6 +5,7 @@ using ProblemSourceModule.Services.Storage.AzureTables;
 using System.Text.RegularExpressions;
 using ProblemSource.Models;
 using ProblemSourceModule.Services.Storage;
+using ProblemSourceModule.Models;
 
 namespace Tools
 {
@@ -31,6 +32,18 @@ namespace Tools
                 ? user.Trainings.Where(o => groups?.Contains(o.Key) == true).SelectMany(o => o.Value)
                 : user.Trainings.SelectMany(o => o.Value)
                 ).ToList();
+        }
+
+        public async Task CopyTrainingTemplate(IEnumerable<int> ids, Training template)
+        {
+            var trainings = await trainingRepository.GetByIds(ids);
+            foreach (var training in trainings)
+            {
+                // TODO: could we e.g. store the template that was used, retrieve it here, and keep any modifications that were done compared to that template?
+                training.TrainingPlanName = template.TrainingPlanName;
+                training.Settings.Analyzers = template.Settings.Analyzers;
+                await trainingRepository.Update(training);
+            }
         }
 
         public async Task ModifySettings(IEnumerable<int> ids)

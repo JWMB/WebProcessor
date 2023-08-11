@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using ProblemSourceModule.Models;
 using AutoBogus;
 using AutoBogus.FakeItEasy;
+using FakeItEasy;
 
 namespace TrainingApi.Tests.IntegrationHelpers
 {
@@ -34,7 +35,11 @@ namespace TrainingApi.Tests.IntegrationHelpers
                         services.AddTransient<IStartupFilter, TestStartupFilter>();
 
                         //services.
-                        services.AddSingleton(sp => CreateAutoMocked<IUserRepository>());
+                        services.AddSingleton(sp => { 
+                            var repo = CreateAutoMocked<IUserRepository>();
+                            A.CallTo(() => repo.Get(A<string>._)).Returns(Task.FromResult((User?)null));
+                            return repo;
+                        });
                         services.AddSingleton(sp => CreateAutoMocked<IUserGeneratedDataRepositoryProviderFactory>());
                         services.AddSingleton(sp => CreateAutoMocked<ITrainingRepository>());
                     };

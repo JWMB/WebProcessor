@@ -52,7 +52,7 @@ namespace Tools
             return users;
         }
 
-        private IBatchRepository<TrainingSummary> CreateTrainingSummaryRepo()
+        public IBatchRepository<TrainingSummary> CreateTrainingSummaryRepo()
         {
             string? partitionKey = null;
 
