@@ -2,6 +2,7 @@
 using Azure;
 using Newtonsoft.Json;
 using ProblemSource.Models.Aggregates;
+using AzureTableGenerics;
 
 namespace ProblemSource.Services.Storage.AzureTables.TableEntities
 {

@@ -1,8 +1,10 @@
 ﻿using Azure.Data.Tables;
+using AzureTableGenerics;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using ProblemSource;
 using ProblemSource.Models;
+using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
@@ -11,9 +13,8 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
-using System.Collections.Concurrent;
+using ProblemSourceModule.Services.TrainingAnalyzers;
 using System.Reflection;
-using System.Security.Cryptography;
 
 namespace Tools
 {
@@ -57,7 +58,7 @@ namespace Tools
 
             var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
             var trainingSummaries = new Lazy<IBatchRepository<TrainingSummary>>(() =>
-                Create(new AutoConvertTableEntityRepository<TrainingSummary>(tableClientFactory.TrainingSummaries,
+                Create(new AutoConvertTableEntityRepositoryBatch<TrainingSummary>(tableClientFactory.TrainingSummaries,
             new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
             t => partitionKey));
             return trainingSummaries.Value;
@@ -171,56 +172,78 @@ namespace Tools
 
         public async Task ExportTrainingsKIFormat()
         {
-            var allSummaries = await CreateTrainingSummaryRepo().GetAll();
-            var includedSummaries = allSummaries.Where(o => o.TrainedDays >= 15).ToList();
-
-            var trainingIds = includedSummaries.Select(o => o.Id).ToList();
-
-            Console.WriteLine($"Including {trainingIds.Count} trainings");
+            var path = @"C:\temp\_KIExport";
 
             var trainingsRepo = serviceProvider.CreateInstance<AzureTableTrainingRepository>();
-            //var allTrainings = (await trainingsRepo.GetAll()).ToList(); //(await trainingsRepo.GetByIds(new[] { 12 })).ToList();
-            var allTrainings = (await trainingsRepo.GetByIds(trainingIds)).ToList();
 
-            var overrides = allTrainings.Where(training => training.Settings.trainingPlanOverrides != null).ToList();
-            allTrainings = overrides;
+            var minNumDays = 15;
+            List<Training> allTrainings;
+            if (false)
+            {
+                var allSummaries = await CreateTrainingSummaryRepo().GetAll();
+                var includedSummaries = allSummaries.Where(o => o.TrainedDays >= 35).ToList();
+                var trainingIds = includedSummaries.Select(o => o.Id).ToList();
+                //trainingIds = new List<int> { 16254, 16258 };
 
+                allTrainings = (await trainingsRepo.GetByIds(trainingIds)).ToList();
+
+                var overrides = allTrainings.Where(training => training.Settings.trainingPlanOverrides != null).ToList();
+                allTrainings = overrides;
+            }
+            else
+            {
+                allTrainings = (await trainingsRepo.GetAll()).ToList();
+            }
+
+            Console.WriteLine($"Including {allTrainings.Count} trainings");
+            
             var xrepo = serviceProvider.CreateInstance<AzureTableUserGeneratedDataRepositoriesProviderFactory>();
             var properties = new List<PropertyInfo>();
 
-            using var fileStream = File.OpenWrite(@"C:\temp\_aaa.csv");
+            var predictor = new CachedPredictor(path);
+
+            using var fileStream = File.OpenWrite(Path.Combine(path, "KIExport.csv"));
             using var writer = new StreamWriter(fileStream);
 
+            var dbg = new List<string>();
             foreach (var training in allTrainings)
             {
-                var rows = await KITrainingExport(training, xrepo.Create(training.Id));
-
-                if (rows.Count < 100)
-                    continue;
-
-                if (!properties.Any())
+                if (true)
                 {
-                    var row = rows[0];
-                    properties = row.GetType().GetProperties().ToList();
-
-                    await writer.WriteAsync(string.Join(",", properties.Select(o => o.Name)));
-                    await writer.WriteAsync("\n");
+                    var tmp = X(training);
+                    dbg.Add($"{training.Id}\t{tmp.numberlineModEasy}\t{tmp.weightMod}");
                 }
+                else
+                {
+                    var rows = await KITrainingExport(training, xrepo.Create(training.Id), predictor, minNumDays);
 
-                await writer.WriteAsync(
-                    string.Join("\n", 
-                    rows.Select(row => string.Join(",", properties.Select(o => o.GetValue(row)?.ToString())))
-                    ));
-                await writer.FlushAsync();
+                    if (rows.Count < 100)
+                        continue;
 
-                Console.WriteLine($"{training.Id} ({100 * allTrainings.IndexOf(training) / allTrainings.Count} {allTrainings.Count})");
+                    if (!properties.Any())
+                    {
+                        var row = rows[0];
+                        properties = row.GetType().GetProperties().ToList();
+
+                        await writer.WriteAsync(string.Join(",", properties.Select(o => o.Name)));
+                        await writer.WriteAsync("\n");
+                    }
+
+                    await writer.WriteAsync(
+                        string.Join("\n",
+                        rows.Select(row => string.Join(",", properties.Select(o => o.GetValue(row)?.ToString())))
+                        ));
+                    await writer.WriteAsync("\n");
+                    await writer.FlushAsync();
+
+                    Console.WriteLine($"{training.Id} ({100 * allTrainings.IndexOf(training) / allTrainings.Count} {allTrainings.Count})");
+                }
             }
+            var x = string.Join("\n", dbg);
         }
 
-        private async Task<List<object>> KITrainingExport(Training training, IUserGeneratedDataRepositoryProvider provider)
+        private (bool numberlineModEasy, string weightMod) X(Training training)
         {
-            var phases = await provider.Phases.GetAll();
-
             var numberlineModEasy = false;
             var weightMod = "";
             var settings = training.Settings ?? new TrainingSettings();
@@ -235,7 +258,7 @@ namespace Tools
                         var weights = props.weights as JObject;
                         if (weights != null)
                         {
-                            weightMod = string.Join("", new[] { "WM", "Math", "NVR" }.Select(o => $"{o[0]}{weights[o]?.Value<int>() ?? 0}"));
+                            weightMod = string.Join("", new[] { "WM", "Math", "NVR", "Reasoning" }.Select(o => $"{o[0]}{weights[o]?.Value<int>() ?? 0}"));
                         }
 
                         var phasesx = props.phases as JObject;
@@ -250,6 +273,51 @@ namespace Tools
                     }
                 }
             }
+            return (numberlineModEasy, weightMod);
+        }
+
+        private async Task<List<object>> KITrainingExport(Training training, IUserGeneratedDataRepositoryProvider provider, CachedPredictor predictor, int? minNumDays = null)
+        {
+            var phases = (await provider.Phases.GetAll()).ToList();
+
+            var tdays = phases.Select(o => o.training_day).Distinct().ToList();
+            if (minNumDays.HasValue && (tdays.Count == 0 || tdays.Max() < minNumDays.Value))
+                return new List<object>();
+
+            var predicted = await predictor.Predict(training, phases);
+
+            var (numberlineModEasy, weightMod) = X(training);
+            //var numberlineModEasy = false;
+            //var weightMod = "";
+            var settings = training.Settings ?? new TrainingSettings();
+            //if (settings.trainingPlanOverrides != null)
+            //{
+            //    dynamic overrides = settings.trainingPlanOverrides;
+            //    if (overrides.triggers != null && overrides.triggers[0] != null && overrides.triggers[0].actionData != null)
+            //    {
+            //        dynamic props = overrides.triggers[0].actionData.properties;
+            //        if (props != null)
+            //        {
+            //            var weights = props.weights as JObject;
+            //            if (weights != null)
+            //            {
+            //                weightMod = string.Join("", new[] { "WM", "Math", "NVR" }.Select(o => $"{o[0]}{weights[o]?.Value<int>() ?? 0}"));
+            //            }
+
+            //            var phasesx = props.phases as JObject;
+            //            if (phasesx != null)
+            //            {
+            //                var numberlineMod = phasesx.Children().OfType<JProperty>()
+            //                    .FirstOrDefault(o => o.Name.StartsWith("numberline"))?
+            //                    .Descendants().OfType<JProperty>().FirstOrDefault(o => o.Name == "path")?
+            //                    .FirstOrDefault()?.Value<string>() ?? "";
+            //                numberlineModEasy = numberlineMod.Contains("easy_ola");
+            //            }
+            //        }
+            //    }
+            //}
+
+
             return phases.OrderBy(o => o.training_day).ThenBy(o => o.time).SelectMany(phase =>
                 phase.problems.OrderBy(o => o.time).SelectMany(problem =>
                     problem.answers.OrderBy(o => o.time).Select(answer =>
@@ -262,15 +330,53 @@ namespace Tools
                         problem_string = $"\"{problem.problem_string.Replace("\"", "'")}\"",
                         level = problem.level.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture.NumberFormat),
                         training_plan_id = 0,
-                        targetTime = settings.timeLimits.FirstOrDefault(),
+                        targetTime = settings.timeLimits.FirstOrDefault().ToString("0.#", System.Globalization.CultureInfo.InvariantCulture.NumberFormat),
                         phase.training_day,
                         answer.response_time,
                         answer.tries,
                         is_intro = phase.exercise.EndsWith("#intro") ? 1 : 0,
                         numberline_mod = numberlineModEasy ? 1 : 0,
                         weight_mod = weightMod,
+                        age_lower = training.GetAgeBracketLower(),
+                        predicted_level = predicted.Predicted.HasValue ? (int?)predicted.Predicted : null,
+                        predicted_tier = predicted.PredictedPerformanceTier.ToString()
                     })))
                 .ToList();
+        }
+    }
+
+    public class CachedPredictor
+    {
+        private Dictionary<int, int> cached = new();
+
+        private IPredictNumberlineLevelService inner;
+        public CachedPredictor(string path)
+        {
+            inner = new MLPredictNumberlineLevelService(new LocalMLPredictor(Path.Combine(path, "JuliaMLModel_Reg.zip")));
+            var predictionsFile = Path.Combine(path, "_predictions.csv");
+            if (File.Exists(predictionsFile))
+            {
+                cached = File.ReadAllText(predictionsFile)
+                    .Split('\n')
+                    .Select(o => o.Trim().Split(','))
+                    .Where(o => o.Length == 2)
+                    .ToDictionary(o => int.Parse(o[0]), o => int.Parse(o[1]));
+            }
+        }
+
+        public async Task<PredictedNumberlineLevel> Predict(Training training, List<Phase> phases)
+        {
+            if (cached.TryGetValue(training.Id, out var prediction))
+                return new PredictedNumberlineLevel { Predicted = prediction };
+
+            var features = MLFeaturesJulia.FromPhases(training.Settings, phases, training.GetAgeBracketLower(), null, 5);
+            if (features.InvalidReasons.Any())
+                return new PredictedNumberlineLevel { Predicted = null };
+
+            var predicted = await inner.Predict(features);
+            if (!predicted.Predicted.HasValue)
+            { }
+            return predicted;
         }
     }
 }

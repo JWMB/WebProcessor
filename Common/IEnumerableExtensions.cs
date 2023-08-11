@@ -7,10 +7,14 @@
             => values.Any() ? values.Sum() : defaultValue;
         public static int SumOrDefault(this IEnumerable<int> values, int defaultValue = 0)
             => values.Any() ? values.Sum() : defaultValue;
+        public static long SumOrDefault(this IEnumerable<long> values, long defaultValue = 0)
+            => values.Any() ? values.Sum() : defaultValue;
 
         public static decimal SumOrDefault<T>(this IEnumerable<T> values, Func<T, decimal> selector, decimal defaultValue = 0) where T : notnull
             => values.Any() ? values.Sum(selector) : defaultValue;
         public static int SumOrDefault<T>(this IEnumerable<T> values, Func<T, int> selector, int defaultValue = 0) where T : notnull
+            => values.Any() ? values.Sum(selector) : defaultValue;
+        public static long SumOrDefault<T>(this IEnumerable<T> values, Func<T, long> selector, long defaultValue = 0) where T : notnull
             => values.Any() ? values.Sum(selector) : defaultValue;
 
 

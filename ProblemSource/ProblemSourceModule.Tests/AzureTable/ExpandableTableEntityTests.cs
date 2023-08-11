@@ -1,10 +1,9 @@
 ﻿using Shouldly;
 using ProblemSource.Models.Aggregates;
-using Common;
-using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSource.Services.Storage.AzureTables;
 using Azure.Data.Tables;
 using Newtonsoft.Json;
+using AzureTableGenerics;
 
 namespace ProblemSourceModule.Tests.AzureTable
 {

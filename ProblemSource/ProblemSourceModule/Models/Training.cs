@@ -9,5 +9,7 @@ namespace ProblemSourceModule.Models
         public string TrainingPlanName { get; set; } = string.Empty;
         public TrainingSettings Settings { get; set; } = TrainingSettings.Default;
         public string AgeBracket { get; set; } = string.Empty;
+
+        public int GetAgeBracketLower() => int.TryParse(AgeBracket.Split('-').Where(o => o.Any()).FirstOrDefault() ?? "6", out var age) ? age : 6;
     }
 }

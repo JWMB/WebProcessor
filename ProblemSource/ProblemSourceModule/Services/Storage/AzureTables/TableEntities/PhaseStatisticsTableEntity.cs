@@ -1,5 +1,4 @@
-﻿using Azure;
-using Azure.Data.Tables;
+﻿using AzureTableGenerics;
 using ProblemSource.Models.Aggregates;
 
 namespace ProblemSource.Services.Storage.AzureTables.TableEntities

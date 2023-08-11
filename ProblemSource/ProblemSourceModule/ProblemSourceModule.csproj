@@ -9,6 +9,7 @@
   <ItemGroup>
     <None Remove="Resources\2017 HT template Default.json" />
     <None Remove="Resources\2018 VT template Default.json" />
+    <None Remove="Resources\2023 HT template Preview.json" />
     <None Remove="Resources\2023 VT template JonasTest.json" />
     <None Remove="Resources\DebugPlan.json" />
     <None Remove="Resources\JuliaMLModel_Reg.zip" />
@@ -22,6 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\2023 HT template Preview.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources\2023 VT template JonasTest.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
@@ -49,10 +55,11 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Data.Tables" Version="12.8.0" />
-    <PackageReference Include="Azure.Storage.Queues" Version="12.12.0" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.14.0" />
+    <PackageReference Include="JWMB.AzureTableGenerics" Version="0.0.3" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <ItemGroup>

@@ -35,6 +35,14 @@ namespace Common.Web.Controllers
             await RunPipeline(pipelineName);
         }
 
+        [Authorize]
+        [HttpGet]
+        public async Task DeleteData([FromQuery] string uuid) // TODO: backwards compability
+        {
+            await RunPipeline(User?.Claims?.FirstOrDefault(o => o.Type == "pipeline")?.Value ?? "problemsource");
+        }
+
+
         private async Task RunPipeline(string? pipelineName)
         {
             if (HttpContext.Request.Headers.TryGetValue(HeaderNames.UserAgent, out var ua))
