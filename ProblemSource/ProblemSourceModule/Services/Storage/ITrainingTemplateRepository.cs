@@ -21,11 +21,11 @@ namespace ProblemSourceModule.Services.Storage
             var templates = new[] {
                 new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = CreateSettings(s =>
                 {
-                    s.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.CategorizerDay5_23Q1) };
+                    s.Analyzers = new List<string> { nameof(TrainingAnalyzers.CategorizerDay5_23Q1) };
                 }) },
                 new Training { Id = 2, Username = "template_Test training", TrainingPlanName = "2023 VT template JonasTest", Settings = CreateSettings(s =>
                 {
-                    s.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.ExperimentalAnalyzer) };
+                    s.Analyzers = new List<string> { nameof(TrainingAnalyzers.ExperimentalAnalyzer) };
                     s.timeLimits = new List<decimal> { 3 };
                     s.customData = new CustomData { allowMultipleLogins = true };
                 }) },
@@ -46,6 +46,7 @@ namespace ProblemSourceModule.Services.Storage
                 {
                     s.timeLimits = new List<decimal> { 30 };
                     s.customData = new CustomData { };
+                    s.Analyzers = new List<string> { nameof(TrainingAnalyzers.CategorizerDay5_23Q1) };
                 }) },
             };
 
