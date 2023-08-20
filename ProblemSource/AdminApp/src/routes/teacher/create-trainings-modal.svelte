@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { closeModal } from 'svelte-modals';
-	import type { TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
+	import type { CreateTrainingsInfoDto, TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
 	import { getApi } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
 	import { onMount } from 'svelte';
@@ -12,6 +12,9 @@
 	const apiFacade = getApi() as ApiFacade;
 
 	let templates: TrainingTemplateDto[] = [];
+	let createInfo: CreateTrainingsInfoDto | null;
+	let maxNumNewTrainings: number | null;
+
 	let error: string | null = null;
 
 	const timePerDayValues = [
@@ -32,13 +35,13 @@
 	];
 	let newGroupData = {
 		name: 'Fsk A',
-		noOfTrainings: 10,
+		noOfTrainings: 0,
 		timePerDay: 33,
 		ageBracket: ""
 	};
 
 	let createdTrainingUsernames: string[] = [];
-	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string, forUser?: string | null) {
+	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string) {
 		error = null;
 		try {
 			if (!ageBracket) throw "Age span must be set";
@@ -55,7 +58,7 @@
 				trainingSettings: chosenTemplate.settings,
 				ageBracket: ageBracket
 			};
-			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
+			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num);
 		} catch (err) {
 			error = ErrorHandling.getErrorObject(err).message;
 			throw err;
@@ -65,6 +68,9 @@
 	}
 
 	onMount(async () => {
+		createInfo = await apiFacade.trainings.getCreateTrainingsInfo();
+		maxNumNewTrainings = Math.max(0, createInfo.trainingsQuota.limit - createInfo.trainingsQuota.inUse);
+		newGroupData.noOfTrainings = Math.min(maxNumNewTrainings, 10);
 		templates = await apiFacade.trainings.getTemplates();
 	});
 </script>
@@ -92,8 +98,14 @@
 					</label>
 					<label>
 						Number of trainings
-						<input id="numTrainings" required bind:value={newGroupData.noOfTrainings} min="1" max="40" />
+						<input id="numTrainings" required bind:value={newGroupData.noOfTrainings} min="1" max="{Math.min(40, maxNumNewTrainings == null ? 40 : maxNumNewTrainings)}" />
 					</label>
+					{#if maxNumNewTrainings != null}
+					<div style="font-style: italic;font-size: small; color: {maxNumNewTrainings == 0 ? "red" : "black"}">
+						Remaining quota: {maxNumNewTrainings}
+					</div>
+					<br/>
+					{/if}
 					<label>
 						Time per day
 						<br/>
@@ -109,7 +121,11 @@
 					{/if}
 					<div class="actions">
 						<button class="secondary" on:click={closeModal}>Cancel</button>
-						<button class="primary" style="opacity:1" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket, '')}>Create</button>
+						<button class="primary" style="opacity:{newGroupData.noOfTrainings <= 0 ? 0.5 : 1}" type="submit" value="Create"
+							disabled={newGroupData.noOfTrainings <= 0}
+							on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket)}>
+							Create
+						</button>
 					</div>
 				</form>
 			{:else}
