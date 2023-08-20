@@ -82,38 +82,29 @@ namespace TrainingApi.Controllers
             return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, dto.TrainingSettings, dto.AgeBracket);
         }
 
-        private async Task<User> GetImpersonatedUserOrThrow(string? username)
+        [HttpGet]
+        [Route("CreateTrainingsInfo")]
+        public async Task<CreateTrainingsInfoDto> GetCreateTrainingsInfo()
         {
             var currentUser = userProvider.UserOrThrow;
-            if (string.IsNullOrEmpty(username))
-                return currentUser;
+            var allTrainingIds = currentUser!.Trainings.Values.SelectMany(o => o).ToList() ?? new List<int>();
+            var summaries = (await statisticsProvider.GetTrainingSummaries(allTrainingIds)).OfType<TrainingSummary>();
 
-            if (currentUser.Role != Roles.Admin)
-                throw new UnauthorizedAccessException();
+            var numTrainingsWithMinDaysCompleted = summaries.Count(o => o.TrainedDays >= 5);
 
-            var impersonatedUser = await userRepository.Get(username);
-            if (impersonatedUser == null)
-                throw new Exception($"null user '{username}'");
-
-            return impersonatedUser;
-        }
-
-        [HttpGet]
-        [Route("createsettings")]
-        public CreateSettingsDto GetCreateSettings()
-        {
-            return new CreateSettingsDto { MaxNumTrainingsTotal = 60 };
-        }
-
-        public class CreateSettingsDto
-        {
-            public int MaxNumTrainingsTotal { get; set; }
+            return new CreateTrainingsInfoDto { 
+                TrainingsQuota = new CreateTrainingsInfoDto.Quota
+                { 
+                    InUse = allTrainingIds.Count,
+                    Limit = Math.Max(60, numTrainingsWithMinDaysCompleted + 30)
+                }
+            };
         }
 
         [HttpPost]
         [Route("createclass")]
         [ProducesErrorResponseType(typeof(HttpException))]
-        public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings, string? createForUser = null)
+        public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings)
         {
             var user = userProvider.UserOrThrow;
 
@@ -128,16 +119,14 @@ namespace TrainingApi.Controllers
 
             if (user.Role != Roles.Admin)
             {
-                var currentNumTrainings = user.Trainings.Sum(o => o.Value.Count());
-                var maxTotalTrainings = GetCreateSettings().MaxNumTrainingsTotal;
+                var currentNumTrainings = user.Trainings.Values.Sum(o => o.Count); // user.Trainings.Sum(o => o.Value.Count());
+                var createTrainingsInfo = await GetCreateTrainingsInfo();
+                var maxTotalTrainings = createTrainingsInfo.TrainingsQuota.Limit;
                 if (numTrainings + currentNumTrainings > maxTotalTrainings)
                 {
-                    throw new HttpException($"We currently allow max {maxTotalTrainings} trainings per account. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
+                    throw new HttpException($"You are allowed max {maxTotalTrainings} trainings. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
                 }
             }
-
-            if (string.IsNullOrEmpty(createForUser) == false)
-                user = await GetImpersonatedUserOrThrow(createForUser);
 
             var templates = await trainingTemplateRepository.GetAll();
 
@@ -194,9 +183,9 @@ namespace TrainingApi.Controllers
 
         [HttpGet]
         [Route("groups")]
-        public async Task<Dictionary<string, List<TrainingSummaryDto>>> GetGroups(string? impersonateUser = null) // TODO: use a header instead and centralize impersonation ICurrentUserProvider?
+        public async Task<Dictionary<string, List<TrainingSummaryDto>>> GetGroups()
         {
-            var user = await GetImpersonatedUserOrThrow(impersonateUser);
+            var user = userProvider.UserOrThrow;
             var groupedTrainings = await GetUserGroups(user: user);
             var trainings = groupedTrainings.SelectMany(o => o.Value).DistinctBy(o => o.Id).ToList();
 
@@ -244,9 +233,9 @@ namespace TrainingApi.Controllers
         
         [HttpGet]
         [Route("summaries")]
-        public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery] string? group = null, string? impersonateUser = null)
+        public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery] string? group = null)
         {
-            var trainings = await GetUsersTrainings(group: group, user: await GetImpersonatedUserOrThrow(impersonateUser));
+            var trainings = await GetUsersTrainings(group: group);
             var trainingDayTasks = trainings.Select(o => statisticsProvider.GetTrainingDays(o.Id)).ToList();
 
             IEnumerable<TrainingDayAccount>[] results;
@@ -357,5 +346,17 @@ namespace TrainingApi.Controllers
             public string TrainingPlanName { get; set; } = "";
             public TrainingSettings Settings { get; set; } = new TrainingSettings();
         }
+
+        public class CreateTrainingsInfoDto
+        {
+            public Quota TrainingsQuota { get; set; } = new();
+
+            public class Quota
+            {
+                public int Limit { get; set; }
+                public int InUse { get; set; }
+            }
+        }
+
     }
 }

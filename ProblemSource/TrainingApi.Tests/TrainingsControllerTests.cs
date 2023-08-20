@@ -1,6 +1,6 @@
 ﻿using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
@@ -56,6 +56,135 @@ namespace TrainingApi.Tests
 
             // Assert
             response!.Single().Id.ShouldBe(training.Id);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task CreateTrainingsInfo(bool withImpersonation)
+        {
+            // Arrange
+            var users = ImpersonationWrapper.CreateDefaultUsers();
+            var wrapper = new ImpersonationWrapper(users.Single(o => o.Role == Roles.Admin), withImpersonation ? users.Single(o => o.Role == Roles.Teacher) : null);
+
+            var client = wrapper.CreateClient();
+
+            // Act
+            var response = await client.GetFromJsonAsync<CreateTrainingsInfoDto>(wrapper.AppendOptionalImpersonation("/api/trainings/CreateTrainingsInfo"));
+
+            // Assert
+            response.ShouldNotBeNull();
+            response.TrainingsQuota.Limit.ShouldBe(60);
+            response.TrainingsQuota.InUse.ShouldBe(wrapper.ResolvedUser.Trainings.Sum(o => o.Value.Count));
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task GetGroups(bool withImpersonation)
+        {
+            // Arrange
+            var users = ImpersonationWrapper.CreateDefaultUsers();
+            var wrapper = new ImpersonationWrapper(users.Single(o => o.Role == Roles.Admin), withImpersonation ? users.Single(o => o.Role == Roles.Teacher) : null);
+
+            var client = wrapper.CreateClient();
+
+            // Act
+            var response = await client.GetFromJsonAsync<Dictionary<string, List<TrainingSummaryDto>>>(wrapper.AppendOptionalImpersonation("/api/trainings/groups"));
+
+            // Assert
+            response.ShouldNotBeNull();
+            response.Keys.ShouldBe(wrapper.ResolvedUser.Trainings.Keys, ignoreOrder: true);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task GetSummaries(bool withImpersonation)
+        {
+            // Arrange
+            var users = ImpersonationWrapper.CreateDefaultUsers();
+            var wrapper = new ImpersonationWrapper(users.Single(o => o.Role == Roles.Admin), withImpersonation ? users.Single(o => o.Role == Roles.Teacher) : null);
+
+            var client = wrapper.CreateClient();
+            var kvSelectedGroup = wrapper.ResolvedUser.Trainings.First();
+
+            // Act
+            var response = await client.GetFromJsonAsync<List<TrainingSummaryWithDaysDto>>(wrapper.AppendOptionalImpersonation($"/api/trainings/summaries?group={kvSelectedGroup.Key}"));
+
+            // Assert
+            response.ShouldNotBeNull();
+            response.Count.ShouldBe(kvSelectedGroup.Value.Count);
+        }
+    }
+
+    public class ImpersonationWrapper
+    {
+        public readonly User? ImpersonatedUser;
+        public readonly User ActingUser;
+        public User ResolvedUser => ImpersonatedUser ?? ActingUser;
+
+        private readonly List<User> users;
+
+        internal MyTestServer Server { get; private set; }
+
+        public ImpersonationWrapper(User actingUser, User? impersonate = null) //, IEnumerable<User>? users = null)
+        {
+            ActingUser = actingUser;
+            ImpersonatedUser = impersonate;
+
+            users = new List<User> { actingUser };
+            if (ImpersonatedUser != null)
+                users.Add(ImpersonatedUser);
+
+            Server = new MyTestServer(postConfigureTestServices: services =>
+            {
+                services.RemoveAll(typeof(IUserRepository));
+                services.AddSingleton(sp =>
+                {
+                    var repo = MyTestServer.CreateAutoMocked<IUserRepository>();
+                    A.CallTo(() => repo.Get(A<string>.Ignored)).ReturnsLazily((string uname) => Task.FromResult(users.SingleOrDefault(o => o.Email == uname)));
+                    return repo;
+                });
+
+                services.RemoveAll(typeof(ITrainingRepository));
+
+                services.AddSingleton(sp =>
+                {
+                    var repo = MyTestServer.CreateAutoMocked<ITrainingRepository>();
+                    A.CallTo(() => repo.Get(A<int>._)).ReturnsLazily((int id) => Task.FromResult((Training?)new Training { Id = id }));
+                    A.CallTo(() => repo.GetByIds(A<IEnumerable<int>>._)).ReturnsLazily((IEnumerable<int> ids) => Task.FromResult(ids.Select(id => new Training { Id = id })));
+                    return repo;
+                });
+            });
+        }
+
+        public string AppendOptionalImpersonation(string path)
+        {
+            return path + (ImpersonatedUser != null ? $"{(path.Contains("?") ? "&" : "?")}impersonate={ImpersonatedUser.Email}" : "");
+        }
+
+        public HttpClient CreateClient()
+        {
+            return Server.CreateClient(ActingUser);
+        }
+
+        public static List<User> CreateDefaultUsers()
+        {
+            return new List<User> {
+                new User
+                {
+                    Email = "AnAdmin",
+                    Role = Roles.Admin,
+                    Trainings = new Dictionary<string, List<int>> { { "AdminGroup", Enumerable.Range(0, 1).ToList() } }
+                },
+                new User
+                {
+                    Email = "ATeacher",
+                    Role = Roles.Teacher,
+                    Trainings = new Dictionary<string, List<int>> { { "TeacherGroup", Enumerable.Range(0, 40).ToList() } }
+                },
+            };
         }
     }
 }

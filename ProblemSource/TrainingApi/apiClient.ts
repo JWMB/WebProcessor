@@ -640,8 +640,8 @@ export class TrainingsClient {
         return Promise.resolve<Training[]>(null as any);
     }
 
-    getCreateSettings(): Promise<CreateSettingsDto> {
-        let url_ = this.baseUrl + "/api/Trainings/createsettings";
+    getCreateTrainingsInfo(): Promise<CreateTrainingsInfoDto> {
+        let url_ = this.baseUrl + "/api/Trainings/CreateTrainingsInfo";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -652,17 +652,17 @@ export class TrainingsClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetCreateSettings(_response);
+            return this.processGetCreateTrainingsInfo(_response);
         });
     }
 
-    protected processGetCreateSettings(response: Response): Promise<CreateSettingsDto> {
+    protected processGetCreateTrainingsInfo(response: Response): Promise<CreateTrainingsInfoDto> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateSettingsDto;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateTrainingsInfoDto;
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -670,10 +670,10 @@ export class TrainingsClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<CreateSettingsDto>(null as any);
+        return Promise.resolve<CreateTrainingsInfoDto>(null as any);
     }
 
-    postGroup(dto: TrainingCreateDto, groupName: string | undefined, numTrainings: number | undefined, createForUser: string | null | undefined): Promise<string[]> {
+    postGroup(dto: TrainingCreateDto, groupName: string | undefined, numTrainings: number | undefined): Promise<string[]> {
         let url_ = this.baseUrl + "/api/Trainings/createclass?";
         if (groupName === null)
             throw new Error("The parameter 'groupName' cannot be null.");
@@ -683,8 +683,6 @@ export class TrainingsClient {
             throw new Error("The parameter 'numTrainings' cannot be null.");
         else if (numTrainings !== undefined)
             url_ += "numTrainings=" + encodeURIComponent("" + numTrainings) + "&";
-        if (createForUser !== undefined && createForUser !== null)
-            url_ += "createForUser=" + encodeURIComponent("" + createForUser) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(dto);
@@ -789,10 +787,8 @@ export class TrainingsClient {
         return Promise.resolve<TrainingTemplateDto[]>(null as any);
     }
 
-    getGroups(impersonateUser: string | null | undefined): Promise<{ [key: string]: TrainingSummaryDto[]; }> {
-        let url_ = this.baseUrl + "/api/Trainings/groups?";
-        if (impersonateUser !== undefined && impersonateUser !== null)
-            url_ += "impersonateUser=" + encodeURIComponent("" + impersonateUser) + "&";
+    getGroups(): Promise<{ [key: string]: TrainingSummaryDto[]; }> {
+        let url_ = this.baseUrl + "/api/Trainings/groups";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -894,12 +890,10 @@ export class TrainingsClient {
         return Promise.resolve<TrainingSummaryDto[]>(null as any);
     }
 
-    getSummaries(group: string | null | undefined, impersonateUser: string | null | undefined): Promise<TrainingSummaryWithDaysDto[]> {
+    getSummaries(group: string | null | undefined): Promise<TrainingSummaryWithDaysDto[]> {
         let url_ = this.baseUrl + "/api/Trainings/summaries?";
         if (group !== undefined && group !== null)
             url_ += "group=" + encodeURIComponent("" + group) + "&";
-        if (impersonateUser !== undefined && impersonateUser !== null)
-            url_ += "impersonateUser=" + encodeURIComponent("" + impersonateUser) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -1229,8 +1223,13 @@ export interface TrainingSyncSettings {
     syncTriggerCode: string;
 }
 
-export interface CreateSettingsDto {
-    maxNumTrainingsTotal: number;
+export interface CreateTrainingsInfoDto {
+    trainingsQuota: Quota;
+}
+
+export interface Quota {
+    limit: number;
+    inUse: number;
 }
 
 export interface Training {

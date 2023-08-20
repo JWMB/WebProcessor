@@ -34,7 +34,6 @@ namespace TrainingApi.Tests.IntegrationHelpers
                     {
                         services.AddTransient<IStartupFilter, TestStartupFilter>();
 
-                        //services.
                         services.AddSingleton(sp => { 
                             var repo = CreateAutoMocked<IUserRepository>();
                             A.CallTo(() => repo.Get(A<string>._)).Returns(Task.FromResult((User?)null));
@@ -60,7 +59,7 @@ namespace TrainingApi.Tests.IntegrationHelpers
 
         private TestServer CreateServer(Dictionary<string, string>? config = null, Action<IServiceCollection>? configureTestServices = null)
         {
-            var factory = new WebApplicationFactory<TrainingApi.Startup>()
+            var factory = new WebApplicationFactory<Startup>()
                 .WithWebHostBuilder(builder =>
                 {
                     builder.ConfigureAppConfiguration((context, configBuilder) =>
@@ -84,23 +83,5 @@ namespace TrainingApi.Tests.IntegrationHelpers
 
             return factory.Server;
         }
-
-        //private TestServer CreateServer()
-        //{
-        //    var testServer = new TestServer(new WebHostBuilder()
-        //        .ConfigureAppConfiguration((context, builder) =>
-        //        {
-        //            builder.AddJsonFile("appsettings.json");
-        //        })
-        //        .ConfigureTestServices(services =>
-        //        {
-        //            services.AddSingleton(sp => fixture.Create<IUserStateRepository>());
-        //            services.AddSingleton(sp => fixture.Create<IUserRepository>());
-        //            services.AddSingleton(sp => fixture.Create<IUserGeneratedDataRepositoryProviderFactory>());
-        //            services.AddSingleton(sp => fixture.Create<ITrainingRepository>());
-        //        })
-        //        .UseStartup<TrainingApi.Startup>());
-        //    return testServer;
-        //}
     }
 }

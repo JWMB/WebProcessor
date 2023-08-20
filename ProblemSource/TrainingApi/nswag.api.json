@@ -465,12 +465,12 @@
         }
       }
     },
-    "/api/Trainings/createsettings": {
+    "/api/Trainings/CreateTrainingsInfo": {
       "get": {
         "tags": [
           "Trainings"
         ],
-        "operationId": "Trainings_GetCreateSettings",
+        "operationId": "Trainings_GetCreateTrainingsInfo",
         "produces": [
           "text/plain",
           "application/json",
@@ -481,7 +481,7 @@
             "x-nullable": false,
             "description": "",
             "schema": {
-              "$ref": "#/definitions/CreateSettingsDto"
+              "$ref": "#/definitions/CreateTrainingsInfoDto"
             }
           }
         }
@@ -525,12 +525,6 @@
             "in": "query",
             "format": "int32",
             "x-nullable": false
-          },
-          {
-            "type": "string",
-            "name": "createForUser",
-            "in": "query",
-            "x-nullable": true
           }
         ],
         "responses": {
@@ -614,14 +608,6 @@
           "text/plain",
           "application/json",
           "text/json"
-        ],
-        "parameters": [
-          {
-            "type": "string",
-            "name": "impersonateUser",
-            "in": "query",
-            "x-nullable": true
-          }
         ],
         "responses": {
           "200": {
@@ -723,12 +709,6 @@
           {
             "type": "string",
             "name": "group",
-            "in": "query",
-            "x-nullable": true
-          },
-          {
-            "type": "string",
-            "name": "impersonateUser",
             "in": "query",
             "x-nullable": true
           }
@@ -1295,13 +1275,29 @@
         }
       }
     },
-    "CreateSettingsDto": {
+    "CreateTrainingsInfoDto": {
       "type": "object",
       "required": [
-        "maxNumTrainingsTotal"
+        "trainingsQuota"
       ],
       "properties": {
-        "maxNumTrainingsTotal": {
+        "trainingsQuota": {
+          "$ref": "#/definitions/Quota"
+        }
+      }
+    },
+    "Quota": {
+      "type": "object",
+      "required": [
+        "limit",
+        "inUse"
+      ],
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "inUse": {
           "type": "integer",
           "format": "int32"
         }

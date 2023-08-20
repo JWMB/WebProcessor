@@ -1,10 +1,7 @@
 ﻿using Azure.Storage.Queues;
-using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json.Linq;
-using ProblemSource.Services.Storage.AzureTables;
 using System.Text;
 using TrainingApi.Services;
-using YamlDotNet.Core.Tokens;
 
 namespace TrainingApi.RealTime
 {
