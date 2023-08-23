@@ -13,7 +13,9 @@
 
 	let templates: TrainingTemplateDto[] = [];
 	let createInfo: CreateTrainingsInfoDto | null;
-	let maxNumNewTrainings: number | null;
+	let numTrainingsForReuse = 0;
+	let numTrainingsLeftInQuota = 0;
+	$: maxNumNewTrainings = numTrainingsLeftInQuota + (newGroupData.reuseTrainings ? numTrainingsForReuse : 0); 
 
 	let error: string | null = null;
 
@@ -37,11 +39,12 @@
 		name: 'Fsk A',
 		noOfTrainings: 0,
 		timePerDay: 33,
-		ageBracket: ""
+		ageBracket: "",
+		reuseTrainings: false
 	};
 
 	let createdTrainingUsernames: string[] = [];
-	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string) {
+	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string, reuseTrainingsNotStarted: boolean) {
 		error = null;
 		try {
 			if (!ageBracket) throw "Age span must be set";
@@ -56,7 +59,8 @@
 				baseTemplateId: chosenTemplate.id,
 				trainingPlan: chosenTemplate.trainingPlanName,
 				trainingSettings: chosenTemplate.settings,
-				ageBracket: ageBracket
+				ageBracket: ageBracket,
+				reuseTrainingsNotStarted: reuseTrainingsNotStarted
 			};
 			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num);
 		} catch (err) {
@@ -69,7 +73,9 @@
 
 	onMount(async () => {
 		createInfo = await apiFacade.trainings.getCreateTrainingsInfo();
-		maxNumNewTrainings = Math.max(0, createInfo.trainingsQuota.limit - createInfo.trainingsQuota.inUse);
+		// createInfo.trainingsQuota.inUse = 40; // testing
+		numTrainingsLeftInQuota = Math.max(0, createInfo.trainingsQuota.limit - createInfo.trainingsQuota.inUse);
+		numTrainingsForReuse = createInfo.trainingsQuota.inUse - createInfo.trainingsQuota.started;
 		newGroupData.noOfTrainings = Math.min(maxNumNewTrainings, 10);
 		templates = await apiFacade.trainings.getTemplates();
 	});
@@ -98,12 +104,18 @@
 					</label>
 					<label>
 						Number of trainings
-						<input id="numTrainings" required bind:value={newGroupData.noOfTrainings} min="1" max="{Math.min(40, maxNumNewTrainings == null ? 40 : maxNumNewTrainings)}" />
+						<input id="numTrainings" type="number" required bind:value={newGroupData.noOfTrainings} 
+							min="1" max="{Math.min(createInfo?.maxTrainingsInGroup || 1, maxNumNewTrainings)}"
+							on:blur={() => newGroupData.noOfTrainings = Math.min(newGroupData.noOfTrainings, maxNumNewTrainings)} />
 					</label>
-					{#if maxNumNewTrainings != null}
-					<div style="font-style: italic;font-size: small; color: {maxNumNewTrainings == 0 ? "red" : "black"}">
-						Remaining quota: {maxNumNewTrainings}
+					<div style="font-style: italic;font-size: small; color: {(createInfo != null && numTrainingsLeftInQuota == 0) ? "red" : "black"}">
+						Remaining quota: {numTrainingsLeftInQuota}
 					</div>
+					{#if false && numTrainingsForReuse > 0 && numTrainingsLeftInQuota < (createInfo?.maxTrainingsInGroup || 1)}
+					<span>
+						<input type="checkbox" style="width:10px; height:10px; display: inline;" bind:value={newGroupData.reuseTrainings} />
+						<span style="float:left; font-style: italic;font-size: small">Re-use unused trainings ({numTrainingsForReuse})</span>
+					</span>
 					<br/>
 					{/if}
 					<label>
@@ -123,7 +135,7 @@
 						<button class="secondary" on:click={closeModal}>Cancel</button>
 						<button class="primary" style="opacity:{newGroupData.noOfTrainings <= 0 ? 0.5 : 1}" type="submit" value="Create"
 							disabled={newGroupData.noOfTrainings <= 0}
-							on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket)}>
+							on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket, newGroupData.reuseTrainings)}>
 							Create
 						</button>
 					</div>

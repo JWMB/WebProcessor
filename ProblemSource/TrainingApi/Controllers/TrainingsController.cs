@@ -88,6 +88,7 @@ namespace TrainingApi.Controllers
         {
             var currentUser = userProvider.UserOrThrow;
             var allTrainingIds = currentUser!.Trainings.Values.SelectMany(o => o).ToList() ?? new List<int>();
+            var trainings = await trainingRepository.GetByIds(allTrainingIds);
             var summaries = (await statisticsProvider.GetTrainingSummaries(allTrainingIds)).OfType<TrainingSummary>();
 
             var numTrainingsWithMinDaysCompleted = summaries.Count(o => o.TrainedDays >= 5);
@@ -96,7 +97,10 @@ namespace TrainingApi.Controllers
                 TrainingsQuota = new CreateTrainingsInfoDto.Quota
                 { 
                     InUse = allTrainingIds.Count,
-                    Limit = Math.Max(60, numTrainingsWithMinDaysCompleted + 30)
+                    Started = summaries.Count(o => o.TrainedDays > 0),
+                    Limit = Math.Max(60, numTrainingsWithMinDaysCompleted + 30),
+                    // TODO: set Reusable depending on when trainings were created (can't reuse trainings that were created within the last few days)
+                    // But creation timestamp is not available on Training right now
                 }
             };
         }
@@ -108,8 +112,10 @@ namespace TrainingApi.Controllers
         {
             var user = userProvider.UserOrThrow;
 
+            var createTrainingsInfo = await GetCreateTrainingsInfo();
+
             // TODO: standard validation
-            var maxTrainingsInGroup = 30;
+            var maxTrainingsInGroup = createTrainingsInfo.MaxTrainingsInGroup;
             if (numTrainings < 1)
                 throw new HttpException($"{nameof(numTrainings)}:{numTrainings} exceeds accepted range", StatusCodes.Status400BadRequest);
             else if (numTrainings > maxTrainingsInGroup)
@@ -120,8 +126,11 @@ namespace TrainingApi.Controllers
             if (user.Role != Roles.Admin)
             {
                 var currentNumTrainings = user.Trainings.Values.Sum(o => o.Count); // user.Trainings.Sum(o => o.Value.Count());
-                var createTrainingsInfo = await GetCreateTrainingsInfo();
                 var maxTotalTrainings = createTrainingsInfo.TrainingsQuota.Limit;
+                if (dto.ReuseTrainingsNotStarted)
+                {
+                    maxTotalTrainings += Math.Max(0, createTrainingsInfo.TrainingsQuota.InUse - createTrainingsInfo.TrainingsQuota.Started);
+                }
                 if (numTrainings + currentNumTrainings > maxTotalTrainings)
                 {
                     throw new HttpException($"You are allowed max {maxTotalTrainings} trainings. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
@@ -337,6 +346,7 @@ namespace TrainingApi.Controllers
             public string? TrainingPlan { get; set; }
             public TrainingSettings? TrainingSettings { get; set; }
             public string? AgeBracket { get; set; }
+            public bool ReuseTrainingsNotStarted { get; set; }
         }
 
         public class TrainingTemplateDto
@@ -351,12 +361,15 @@ namespace TrainingApi.Controllers
         {
             public Quota TrainingsQuota { get; set; } = new();
 
+            public int MaxTrainingsInGroup { get; set; } = 35;
+
             public class Quota
             {
                 public int Limit { get; set; }
                 public int InUse { get; set; }
+                public int Started { get; set; }
+                //public int Reusable { get; set; }
             }
         }
-
     }
 }

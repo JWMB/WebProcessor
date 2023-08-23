@@ -1075,7 +1075,8 @@
     "TrainingCreateDto": {
       "type": "object",
       "required": [
-        "baseTemplateId"
+        "baseTemplateId",
+        "reuseTrainingsNotStarted"
       ],
       "properties": {
         "baseTemplateId": {
@@ -1090,6 +1091,9 @@
         },
         "ageBracket": {
           "type": "string"
+        },
+        "reuseTrainingsNotStarted": {
+          "type": "boolean"
         }
       }
     },
@@ -1278,11 +1282,16 @@
     "CreateTrainingsInfoDto": {
       "type": "object",
       "required": [
-        "trainingsQuota"
+        "trainingsQuota",
+        "maxTrainingsInGroup"
       ],
       "properties": {
         "trainingsQuota": {
           "$ref": "#/definitions/Quota"
+        },
+        "maxTrainingsInGroup": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -1290,7 +1299,8 @@
       "type": "object",
       "required": [
         "limit",
-        "inUse"
+        "inUse",
+        "started"
       ],
       "properties": {
         "limit": {
@@ -1298,6 +1308,10 @@
           "format": "int32"
         },
         "inUse": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "started": {
           "type": "integer",
           "format": "int32"
         }

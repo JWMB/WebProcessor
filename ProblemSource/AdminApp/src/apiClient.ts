@@ -1157,6 +1157,7 @@ export interface TrainingCreateDto {
     trainingPlan?: string | undefined;
     trainingSettings?: TrainingSettings | undefined;
     ageBracket?: string | undefined;
+    reuseTrainingsNotStarted: boolean;
 }
 
 export interface TrainingSettings {
@@ -1230,6 +1231,7 @@ export interface CreateTrainingsInfoDto {
 export interface Quota {
     limit: number;
     inUse: number;
+    started: number;
 }
 
 export interface Training {
