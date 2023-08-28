@@ -25,7 +25,7 @@ namespace TrainingApi.Tests.IntegrationHelpers
            return client;
         }
 
-        public MyTestServer(Action<IServiceCollection>? configureTestServices = null, Action<IServiceCollection>? postConfigureTestServices = null, Dictionary<string, string>? config = null)
+        public MyTestServer(IEnumerable<User>? users = null, Action<IServiceCollection>? configureTestServices = null, Action<IServiceCollection>? postConfigureTestServices = null, Dictionary<string, string>? config = null)
         {
             Action<IServiceCollection> configure = services => {
                 if (configureTestServices == null)
@@ -36,7 +36,7 @@ namespace TrainingApi.Tests.IntegrationHelpers
 
                         services.AddSingleton(sp => { 
                             var repo = CreateAutoMocked<IUserRepository>();
-                            A.CallTo(() => repo.Get(A<string>._)).Returns(Task.FromResult((User?)null));
+                            A.CallTo(() => repo.Get(A<string>._)).ReturnsLazily((string uname) => Task.FromResult(users?.SingleOrDefault(o => o.Email == uname)));
                             return repo;
                         });
                         services.AddSingleton(sp => CreateAutoMocked<IUserGeneratedDataRepositoryProviderFactory>());

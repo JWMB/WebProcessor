@@ -12,6 +12,8 @@ namespace TrainingApi.Tests
 {
     public class TrainingsControllerTests
     {
+        private const string basePath = "/api/trainings/";
+
         [Fact]
         public async Task GetTemplates_Serialization()
         {
@@ -22,7 +24,7 @@ namespace TrainingApi.Tests
             var client = ts.CreateClient(user);
 
             // Act
-            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"/api/trainings/templates");
+            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"{basePath}templates");
 
             // Assert
             var template = response!.Single(o => o.Name == "NumberlineTest training");
@@ -52,7 +54,7 @@ namespace TrainingApi.Tests
             var client = ts.CreateClient(user);
 
             // Act
-            var response = await client.GetFromJsonAsync<List<TrainingSummaryWithDaysDto>>($"/api/trainings/summaries");
+            var response = await client.GetFromJsonAsync<List<TrainingSummaryWithDaysDto>>($"{basePath}summaries");
 
             // Assert
             response!.Single().Id.ShouldBe(training.Id);
@@ -70,7 +72,7 @@ namespace TrainingApi.Tests
             var client = wrapper.CreateClient();
 
             // Act
-            var response = await client.GetFromJsonAsync<CreateTrainingsInfoDto>(wrapper.AppendOptionalImpersonation("/api/trainings/CreateTrainingsInfo"));
+            var response = await client.GetFromJsonAsync<CreateTrainingsInfoDto>(wrapper.AppendOptionalImpersonation($"{basePath}CreateTrainingsInfo"));
 
             // Assert
             response.ShouldNotBeNull();
@@ -90,7 +92,7 @@ namespace TrainingApi.Tests
             var client = wrapper.CreateClient();
 
             // Act
-            var response = await client.GetFromJsonAsync<Dictionary<string, List<TrainingSummaryDto>>>(wrapper.AppendOptionalImpersonation("/api/trainings/groups"));
+            var response = await client.GetFromJsonAsync<Dictionary<string, List<TrainingSummaryDto>>>(wrapper.AppendOptionalImpersonation($"{basePath}groups"));
 
             // Assert
             response.ShouldNotBeNull();
@@ -110,7 +112,7 @@ namespace TrainingApi.Tests
             var kvSelectedGroup = wrapper.ResolvedUser.Trainings.First();
 
             // Act
-            var response = await client.GetFromJsonAsync<List<TrainingSummaryWithDaysDto>>(wrapper.AppendOptionalImpersonation($"/api/trainings/summaries?group={kvSelectedGroup.Key}"));
+            var response = await client.GetFromJsonAsync<List<TrainingSummaryWithDaysDto>>(wrapper.AppendOptionalImpersonation($"{basePath}summaries?group={kvSelectedGroup.Key}"));
 
             // Assert
             response.ShouldNotBeNull();
@@ -128,7 +130,7 @@ namespace TrainingApi.Tests
 
         internal MyTestServer Server { get; private set; }
 
-        public ImpersonationWrapper(User actingUser, User? impersonate = null) //, IEnumerable<User>? users = null)
+        public ImpersonationWrapper(User actingUser, User? impersonate = null)
         {
             ActingUser = actingUser;
             ImpersonatedUser = impersonate;
@@ -137,18 +139,9 @@ namespace TrainingApi.Tests
             if (ImpersonatedUser != null)
                 users.Add(ImpersonatedUser);
 
-            Server = new MyTestServer(postConfigureTestServices: services =>
+            Server = new MyTestServer(users, postConfigureTestServices: services =>
             {
-                services.RemoveAll(typeof(IUserRepository));
-                services.AddSingleton(sp =>
-                {
-                    var repo = MyTestServer.CreateAutoMocked<IUserRepository>();
-                    A.CallTo(() => repo.Get(A<string>.Ignored)).ReturnsLazily((string uname) => Task.FromResult(users.SingleOrDefault(o => o.Email == uname)));
-                    return repo;
-                });
-
                 services.RemoveAll(typeof(ITrainingRepository));
-
                 services.AddSingleton(sp =>
                 {
                     var repo = MyTestServer.CreateAutoMocked<ITrainingRepository>();
@@ -159,15 +152,10 @@ namespace TrainingApi.Tests
             });
         }
 
-        public string AppendOptionalImpersonation(string path)
-        {
-            return path + (ImpersonatedUser != null ? $"{(path.Contains("?") ? "&" : "?")}impersonate={ImpersonatedUser.Email}" : "");
-        }
+        public string AppendOptionalImpersonation(string path) =>
+            path + (ImpersonatedUser != null ? $"{(path.Contains("?") ? "&" : "?")}impersonate={ImpersonatedUser.Email}" : "");
 
-        public HttpClient CreateClient()
-        {
-            return Server.CreateClient(ActingUser);
-        }
+        public HttpClient CreateClient() => Server.CreateClient(ActingUser);
 
         public static List<User> CreateDefaultUsers()
         {

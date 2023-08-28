@@ -7,19 +7,20 @@ using ProblemSourceModule.Services.Storage;
 using TrainingApi.Services;
 using ProblemSourceModule.Models;
 using System.ComponentModel.DataAnnotations;
+using TrainingApi.ErrorHandling;
 
 namespace TrainingApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AccountsController : ControllerBase
+    public class UsersController : ControllerBase
     {
         private readonly IUserRepository userRepository;
         private readonly IAuthenticateUserService authenticateUserService;
         private readonly ICurrentUserProvider userProvider;
-        private readonly ILogger<AccountsController> log;
+        private readonly ILogger<UsersController> log;
 
-        public AccountsController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ICurrentUserProvider userProvider, ILogger<AccountsController> logger)
+        public UsersController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ICurrentUserProvider userProvider, ILogger<UsersController> logger)
         {
             this.userRepository = userRepository;
             this.authenticateUserService = authenticateUserService;
@@ -130,6 +131,34 @@ namespace TrainingApi.Controllers
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
             
             return Ok(new LoginResultDto(user.Role));
+        }
+
+        [HttpPut]
+        [Route("movetrainings")]
+        public async Task MoveTrainings([FromBody] MoveTrainingsDto input)
+        {
+            var user = userProvider.UserOrThrow;
+
+            if (!user.Trainings.TryGetValue(input.FromGroup, out var idsFromGroup))
+                throw new HttpException($"Group not found: {input.FromGroup}", StatusCodes.Status400BadRequest);
+
+            if (!user.Trainings.TryGetValue(input.ToGroup, out var idsToGroup))
+                throw new HttpException($"Group not found: {input.ToGroup}", StatusCodes.Status400BadRequest);
+
+            if (idsFromGroup.Intersect(input.TrainingIds).Count() != input.TrainingIds.Count())
+                throw new HttpException($"Id mismatch", StatusCodes.Status400BadRequest);
+
+            user.Trainings[input.FromGroup] = idsFromGroup.Except(input.TrainingIds).ToList();
+            user.Trainings[input.ToGroup] = idsToGroup.Concat(input.TrainingIds).Distinct().ToList();
+
+            await userRepository.Update(user);
+        }
+
+        public class MoveTrainingsDto
+        {
+            public List<int> TrainingIds { get; set; } = new();
+            public string FromGroup { get; set; } = string.Empty;
+            public string ToGroup { get; set; } = string.Empty;
         }
 
         public readonly record struct LoginResultDto(string Role);
