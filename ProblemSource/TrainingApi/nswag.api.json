@@ -6,237 +6,6 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/api/Accounts": {
-      "get": {
-        "tags": [
-          "Accounts"
-        ],
-        "operationId": "Accounts_GetAll",
-        "produces": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "responses": {
-          "200": {
-            "x-nullable": false,
-            "description": "",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/GetUserDto"
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Accounts"
-        ],
-        "operationId": "Accounts_Post",
-        "consumes": [
-          "application/json",
-          "text/json",
-          "application/*+json"
-        ],
-        "parameters": [
-          {
-            "name": "dto",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/CreateUserDto"
-            },
-            "x-nullable": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/Accounts/GetOne": {
-      "get": {
-        "tags": [
-          "Accounts"
-        ],
-        "operationId": "Accounts_Get",
-        "produces": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "parameters": [
-          {
-            "type": "string",
-            "name": "id",
-            "in": "query",
-            "x-nullable": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "x-nullable": false,
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/GetUserDto"
-            }
-          }
-        }
-      }
-    },
-    "/api/Accounts/{id}": {
-      "get": {
-        "tags": [
-          "Accounts"
-        ],
-        "operationId": "Accounts_Get2",
-        "produces": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "parameters": [
-          {
-            "type": "string",
-            "name": "id",
-            "in": "query",
-            "x-nullable": false
-          },
-          {
-            "type": "string",
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "x-nullable": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "x-nullable": false,
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/GetUserDto"
-            }
-          }
-        }
-      }
-    },
-    "/api/Accounts/id": {
-      "patch": {
-        "tags": [
-          "Accounts"
-        ],
-        "operationId": "Accounts_Patch",
-        "consumes": [
-          "application/json",
-          "text/json",
-          "application/*+json"
-        ],
-        "parameters": [
-          {
-            "type": "string",
-            "name": "id",
-            "in": "query",
-            "x-nullable": false
-          },
-          {
-            "name": "dto",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/PatchUserDto"
-            },
-            "x-nullable": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "x-nullable": true,
-            "description": "",
-            "schema": {
-              "type": "file"
-            }
-          }
-        }
-      }
-    },
-    "/api/Accounts/GetLoggedInUser": {
-      "get": {
-        "tags": [
-          "Accounts"
-        ],
-        "operationId": "Accounts_GetLoggedInUser",
-        "produces": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "responses": {
-          "200": {
-            "x-nullable": false,
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/GetUserDto"
-            }
-          }
-        }
-      }
-    },
-    "/api/Accounts/logout": {
-      "post": {
-        "tags": [
-          "Accounts"
-        ],
-        "operationId": "Accounts_Logout",
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/api/Accounts/login": {
-      "post": {
-        "tags": [
-          "Accounts"
-        ],
-        "operationId": "Accounts_Login",
-        "consumes": [
-          "application/json",
-          "text/json",
-          "application/*+json"
-        ],
-        "produces": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "parameters": [
-          {
-            "name": "credentials",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/LoginCredentials"
-            },
-            "x-nullable": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "x-nullable": false,
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/LoginResultDto"
-            }
-          }
-        }
-      }
-    },
     "/api/Aggregates/TrainingDayAccount": {
       "get": {
         "tags": [
@@ -727,6 +496,266 @@
         }
       }
     },
+    "/api/Users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_GetAll",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GetUserDto"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_Post",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateUserDto"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/Users/GetOne": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_Get",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "id",
+            "in": "query",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GetUserDto"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_Get2",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "id",
+            "in": "query",
+            "x-nullable": false
+          },
+          {
+            "type": "string",
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GetUserDto"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/id": {
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_Patch",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "id",
+            "in": "query",
+            "x-nullable": false
+          },
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PatchUserDto"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/GetLoggedInUser": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_GetLoggedInUser",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GetUserDto"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/logout": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_Logout",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/Users/login": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_Login",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "name": "credentials",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LoginCredentials"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/LoginResultDto"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/movetrainings": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_MoveTrainings",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/MoveTrainingsDto"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/Health/Heartbeat": {
       "get": {
         "tags": [
@@ -793,101 +822,6 @@
     }
   },
   "definitions": {
-    "GetUserDto": {
-      "type": "object",
-      "required": [
-        "username",
-        "role",
-        "trainings"
-      ],
-      "properties": {
-        "username": {
-          "type": "string"
-        },
-        "role": {
-          "type": "string"
-        },
-        "trainings": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        }
-      }
-    },
-    "CreateUserDto": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/GetUserDto"
-        },
-        {
-          "type": "object",
-          "required": [
-            "password"
-          ],
-          "properties": {
-            "password": {
-              "type": "string"
-            }
-          }
-        }
-      ]
-    },
-    "PatchUserDto": {
-      "type": "object",
-      "properties": {
-        "role": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        },
-        "trainings": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        }
-      }
-    },
-    "LoginResultDto": {
-      "type": "object",
-      "required": [
-        "role"
-      ],
-      "properties": {
-        "role": {
-          "type": "string"
-        }
-      }
-    },
-    "LoginCredentials": {
-      "type": "object",
-      "required": [
-        "username",
-        "password"
-      ],
-      "properties": {
-        "username": {
-          "type": "string",
-          "maxLength": 50,
-          "minLength": 5
-        },
-        "password": {
-          "type": "string",
-          "maxLength": 14,
-          "minLength": 5
-        }
-      }
-    },
     "TrainingDayAccount": {
       "type": "object",
       "required": [
@@ -1458,6 +1392,124 @@
           }
         }
       ]
+    },
+    "GetUserDto": {
+      "type": "object",
+      "required": [
+        "username",
+        "role",
+        "trainings"
+      ],
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "trainings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      }
+    },
+    "CreateUserDto": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/GetUserDto"
+        },
+        {
+          "type": "object",
+          "required": [
+            "password"
+          ],
+          "properties": {
+            "password": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "PatchUserDto": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "trainings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      }
+    },
+    "LoginResultDto": {
+      "type": "object",
+      "required": [
+        "role"
+      ],
+      "properties": {
+        "role": {
+          "type": "string"
+        }
+      }
+    },
+    "LoginCredentials": {
+      "type": "object",
+      "required": [
+        "username",
+        "password"
+      ],
+      "properties": {
+        "username": {
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 5
+        },
+        "password": {
+          "type": "string",
+          "maxLength": 14,
+          "minLength": 5
+        }
+      }
+    },
+    "MoveTrainingsDto": {
+      "type": "object",
+      "required": [
+        "trainingIds",
+        "fromGroup",
+        "toGroup"
+      ],
+      "properties": {
+        "trainingIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "fromGroup": {
+          "type": "string"
+        },
+        "toGroup": {
+          "type": "string"
+        }
+      }
     }
   }
 }

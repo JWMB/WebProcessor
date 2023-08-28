@@ -10,9 +10,9 @@ namespace TrainingApi.Controllers
     [Route("api/[controller]")]
     public class TestingController : ControllerBase
     {
-        private readonly ILogger<AccountsController> log;
+        private readonly ILogger<UsersController> log;
 
-        public TestingController(IConfiguration configuration, ILogger<AccountsController> logger)
+        public TestingController(IConfiguration configuration, ILogger<UsersController> logger)
         {
             log = logger;
         }

@@ -19,6 +19,7 @@ namespace TrainingApi.Tests
             Skip.If(!System.Diagnostics.Debugger.IsAttached);
 
             client = new MyTestServer(
+                null,
                 services => { },
                 config: new Dictionary<string, string> { { "AppSettings:AzureTables:TablePrefix", "vektorTEST" } }
                 ).CreateClient();

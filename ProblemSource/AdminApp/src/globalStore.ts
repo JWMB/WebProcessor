@@ -65,7 +65,7 @@ export const userStore = (() => {
     async function getLoggedInUser(): Promise<void> {
         return new Promise<void>((resolve) => {
             if (browser) {
-                getApi()?.accounts.getLoggedInUser()
+                getApi()?.users.getLoggedInUser()
                     .then(r => {
                         console.log("logged in with user:", r);
                         loggedInUser.set({ username: r.username, loggedIn: true, role: r.role });
@@ -88,11 +88,11 @@ export const userStore = (() => {
     return {
         inited,
         login: async (credentials: LoginCredentials) => {
-            await getApi()?.accounts.login(credentials);
+            await getApi()?.users.login(credentials);
             await getLoggedInUser();
         },
         logout: async () => {
-            await getApi()?.accounts.logout();
+            await getApi()?.users.logout();
         },
         subscribe: loggedInUser.subscribe
     }
