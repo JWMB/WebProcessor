@@ -83,7 +83,7 @@ namespace TrainingApi.Controllers
                 return NotFound();
             if (dto.Role != null) user.Role = dto.Role;
             if (dto.Password != null) user.PasswordForHashing = dto.Password;
-            if (dto.Trainings != null) user.Trainings = dto.Trainings;
+            if (dto.Trainings != null) user.Trainings = new UserTrainingsCollection(dto.Trainings);
 
             await userRepository.Update(user);
             return Ok();

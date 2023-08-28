@@ -1241,6 +1241,7 @@ export interface Training {
     trainingPlanName: string;
     settings: TrainingSettings;
     ageBracket: string;
+    created: Date;
 }
 
 export interface TrainingTemplateDto {

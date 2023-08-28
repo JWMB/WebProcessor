@@ -1324,7 +1324,8 @@
         "username",
         "trainingPlanName",
         "settings",
-        "ageBracket"
+        "ageBracket",
+        "created"
       ],
       "properties": {
         "id": {
@@ -1342,6 +1343,10 @@
         },
         "ageBracket": {
           "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

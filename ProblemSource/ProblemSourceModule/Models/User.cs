@@ -1,4 +1,8 @@
-﻿namespace ProblemSourceModule.Models
+﻿using ProblemSource.Services;
+using ProblemSourceModule.Models.Aggregates;
+using ProblemSourceModule.Services.Storage;
+
+namespace ProblemSourceModule.Models
 {
     public class User
     {
@@ -14,7 +18,7 @@
             return tmp.HashedPassword == HashedPassword;
         }
 
-        public Dictionary<string, List<int>> Trainings { get; set; } = new();
+        public UserTrainingsCollection Trainings { get; set; } = new();
 
         public static string NormalizeEmail(string email) => email.ToLower().Trim();
 
@@ -31,6 +35,79 @@
                     prf: Microsoft.AspNetCore.Cryptography.KeyDerivation.KeyDerivationPrf.HMACSHA256,
                     iterationCount: 100000,
                     numBytesRequested: 256 / 8));
+        }
+    }
+
+    public class UserTrainingsCollection : Dictionary<string, List<int>>
+    {
+        public UserTrainingsCollection()
+        {
+        }
+
+        public UserTrainingsCollection(string groupName, IEnumerable<int> ids)
+        {
+            Add(groupName, ids.ToList());
+        }
+
+        public UserTrainingsCollection(Dictionary<string, IEnumerable<int>> groups)
+        {
+            foreach (var kv in groups)
+                Add(kv.Key, kv.Value.ToList());
+        }
+        public UserTrainingsCollection(Dictionary<string, List<int>> groups)
+        {
+            foreach (var kv in groups)
+                Add(kv.Key, kv.Value);
+        }
+
+        public List<int> GetAllIds()
+        {
+            return Values.SelectMany(o => o).ToList();
+        }
+
+        public async Task<Dictionary<string, List<(int, Training?, TrainingSummary?)>>> GetTrainingsInfo(ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
+        {
+            var summaries = await statisticsProvider.GetTrainingSummaries(GetAllIds());
+            var trainings = await trainingRepo.GetByIds(GetAllIds());
+
+            var result = new Dictionary<string, List<(int, Training?, TrainingSummary?)>>();
+
+            foreach (var kv in this)
+                result.Add(kv.Key, kv.Value.Select(id => (id, trainings.SingleOrDefault(o => o.Id == id), summaries.SingleOrDefault(o => o.Id == id))).ToList());
+
+            return result;
+        }
+
+        public async Task TransferTrainings(int numTrainings, string toGroup, ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
+        {
+            var info = await GetTrainingsInfo(trainingRepo, statisticsProvider);
+
+            var summaries = info.SelectMany(o => o.Value).Select(o => o.Item3).OfType<TrainingSummary>();
+            var startedTrainingIds = summaries.Where(o => o.TrainedDays >= 1).Select(o => o.Id).ToList();
+
+            var trainings = info.SelectMany(o => o.Value).Select(o => o.Item2).OfType<Training>();
+            var justCreatedTrainingIds = trainings.Where(o => o.Created >= DateTimeOffset.UtcNow.AddDays(-1)).Select(o => o.Id).ToList(); ;
+
+            var numRemainingToTransfer = numTrainings;
+
+            var updated = new Dictionary<string, List<int>>();
+
+            foreach (var kv in this.Where(o => o.Key != toGroup))
+            {
+                var available = kv.Value.Except(startedTrainingIds).Except(justCreatedTrainingIds);
+                var forTransfer = available.Take(numRemainingToTransfer);
+
+                if (forTransfer.Any())
+                {
+                    updated[kv.Key] = kv.Value.Except(forTransfer).ToList();
+                }
+
+                numRemainingToTransfer -= forTransfer.Count();
+                if (numRemainingToTransfer == 0)
+                    break;
+            }
+
+            // Save to user repo
         }
     }
 }

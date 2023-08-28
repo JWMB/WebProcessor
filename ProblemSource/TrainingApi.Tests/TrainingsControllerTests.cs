@@ -1,9 +1,12 @@
 ﻿using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using ProblemSource.Services;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
+using System.Linq;
 using System.Net.Http.Json;
 using TrainingApi.Tests.IntegrationHelpers;
 using static TrainingApi.Controllers.TrainingsController;
@@ -116,6 +119,40 @@ namespace TrainingApi.Tests
             response.ShouldNotBeNull();
             response.Count.ShouldBe(kvSelectedGroup.Value.Count);
         }
+
+        [Theory]
+        [InlineData(50, 30, 10, 60)]
+        [InlineData(60, 50, 10, 80)]
+        [InlineData(120, 110, 10, 140)]
+        [InlineData(120, 60, 10, 90)]
+        public async Task CreateTrainingsInfo_Quotas(int numCreated, int numStartedWith5Days, int numStartedWith1Day, int expectedLimit)
+        {
+            // Arrange
+            var trainingIds = Enumerable.Range(0, numCreated).ToList();
+
+            var user = new User
+            {
+                Email = "a_teacher",
+                Role = Roles.Teacher,
+                Trainings = new UserTrainingsCollection("Group", trainingIds)
+            };
+
+            var summaries = trainingIds
+                .Take(numStartedWith5Days).Select(id => new TrainingSummary { Id = id, TrainedDays = 5 })
+                .Concat(trainingIds.Skip(numStartedWith5Days).Take(numStartedWith1Day).Select(id => new TrainingSummary { Id = id, TrainedDays = 1 }));
+
+            var wrapper = new ImpersonationWrapper(user, trainingSummaries: summaries);
+            var client = wrapper.CreateClient();
+            // Act
+            var response = await client.GetFromJsonAsync<CreateTrainingsInfoDto>($"/api/trainings/CreateTrainingsInfo");
+
+            // Assert
+            response.ShouldNotBeNull();
+            response.TrainingsQuota.InUse.ShouldBe(trainingIds.Count);
+            response.TrainingsQuota.Started.ShouldBe(numStartedWith5Days + numStartedWith1Day);
+
+            response.TrainingsQuota.Limit.ShouldBe(expectedLimit);
+        }
     }
 
     public class ImpersonationWrapper
@@ -128,7 +165,7 @@ namespace TrainingApi.Tests
 
         internal MyTestServer Server { get; private set; }
 
-        public ImpersonationWrapper(User actingUser, User? impersonate = null) //, IEnumerable<User>? users = null)
+        public ImpersonationWrapper(User actingUser, User? impersonate = null, IEnumerable<TrainingSummary>? trainingSummaries = null) //, IEnumerable<User>? users = null)
         {
             ActingUser = actingUser;
             ImpersonatedUser = impersonate;
@@ -148,14 +185,29 @@ namespace TrainingApi.Tests
                 });
 
                 services.RemoveAll(typeof(ITrainingRepository));
-
                 services.AddSingleton(sp =>
                 {
                     var repo = MyTestServer.CreateAutoMocked<ITrainingRepository>();
-                    A.CallTo(() => repo.Get(A<int>._)).ReturnsLazily((int id) => Task.FromResult((Training?)new Training { Id = id }));
-                    A.CallTo(() => repo.GetByIds(A<IEnumerable<int>>._)).ReturnsLazily((IEnumerable<int> ids) => Task.FromResult(ids.Select(id => new Training { Id = id })));
+                    A.CallTo(() => repo.Get(A<int>._))
+                        .ReturnsLazily((int id) => Task.FromResult((Training?)new Training { Id = id }));
+                    A.CallTo(() => repo.GetByIds(A<IEnumerable<int>>._))
+                        .ReturnsLazily((IEnumerable<int> ids) => Task.FromResult(ids.Select(id => new Training { Id = id })));
                     return repo;
                 });
+
+                if (trainingSummaries?.Any() == true)
+                {
+                    services.AddSingleton(sp =>
+                    {
+                        var stats = MyTestServer.CreateAutoMocked<IStatisticsProvider>();
+                        A.CallTo(() => stats.GetAllTrainingSummaries())
+                            .Returns(Task.FromResult(trainingSummaries.ToList()));
+
+                        A.CallTo(() => stats.GetTrainingSummaries(A<IEnumerable<int>>._))
+                            .ReturnsLazily((IEnumerable<int> ids) => Task.FromResult(ids.Select(id => trainingSummaries.FirstOrDefault(ts => ts.Id == id)))); //ids.Select(id => (TrainingSummary?)new TrainingSummary { Id = id, TrainedDays = 5 })));
+                        return stats;
+                    });
+                }
             });
         }
 
@@ -176,13 +228,13 @@ namespace TrainingApi.Tests
                 {
                     Email = "AnAdmin",
                     Role = Roles.Admin,
-                    Trainings = new Dictionary<string, List<int>> { { "AdminGroup", Enumerable.Range(0, 1).ToList() } }
+                    Trainings = new UserTrainingsCollection("AdminGroup", Enumerable.Range(0, 1))
                 },
                 new User
                 {
                     Email = "ATeacher",
                     Role = Roles.Teacher,
-                    Trainings = new Dictionary<string, List<int>> { { "TeacherGroup", Enumerable.Range(0, 40).ToList() } }
+                    Trainings = new UserTrainingsCollection("TeacherGroup", Enumerable.Range(0, 40))
                 },
             };
         }
