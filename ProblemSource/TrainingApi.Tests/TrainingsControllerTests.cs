@@ -158,14 +158,27 @@ namespace TrainingApi.Tests
 
         // TODO: test for PostGroup/createclass
 
-        [Fact]
-        public async Task X()
+        [Theory]
+        [InlineData(2, new[] { "a" }, new[] { 1, 5 })]
+        [InlineData(3, new[] { "a", "b" }, new[] { 1, 5, 9 })]
+        public async Task User_Trainings_RemoveUnusedFromGroups(int numToTransfer, IEnumerable<string> expectedGroups, IEnumerable<int> expectedIds)
         {
-            var trainings = new List<Training>
+            // TODO: not a TrainingsController test
+            var trainings = Enumerable.Range(0, 12).Select(o => new Training { Id = o, Created = DateTimeOffset.UtcNow }).ToList();
+
+            // 0, 2, 4... have trained 5 days
+            var summaries = trainings.Where(o => o.Id % 2 == 0)
+                .Select(o => new TrainingSummary { Id = o.Id, TrainedDays = 5 });
+
+            // 0, 1, 4, 5... were not recently created
+            foreach (var training in trainings.Where(o => (o.Id / 2) % 2 == 0))
+                training.Created = DateTimeOffset.UtcNow.AddDays(-10);
+
+            var user = new User { Trainings = new UserTrainingsCollection(new Dictionary<string, List<int>>
             {
-                new Training { Id = 0 }
-            };
-            var user = new User { Trainings = new UserTrainingsCollection(new Dictionary<string, List<int>> { { "a", trainings.Select(o => o.Id).ToList() } }) };
+                { "a", trainings.Take(6).Select(o => o.Id).ToList() },
+                { "b", trainings.Skip(6).Select(o => o.Id).ToList() }
+            }) };
 
             var trainingsRepo = A.Fake<ITrainingRepository>();
             A.CallTo(() => trainingsRepo.GetByIds(A<IEnumerable<int>>._))
@@ -173,12 +186,12 @@ namespace TrainingApi.Tests
 
             var stats = A.Fake<IStatisticsProvider>();
             A.CallTo(() => stats.GetTrainingSummaries(A<IEnumerable<int>>._))
-                .ReturnsLazily((IEnumerable<int> ids) => Task.FromResult((IEnumerable<TrainingSummary?>)new TrainingSummary?[] { }));
+                .ReturnsLazily((IEnumerable<int> ids) => Task.FromResult((IEnumerable<TrainingSummary?>)summaries.Where(o => ids.Contains(o.Id))));
 
-            var numToTransfer = 2;
             var result = await user.Trainings.RemoveUnusedFromGroups(numToTransfer, "", trainingsRepo, stats);
-            result.Keys.ShouldBe(new[] { "a" });
+            result.Keys.ShouldBe(expectedGroups);
             result.SelectMany(o => o.Value).Count().ShouldBe(numToTransfer);
+            result.SelectMany(o => o.Value).ShouldBe(expectedIds); // These were ids that were not recently created nor had training days
         }
     }
 
