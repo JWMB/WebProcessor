@@ -65,15 +65,15 @@ namespace ProblemSourceModule.Models
             return Values.SelectMany(o => o).ToList();
         }
 
-        public async Task<Dictionary<string, List<(int, Training?, TrainingSummary?)>>> GetTrainingsInfo(ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
+        public async Task<Dictionary<string, List<(int Id, Training Training, TrainingSummary? Summary)>>> GetTrainingsInfo(ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
         {
             var summaries = await statisticsProvider.GetTrainingSummaries(GetAllIds());
             var trainings = await trainingRepo.GetByIds(GetAllIds());
 
-            var result = new Dictionary<string, List<(int, Training?, TrainingSummary?)>>();
+            var result = new Dictionary<string, List<(int, Training, TrainingSummary?)>>();
 
             foreach (var kv in this)
-                result.Add(kv.Key, kv.Value.Select(id => (id, trainings.SingleOrDefault(o => o.Id == id), summaries.SingleOrDefault(o => o.Id == id))).ToList());
+                result.Add(kv.Key, kv.Value.Select(id => (id, trainings.Single(o => o.Id == id), summaries.SingleOrDefault(o => o.Id == id))).ToList());
 
             return result;
         }

@@ -87,20 +87,18 @@ namespace TrainingApi.Controllers
         public async Task<CreateTrainingsInfoDto> GetCreateTrainingsInfo()
         {
             var currentUser = userProvider.UserOrThrow;
-            var allTrainingIds = currentUser!.Trainings.Values.SelectMany(o => o).ToList() ?? new List<int>();
-            var trainings = await trainingRepository.GetByIds(allTrainingIds);
-            var summaries = (await statisticsProvider.GetTrainingSummaries(allTrainingIds)).OfType<TrainingSummary>();
 
-            var numTrainingsWithMinDaysCompleted = summaries.Count(o => o.TrainedDays >= 5);
+            var trainingsInfo = (await currentUser.Trainings.GetTrainingsInfo(trainingRepository, statisticsProvider)).SelectMany(o => o.Value).ToList();
+
+            var numTrainingsWithMinDaysCompleted = trainingsInfo.Count(o => o.Summary?.TrainedDays >= 5); // summaries.Count(o => o.TrainedDays >= 5);
 
             return new CreateTrainingsInfoDto { 
                 TrainingsQuota = new CreateTrainingsInfoDto.Quota
-                { 
-                    InUse = allTrainingIds.Count,
-                    Started = summaries.Count(o => o.TrainedDays > 0),
+                {
+                    Created = trainingsInfo.Count,
+                    Started = trainingsInfo.Count(o => o.Summary?.TrainedDays > 0),
                     Limit = Math.Max(60, numTrainingsWithMinDaysCompleted + 30),
-                    // TODO: set Reusable depending on when trainings were created (can't reuse trainings that were created within the last few days)
-                    // But creation timestamp is not available on Training right now
+                    Reusable = trainingsInfo.Count(o => o.Training.Created < DateTimeOffset.UtcNow.AddDays(-1) && (o.Summary?.TrainedDays ?? 0) == 0)
                 }
             };
         }
@@ -129,7 +127,7 @@ namespace TrainingApi.Controllers
                 var maxTotalTrainings = createTrainingsInfo.TrainingsQuota.Limit;
                 if (dto.ReuseTrainingsNotStarted)
                 {
-                    maxTotalTrainings += Math.Max(0, createTrainingsInfo.TrainingsQuota.InUse - createTrainingsInfo.TrainingsQuota.Started);
+                    maxTotalTrainings += Math.Max(0, createTrainingsInfo.TrainingsQuota.Created - createTrainingsInfo.TrainingsQuota.Started);
                 }
                 if (numTrainings + currentNumTrainings > maxTotalTrainings)
                 {
@@ -366,9 +364,9 @@ namespace TrainingApi.Controllers
             public class Quota
             {
                 public int Limit { get; set; }
-                public int InUse { get; set; }
+                public int Created { get; set; }
                 public int Started { get; set; }
-                //public int Reusable { get; set; }
+                public int Reusable { get; set; }
             }
         }
     }

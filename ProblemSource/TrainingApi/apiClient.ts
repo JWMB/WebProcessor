@@ -1231,8 +1231,9 @@ export interface CreateTrainingsInfoDto {
 
 export interface Quota {
     limit: number;
-    inUse: number;
+    created: number;
     started: number;
+    reusable: number;
 }
 
 export interface Training {

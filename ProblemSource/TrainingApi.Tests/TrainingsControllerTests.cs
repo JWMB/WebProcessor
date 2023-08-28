@@ -78,7 +78,7 @@ namespace TrainingApi.Tests
             // Assert
             response.ShouldNotBeNull();
             response.TrainingsQuota.Limit.ShouldBe(60);
-            response.TrainingsQuota.InUse.ShouldBe(wrapper.ResolvedUser.Trainings.Sum(o => o.Value.Count));
+            response.TrainingsQuota.Created.ShouldBe(wrapper.ResolvedUser.Trainings.Sum(o => o.Value.Count));
         }
 
         [Theory]
@@ -148,7 +148,7 @@ namespace TrainingApi.Tests
 
             // Assert
             response.ShouldNotBeNull();
-            response.TrainingsQuota.InUse.ShouldBe(trainingIds.Count);
+            response.TrainingsQuota.Created.ShouldBe(trainingIds.Count);
             response.TrainingsQuota.Started.ShouldBe(numStartedWith5Days + numStartedWith1Day);
 
             response.TrainingsQuota.Limit.ShouldBe(expectedLimit);

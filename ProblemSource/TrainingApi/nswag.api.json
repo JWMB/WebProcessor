@@ -1299,19 +1299,24 @@
       "type": "object",
       "required": [
         "limit",
-        "inUse",
-        "started"
+        "created",
+        "started",
+        "reusable"
       ],
       "properties": {
         "limit": {
           "type": "integer",
           "format": "int32"
         },
-        "inUse": {
+        "created": {
           "type": "integer",
           "format": "int32"
         },
         "started": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "reusable": {
           "type": "integer",
           "format": "int32"
         }
