@@ -69,11 +69,11 @@ namespace TrainingApi.Tests
             var user = new User
             {
                 Role = Roles.Teacher,
-                Trainings = new Dictionary<string, List<int>>
+                Trainings = new UserTrainingsCollection(new Dictionary<string, List<int>>
                 {
                     { "a", new  List<int>{ 1, 2, 3 } },
                     { "b", new  List<int>{ 4, 5, 6 } }
-                }
+                })
             };
             var ts = new MyTestServer(users: new[] { user });
 
