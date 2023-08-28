@@ -155,6 +155,31 @@ namespace TrainingApi.Tests
 
             response.TrainingsQuota.Limit.ShouldBe(expectedLimit);
         }
+
+        // TODO: test for PostGroup/createclass
+
+        [Fact]
+        public async Task X()
+        {
+            var trainings = new List<Training>
+            {
+                new Training { Id = 0 }
+            };
+            var user = new User { Trainings = new UserTrainingsCollection(new Dictionary<string, List<int>> { { "a", trainings.Select(o => o.Id).ToList() } }) };
+
+            var trainingsRepo = A.Fake<ITrainingRepository>();
+            A.CallTo(() => trainingsRepo.GetByIds(A<IEnumerable<int>>._))
+                .ReturnsLazily((IEnumerable<int> ids) => Task.FromResult(trainings.Where(o => ids.Contains(o.Id))));
+
+            var stats = A.Fake<IStatisticsProvider>();
+            A.CallTo(() => stats.GetTrainingSummaries(A<IEnumerable<int>>._))
+                .ReturnsLazily((IEnumerable<int> ids) => Task.FromResult((IEnumerable<TrainingSummary?>)new TrainingSummary?[] { }));
+
+            var numToTransfer = 2;
+            var result = await user.Trainings.RemoveUnusedFromGroups(numToTransfer, "", trainingsRepo, stats);
+            result.Keys.ShouldBe(new[] { "a" });
+            result.SelectMany(o => o.Value).Count().ShouldBe(numToTransfer);
+        }
     }
 
     public class ImpersonationWrapper

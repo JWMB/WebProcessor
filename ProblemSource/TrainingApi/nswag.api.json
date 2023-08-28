@@ -1234,8 +1234,7 @@
       "required": [
         "limit",
         "created",
-        "started",
-        "reusable"
+        "started"
       ],
       "properties": {
         "limit": {
@@ -1251,8 +1250,11 @@
           "format": "int32"
         },
         "reusable": {
-          "type": "integer",
-          "format": "int32"
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
         }
       }
     },

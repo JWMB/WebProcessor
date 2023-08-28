@@ -1242,7 +1242,7 @@ export interface Quota {
     limit: number;
     created: number;
     started: number;
-    reusable: number;
+    reusable?: number[] | undefined;
 }
 
 export interface Training {

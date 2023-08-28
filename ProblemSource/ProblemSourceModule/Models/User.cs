@@ -73,12 +73,12 @@ namespace ProblemSourceModule.Models
             var result = new Dictionary<string, List<(int, Training, TrainingSummary?)>>();
 
             foreach (var kv in this)
-                result.Add(kv.Key, kv.Value.Select(id => (id, trainings.Single(o => o.Id == id), summaries.SingleOrDefault(o => o.Id == id))).ToList());
+                result.Add(kv.Key, kv.Value.Select(id => (id, trainings.Single(o => o.Id == id), summaries.SingleOrDefault(o => o?.Id == id))).ToList());
 
             return result;
         }
 
-        public async Task TransferTrainings(int numTrainings, string toGroup, ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
+        public async Task<Dictionary<string, List<int>>> RemoveUnusedFromGroups(int numTrainings, string exceptGroup, ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
         {
             var info = await GetTrainingsInfo(trainingRepo, statisticsProvider);
 
@@ -91,14 +91,16 @@ namespace ProblemSourceModule.Models
             var numRemainingToTransfer = numTrainings;
 
             var updated = new Dictionary<string, List<int>>();
+            var source = new Dictionary<string, List<int>>();
 
-            foreach (var kv in this.Where(o => o.Key != toGroup))
+            foreach (var kv in this.Where(o => o.Key != exceptGroup))
             {
                 var available = kv.Value.Except(startedTrainingIds).Except(justCreatedTrainingIds);
                 var forTransfer = available.Take(numRemainingToTransfer);
 
                 if (forTransfer.Any())
                 {
+                    source[kv.Key] = forTransfer.ToList();
                     updated[kv.Key] = kv.Value.Except(forTransfer).ToList();
                 }
 
@@ -107,7 +109,8 @@ namespace ProblemSourceModule.Models
                     break;
             }
 
-            // Save to user repo
+            return source;
+            // Note: caller updates user repo
         }
     }
 }
