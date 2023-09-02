@@ -54,6 +54,22 @@ namespace TrainingApi
             }
 
             services.AddControllers();
+            // Note: this can be used to customize 400 handling:
+                //.ConfigureApiBehaviorOptions(options =>
+                //{
+                //    options.InvalidModelStateResponseFactory = context =>
+                //        new BadRequestObjectResult(context.ModelState)
+                //        {
+                //            ContentTypes =
+                //            {
+                //                // using static System.Net.Mime.MediaTypeNames;
+                //                Application.Json,
+                //                Application.Xml
+                //            }
+                //        };
+                //})
+                //.AddXmlSerializerFormatters();
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             services.AddEndpointsApiExplorer();
             AddSwaggerGen(services);

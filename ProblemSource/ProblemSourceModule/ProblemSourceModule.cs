@@ -12,6 +12,7 @@ using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.TrainingAnalyzers;
+using System.Linq;
 
 namespace ProblemSource
 {
@@ -27,7 +28,12 @@ namespace ProblemSource
 
             // training analyzers:
             // TODO: these should be provided by configuration, not hardcoded!
-            var analyzers = new[] { typeof(ExperimentalAnalyzer), typeof(CategorizerDay5_23Q1) };
+            //var analyzers = new[] { typeof(ExperimentalAnalyzer), typeof(CategorizerDay5_23Q1) };
+            var analyzerInterfaceType = typeof(ITrainingAnalyzer);
+            var analyzers = analyzerInterfaceType.Assembly.GetTypes()
+                .Where(analyzerInterfaceType.IsAssignableFrom)
+                .Where(o => !o.IsInterface)
+                .ToArray();
 
             //var pathToMLModel = "Resources/JuliaMLModel_Reg.zip";
             services.AddSingleton<IPredictNumberlineLevelService>(sp =>
@@ -49,6 +55,7 @@ namespace ProblemSource
 
             services.AddMemoryCache();
 
+            services.AddSingleton<ITrainingTemplateRepository, StaticTrainingTemplateRepository>();
             ConfigureForAzureTables(services);
             ConfigureUsernameHashing(services);
         }

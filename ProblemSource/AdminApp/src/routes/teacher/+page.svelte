@@ -9,15 +9,22 @@
 	import { assistanStore, getApi } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
 	import { getString } from 'src/utilities/LanguageService';
+	import { TrainingDayTools } from 'src/services/trainingDayTools';
+	import { DateUtils } from 'src/utilities/DateUtils';
 
 	const apiFacade = getApi() as ApiFacade;
 
 	let detailedTrainingsData: TrainingSummaryWithDaysDto[] = [];
 	let showStatsForLast7days = false;
+
+	const trainingDayDetailsNumDaysBack = 7;
+	let trainingDayDetails = TrainingDayTools.getLatestNumDaysStats(0, []);
+
 	$: noOfDays = showStatsForLast7days ? 7 : 9999;
 
 	$: trainings = calculateTrainingStats(detailedTrainingsData, noOfDays);
 	let groups: { group: string; summaries: TrainingSummaryDto[] }[];
+	let lastTrainingOccasionInGroup: Date | null = null;
 
 	onMount(() => getData());
 
@@ -26,19 +33,32 @@
 			console.error('apiFacade null');
 			return;
 		}
-		const groupsData = await apiFacade.trainings.getGroups(null);
+		const groupsData = await apiFacade.trainings.getGroups();
 		groups = Object.entries(groupsData).map((o) => ({ group: o[0], summaries: o[1] }));
 	}
 
 	async function onSelectGroup(groupId: string) {
-		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId, null);
+		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId);
+	}
+
+	function getAccuracyWarningLevel(training: { accuracyWarningThreshold: number }, accuracy: number) {
+		return accuracy < training.accuracyWarningThreshold ? 1 : 0;
+	}
+	function getTimeWarningLevel(training: { effectiveTimeWarningThreshold: number }, minutes: number) {
+		return minutes < training.effectiveTimeWarningThreshold ? 1 : 0;
+	}
+	function gettimeTotalOfTargetPercent(training: {latestDays?: { timeTotalOfTargetPercent: number}[]}, dayOffset: number) {
+		return ((training.latestDays || [])[dayOffset] ||{}).timeTotalOfTargetPercent || 0;
 	}
 
 	function calculateTrainingStats(data: TrainingSummaryWithDaysDto[], numberOfDays = 7) {
+		trainingDayDetails = TrainingDayTools.getLatestNumDaysStats(7, detailedTrainingsData);
+
+		// Math.max.apply(null, data.map(o => o.lastLogin));
 		const average = (arr: number[]) => {
 			return arr.reduce((p, c) => p + c, 0) / arr.length;
 		};
-		return data.map((t) => {
+		const result = data.map((t) => {
 			const dateRange = t.days.slice(-numberOfDays);
 			const accuracy = average(dateRange.map((d) => d.numCorrectAnswers / (d.numQuestions || 1))) || 0;
 			const effectiveTime = Math.min(average(dateRange.map((d) => (d.responseMinutes + d.remainingMinutes) / (t.targetMinutesPerDay || 32))) || 0, 1);
@@ -49,12 +69,27 @@
 				trainedDaysMax: t.targetDays || 30,
 				accuracy,
 				effectiveTime,
-				isAccuracyLow: accuracy < 0.4, // TODO: get value from server
-				isEffectiveTimeLow: effectiveTime < 0.5, // TODO: get value from server
+				accuracyWarningThreshold: 0.4, // TODO: part of TrainingSummaryWithDaysDto
+				effectiveTimeWarningThreshold: 0.5, // TODO: part of TrainingSummaryWithDaysDto
+				targetMinutesPerDay: t.targetMinutesPerDay,
 				isDaysTrainedLow: false, // TODO: get value from server
+				latestDays: trainingDayDetails.trainings.find(o => o.id == t.id)?.days,
 				comments: [] as Array<{ type: 'Critical' | 'Warning' | 'Info'; description: string }>
 			};
 		});
+
+		try {
+			const allLastDays = result
+				.map(o => o.latestDays)
+				.filter(o => o != null && o.length > 0)
+				.map(o => o ? o[o.length - 1] : null)
+				.filter(o => o != null)
+				.map(o => (<Date>(<any>o)["startTime"]))
+				.filter(o => o != null)
+				.map(o => o.valueOf());
+			lastTrainingOccasionInGroup = allLastDays.length ? new Date(Math.max.apply(null, allLastDays)) : null;
+		} catch {}
+		return result;
 	}
 
 	function onSelectTraining(trainingId: number) {
@@ -95,6 +130,7 @@
 	{#if trainings && trainings.length > 0}
 		<div class="training-header">
 			<h2>{getString('teacher_training_header')}</h2>
+			<p>Num trainings:{trainings.length} - Started:{trainings.filter(o => o.trainedDays > 0).length} - Last training occasion:{lastTrainingOccasionInGroup == null ? 'N/A' : DateUtils.toIsoDate(lastTrainingOccasionInGroup)}</p>
 			<div class="range-widget-container">
 				<div class="range-widget-label">{getString('teacher_stats_range_label')}</div>
 				<div class="range-switch-container">
@@ -124,20 +160,35 @@
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span>
 				</th>
+				{#each Array.from(Array(trainingDayDetailsNumDaysBack).keys()) as dayOffset}
+				<th class="training-day-column" title="{DateUtils.toIsoDate(DateUtils.addDays(trainingDayDetails.startDate, dayOffset))}">{DateUtils.getWeekDayName(DateUtils.addDays(trainingDayDetails.startDate, dayOffset))[0]}</th>
+				{/each}
 				<th class="notes-column">
 					{getString('teacher_trainings_column_header_notes')}
 				</th>
 			</tr>
 			{#each trainings as t (t.id)}
 				<tr on:click={() => onSelectTraining(t.id)} class="training-row">
-					<td class="user-column">{t.username}</td>
-					<td><ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" decimals={0} color={t.isDaysTrainedLow ? '#ff5959' : '#c7a0fc'} /></td>
-					<td><ProgressBar value={t.effectiveTime * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={t.isEffectiveTimeLow ? '#ff5959' : '#49e280'} /></td>
-					<td><ProgressBar value={t.accuracy * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={t.isAccuracyLow ? '#ff5959' : '#52cad8'} /></td>
+					<td class="user-column">{t.username}&nbsp;<a href="/admin/teacher/training?id={t.id.toString()}" title="id={t.id.toString()}" target="_blank">^</a></td>
 					<td>
-						{#each t.comments as c}
-							{c.description}
-						{/each}</td>
+						<ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" decimals={0} color={t.isDaysTrainedLow ? '#ff5959' : '#c7a0fc'} />
+					</td>
+					<td title="Target: {t.targetMinutesPerDay} minutes">
+						<ProgressBar value={t.effectiveTime * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={getTimeWarningLevel(t, t.effectiveTime) == 1 ? '#ff5959' : '#49e280'}/>
+					</td>
+					<td>
+						<ProgressBar value={t.accuracy * 100} showValueAs="OnlyValue" max={100} suffix="%" decimals={0} color={getAccuracyWarningLevel(t, t.accuracy) == 1 ? '#ff5959' : '#52cad8'} />
+					</td>
+					{#each Array.from(Array(trainingDayDetailsNumDaysBack).keys()) as dayOffset}
+					<td title="{gettimeTotalOfTargetPercent(t, dayOffset)}% of {t.targetMinutesPerDay} minutes">
+						<ProgressBar value={gettimeTotalOfTargetPercent(t, dayOffset)} showValueAs="None" max={100} suffix="%" decimals={0} color={getTimeWarningLevel(t, 0.01 * gettimeTotalOfTargetPercent(t, dayOffset)) == 1 ? '#fc9a9a' : '#77eda1'}/>
+					</td>
+					{/each}
+					<td>
+					{#each t.comments as c}
+						{c.description}
+					{/each}
+					</td>
 				</tr>
 			{/each}
 		</table>
@@ -199,6 +250,10 @@
 	.user-column {
 		width: 120px;
 		padding-left: 10px;
+	}
+	.training-day-column {
+		width: 55px;
+		padding-left: 5px;
 	}
 	.days-trained-column {
 		width: 120px;

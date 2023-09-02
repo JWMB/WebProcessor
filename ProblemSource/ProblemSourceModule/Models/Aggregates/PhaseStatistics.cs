@@ -40,7 +40,7 @@ namespace ProblemSource.Models.Aggregates
         }
 
         //Score,Target score,Planet target score
-        public static string UniqueIdWithinUser(PhaseStatistics p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{p.timestamp.ToUnixTimestamp()}";
+        public static string UniqueIdWithinUser(PhaseStatistics p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{Math.Abs(p.timestamp.ToUnixTimestamp())}";
 
         public static List<PhaseStatistics> Create(int accountId, IEnumerable<Phase> phases)
         {
@@ -54,8 +54,8 @@ namespace ProblemSource.Models.Aggregates
                     training_day = phase.training_day,
                     exercise = phase.exercise,
                     phase_type = phase.phase_type,
-                    timestamp = new DateTime(1970, 1, 1).AddMilliseconds(phase.time),
-                    end_timestamp = new DateTime(1970, 1, 1).AddMilliseconds(lastTimestamp),
+                    timestamp = new DateTime(1970, 1, 1).AddMilliseconds(Math.Max(0, phase.time)),
+                    end_timestamp = new DateTime(1970, 1, 1).AddMilliseconds(Math.Max(0, lastTimestamp)),
                     sequence = phase.sequence,
 
                     num_questions = phase.problems.Count,

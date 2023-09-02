@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Connections.Features;
+using Microsoft.Extensions.Primitives;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
+using System.Collections.Specialized;
 using System.Security.Claims;
 
 namespace TrainingApi.Services
@@ -38,14 +42,33 @@ namespace TrainingApi.Services
             var user = await GetUser(userRepository, httpContextAccessor.HttpContext?.User);
             if (user?.Role == Roles.Admin)
             {
-                if (httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("Impersonate-User", out var impersonated) == true)
+                var impersonated = GetRequestImpersonatedUser(httpContextAccessor.HttpContext?.Request);
+                if (impersonated != null)
                 {
-                    var name = impersonated.FirstOrDefault();
-                    if (!string.IsNullOrEmpty(name))
-                        return await userRepository.Get(name);
+                    var found = await userRepository.Get(impersonated);
+                    if (found == null)
+                        throw new Exception($"Impersonated not found: '{impersonated}'");
+                    return found;
                 }
             }
             return user;
+        }
+
+        private static string? GetRequestImpersonatedUser(HttpRequest? request)
+        {
+            if (request == null) return null;
+
+            if (request.Query.TryGetValue("impersonate", out var fromQuery))
+            {
+                var name = fromQuery.FirstOrDefault();
+                if (!string.IsNullOrEmpty(name)) return name;
+            }
+            if (request.Headers.TryGetValue("Impersonate-User", out var fromHeader))
+            {
+                var name = fromHeader.FirstOrDefault();
+                if (!string.IsNullOrEmpty(name)) return name;
+            }
+            return null;
         }
 
         public static string? GetNameClaim(ClaimsPrincipal? principal) => principal?.Claims.Any() == true ? principal?.Claims.First(o => o.Type == ClaimTypes.Name).Value : null;

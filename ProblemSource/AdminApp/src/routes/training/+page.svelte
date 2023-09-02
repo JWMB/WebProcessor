@@ -8,4 +8,4 @@
 	});
 </script>
 
-<TrainingView {accountId} />
+<TrainingView trainingId={accountId} />

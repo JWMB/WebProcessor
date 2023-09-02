@@ -36,7 +36,7 @@ Console.CancelKeyPress += (s, e) =>
 };
 var cancellationToken = cts.Token;
 
-var path = @"C:\Users\uzk446\Downloads\";
+var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
 
 //await new OldDbMLFeatures().Run(cancellationToken);
 //return;
@@ -60,9 +60,7 @@ var path = @"C:\Users\uzk446\Downloads\";
 //        if (predicted.PredictedPerformanceTier != PredictedNumberlineLevel.PerformanceTier.Unknown)
 //        {
 //            if (await analyzer.Analyze(training, dataProvider, null))
-//            {
 //                await trainingRepo.Update(training);
-//            }
 //        }
 //    }
 //}
@@ -80,23 +78,33 @@ var path = @"C:\Users\uzk446\Downloads\";
 //}
 
 //var tool = new TrainingStatsTools(serviceProvider);
+//await tool.ExportTrainingsKIFormat();
+
 //var result = await tool.GetTrainingIdsToTeachers(new[] { 9514, 9513, 9510, 936, 933, 91, 7857, 7821, 7205, 7204, 6109, 5949, 5447, 5019, 4990, 4957, 4933, 4356, 4111, 4050, 3931, 3523, 3507, 3413, 3396, 3342, 3340, 3338, 3336, 3320, 3315, 3312, 3309, 3156, 3081, 2442, 2435, 2425, 2423, 2421, 2278, 22760, 2203, 2202, 2201, 2198, 2197, 2195, 2193, 2182, 2144, 2142, 19068, 17908, 16266, 16236, 13835, 13834, 13830, 128, 126, 121, 120, 111, 10118, 10048, 100 });
 //var oo = result.Select(o => new { Email = o.Key, Count = o.Value.SelectMany(p => p.Value).Count(), Value = o.Value }).OrderByDescending(o => o.Count).ToList();
 //await tool.OverallStats(5);
 //var result = await tool.GetUsersWithSyncedTrainings();
 
 
+//var template = await serviceProvider.GetRequiredService<ITrainingTemplateRepository>().Get("template_2023HT");
 //var trainingMod = serviceProvider.CreateInstance<TrainingMod>();
+//var ids = TrainingMod.ExtractTrainingNames(File.ReadAllText(@"C:\Users\uzk446\Desktop\WebProcessor_Files\idsForParse.txt"));
+//await trainingMod.MoveTeachersTrainingsToGroup("EMAIL HERE", ids.Select(o => o.Id), "GROUP HERE", true);
+//var allTrainings = await serviceProvider.GetRequiredService<ITrainingRepository>().GetAll();
+//var tools = new TrainingStatsTools(serviceProvider);
+//var allSummaries = (await tools.CreateTrainingSummaryRepo().GetAll()).Where(o => o.TrainedDays > 1);
+//var notStartedIds = allTrainings.Select(o => o.Id).Except(allSummaries.Select(o => o.Id)).ToList();
+//await trainingMod.CopyTrainingTemplate(notStartedIds, template);
+
 //var ids = await trainingMod.GetTrainingsForTeacher("name@domain.se");
 //var trainings = await (serviceProvider.GetRequiredService<ITrainingRepository>().GetByIds(ids));
 //await trainingMod.ModifySettings(ids);
 
 //var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
-//var emails = @"
-//".Split('\n').Select(o => o.Trim().ToLower()).Where(o => o.Any());
-//var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
-//await creator.CreateAndEmail(config, emails, true);
-
+var emails = @"
+".Split('\n').Select(o => o.Trim().ToLower()).Where(o => o.Any());
+var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
+await creator.CreateAndEmail(path, config, emails, true);
 
 //var gmailService = BatchMail.CreateGmailService(config.GetRequiredSection("Gmail"));
 //await BatchMail.SendBatch(gmailService, "Vektor invitation", emails, actuallySend: true); //Vektor - uppdatering

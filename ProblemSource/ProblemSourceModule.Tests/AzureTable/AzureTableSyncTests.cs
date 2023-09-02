@@ -58,7 +58,7 @@ namespace ProblemSourceModule.Tests.AzureTable
             foreach (var dayItems in splitByDay)
             {
                 var start = DateTime.Now;
-                var result = await middleware.Sync(new SyncInput { Uuid = uuid, Events = dayItems.Select(o => (object)o).ToArray(), RequestState = true });
+                var result = await middleware.Sync(new SyncInput { Uuid = uuid, Events = dayItems.Select(o => (object)o).ToArray(), RequestState = true }, new System.Security.Claims.ClaimsPrincipal());
                 times.Add(DateTime.Now - start);
 
                 result.error.ShouldBe(null);

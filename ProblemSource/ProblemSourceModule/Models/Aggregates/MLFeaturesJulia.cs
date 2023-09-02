@@ -65,16 +65,17 @@ namespace ProblemSource.Models.Aggregates
             }
         }
 
-        public bool IsValid => InvalidReasons.Any() == false;
-
         public Dictionary<string, string> InvalidReasons
         {
             get
             {
                 var result = new Dictionary<string, string>();
 
-                AddFractionCorrectError("nvr_rp");
-                AddFractionCorrectError("nvr_so");
+                //AddFractionCorrectError("nvr_rp");
+                //AddFractionCorrectError("nvr_so");
+
+                AddFractionCorrectError("numberline");
+                AddFractionCorrectError("WM_grid");
 
                 //if (!(Age >= 6 && Age <= 7))
                 //    result.Add("Age", $"{Age}");
@@ -83,7 +84,7 @@ namespace ProblemSource.Models.Aggregates
 
                 void AddFractionCorrectError(string exercise)
                 {
-                    var val = GetFractionCorrect(exercise);
+                    var val = GetFractionCorrect(exercise.ToLower());
                     if (val == null)
                         result.Add(exercise, $"fractionCorrect null {ByExercise.ContainsKey(exercise)}");
                 }

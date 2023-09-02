@@ -7,10 +7,15 @@
 	import { DateUtils } from '../utilities/DateUtils';
 
     Chart.register(Title,Tooltip,Legend,BarElement,CategoryScale,LinearScale, BarController);
-    export let data: TrainingSummaryDto[] = [];
-    const weeksBack = 7;
-    const now = Date.now();
+
     const weekMs = 1000 * 60 * 60 * 24 * 7;
+    const now = Date.now();
+
+    export let data: TrainingSummaryDto[] = [];
+    export let startDate = DateUtils.getDatePart(now - weekMs * 26);
+    export let stackToLeft = true;
+
+    const weeksBack = Math.ceil((now - startDate.valueOf()) / weekMs);
 
     function weekToDate(weekFromStartWeek: number) {
         return new Date(Date.now() + (weekFromStartWeek - weeksBack) * weekMs);
@@ -33,20 +38,39 @@
             .map(week => {
                 const startedThisWeek = startAndLatest.filter(o => o.startWeek == week);
 
-                const timeSeries = weekArray.map(w => { 
-                    return week > w ? 0 : startedThisWeek.filter(o => o.latestWeek >= w).length;
-                });
+                const timeSeries = weekArray.map(w => ({ 
+                    week: w,
+                    count: week > w ? 0 : startedThisWeek.filter(o => o.latestWeek >= w).length
+                }));
                 
                 const rgb = convert.hsl.rgb([(360 * week) / weeksBack, (week % 2) * 50 + 50, 50]);
-				return <ChartDataset<"bar">>{
-					label: `Week of ${DateUtils.toIsoDate(weekToDate(week))}`,
-					data: timeSeries,
-					fill: true,
-					backgroundColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 1)`,
-                    borderColor: 'rgb(0, 0, 0)',
-				};
-            }).filter(o => o.data.length > 0);
-        return perWeek;
+                return {
+                    week: week,
+                    colorStr: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 1)`,
+                    timeSeries: timeSeries
+                };
+            }).filter(o => o.timeSeries.filter(x => x.count > 0).length > 0);
+
+            console.log("stackToLeft", stackToLeft);
+        const pp = stackToLeft
+            ? perWeek.map(o => {
+                return <ChartDataset<"bar">>{
+                        label: `Week of ${DateUtils.toIsoDate(weekToDate(o.week))}`,
+                        data: o.timeSeries.filter(x => x.week >= o.week).map(ww => ww.count),
+                        fill: true,
+                        backgroundColor: o.colorStr,
+                        borderColor: 'rgb(0, 0, 0)',
+                }})
+            : perWeek.map(o => {
+                return <ChartDataset<"bar">>{
+                        label: `Week of ${DateUtils.toIsoDate(weekToDate(o.week))}`,
+                        data: o.timeSeries.map(ww => ww.count),
+                        fill: true,
+                        backgroundColor: o.colorStr,
+                        borderColor: 'rgb(0, 0, 0)',
+                }});
+
+        return pp;
     }
 
     onMount(() => {
@@ -70,11 +94,6 @@
         });
         chart.update();
     });
-    // const config = <ChartData<"bar", number[], unknown>>{
-    //     //labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-    //     datasets: getSeries(data),
-    // };
-    // console.log("config", config);
 </script>
 
 <main>

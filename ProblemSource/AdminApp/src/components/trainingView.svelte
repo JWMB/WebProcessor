@@ -24,12 +24,12 @@
 	let singleTrainingDays: TrainingDayAccount[];
 	let training: Training;
 
-	export let accountId: number;
+	export let trainingId: number;
 	const loadData = async () => {
 		[trainingDays, phaseStatistics, training] = await Promise.all([
-				apiFacade.aggregates.trainingDayAccount(accountId),
-				apiFacade.aggregates.phaseStatistics(accountId),
-				apiFacade.trainings.getById(accountId)
+				apiFacade.aggregates.trainingDayAccount(trainingId),
+				apiFacade.aggregates.phaseStatistics(trainingId),
+				apiFacade.trainings.getById(trainingId)
 			]);
 
 		const byDay = groupBy(trainingDays, (o) => `${o.trainingDay}`);
@@ -55,7 +55,7 @@
 	};
 
 	onMount(() => {
-		if (accountId == null) accountId = parseFloat(new URLSearchParams(window.location.search).get('id') ?? '715955');
+		if (trainingId == null) trainingId = parseFloat(new URLSearchParams(window.location.search).get('id') ?? '715955');
 		loadData();
 	});
 </script>

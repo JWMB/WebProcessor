@@ -1,4 +1,5 @@
 ﻿using Azure.Data.Tables;
+using AzureTableGenerics;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models;

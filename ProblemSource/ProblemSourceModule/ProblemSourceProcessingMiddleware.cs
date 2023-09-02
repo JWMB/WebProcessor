@@ -11,6 +11,9 @@ using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
+using System.Security.Claims;
+using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
+using static ProblemSource.Services.LogEventsToPhases;
 
 namespace ProblemSource
 {
@@ -51,27 +54,43 @@ namespace ProblemSource
 
         public async Task Invoke(HttpContext context, RequestDelegate next)
         {
-            SyncInput? root;
-            if (context.Request.Headers.ContentType.Any(o => o?.ToLower().Contains("application/json") == true))
+            object result;
+            var action = context.Request.RouteValues["action"]?.ToString() ?? "";
+            switch (action.ToLower())
             {
-                root = await context.Request.ReadFromJsonAsync<SyncInput>();
-            }
-            else
-            {
-                var body = await context.Request.ReadBodyAsStringAsync();
-                if (string.IsNullOrEmpty(body))
-                    throw new ArgumentNullException($"Request.Body");
-                root = System.Text.Json.JsonSerializer.Deserialize<SyncInput?>(body);
-            }
-            
-            if (root == null)
-                throw new ArgumentException("input: incorrect format");
+                case "deletedata":
+                    var uuid = context.Request.Query["uuid"].FirstOrDefault() ?? "";
+                    if (!TryGetTrainingIdFromUsername(uuid, false, out var trainingId))
+                        result = new SyncResult { error = $"Username not found ({uuid})" };
+                    else
+                    {
+                        var training = await GetTrainingOrThrow(trainingId, context.User);
 
-            var result = await Process(root, context.User);
-            if (result.error != null)
-            {
-                var (training, error) = await GetTrainingFromInput(root);
-                log.LogWarning($"Training id={training?.Id} (user='{root.Uuid}') login: {result.error}");
+                        var userRepositories = AssertSession(training, null, null);
+                        await userRepositories.RemoveAll();
+                        result = new SyncResult { };
+                    }
+                    break;
+
+                case "syncunauthorized":
+                case "sync":
+                    var root = await ParseBodyOrThrow(context.Request);
+                    var isValidationOnly = root.SessionToken == "validate";
+                    if (!TryGetTrainingIdFromUsername(root.Uuid, isValidationOnly, out var trainingId2)) // TODO: co-opting SessionToken for now
+                    {
+                        result = new SyncResult { error = $"Username not found ({root.Uuid})" };
+                    }
+                    else
+                    {
+                        result = isValidationOnly
+                            ? new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" }
+                            : await Sync(root, context.User);
+                    }
+                    break;
+
+                default:
+                    result = new SyncResult { error = $"Unknown action: '{action}'" };
+                    break;
             }
 
             await next.Invoke(context);
@@ -79,89 +98,120 @@ namespace ProblemSource
             await context.Response.WriteAsJsonAsync(result);
         }
 
-        private async Task<SyncResult> Process(SyncInput root, System.Security.Claims.ClaimsPrincipal? user)
+        public async Task<SyncResult> Sync(SyncInput root, ClaimsPrincipal user)
         {
-            // TODO: use regular model validation
-            if (string.IsNullOrEmpty(root.Uuid))
+            if (!TryGetTrainingIdFromUsername(root.Uuid, false, out var trainingId2)) // TODO: co-opting SessionToken for now
             {
                 return new SyncResult { error = $"Username not found ({root.Uuid})" };
             }
-            // Handle some common user input problems:
-            root.Uuid = root.Uuid.Trim().Replace("  ", " ");
-
-            //if (user?.Claims.Any() == false &&  // anonymous access for "validate" request
-            if (root.SessionToken == "validate") // TODO: co-opting SessionToken for now
+            else
             {
-                var dehashedUuid = usernameHashing.Dehash(root.Uuid);
-                if (dehashedUuid == null)
+                var training = await GetTrainingOrThrow(trainingId2, user); // context.User);
+                var syncResult = await Sync(training, root);
+                if (syncResult.error != null)
                 {
-                    if (!root.Uuid.Contains(" ") && root.Uuid.Length > 4) // allow for forgotten space
-                        dehashedUuid = usernameHashing.Dehash(root.Uuid.Insert(4, " "));
-
-                    if (dehashedUuid == null)
-                        return new SyncResult { error = $"Username not found: '{root.Uuid}'" };
+                    log.LogWarning($"Training id={trainingId2} (user='{root.Uuid}') login: {syncResult.error}");
                 }
-                return new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" };
+                return syncResult;
             }
+        }
 
-            // TODO: client has already dehashed (but should not, let server handle ui)
-            var id = mnemoJapanese.ToIntWithRandom(root.Uuid);
-            if (id == null)
-                return new SyncResult { error = $"Username not found ({root.Uuid})" };
-
+        private async Task<Training> GetTrainingOrThrow(int id, ClaimsPrincipal user)
+        {
             if (user == null) // For actual sync, we require an authenticated user
                 throw new Exception("Unauthenticated"); // TODO: some HttpException with status code
 
-            var training = await trainingRepository.Get(id.Value);
+            var training = await trainingRepository.Get(id);
             if (training == null)
-                return new SyncResult { error = $"Username not found ({root.Uuid}/{id.Value})" };
+                throw new Exception($"Username not found ({id})");
 
-            return await Sync(root);
+            return training;
         }
 
-        private async Task<(Training? training, string? error)> GetTrainingFromInput(SyncInput root)
+        private async Task<SyncInput> ParseBodyOrThrow(HttpRequest request)
         {
-            if (string.IsNullOrEmpty(root.Uuid))
-                return (null, $"Username empty");
-
-            var trainingId = mnemoJapanese.ToIntWithRandom(root.Uuid);
-            if (trainingId == null)
+            SyncInput? root;
+            if (request.Headers.ContentType.Any(o => o?.ToLower().Contains("application/json") == true))
             {
-                var dehashedUuid = usernameHashing.Dehash(root.Uuid);
-                if (dehashedUuid != null)
-                    trainingId = mnemoJapanese.ToIntWithRandom(dehashedUuid);
-                if (trainingId == null)
-                    return (null, $"Username not found ({root.Uuid})");
+                root = await request.ReadFromJsonAsync<SyncInput>();
+            }
+            else
+            {
+                var body = await request.ReadBodyAsStringAsync();
+                if (string.IsNullOrEmpty(body))
+                    throw new ArgumentNullException($"Request.Body");
+                root = System.Text.Json.JsonSerializer.Deserialize<SyncInput?>(body);
             }
 
-            var training = await trainingRepository.Get(trainingId.Value);
-            return (training, training == null ? $"Username not found ({root.Uuid}/{trainingId.Value})" : null);
+            if (root == null)
+                throw new ArgumentException("input: incorrect format");
+
+            return root;
         }
 
-        public async Task<SyncResult> Sync(SyncInput root)
+        private bool TryGetTrainingIdFromUsername(string uuid, bool validateOnly, out int trainingId)
+        {
+            // TODO: use regular asp.net model validation
+            trainingId = -1;
+
+            // TODO: use regular model validation
+            if (string.IsNullOrEmpty(uuid))
+                return false;
+
+            // Handle common user input mistakes:
+            uuid = uuid.Trim().Replace("  ", " ");
+
+            // TODO: client has already dehashed (but should not, let server handle ui)
+            var dehashedUuid = uuid.Contains(" ") ? usernameHashing.Dehash(uuid) : uuid;
+
+            if (dehashedUuid == null)
+            {
+                if (validateOnly)
+                {
+                    if (!uuid.Contains(" ") && uuid.Length > 4) // allow for forgotten space
+                        dehashedUuid = usernameHashing.Dehash(uuid.Insert(4, " "));
+
+                    if (dehashedUuid == null)
+                        return false;
+                }
+                else
+                    return false;
+            }
+
+            var id = mnemoJapanese.ToIntWithRandom(dehashedUuid);
+            if (id == null)
+                return false;
+
+            trainingId = id.Value;
+
+            return true;
+        }
+
+        private IUserGeneratedDataRepositoryProvider AssertSession(Training training, string? sessionToken, SyncResult? syncResultForUpdating)
+        {
+            var sessionInfo = sessionManager.GetOrOpenSession(training.Username, sessionToken);
+            if (syncResultForUpdating != null)
+            {
+                if (sessionInfo.Error != GetOrCreateSessionResult.ErrorTypes.OK)
+                    syncResultForUpdating.error = sessionInfo.Error.ToString();
+                syncResultForUpdating.sessionToken = sessionInfo.Session.SessionToken;
+            }
+
+            if (sessionInfo.Session.UserRepositories == null)
+                sessionInfo.Session.UserRepositories = userGeneratedRepositoriesFactory.Create(training.Id);
+
+            return sessionInfo.Session.UserRepositories!;
+        }
+
+        public async Task<SyncResult> Sync(Training training, SyncInput root)
         {
             var result = new SyncResult();
 
-            var (training, error) = await GetTrainingFromInput(root);
-            if (training == null)
-            {
-                log.LogWarning($"Training login: {error}");
-                return new SyncResult { error = error };
-            }
-
-            var sessionInfo = sessionManager.GetOrOpenSession(root.Uuid, root.SessionToken);
-            if (sessionInfo.Error != GetOrCreateSessionResult.ErrorTypes.OK)
-                result.error = sessionInfo.Error.ToString();
-            result.sessionToken = sessionInfo.Session.SessionToken;
-
-            if (sessionInfo.Session.UserRepositories == null)
-            {
-                sessionInfo.Session.UserRepositories = userGeneratedRepositoriesFactory.Create(training.Id);
-            }
+            var userRepositories = AssertSession(training, root.SessionToken, result);
 
             await eventDispatcher.Dispatch(new { TrainingId = training.Id, training.Username, root.CurrentTime, root.Events }); // E.g. for real-time teacher view
             
-            var currentStoredState = (await sessionInfo.Session.UserRepositories.UserStates.GetAll()).SingleOrDefault();
+            var currentStoredState = (await userRepositories.UserStates.GetAll()).SingleOrDefault();
 
             if (root.Events?.Any() == true)
             {
@@ -177,7 +227,7 @@ namespace ProblemSource
                     else
                     {
                         currentStoredState = new UserGeneratedState { exercise_stats = pushedStateItem.exercise_stats, user_data = pushedStateItem.user_data };
-                        await sessionInfo.Session.UserRepositories.UserStates.Upsert(new[] { currentStoredState });
+                        await userRepositories.UserStates.Upsert(new[] { currentStoredState });
                     }
                 }
 
@@ -198,14 +248,14 @@ namespace ProblemSource
 
                 try
                 {
-                    await aggregationService.UpdateAggregates(sessionInfo.Session.UserRepositories, logItems, training.Id);
+                    await aggregationService.UpdateAggregates(userRepositories, logItems, training.Id);
                 }
                 catch (Exception ex)
                 {
                     log.LogError(ex, $"UpdateAggregates");
                 }
 
-                var modified = await trainingAnalyzers.Execute(training, sessionInfo.Session.UserRepositories, logItems);
+                var modified = await trainingAnalyzers.Execute(training, userRepositories, logItems);
                 if (modified)
                 {
                     log.LogInformation($"Modified training saved, id = {training.Id}");
@@ -221,7 +271,7 @@ namespace ProblemSource
 
                 try
                 {
-                    var trainingDays = await sessionInfo.Session.UserRepositories.TrainingDays.GetAll();
+                    var trainingDays = await userRepositories.TrainingDays.GetAll();
                     if (trainingDays.Any() && currentStoredState != null)
                     {
                         var fromTrainingDays = trainingDays.Max(o => o.TrainingDay);

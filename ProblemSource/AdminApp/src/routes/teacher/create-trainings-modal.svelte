@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { closeModal } from 'svelte-modals';
-	import type { TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
+	import type { CreateTrainingsInfoDto, TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
 	import { getApi } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
 	import { onMount } from 'svelte';
@@ -12,6 +12,12 @@
 	const apiFacade = getApi() as ApiFacade;
 
 	let templates: TrainingTemplateDto[] = [];
+	let createInfo: CreateTrainingsInfoDto | null;
+	let numTrainingsForReuse = 0;
+	let numTrainingsLeftInQuota = 0;
+	let maxNumNewTrainings = 0;
+	// can't get this to work... $: maxNumNewTrainings = numTrainingsLeftInQuota + (newGroupData.reuseTrainings ? numTrainingsForReuse : 0);
+
 	let error: string | null = null;
 
 	const timePerDayValues = [
@@ -32,13 +38,26 @@
 	];
 	let newGroupData = {
 		name: 'Fsk A',
-		noOfTrainings: 10,
+		noOfTrainings: 0,
 		timePerDay: 33,
-		ageBracket: ""
+		ageBracket: "",
+		reuseTrainings: false
 	};
+	const updateNoOfTrainings = () => {
+		maxNumNewTrainings = numTrainingsLeftInQuota + (newGroupData.reuseTrainings ? numTrainingsForReuse : 0)
+		newGroupData.noOfTrainings = Math.min(newGroupData.noOfTrainings, maxNumNewTrainings);
+		// console.log("updateNoOfTrainings", Date.now(), maxNumNewTrainings, newGroupData.noOfTrainings, newGroupData.reuseTrainings);
+	}
+	const clickReuseTrainings = () => {
+		// Goddamn, can't get input checkbox bind + click/change combo to work. Doing it all non-svelte way instead
+		const cb = document.getElementById("goddamnSvelteBindingsReuseTrainings");
+		newGroupData.reuseTrainings = ((<any>cb).checked) === true;
+		updateNoOfTrainings();
+	}
+
 
 	let createdTrainingUsernames: string[] = [];
-	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string, forUser?: string | null) {
+	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string, reuseTrainingsNotStarted: boolean) {
 		error = null;
 		try {
 			if (!ageBracket) throw "Age span must be set";
@@ -53,9 +72,10 @@
 				baseTemplateId: chosenTemplate.id,
 				trainingPlan: chosenTemplate.trainingPlanName,
 				trainingSettings: chosenTemplate.settings,
-				ageBracket: ageBracket
+				ageBracket: ageBracket,
+				reuseTrainingsNotStarted: reuseTrainingsNotStarted
 			};
-			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
+			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num);
 		} catch (err) {
 			error = ErrorHandling.getErrorObject(err).message;
 			throw err;
@@ -65,6 +85,11 @@
 	}
 
 	onMount(async () => {
+		createInfo = await apiFacade.trainings.getCreateTrainingsInfo();
+		// createInfo.trainingsQuota.inUse = 40; // testing
+		numTrainingsLeftInQuota = Math.max(0, createInfo.trainingsQuota.limit - createInfo.trainingsQuota.started);
+		numTrainingsForReuse = createInfo.trainingsQuota.started - createInfo.trainingsQuota.started;
+		newGroupData.noOfTrainings = Math.min(maxNumNewTrainings, 10);
 		templates = await apiFacade.trainings.getTemplates();
 	});
 </script>
@@ -92,8 +117,23 @@
 					</label>
 					<label>
 						Number of trainings
-						<input id="numTrainings" required bind:value={newGroupData.noOfTrainings} min="1" max="40" />
+						<input id="numTrainings" type="number" required bind:value={newGroupData.noOfTrainings} 
+							min="1" max="{Math.min(createInfo?.maxTrainingsInGroup || 1, maxNumNewTrainings)}"
+							on:change={updateNoOfTrainings}
+							on:blur={updateNoOfTrainings} />
 					</label>
+					<div style="font-style: italic;font-size: small; color: {(createInfo != null && numTrainingsLeftInQuota == 0) ? "red" : "black"}">
+						Remaining quota: {numTrainingsLeftInQuota}
+					</div>
+					{#if true && numTrainingsForReuse > 0 && numTrainingsLeftInQuota < (createInfo?.maxTrainingsInGroup || 1)}
+					<span>
+						<input id="goddamnSvelteBindingsReuseTrainings" type="checkbox" style="width:10px; height:10px; display: inline;"
+						on:click={clickReuseTrainings}
+						/>
+						<span style="float:left; font-style: italic;font-size: small">Re-use unused trainings ({numTrainingsForReuse})</span>
+					</span>
+					<br/>
+					{/if}
 					<label>
 						Time per day
 						<br/>
@@ -109,7 +149,11 @@
 					{/if}
 					<div class="actions">
 						<button class="secondary" on:click={closeModal}>Cancel</button>
-						<button class="primary" style="opacity:1" type="submit" value="Create" on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket, '')}>Create</button>
+						<button class="primary" style="opacity:{newGroupData.noOfTrainings <= 0 || newGroupData.noOfTrainings > maxNumNewTrainings ? 0.5 : 1}" type="submit" value="Create"
+							disabled={newGroupData.noOfTrainings <= 0}
+							on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket, newGroupData.reuseTrainings)}>
+							Create
+						</button>
 					</div>
 				</form>
 			{:else}

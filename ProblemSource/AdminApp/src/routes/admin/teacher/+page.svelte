@@ -21,13 +21,13 @@
 	let createdTrainingUsernames: string[] = [];
 
 	const clickedGroupRow = (e: CustomEvent<any>) => {
-		trainingsPromise = apiFacade.trainings.getSummaries(e.detail.group, null); // getElementValue('forUser').toString().trim());
+		trainingsPromise = apiFacade.trainings.getSummaries(e.detail.group);
 	};
 	const clickedTrainingRow = (e: CustomEvent<any>) => {
 		goto(`${base}/training?id=${e.detail.id}`);
 	};
 
-	async function createTrainings(num: number, groupName: string, numMinutes: number, templateId: number, forUser?: string | null) {
+	async function createTrainings(num: number, groupName: string, numMinutes: number, templateId: number) {
 		if (!groupName) {
 			alert('A name is required');
 			return;
@@ -42,7 +42,7 @@
 			}
 			chosenTemplate.settings.timeLimits = [numMinutes];
 			const dto = <TrainingCreateDto>{ baseTemplateId: chosenTemplate.id, trainingPlan: chosenTemplate.trainingPlanName, trainingSettings: chosenTemplate.settings };
-			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num, forUser);
+			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num);
 			await getTrainings();
 		}
 	}
@@ -65,10 +65,9 @@
 			return;
 		}
 		//trainingsPromise = apiFacade.trainings.getSummaries();
-		// const impersonate = getElementValue('forUser').toString().trim();
 
 		trainingGroupsPromise2 = new Promise((res) => {
-			apiFacade.trainings.getGroups(null).then((r) => {
+			apiFacade.trainings.getGroups().then((r) => {
 				const asList = Object.entries(r).map((o) => ({ group: o[0], summaries: o[1] }));
 				trainingGroups = asList;
 				res(asList);
@@ -111,8 +110,7 @@
 				parseFloat(getElementValue('numTrainings')),
 				getElementValue('className'),
 				parseFloat(getElementValue('timePerDay')),
-				parseFloat(getElementValue('template')),
-				$userStore?.role == 'Admin' ? getElementValue('forUser', "") : null)} />
+				parseFloat(getElementValue('template')))} />
 
 		{#if createdTrainingUsernames}
 			Created users:

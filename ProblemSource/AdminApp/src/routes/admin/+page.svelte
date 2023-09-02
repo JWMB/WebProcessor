@@ -7,7 +7,7 @@
 	const apiFacade = getApi() as ApiFacade;
 
 	function createUser(email: string, password: string) {
-		apiFacade.accounts.post(<CreateUserDto>{ username: email, password: password }).then(() => console.log('user created'));
+		apiFacade.users.post(<CreateUserDto>{ username: email, password: password }).then(() => console.log('user created'));
 	}
 	function changePassword(email: string, password?: string | null) {
 		if (!password) {
@@ -16,7 +16,7 @@
 		if (!password || password.length <= 5) {
 			alert('too short');
 		} else {
-			apiFacade.accounts.patch(email, <PatchUserDto>{ password: password }).then((r) => console.log('pwd changed', r));
+			apiFacade.users.patch(email, <PatchUserDto>{ password: password }).then((r) => console.log('pwd changed', r));
 		}
 	}
 
@@ -24,7 +24,7 @@
 
 	let users: GetUserDto[] = [];
 	onMount(async () => {
-		users = await apiFacade.accounts.getAll();
+		users = await apiFacade.users.getAll();
 	});
 </script>
 

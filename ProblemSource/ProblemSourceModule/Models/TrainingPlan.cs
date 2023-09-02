@@ -10,6 +10,8 @@
 
         public string progVisualizer { get; set; } = "";
         public object? progVisualizerData { get; set; }
+
+        public override string ToString() => $"{id} {phases.Count} {(invisible ? "INV" : "")}";
     }
 
     public class LinearGameDefinition : GameDefinition
@@ -42,30 +44,18 @@
                 public string? Max { get; set; }
             }
         }
+
+        public virtual List<GameDefinition> getDefinedGames() => new List<GameDefinition>();
+        public virtual List<ProposedGameInfo> getProposedGames(List<string> proposedGameIds, ExerciseStats stats) => new();
     }
+
+    public readonly record struct ProposedGameInfo(string id, bool unlocked = false);
+
 
     public class LinearTrainingPlan : TrainingPlan
     {
         public bool isPreProcessed { get; set; } = false;
         public string autoConnectType { get; set; } = "THREE-WAY"; // ConnectionType
         public List<LinearGameDefinition> tests { get; set; } = new List<LinearGameDefinition>(); //LinearExerciseDefinition[];
-    }
-
-    public class DynamicTrainingPlan : TrainingPlan
-    {
-        public enum ValueTypeEnum
-        {
-            Runs,
-            Time,
-            Wins,
-            Level,
-        }
-        public ValueTypeEnum valueType { get; set; } = ValueTypeEnum.Runs;
-
-        public int minUnlockedExercises { get; set; } = 1;
-        public int maxUnlockedExercises { get; set; } = 1;
-
-        public List<GameDefinition> hiddenExercises { get; set; } = new();
-        public bool preventSameExerciseTwice { get; set; }
     }
 }

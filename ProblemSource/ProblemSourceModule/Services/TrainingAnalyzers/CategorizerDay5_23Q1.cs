@@ -81,14 +81,21 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             return result;
         }
 
+        public static class GroupNames
+        {
+            public const string Math = "Math";
+            public const string WM = "WM";
+            public const string Reasoning = "Reasoning";
+        }
+
         public static dynamic? CreateTrigger(int triggerDay, PredictedNumberlineLevel.PerformanceTier tier, (double, double) rnds)
         {
             // TK: only nvr_so - rotation, tangram and nvr_rp can be removed from day 6.
             var plans = new
             {
-                NVR_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 38 }, { "NVR", 12 }, { "tangram", 33 }, { "nvr_so", 66 }, { "nvr_rp", 0 }, { "rotation", 0 } }, //{ "NVR", 8 }, { "tangram", 4 } },
-                WM_Std = new Dictionary<string, int> { { "Math", 50 }, { "WM", 46 }, { "NVR", 4 }, { "tangram", 100 }, { "nvr_so", 0 }, { "nvr_rp", 0 }, { "rotation", 0 } }, //{ "NVR", 0 }, { "tangram", 4 } },
-                NVR_High = new Dictionary<string, int> { { "Math", 50 }, { "WM", 20 }, { "NVR", 30 }, { "tangram", 13 }, { "nvr_so", 87 }, { "nvr_rp", 0 }, { "rotation", 0 } }, // { "NVR", 26 }, { "tangram", 4 } },
+                NVR_Std = new Dictionary<string, int> { { GroupNames.Math, 50 }, { GroupNames.WM, 38 }, { GroupNames.Reasoning, 12 }, { "tangram", 33 }, { "nvr_so", 66 }, { "nvr_rp", 0 }, { "rotation", 0 } }, //{ "NVR", 8 }, { "tangram", 4 } },
+                WM_Std = new Dictionary<string, int> { { GroupNames.Math, 50 }, { GroupNames.WM, 46 }, { GroupNames.Reasoning, 4 }, { "tangram", 100 }, { "nvr_so", 0 }, { "nvr_rp", 0 }, { "rotation", 0 } }, //{ "NVR", 0 }, { "tangram", 4 } },
+                NVR_High = new Dictionary<string, int> { { GroupNames.Math, 50 }, { GroupNames.WM, 20 }, { GroupNames.Reasoning, 30 }, { "tangram", 13 }, { "nvr_so", 87 }, { "nvr_rp", 0 }, { "rotation", 0 } }, // { "NVR", 26 }, { "tangram", 4 } },
             };
 
             //"tangram": 100, "tangram#intro": 100,
@@ -121,10 +128,9 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             }
             else
             {
-                // Standard NVR - no change
+                // Standard NVR
+                return TrainingSettings.CreateWeightChangeTrigger(plans.NVR_Std, triggerDay);
             }
-
-            return null;
         }
     }
 

@@ -15,7 +15,7 @@
 	export let data: PageData;
 
 	async function logout() {
-		await getApi()?.accounts.logout();
+		await getApi()?.users.logout();
 		goto(base + '/login');
 	}
 	async function login() {

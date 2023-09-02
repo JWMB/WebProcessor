@@ -20,6 +20,7 @@ namespace TrainingApi.Controllers
     {
         private readonly ITrainingPlanRepository trainingPlanRepository;
         private readonly ITrainingRepository trainingRepository;
+        private readonly ITrainingTemplateRepository trainingTemplateRepository;
         private readonly IStatisticsProvider statisticsProvider;
         private readonly IUserRepository userRepository;
         private readonly ICurrentUserProvider userProvider;
@@ -32,6 +33,7 @@ namespace TrainingApi.Controllers
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
             IUserRepository userRepository, ICurrentUserProvider userProvider, ITrainingUsernameService trainingUsernameService, 
             IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
+            ITrainingTemplateRepository trainingTemplateRepository,
             ILogger<AggregatesController> logger)
         {
             this.trainingPlanRepository = trainingPlanRepository;
@@ -42,6 +44,7 @@ namespace TrainingApi.Controllers
             this.trainingUsernameService = trainingUsernameService;
             this.aggregationService = aggregationService;
             this.dataRepoFactory = dataRepoFactory;
+            this.trainingTemplateRepository = trainingTemplateRepository;
             log = logger;
         }
 
@@ -69,7 +72,7 @@ namespace TrainingApi.Controllers
 
         private async Task<Training> CreateTraining(TrainingCreateDto dto, IEnumerable<Training>? templates = null)
         {
-            templates = templates ?? await GetTrainingTemplates();
+            templates = templates ?? await trainingTemplateRepository.GetAll();
             var template = templates.SingleOrDefault(o => o.Id == dto.BaseTemplateId);
             if (template == null)
                 throw new Exception($"Template not found: {dto.BaseTemplateId}");
@@ -79,31 +82,38 @@ namespace TrainingApi.Controllers
             return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, dto.TrainingSettings, dto.AgeBracket);
         }
 
-        private async Task<User> GetImpersonatedUserOrThrow(string? username)
+        [HttpGet]
+        [Route("CreateTrainingsInfo")]
+        public async Task<CreateTrainingsInfoDto> GetCreateTrainingsInfo()
         {
             var currentUser = userProvider.UserOrThrow;
-            if (string.IsNullOrEmpty(username))
-                return currentUser;
 
-            if (currentUser.Role != Roles.Admin)
-                throw new UnauthorizedAccessException();
+            var trainingsInfo = (await currentUser.Trainings.GetTrainingsInfo(trainingRepository, statisticsProvider)).SelectMany(o => o.Value).ToList();
 
-            var impersonatedUser = await userRepository.Get(username);
-            if (impersonatedUser == null)
-                throw new Exception($"null user '{username}'");
+            var numTrainingsWithMinDaysCompleted = trainingsInfo.Count(o => o.Summary?.TrainedDays >= 5); // summaries.Count(o => o.TrainedDays >= 5);
 
-            return impersonatedUser;
+            return new CreateTrainingsInfoDto { 
+                TrainingsQuota = new CreateTrainingsInfoDto.Quota
+                {
+                    Created = trainingsInfo.Count,
+                    Started = trainingsInfo.Count(o => o.Summary?.TrainedDays > 0),
+                    Limit = currentUser.Role == Roles.Admin ? 1000 : Math.Max(60, numTrainingsWithMinDaysCompleted + 30),
+                    Reusable = trainingsInfo.Where(o => o.Training.Created < DateTimeOffset.UtcNow.AddDays(-1) && (o.Summary?.TrainedDays ?? 0) == 0).Select(o => o.Id).ToList()
+                }
+            };
         }
 
         [HttpPost]
         [Route("createclass")]
         [ProducesErrorResponseType(typeof(HttpException))]
-        public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings, string? createForUser = null)
+        public async Task<IEnumerable<string>> PostGroup(TrainingCreateDto dto, string groupName, int numTrainings)
         {
             var user = userProvider.UserOrThrow;
 
+            var createTrainingsInfo = await GetCreateTrainingsInfo();
+
             // TODO: standard validation
-            var maxTrainingsInGroup = 30;
+            var maxTrainingsInGroup = createTrainingsInfo.MaxTrainingsInGroup;
             if (numTrainings < 1)
                 throw new HttpException($"{nameof(numTrainings)}:{numTrainings} exceeds accepted range", StatusCodes.Status400BadRequest);
             else if (numTrainings > maxTrainingsInGroup)
@@ -111,20 +121,39 @@ namespace TrainingApi.Controllers
 
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);
 
+            var numTrainingsToGetFromOtherGroups = 0;
+
             if (user.Role != Roles.Admin)
             {
-                var currentNumTrainings = user.Trainings.Sum(o => o.Value.Count());
-                var maxTotalTrainings = 60;
-                if (numTrainings + currentNumTrainings > maxTotalTrainings)
+                var currentNumTrainings = createTrainingsInfo.TrainingsQuota.Created;
+                var maxTotalTrainings = createTrainingsInfo.TrainingsQuota.Limit;
+
+                var numAvailableWithoutReusing = createTrainingsInfo.TrainingsQuota.Limit - createTrainingsInfo.TrainingsQuota.Created;
+
+                numTrainingsToGetFromOtherGroups = numTrainings - numAvailableWithoutReusing;
+
+                if (numTrainingsToGetFromOtherGroups > 0)
                 {
-                    throw new HttpException($"We currently allow max {maxTotalTrainings} trainings per account. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
+                    if (!dto.ReuseTrainingsNotStarted || createTrainingsInfo.TrainingsQuota.Reusable.Count < numTrainingsToGetFromOtherGroups)
+                        throw new HttpException($"You are allowed max {maxTotalTrainings} trainings. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
                 }
+                //if (dto.ReuseTrainingsNotStarted)
+                //{
+                //    maxTotalTrainings += createTrainingsInfo.TrainingsQuota.Reusable.Count; //Math.Max(0, createTrainingsInfo.TrainingsQuota.Created - createTrainingsInfo.TrainingsQuota.Started);
+                //}
+                //if (numTrainings + currentNumTrainings > maxTotalTrainings)
+                //{
+                //    throw new HttpException($"You are allowed max {maxTotalTrainings} trainings. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
+                //}
             }
 
-            if (string.IsNullOrEmpty(createForUser) == false)
-                user = await GetImpersonatedUserOrThrow(createForUser);
+            var templates = await trainingTemplateRepository.GetAll();
 
-            var templates = await GetTrainingTemplates();
+            // TODO: first move / reset 
+            if (numTrainingsToGetFromOtherGroups > 0)
+            {
+                //var idsToUse = (await user.Trainings.RemoveUnusedFromGroups(numTrainingsToGetFromOtherGroups, groupName, trainingRepository, statisticsProvider)).SelectMany(o => o.Value);
+            }
 
             var trainings = new List<Training>();
             for (int i = 0; i < numTrainings; i++)
@@ -154,45 +183,22 @@ namespace TrainingApi.Controllers
             return await GetUsersTrainings();
         }
 
-        private Task<IEnumerable<Training>> GetTrainingTemplates()
-        {
-            // TODO: use real storage, move to service
-            var templates = new[] {
-                new Training { Id = 1, Username = "template_Default training", TrainingPlanName = "2017 HT template Default", Settings = CreateSettings(s =>
-                {
-                    s.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.CategorizerDay5_23Q1) };
-                }) },
-                new Training { Id = 2, Username = "template_Test training", TrainingPlanName = "2023 VT template JonasTest", Settings = CreateSettings(s => 
-                {
-                    s.Analyzers = new List<string> { nameof(ProblemSourceModule.Services.TrainingAnalyzers.ExperimentalAnalyzer) };
-                    s.timeLimits = new List<decimal> { 3 };
-                    s.customData = new CustomData { allowMultipleLogins = true };
-                }) },
-                new Training { Id = 3, Username = "template_NumberlineTest training", TrainingPlanName = "2023 VT template JonasTest", Settings = CreateSettings(s => {
-                    s.customData = new CustomData { 
-                        allowMultipleLogins = true,
-                        numberLine = new { changeSuccess = 0.4, changeFail = -1 } //skillChangeGood = 0.5 }
-                    };
-                    // TODO: Response serialization doesn't work (probably .NET built-in JSON vs dynamic/JToken)
-                    s.UpdateTrainingOverrides(new[]{ TrainingSettings.CreateWeightChangeTrigger(new Dictionary<string, int> { {"Math", 100}, { "numberline", 100 } }, 0, 0) });
-                }) },
-            };
-
-            return Task.FromResult((IEnumerable<Training>)templates);
-
-            TrainingSettings CreateSettings(Action<TrainingSettings>? act = null)
-            {
-                var ts = TrainingSettings.Default;
-                act?.Invoke(ts);
-                return ts;
-            }
-        }
-
         [HttpGet]
         [Route("templates")]
         public async Task<IEnumerable<TrainingTemplateDto>> GetTemplates()
         {
-            return (await GetTrainingTemplates()).Select(o => new TrainingTemplateDto {
+            var templates = await trainingTemplateRepository.GetAll();
+            var user = userProvider.UserOrThrow;
+            if (user.Role != "Admin")
+            {
+                // Only provide a the default template when not an admin:
+                var preferredTemplate = "template_2023HT";
+                templates = templates.Where(o => o.Username == preferredTemplate);
+                if (!templates.Any())
+                    throw new Exception($"Template missing: {preferredTemplate}");
+            }
+
+            return templates.Select(o => new TrainingTemplateDto {
                 Id = o.Id,
                 Name = o.Username.Replace("template_", ""),
                 TrainingPlanName = o.TrainingPlanName,
@@ -202,9 +208,9 @@ namespace TrainingApi.Controllers
 
         [HttpGet]
         [Route("groups")]
-        public async Task<Dictionary<string, List<TrainingSummaryDto>>> GetGroups(string? impersonateUser = null) // TODO: use a header instead and centralize impersonation ICurrentUserProvider?
+        public async Task<Dictionary<string, List<TrainingSummaryDto>>> GetGroups()
         {
-            var user = await GetImpersonatedUserOrThrow(impersonateUser);
+            var user = userProvider.UserOrThrow;
             var groupedTrainings = await GetUserGroups(user: user);
             var trainings = groupedTrainings.SelectMany(o => o.Value).DistinctBy(o => o.Id).ToList();
 
@@ -252,9 +258,9 @@ namespace TrainingApi.Controllers
         
         [HttpGet]
         [Route("summaries")]
-        public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery] string? group = null, string? impersonateUser = null)
+        public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery] string? group = null)
         {
-            var trainings = await GetUsersTrainings(group: group, user: await GetImpersonatedUserOrThrow(impersonateUser));
+            var trainings = await GetUsersTrainings(group: group);
             var trainingDayTasks = trainings.Select(o => statisticsProvider.GetTrainingDays(o.Id)).ToList();
 
             IEnumerable<TrainingDayAccount>[] results;
@@ -356,6 +362,7 @@ namespace TrainingApi.Controllers
             public string? TrainingPlan { get; set; }
             public TrainingSettings? TrainingSettings { get; set; }
             public string? AgeBracket { get; set; }
+            public bool ReuseTrainingsNotStarted { get; set; }
         }
 
         public class TrainingTemplateDto
@@ -364,6 +371,21 @@ namespace TrainingApi.Controllers
             public int Id { get; set; }
             public string TrainingPlanName { get; set; } = "";
             public TrainingSettings Settings { get; set; } = new TrainingSettings();
+        }
+
+        public class CreateTrainingsInfoDto
+        {
+            public Quota TrainingsQuota { get; set; } = new();
+
+            public int MaxTrainingsInGroup { get; set; } = 35;
+
+            public class Quota
+            {
+                public int Limit { get; set; }
+                public int Created { get; set; }
+                public int Started { get; set; }
+                public List<int> Reusable { get; set; } = new();
+            }
         }
     }
 }

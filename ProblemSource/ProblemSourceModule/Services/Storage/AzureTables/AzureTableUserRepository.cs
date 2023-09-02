@@ -1,9 +1,8 @@
 ﻿using Azure;
 using Azure.Data.Tables;
+using AzureTableGenerics;
 using Common;
-using Microsoft.AspNetCore.Mvc.DataAnnotations;
 using ProblemSource.Services.Storage.AzureTables;
-using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models;
 
 namespace ProblemSourceModule.Services.Storage.AzureTables
