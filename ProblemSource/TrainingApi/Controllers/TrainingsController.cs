@@ -97,7 +97,7 @@ namespace TrainingApi.Controllers
                 {
                     Created = trainingsInfo.Count,
                     Started = trainingsInfo.Count(o => o.Summary?.TrainedDays > 0),
-                    Limit = Math.Max(60, numTrainingsWithMinDaysCompleted + 30),
+                    Limit = currentUser.Role == Roles.Admin ? 1000 : Math.Max(60, numTrainingsWithMinDaysCompleted + 30),
                     Reusable = trainingsInfo.Where(o => o.Training.Created < DateTimeOffset.UtcNow.AddDays(-1) && (o.Summary?.TrainedDays ?? 0) == 0).Select(o => o.Id).ToList()
                 }
             };

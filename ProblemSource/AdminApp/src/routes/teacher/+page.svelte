@@ -24,6 +24,7 @@
 
 	$: trainings = calculateTrainingStats(detailedTrainingsData, noOfDays);
 	let groups: { group: string; summaries: TrainingSummaryDto[] }[];
+	let lastTrainingOccasionInGroup: Date | null = null;
 
 	onMount(() => getData());
 
@@ -32,12 +33,12 @@
 			console.error('apiFacade null');
 			return;
 		}
-		const groupsData = await apiFacade.trainings.getGroups(null);
+		const groupsData = await apiFacade.trainings.getGroups();
 		groups = Object.entries(groupsData).map((o) => ({ group: o[0], summaries: o[1] }));
 	}
 
 	async function onSelectGroup(groupId: string) {
-		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId, null);
+		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId);
 	}
 
 	function getAccuracyWarningLevel(training: { accuracyWarningThreshold: number }, accuracy: number) {
@@ -53,10 +54,11 @@
 	function calculateTrainingStats(data: TrainingSummaryWithDaysDto[], numberOfDays = 7) {
 		trainingDayDetails = TrainingDayTools.getLatestNumDaysStats(7, detailedTrainingsData);
 
+		// Math.max.apply(null, data.map(o => o.lastLogin));
 		const average = (arr: number[]) => {
 			return arr.reduce((p, c) => p + c, 0) / arr.length;
 		};
-		return data.map((t) => {
+		const result = data.map((t) => {
 			const dateRange = t.days.slice(-numberOfDays);
 			const accuracy = average(dateRange.map((d) => d.numCorrectAnswers / (d.numQuestions || 1))) || 0;
 			const effectiveTime = Math.min(average(dateRange.map((d) => (d.responseMinutes + d.remainingMinutes) / (t.targetMinutesPerDay || 32))) || 0, 1);
@@ -75,6 +77,19 @@
 				comments: [] as Array<{ type: 'Critical' | 'Warning' | 'Info'; description: string }>
 			};
 		});
+
+		try {
+			const allLastDays = result
+				.map(o => o.latestDays)
+				.filter(o => o != null && o.length > 0)
+				.map(o => o ? o[o.length - 1] : null)
+				.filter(o => o != null)
+				.map(o => (<Date>(<any>o)["startTime"]))
+				.filter(o => o != null)
+				.map(o => o.valueOf());
+			lastTrainingOccasionInGroup = allLastDays.length ? new Date(Math.max.apply(null, allLastDays)) : null;
+		} catch {}
+		return result;
 	}
 
 	function onSelectTraining(trainingId: number) {
@@ -115,6 +130,7 @@
 	{#if trainings && trainings.length > 0}
 		<div class="training-header">
 			<h2>{getString('teacher_training_header')}</h2>
+			<p>Num trainings:{trainings.length} - Started:{trainings.filter(o => o.trainedDays > 0).length} - Last training occasion:{lastTrainingOccasionInGroup == null ? 'N/A' : DateUtils.toIsoDate(lastTrainingOccasionInGroup)}</p>
 			<div class="range-widget-container">
 				<div class="range-widget-label">{getString('teacher_stats_range_label')}</div>
 				<div class="range-switch-container">

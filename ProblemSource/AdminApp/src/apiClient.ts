@@ -1240,8 +1240,9 @@ export interface CreateTrainingsInfoDto {
 
 export interface Quota {
     limit: number;
-    inUse: number;
+    created: number;
     started: number;
+    reusable?: number[] | undefined;
 }
 
 export interface Training {
@@ -1250,6 +1251,7 @@ export interface Training {
     trainingPlanName: string;
     settings: TrainingSettings;
     ageBracket: string;
+    created: Date;
 }
 
 export interface TrainingTemplateDto {
