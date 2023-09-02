@@ -20,7 +20,8 @@ namespace ProblemSourceModule.Services.Storage
             {
                 TrainingPlanName = trainingPlan,
                 Settings = settings ?? TrainingSettings.Default,
-                AgeBracket = ageBracket ?? ""
+                AgeBracket = ageBracket ?? "",
+                Created = DateTimeOffset.UtcNow,
             };
 
             var id = await Add(training);

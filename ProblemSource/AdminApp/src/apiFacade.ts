@@ -1,9 +1,9 @@
-import { AccountsClient, AggregatesClient, TestingClient, TrainingsClient } from "./apiClient";
+import { UsersClient, AggregatesClient, TestingClient, TrainingsClient } from "./apiClient";
 import { RequestAdapter } from "./RequestAdapter";
 
 export class ApiFacade {
     private aggregatesClient: AggregatesClient;
-    private accountsClient: AccountsClient;
+    private usersClient: UsersClient;
     private trainingsClient: TrainingsClient;
     private testingClient: TestingClient;
 
@@ -22,13 +22,13 @@ export class ApiFacade {
             }
         };
         this.aggregatesClient = new AggregatesClient(baseUrl, http);
-        this.accountsClient = new AccountsClient(baseUrl, http);
+        this.usersClient = new UsersClient(baseUrl, http);
         this.trainingsClient = new TrainingsClient(baseUrl, http);
         this.testingClient = new TestingClient(baseUrl, http);
     }
 
     get aggregates() { return this.aggregatesClient; }
-    get accounts() { return this.accountsClient; }
+    get users() { return this.usersClient; }
     get trainings() { return this.trainingsClient; }
     get testing() { return this.testingClient; }
 }

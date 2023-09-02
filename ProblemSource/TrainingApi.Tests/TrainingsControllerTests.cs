@@ -1,9 +1,12 @@
 ﻿using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using ProblemSource.Services;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
 using Shouldly;
+using System.Linq;
 using System.Net.Http.Json;
 using TrainingApi.Tests.IntegrationHelpers;
 using static TrainingApi.Controllers.TrainingsController;
@@ -12,6 +15,8 @@ namespace TrainingApi.Tests
 {
     public class TrainingsControllerTests
     {
+        private const string basePath = "/api/trainings/";
+
         [Fact]
         public async Task GetTemplates_Serialization()
         {
@@ -22,7 +27,7 @@ namespace TrainingApi.Tests
             var client = ts.CreateClient(user);
 
             // Act
-            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"/api/trainings/templates");
+            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"{basePath}templates");
 
             // Assert
             var template = response!.Single(o => o.Name == "NumberlineTest training");
@@ -52,7 +57,7 @@ namespace TrainingApi.Tests
             var client = ts.CreateClient(user);
 
             // Act
-            var response = await client.GetFromJsonAsync<List<TrainingSummaryWithDaysDto>>($"/api/trainings/summaries");
+            var response = await client.GetFromJsonAsync<List<TrainingSummaryWithDaysDto>>($"{basePath}summaries");
 
             // Assert
             response!.Single().Id.ShouldBe(training.Id);
@@ -70,12 +75,12 @@ namespace TrainingApi.Tests
             var client = wrapper.CreateClient();
 
             // Act
-            var response = await client.GetFromJsonAsync<CreateTrainingsInfoDto>(wrapper.AppendOptionalImpersonation("/api/trainings/CreateTrainingsInfo"));
+            var response = await client.GetFromJsonAsync<CreateTrainingsInfoDto>(wrapper.AppendOptionalImpersonation($"{basePath}CreateTrainingsInfo"));
 
             // Assert
             response.ShouldNotBeNull();
             response.TrainingsQuota.Limit.ShouldBe(60);
-            response.TrainingsQuota.InUse.ShouldBe(wrapper.ResolvedUser.Trainings.Sum(o => o.Value.Count));
+            response.TrainingsQuota.Created.ShouldBe(wrapper.ResolvedUser.Trainings.Sum(o => o.Value.Count));
         }
 
         [Theory]
@@ -90,7 +95,7 @@ namespace TrainingApi.Tests
             var client = wrapper.CreateClient();
 
             // Act
-            var response = await client.GetFromJsonAsync<Dictionary<string, List<TrainingSummaryDto>>>(wrapper.AppendOptionalImpersonation("/api/trainings/groups"));
+            var response = await client.GetFromJsonAsync<Dictionary<string, List<TrainingSummaryDto>>>(wrapper.AppendOptionalImpersonation($"{basePath}groups"));
 
             // Assert
             response.ShouldNotBeNull();
@@ -110,11 +115,83 @@ namespace TrainingApi.Tests
             var kvSelectedGroup = wrapper.ResolvedUser.Trainings.First();
 
             // Act
-            var response = await client.GetFromJsonAsync<List<TrainingSummaryWithDaysDto>>(wrapper.AppendOptionalImpersonation($"/api/trainings/summaries?group={kvSelectedGroup.Key}"));
+            var response = await client.GetFromJsonAsync<List<TrainingSummaryWithDaysDto>>(wrapper.AppendOptionalImpersonation($"{basePath}summaries?group={kvSelectedGroup.Key}"));
 
             // Assert
             response.ShouldNotBeNull();
             response.Count.ShouldBe(kvSelectedGroup.Value.Count);
+        }
+
+        [Theory]
+        [InlineData(50, 30, 10, 60)]
+        [InlineData(60, 50, 10, 80)]
+        [InlineData(120, 110, 10, 140)]
+        [InlineData(120, 60, 10, 90)]
+        public async Task CreateTrainingsInfo_Quotas(int numCreated, int numStartedWith5Days, int numStartedWith1Day, int expectedLimit)
+        {
+            // Arrange
+            var trainingIds = Enumerable.Range(0, numCreated).ToList();
+
+            var user = new User
+            {
+                Email = "a_teacher",
+                Role = Roles.Teacher,
+                Trainings = new UserTrainingsCollection("Group", trainingIds)
+            };
+
+            var summaries = trainingIds
+                .Take(numStartedWith5Days).Select(id => new TrainingSummary { Id = id, TrainedDays = 5 })
+                .Concat(trainingIds.Skip(numStartedWith5Days).Take(numStartedWith1Day).Select(id => new TrainingSummary { Id = id, TrainedDays = 1 }));
+
+            var wrapper = new ImpersonationWrapper(user, trainingSummaries: summaries);
+            var client = wrapper.CreateClient();
+            // Act
+            var response = await client.GetFromJsonAsync<CreateTrainingsInfoDto>($"/api/trainings/CreateTrainingsInfo");
+
+            // Assert
+            response.ShouldNotBeNull();
+            response.TrainingsQuota.Created.ShouldBe(trainingIds.Count);
+            response.TrainingsQuota.Started.ShouldBe(numStartedWith5Days + numStartedWith1Day);
+
+            response.TrainingsQuota.Limit.ShouldBe(expectedLimit);
+        }
+
+        // TODO: test for PostGroup/createclass
+
+        [Theory]
+        [InlineData(2, new[] { "a" }, new[] { 1, 5 })]
+        [InlineData(3, new[] { "a", "b" }, new[] { 1, 5, 9 })]
+        public async Task User_Trainings_RemoveUnusedFromGroups(int numToTransfer, IEnumerable<string> expectedGroups, IEnumerable<int> expectedIds)
+        {
+            // TODO: not a TrainingsController test
+            var trainings = Enumerable.Range(0, 12).Select(o => new Training { Id = o, Created = DateTimeOffset.UtcNow }).ToList();
+
+            // 0, 2, 4... have trained 5 days
+            var summaries = trainings.Where(o => o.Id % 2 == 0)
+                .Select(o => new TrainingSummary { Id = o.Id, TrainedDays = 5 });
+
+            // 0, 1, 4, 5... were not recently created
+            foreach (var training in trainings.Where(o => (o.Id / 2) % 2 == 0))
+                training.Created = DateTimeOffset.UtcNow.AddDays(-10);
+
+            var user = new User { Trainings = new UserTrainingsCollection(new Dictionary<string, List<int>>
+            {
+                { "a", trainings.Take(6).Select(o => o.Id).ToList() },
+                { "b", trainings.Skip(6).Select(o => o.Id).ToList() }
+            }) };
+
+            var trainingsRepo = A.Fake<ITrainingRepository>();
+            A.CallTo(() => trainingsRepo.GetByIds(A<IEnumerable<int>>._))
+                .ReturnsLazily((IEnumerable<int> ids) => Task.FromResult(trainings.Where(o => ids.Contains(o.Id))));
+
+            var stats = A.Fake<IStatisticsProvider>();
+            A.CallTo(() => stats.GetTrainingSummaries(A<IEnumerable<int>>._))
+                .ReturnsLazily((IEnumerable<int> ids) => Task.FromResult((IEnumerable<TrainingSummary?>)summaries.Where(o => ids.Contains(o.Id))));
+
+            var result = await user.Trainings.RemoveUnusedFromGroups(numToTransfer, "", trainingsRepo, stats);
+            result.Keys.ShouldBe(expectedGroups);
+            result.SelectMany(o => o.Value).Count().ShouldBe(numToTransfer);
+            result.SelectMany(o => o.Value).ShouldBe(expectedIds); // These were ids that were not recently created nor had training days
         }
     }
 
@@ -128,7 +205,7 @@ namespace TrainingApi.Tests
 
         internal MyTestServer Server { get; private set; }
 
-        public ImpersonationWrapper(User actingUser, User? impersonate = null) //, IEnumerable<User>? users = null)
+        public ImpersonationWrapper(User actingUser, User? impersonate = null, IEnumerable<TrainingSummary>? trainingSummaries = null)
         {
             ActingUser = actingUser;
             ImpersonatedUser = impersonate;
@@ -137,37 +214,39 @@ namespace TrainingApi.Tests
             if (ImpersonatedUser != null)
                 users.Add(ImpersonatedUser);
 
-            Server = new MyTestServer(postConfigureTestServices: services =>
+            Server = new MyTestServer(users, postConfigureTestServices: services =>
             {
-                services.RemoveAll(typeof(IUserRepository));
-                services.AddSingleton(sp =>
-                {
-                    var repo = MyTestServer.CreateAutoMocked<IUserRepository>();
-                    A.CallTo(() => repo.Get(A<string>.Ignored)).ReturnsLazily((string uname) => Task.FromResult(users.SingleOrDefault(o => o.Email == uname)));
-                    return repo;
-                });
-
                 services.RemoveAll(typeof(ITrainingRepository));
-
                 services.AddSingleton(sp =>
                 {
                     var repo = MyTestServer.CreateAutoMocked<ITrainingRepository>();
-                    A.CallTo(() => repo.Get(A<int>._)).ReturnsLazily((int id) => Task.FromResult((Training?)new Training { Id = id }));
-                    A.CallTo(() => repo.GetByIds(A<IEnumerable<int>>._)).ReturnsLazily((IEnumerable<int> ids) => Task.FromResult(ids.Select(id => new Training { Id = id })));
+                    A.CallTo(() => repo.Get(A<int>._))
+                        .ReturnsLazily((int id) => Task.FromResult((Training?)new Training { Id = id }));
+                    A.CallTo(() => repo.GetByIds(A<IEnumerable<int>>._))
+                        .ReturnsLazily((IEnumerable<int> ids) => Task.FromResult(ids.Select(id => new Training { Id = id })));
                     return repo;
                 });
+
+                if (trainingSummaries?.Any() == true)
+                {
+                    services.AddSingleton(sp =>
+                    {
+                        var stats = MyTestServer.CreateAutoMocked<IStatisticsProvider>();
+                        A.CallTo(() => stats.GetAllTrainingSummaries())
+                            .Returns(Task.FromResult(trainingSummaries.ToList()));
+
+                        A.CallTo(() => stats.GetTrainingSummaries(A<IEnumerable<int>>._))
+                            .ReturnsLazily((IEnumerable<int> ids) => Task.FromResult(ids.Select(id => trainingSummaries.FirstOrDefault(ts => ts.Id == id)))); //ids.Select(id => (TrainingSummary?)new TrainingSummary { Id = id, TrainedDays = 5 })));
+                        return stats;
+                    });
+                }
             });
         }
 
-        public string AppendOptionalImpersonation(string path)
-        {
-            return path + (ImpersonatedUser != null ? $"{(path.Contains("?") ? "&" : "?")}impersonate={ImpersonatedUser.Email}" : "");
-        }
+        public string AppendOptionalImpersonation(string path) =>
+            path + (ImpersonatedUser != null ? $"{(path.Contains("?") ? "&" : "?")}impersonate={ImpersonatedUser.Email}" : "");
 
-        public HttpClient CreateClient()
-        {
-            return Server.CreateClient(ActingUser);
-        }
+        public HttpClient CreateClient() => Server.CreateClient(ActingUser);
 
         public static List<User> CreateDefaultUsers()
         {
@@ -176,13 +255,13 @@ namespace TrainingApi.Tests
                 {
                     Email = "AnAdmin",
                     Role = Roles.Admin,
-                    Trainings = new Dictionary<string, List<int>> { { "AdminGroup", Enumerable.Range(0, 1).ToList() } }
+                    Trainings = new UserTrainingsCollection("AdminGroup", Enumerable.Range(0, 1))
                 },
                 new User
                 {
                     Email = "ATeacher",
                     Role = Roles.Teacher,
-                    Trainings = new Dictionary<string, List<int>> { { "TeacherGroup", Enumerable.Range(0, 40).ToList() } }
+                    Trainings = new UserTrainingsCollection("TeacherGroup", Enumerable.Range(0, 40))
                 },
             };
         }

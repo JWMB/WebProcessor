@@ -87,20 +87,18 @@ namespace TrainingApi.Controllers
         public async Task<CreateTrainingsInfoDto> GetCreateTrainingsInfo()
         {
             var currentUser = userProvider.UserOrThrow;
-            var allTrainingIds = currentUser!.Trainings.Values.SelectMany(o => o).ToList() ?? new List<int>();
-            var trainings = await trainingRepository.GetByIds(allTrainingIds);
-            var summaries = (await statisticsProvider.GetTrainingSummaries(allTrainingIds)).OfType<TrainingSummary>();
 
-            var numTrainingsWithMinDaysCompleted = summaries.Count(o => o.TrainedDays >= 5);
+            var trainingsInfo = (await currentUser.Trainings.GetTrainingsInfo(trainingRepository, statisticsProvider)).SelectMany(o => o.Value).ToList();
+
+            var numTrainingsWithMinDaysCompleted = trainingsInfo.Count(o => o.Summary?.TrainedDays >= 5); // summaries.Count(o => o.TrainedDays >= 5);
 
             return new CreateTrainingsInfoDto { 
                 TrainingsQuota = new CreateTrainingsInfoDto.Quota
-                { 
-                    InUse = allTrainingIds.Count,
-                    Started = summaries.Count(o => o.TrainedDays > 0),
-                    Limit = Math.Max(60, numTrainingsWithMinDaysCompleted + 30),
-                    // TODO: set Reusable depending on when trainings were created (can't reuse trainings that were created within the last few days)
-                    // But creation timestamp is not available on Training right now
+                {
+                    Created = trainingsInfo.Count,
+                    Started = trainingsInfo.Count(o => o.Summary?.TrainedDays > 0),
+                    Limit = currentUser.Role == Roles.Admin ? 1000 : Math.Max(60, numTrainingsWithMinDaysCompleted + 30),
+                    Reusable = trainingsInfo.Where(o => o.Training.Created < DateTimeOffset.UtcNow.AddDays(-1) && (o.Summary?.TrainedDays ?? 0) == 0).Select(o => o.Id).ToList()
                 }
             };
         }
@@ -123,21 +121,39 @@ namespace TrainingApi.Controllers
 
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);
 
+            var numTrainingsToGetFromOtherGroups = 0;
+
             if (user.Role != Roles.Admin)
             {
-                var currentNumTrainings = user.Trainings.Values.Sum(o => o.Count); // user.Trainings.Sum(o => o.Value.Count());
+                var currentNumTrainings = createTrainingsInfo.TrainingsQuota.Created;
                 var maxTotalTrainings = createTrainingsInfo.TrainingsQuota.Limit;
-                if (dto.ReuseTrainingsNotStarted)
+
+                var numAvailableWithoutReusing = createTrainingsInfo.TrainingsQuota.Limit - createTrainingsInfo.TrainingsQuota.Created;
+
+                numTrainingsToGetFromOtherGroups = numTrainings - numAvailableWithoutReusing;
+
+                if (numTrainingsToGetFromOtherGroups > 0)
                 {
-                    maxTotalTrainings += Math.Max(0, createTrainingsInfo.TrainingsQuota.InUse - createTrainingsInfo.TrainingsQuota.Started);
+                    if (!dto.ReuseTrainingsNotStarted || createTrainingsInfo.TrainingsQuota.Reusable.Count < numTrainingsToGetFromOtherGroups)
+                        throw new HttpException($"You are allowed max {maxTotalTrainings} trainings. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
                 }
-                if (numTrainings + currentNumTrainings > maxTotalTrainings)
-                {
-                    throw new HttpException($"You are allowed max {maxTotalTrainings} trainings. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
-                }
+                //if (dto.ReuseTrainingsNotStarted)
+                //{
+                //    maxTotalTrainings += createTrainingsInfo.TrainingsQuota.Reusable.Count; //Math.Max(0, createTrainingsInfo.TrainingsQuota.Created - createTrainingsInfo.TrainingsQuota.Started);
+                //}
+                //if (numTrainings + currentNumTrainings > maxTotalTrainings)
+                //{
+                //    throw new HttpException($"You are allowed max {maxTotalTrainings} trainings. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
+                //}
             }
 
             var templates = await trainingTemplateRepository.GetAll();
+
+            // TODO: first move / reset 
+            if (numTrainingsToGetFromOtherGroups > 0)
+            {
+                //var idsToUse = (await user.Trainings.RemoveUnusedFromGroups(numTrainingsToGetFromOtherGroups, groupName, trainingRepository, statisticsProvider)).SelectMany(o => o.Value);
+            }
 
             var trainings = new List<Training>();
             for (int i = 0; i < numTrainings; i++)
@@ -366,9 +382,9 @@ namespace TrainingApi.Controllers
             public class Quota
             {
                 public int Limit { get; set; }
-                public int InUse { get; set; }
+                public int Created { get; set; }
                 public int Started { get; set; }
-                //public int Reusable { get; set; }
+                public List<int> Reusable { get; set; } = new();
             }
         }
     }

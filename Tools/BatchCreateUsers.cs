@@ -127,9 +127,8 @@ namespace Tools
                 }).ToList();
         }
 
-        public async Task CreateAndEmail(IConfiguration config, IEnumerable<string> emails, bool actuallyCreate = false)
+        public async Task CreateAndEmail(string rootPath, IConfiguration config, IEnumerable<string> emails, bool actuallyCreate = false)
         {
-            var rootPath = @"C:\Users\uzk446\Downloads\";
             var useJsonFile = $"{rootPath}createdUsers.json";
             List<CreateUserResult>? createdUsersInfo;
             if (File.Exists(useJsonFile))
