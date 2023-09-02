@@ -94,6 +94,9 @@
     <div>
         Time limit: {training.settings?.timeLimits[0] || "N/A"}
     </div>
+    <div>
+        Age bracket: {training.ageBracket}
+    </div>
 
     {#if !!trainingDays}
     <TrainingDaysChart data={trainingDays} />
