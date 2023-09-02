@@ -36,7 +36,7 @@ Console.CancelKeyPress += (s, e) =>
 };
 var cancellationToken = cts.Token;
 
-var path = @"C:\Users\uzk446\Downloads\";
+var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
 
 //await new OldDbMLFeatures().Run(cancellationToken);
 //return;
@@ -88,6 +88,8 @@ var path = @"C:\Users\uzk446\Downloads\";
 
 //var template = await serviceProvider.GetRequiredService<ITrainingTemplateRepository>().Get("template_2023HT");
 //var trainingMod = serviceProvider.CreateInstance<TrainingMod>();
+//var ids = TrainingMod.ExtractTrainingNames(File.ReadAllText(@"C:\Users\uzk446\Desktop\WebProcessor_Files\idsForParse.txt"));
+//await trainingMod.MoveTeachersTrainingsToGroup("EMAIL HERE", ids.Select(o => o.Id), "GROUP HERE", true);
 //var allTrainings = await serviceProvider.GetRequiredService<ITrainingRepository>().GetAll();
 //var tools = new TrainingStatsTools(serviceProvider);
 //var allSummaries = (await tools.CreateTrainingSummaryRepo().GetAll()).Where(o => o.TrainedDays > 1);
@@ -100,11 +102,9 @@ var path = @"C:\Users\uzk446\Downloads\";
 
 //var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
 var emails = @"
-maria.nylund@vasteras.se
-ida3.eriksson@vasteras.se
 ".Split('\n').Select(o => o.Trim().ToLower()).Where(o => o.Any());
 var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
-await creator.CreateAndEmail(config, emails, true);
+await creator.CreateAndEmail(path, config, emails, true);
 
 //var gmailService = BatchMail.CreateGmailService(config.GetRequiredSection("Gmail"));
 //await BatchMail.SendBatch(gmailService, "Vektor invitation", emails, actuallySend: true); //Vektor - uppdatering
