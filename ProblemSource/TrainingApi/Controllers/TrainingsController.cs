@@ -89,15 +89,14 @@ namespace TrainingApi.Controllers
             var currentUser = userProvider.UserOrThrow;
 
             var trainingsInfo = (await currentUser.Trainings.GetTrainingsInfo(trainingRepository, statisticsProvider)).SelectMany(o => o.Value).ToList();
-
-            var numTrainingsWithMinDaysCompleted = trainingsInfo.Count(o => o.Summary?.TrainedDays >= 5); // summaries.Count(o => o.TrainedDays >= 5);
+            var numTrainingsWithMinDaysCompleted = trainingsInfo.Count(o => o.Summary?.TrainedDays >= 5);
 
             return new CreateTrainingsInfoDto { 
                 TrainingsQuota = new CreateTrainingsInfoDto.Quota
                 {
                     Created = trainingsInfo.Count,
                     Started = trainingsInfo.Count(o => o.Summary?.TrainedDays > 0),
-                    Limit = currentUser.Role == Roles.Admin ? 1000 : Math.Max(60, numTrainingsWithMinDaysCompleted + 30),
+                    Limit = currentUser.Role == Roles.Admin ? 1000 : Math.Max(60, numTrainingsWithMinDaysCompleted + 35),
                     Reusable = trainingsInfo.Where(o => o.Training.Created < DateTimeOffset.UtcNow.AddDays(-1) && (o.Summary?.TrainedDays ?? 0) == 0).Select(o => o.Id).ToList()
                 }
             };
@@ -125,9 +124,6 @@ namespace TrainingApi.Controllers
 
             if (user.Role != Roles.Admin)
             {
-                var currentNumTrainings = createTrainingsInfo.TrainingsQuota.Created;
-                var maxTotalTrainings = createTrainingsInfo.TrainingsQuota.Limit;
-
                 var numAvailableWithoutReusing = createTrainingsInfo.TrainingsQuota.Limit - createTrainingsInfo.TrainingsQuota.Created;
 
                 numTrainingsToGetFromOtherGroups = numTrainings - numAvailableWithoutReusing;
@@ -135,7 +131,9 @@ namespace TrainingApi.Controllers
                 if (numTrainingsToGetFromOtherGroups > 0)
                 {
                     if (!dto.ReuseTrainingsNotStarted || createTrainingsInfo.TrainingsQuota.Reusable.Count < numTrainingsToGetFromOtherGroups)
-                        throw new HttpException($"You are allowed max {maxTotalTrainings} trainings. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
+                        throw new HttpException(
+                            $"You are allowed max {createTrainingsInfo.TrainingsQuota.Limit} trainings.<br/>" 
+                            + $"You already have {createTrainingsInfo.TrainingsQuota.Created}.", StatusCodes.Status400BadRequest);
                 }
                 //if (dto.ReuseTrainingsNotStarted)
                 //{
