@@ -5,6 +5,8 @@ using ProblemSourceModule.Services.Storage.AzureTables;
 using System.Text.RegularExpressions;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Models;
+using ProblemSource.Services;
+using ProblemSourceModule.Models.Aggregates;
 
 namespace Tools
 {
@@ -12,11 +14,15 @@ namespace Tools
     {
         private readonly ITrainingRepository trainingRepository;
         private readonly IUserRepository userRepository;
+        private readonly ITrainingTemplateRepository templateRepo;
+        private readonly IStatisticsProvider statisticsProvider;
 
-        public TrainingMod(ITrainingRepository trainingRepository, IUserRepository userRepository)
+        public TrainingMod(ITrainingRepository trainingRepository, IUserRepository userRepository, ITrainingTemplateRepository templateRepo, IStatisticsProvider statisticsProvider)
         {
             this.trainingRepository = trainingRepository;
             this.userRepository = userRepository;
+            this.templateRepo = templateRepo;
+            this.statisticsProvider = statisticsProvider;
         }
 
         public static List<(string Name, int Id)> ExtractTrainingNames(string input)
@@ -100,6 +106,40 @@ namespace Tools
             {
                 training.Settings.timeLimits = new List<decimal> { 20 };
                 await trainingRepository.Update(training);
+            }
+        }
+
+        public async Task ChangeTrainingsToTrainingTemplate(string? templateNameElseLatest = null, IEnumerable<int>? trainingIds = null, bool actuallyModify = false)
+        {
+            var templates = await templateRepo.GetAll();
+            var template = templateNameElseLatest == null ? templates.Last() : templates.Where(o => o.Username == templateNameElseLatest).Single();
+
+            IEnumerable<Training> trainings;
+            if (trainingIds == null)
+            {
+                trainings = await trainingRepository.GetAll();
+                var summaries = (await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id))).OfType<TrainingSummary>();
+                var trainingsTooFarAlong = summaries.Where(o => o.TrainedDays > 3).ToList();
+                trainingIds = trainings.Select(o => o.Id).Except(trainingsTooFarAlong.Select(o => o.Id));
+            }
+            else
+                trainings = await trainingRepository.GetByIds(trainingIds);
+
+
+            foreach (var trainingId in trainingIds)
+            {
+                var training = trainings.Single(o => o.Id == trainingId);
+                training.TrainingPlanName = template.TrainingPlanName;
+
+                // TODO: if we stored the original template used, we could create a diff between this training's settings and the template's
+                // and then make those changes applying the new template's settings
+                // Right now we don't provide a GUI to make any changes except for the timeLimits, so not a big deal
+                var currentTimeLimits = training.Settings.timeLimits;
+                training.Settings = template.Settings;
+                training.Settings.timeLimits = currentTimeLimits;
+
+                if (actuallyModify)
+                    await trainingRepository.Update(training);
             }
         }
 
