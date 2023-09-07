@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProblemSource;
+using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.Storage;
@@ -88,6 +89,7 @@ var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
 
 //var template = await serviceProvider.GetRequiredService<ITrainingTemplateRepository>().Get("template_2023HT");
 //var trainingMod = serviceProvider.CreateInstance<TrainingMod>();
+//await trainingMod.ChangeTrainingsToTrainingTemplate(actuallyModify: true);
 //var ids = TrainingMod.ExtractTrainingNames(File.ReadAllText(@"C:\Users\uzk446\Desktop\WebProcessor_Files\idsForParse.txt"));
 //await trainingMod.MoveTeachersTrainingsToGroup("EMAIL HERE", ids.Select(o => o.Id), "GROUP HERE", true);
 //var allTrainings = await serviceProvider.GetRequiredService<ITrainingRepository>().GetAll();
@@ -148,6 +150,7 @@ IServiceProvider InititalizeServices(IConfigurationRoot config)
     //var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
     //services.AddSingleton(tableConfig);
     services.AddTransient(sp => TypedConfiguration.Bind<AzureTableConfig>(section));
+    services.AddScoped<IStatisticsProvider, StatisticsProvider>();
 
     var loggerFactory = LoggerFactory.Create(builder =>
     {

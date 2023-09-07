@@ -131,12 +131,24 @@ namespace Tools
                 var training = trainings.Single(o => o.Id == trainingId);
                 training.TrainingPlanName = template.TrainingPlanName;
 
+                if (training.Settings == null)
+                {
+                    training.Settings = template.Settings;
+                }
+                else
+                {
+                    if (training.Settings.uniqueGroupWeights != null || training.Settings.triggers != null || training.Settings.trainingPlanOverrides != null)
+                    {
+                        continue;
+                    }
+                    var currentTimeLimits = training.Settings.timeLimits;
+                    training.Settings = template.Settings;
+                    training.Settings.timeLimits = currentTimeLimits;
+                }
+
                 // TODO: if we stored the original template used, we could create a diff between this training's settings and the template's
                 // and then make those changes applying the new template's settings
                 // Right now we don't provide a GUI to make any changes except for the timeLimits, so not a big deal
-                var currentTimeLimits = training.Settings.timeLimits;
-                training.Settings = template.Settings;
-                training.Settings.timeLimits = currentTimeLimits;
 
                 if (actuallyModify)
                     await trainingRepository.Update(training);
