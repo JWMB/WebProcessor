@@ -69,7 +69,15 @@ namespace TrainingApi.RealTime
                     if (cancellationToken.IsCancellationRequested)
                         break;
 
-                    var jObj = ParseMessage(msg.Body);
+                    JObject? jObj = null;
+                    try
+                    {
+                        jObj = ParseMessage(msg.Body);
+                    }
+                    catch (Exception ex)
+                    {
+                        log.LogError($"Parse error: {msg.Body}", ex);
+                    }
 
                     if (jObj != null)
                     {

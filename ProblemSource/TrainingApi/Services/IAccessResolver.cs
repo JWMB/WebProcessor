@@ -24,7 +24,8 @@ namespace TrainingApi.Services
             this.userProvider = userProvider;
         }
 
-        public bool HasAccess(User user, int trainingId, AccessLevel level) => user.Role == Roles.Admin ? true : user.Trainings.Any(o => o.Value.Contains(trainingId));
+        public bool HasAccess(User user, int trainingId, AccessLevel level) => 
+            user.Role == Roles.Admin ? true : user.Trainings.Any(o => o.Value.Contains(trainingId));
 
         public bool HasAccess(int trainingId, AccessLevel level)
         {

@@ -136,7 +136,7 @@ namespace Tools
             else
             {
                 //var emails = ReadEmails($"{rootPath}TeacherEmails.txt").Select(o => o.ToString()).ToList();
-                createdUsersInfo = (await CreateUsers(emails, new Dictionary<string, int> { { "Test", 2 } }, "2018 VT template Default", actuallyCreate)).ToList();
+                createdUsersInfo = (await CreateUsers(emails, new Dictionary<string, int> { { "Test", 2 } }, "2023 HT template", actuallyCreate)).ToList();
                 File.WriteAllText(useJsonFile.Replace(".json", $"-{DateTime.Now:dd_HH_mm}.json"), JsonConvert.SerializeObject(createdUsersInfo));
                 File.WriteAllText(useJsonFile, JsonConvert.SerializeObject(createdUsersInfo));
             }
