@@ -47,7 +47,8 @@ namespace ProblemSource
             services.AddSingleton<TrainingAnalyzerCollection>();
             //services.AddSingleton<TrainingAnalyzerCollection>(sp => new TrainingAnalyzerCollection(new[] { }, sp.GetRequiredService<>));
 
-            services.AddSingleton<IEventDispatcher, NullEventDispatcher>();
+            if (services.Any(o => o.ServiceType == typeof(IEventDispatcher)) == false)
+                services.AddSingleton<IEventDispatcher, NullEventDispatcher>(); // AzureQueueEventDispatcher>();
 
             services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
             //            services.AddSingleton<IEventDispatcher>(sp =>
@@ -91,7 +92,7 @@ namespace ProblemSource
             var tableClientFactory = serviceProvider.GetService<ITypedTableClientFactory>() as TypedTableClientFactory;
             tableClientFactory?.Init().Wait();
 
-            var queueEventDispatcher = serviceProvider.GetService<IEventDispatcher>() as QueueEventDispatcher;
+            var queueEventDispatcher = serviceProvider.GetService<IEventDispatcher>() as AzureQueueEventDispatcher;
             queueEventDispatcher?.Init().Wait();
         }
     }

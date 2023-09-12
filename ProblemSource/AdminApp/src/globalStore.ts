@@ -6,6 +6,7 @@ import type { CurrentUserInfo } from './currentUserInfo';
 import { Assistant } from './services/assistant';
 import { Startup } from './startup';
 import { SeverityLevel, type NotificationItem } from './types';
+import type { TrainingUpdateMessage } from './types.js';
 
 let _apiFacade: ApiFacade;
 export function getApi() {
@@ -23,6 +24,18 @@ export function getApi() {
 }
 
 //export const trainingUpdates = writable<TrainingUpdateMessage[]>([]);
+
+export const trainingUpdateStore = (() => {
+    const store = writable<TrainingUpdateMessage[]>([]);
+    return {
+        subscribe: store.subscribe,
+        add: (item: TrainingUpdateMessage) => {
+            const n = get(store);
+            n.push(item);
+            store.set(n);    
+        }
+    }
+ })();
 
 export interface NotificationItemDto extends Omit<NotificationItem, "createdAt"> {
     createdAt?: Date;

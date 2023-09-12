@@ -151,6 +151,7 @@ IServiceProvider InititalizeServices(IConfigurationRoot config)
     var section = config.GetRequiredSection("AppSettings:AzureTable");
     //var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
     //services.AddSingleton(tableConfig);
+    services.AddSingleton<AzureQueueConfig>();
     services.AddTransient(sp => TypedConfiguration.Bind<AzureTableConfig>(section));
     services.AddScoped<IStatisticsProvider, StatisticsProvider>();
 

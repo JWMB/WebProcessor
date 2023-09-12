@@ -209,7 +209,17 @@ namespace ProblemSource
 
             var userRepositories = AssertSession(training, root.SessionToken, result);
 
-            await eventDispatcher.Dispatch(new { TrainingId = training.Id, training.Username, root.CurrentTime, root.Events }); // E.g. for real-time teacher view
+            await eventDispatcher.Dispatch(new TrainingSyncMessage
+            { 
+                TrainingId = training.Id,
+                Username = training.Username,
+                ClientTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(root.CurrentTime),
+                // Goddamn System.Text.Json, serializing to ValueKind bullsh*t...
+                Data = root.Events
+                    .Where(o => LogItem.GetEventClassName(o) != "UserStatePushLogItem")
+                    .Select(o => o.ToString()).OfType<string>()
+                    .Select(o => { try { return JObject.Parse(o); } catch { return null; } }).OfType<JObject>()
+            }); // E.g. for real-time teacher view
             
             var currentStoredState = (await userRepositories.UserStates.GetAll()).SingleOrDefault();
 

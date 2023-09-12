@@ -15,8 +15,8 @@ export interface NotificationItem {
 }
 
 export interface TrainingUpdateMessage {
-    trainingId: number;
-    username: string;
-    events: any[];
+    TrainingId: number;
+    Username: string;
+    Data: any[];
     message?: string;
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { notificationsStore, userStore } from '../../globalStore.js';
+	import { trainingUpdateStore, userStore } from '../../globalStore.js';
 	import { base } from '$app/paths';
 	import { Realtime } from '../../services/realtime.js';
 	import { onDestroy } from 'svelte';
@@ -22,9 +22,8 @@
 				console.log('disconnected', err);
 			};
 			realtime.onReceived = (msg) => {
-				console.log('received', msg.username, msg.events);
-				notificationsStore.add({ createdAt: new Date(Date.now()), text: msg.username });
-				// $notifications = [...$notifications, { createdAt: new Date(Date.now()), text: msg.username }];
+				console.log('received', msg.Username, msg.Data);
+				trainingUpdateStore.add(msg);
 			};
 			realtimeConnected = null;
 			try {
@@ -47,6 +46,7 @@
 		<a href="{base}/admin/teacher">Teacher</a>
 		<a href="{base}/admin/overview">Overview</a>
 		<a href="{base}/teacher">Teacher2</a>
+		<a href="{base}/admin/realtime">Realtime</a>
 		<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? 'Disconnect' : 'Connect'}</button>
 	{/if}
 </nav>

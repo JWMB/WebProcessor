@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Queues;
 using Newtonsoft.Json.Linq;
+using ProblemSource.Services;
 using System.Text;
 using TrainingApi.Services;
 
@@ -81,12 +82,15 @@ namespace TrainingApi.RealTime
 
                     if (jObj != null)
                     {
-                        var trainingId = jObj.Value<int?>("trainingId");
-                        if (trainingId.HasValue)
+                        var typed = jObj.ToObject<TrainingSyncMessage>(); // TODO: just want to know if we can parse to ITrainingMessage
+                        if (typed != null)
                         {
+                        //var trainingId = jObj.Value<int?>("trainingId");
+                        //if (trainingId.HasValue)
+                        //{
                             // find which clients should receive events:
                             var sendToIds = chatHub.UserConnections
-                                .Where(kv => accessResolver.HasAccess(kv.Value, trainingId.Value, AccessLevel.Read))
+                                .Where(kv => accessResolver.HasAccess(kv.Value, typed.TrainingId, AccessLevel.Read))
                                 .Select(kv => kv.Key)
                                 .ToList();
 
