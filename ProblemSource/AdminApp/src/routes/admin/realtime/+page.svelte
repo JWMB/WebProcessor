@@ -37,17 +37,17 @@
         const now = Date.now().valueOf();
         const xx: TrainingUpdateMessage[] = [
             { TrainingId: 1, Username : "asd qwe", Data: [
-                {offset: 0, class: "AnswerLogItem", correct: true, answer: "-3" },
-                {offset: 0.5, class: "AnswerLogItem", correct: false, answer: "3" },
-                {offset: 1, class: "AnswerLogItem", correct: false, answer: "3" },
-                {offset: 2, class: "AnswerLogItem", correct: false, answer: "3" },
-                {offset: 3, class: "NewProblemLogItem", problem_type: "NPALS", level: 3, problem_string: "9 - 12" },
-                {offset: 4, class: "NewProblemLogItem", problem_type: "NPALS", level: 3, problem_string: "9 - 12" }
+                {offset: 0, className: "AnswerLogItem", correct: true, answer: "-3" },
+                {offset: 0.5, className: "AnswerLogItem", correct: false, answer: "3" },
+                {offset: 1, className: "AnswerLogItem", correct: false, answer: "3" },
+                {offset: 2, className: "AnswerLogItem", correct: false, answer: "3" },
+                {offset: 3, className: "NewProblemLogItem", problem_type: "NPALS", level: 3, problem_string: "9 - 12" },
+                {offset: 4, className: "NewProblemLogItem", problem_type: "NPALS", level: 3, problem_string: "9 - 12" }
             ].map(o => ({ time: new Date(now - o.offset * 60 * 1000), ...o}))
             },
             { TrainingId: 2, Username : "lke qqq", Data: [
-                {offset: 0.1, class: "hello" },
-                {offset: 4.9, class: "hello" }
+                {offset: 0.1, className: "hello" },
+                {offset: 4.9, className: "hello" }
             ].map(o => ({ time: new Date(now - o.offset * 60 * 1000), ...o}))},
         ]
         xx.forEach(o => messageToHistory(o));

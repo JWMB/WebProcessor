@@ -1,24 +1,12 @@
 <script lang="ts">
     export let history: {time: Date, message: any }[] = [];
-    export let cutoff = 5 * 60 * 1000;
-        
-    const timeToFract = (time: Date) => {
-        const diffMs = Date.now().valueOf() - time.valueOf();
-        const normalized = Math.min(1, Math.max(0, diffMs / cutoff));
-
-        const val = Math.pow(normalized, 0.4);
-        return 1.0 - val;
-    };
-    const getPositioning = (time: Date) => {
-        return `position: absolute; left: ${5 + 95 * timeToFract(time)}%`;
-        // return `position: relative; left: ${500 * timeToFract(time)}px`;
-    };
+    export let getPositioning: (date: Date) => string;
 
 
     const getColor = (item: any) =>{
         const msg = item.message;
         if (msg != null) {
-            const className = msg["class"];
+            const className = msg["className"];
             if (className == "AnswerLogItem") {
                 return msg["correct"] ? "#00BB00" : "#EE0000";
             } else if (className == "NewProblemLogItem") {
@@ -33,7 +21,7 @@
 
         const msg = item.message;
         if (msg != null) {
-            const className = msg["class"];
+            const className = msg["className"];
             if (className == "AnswerLogItem") {
                 return `${msg["answer"] || ""}`;
 
@@ -52,7 +40,7 @@
         const getPreviousOfType = (t: string) => {
             if (history == null) return null;
             const tmp = history
-                .filter(o => (o.message || {})["class"] == t)
+                .filter(o => (o.message || {})["className"] == t)
                 .filter(o => o.time < item.time)
                 .toSorted((a, b) => a.time.valueOf() - b.time.valueOf());
             return tmp.length ? tmp[tmp.length - 1] : null
@@ -60,7 +48,7 @@
 
         const msg = item.message;
         if (msg != null) {
-            const className = msg["class"];
+            const className = msg["className"];
             if (className == "AnswerLogItem") {
                 return `Answer: ${getSimpleTitle(item)} (${getSimpleTitle(getPreviousOfType("NewProblemLogItem"))})`;
 
