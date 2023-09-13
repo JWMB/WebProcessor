@@ -58,5 +58,9 @@ export class DateUtils {
         const diff = DateUtils.toDate(dateEnd).valueOf() - DateUtils.toDate(dateStart).valueOf();
         const days = diff / 1000 / 60 / 60 / 24;
         return floor ? Math.floor(days) : days;
-	}
+    }
+    
+    public static getMsBetween(dateStart: string | Date | number, dateEnd: string | Date | number) {
+        return DateUtils.toDate(dateEnd).valueOf() - DateUtils.toDate(dateStart).valueOf();
+    }
 }
