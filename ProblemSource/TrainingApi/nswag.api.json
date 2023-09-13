@@ -799,6 +799,19 @@
         }
       }
     },
+    "/api/Sync/Ping": {
+      "post": {
+        "tags": [
+          "Sync"
+        ],
+        "operationId": "Sync_Ping",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/Sync/DeleteData": {
       "get": {
         "tags": [

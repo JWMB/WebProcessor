@@ -74,6 +74,7 @@ namespace ProblemSource
 
                 case "syncunauthorized":
                 case "sync":
+                case "ping":
                     var root = await ParseBodyOrThrow(context.Request);
                     var isValidationOnly = root.SessionToken == "validate";
                     if (!TryGetTrainingIdFromUsername(root.Uuid, isValidationOnly, out var trainingId2)) // TODO: co-opting SessionToken for now
@@ -82,9 +83,18 @@ namespace ProblemSource
                     }
                     else
                     {
-                        result = isValidationOnly
-                            ? new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" }
-                            : await Sync(root, context.User);
+                        if (action.ToLower() == "ping")
+                        {
+                            var training = await GetTrainingOrThrow(trainingId2, context.User);
+                            await DispatchIncoming(training, root);
+                            result = new SyncResult { };
+                        }
+                        else
+                        {
+                            result = isValidationOnly
+                                ? new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" }
+                                : await Sync(root, context.User);
+                        }
                     }
                     break;
 
@@ -203,23 +213,35 @@ namespace ProblemSource
             return sessionInfo.Session.UserRepositories!;
         }
 
+        private async Task DispatchIncoming(Training training, SyncInput root)
+        {
+            try
+            {
+                await eventDispatcher.Dispatch(new TrainingSyncMessage
+                {
+                    TrainingId = training.Id,
+                    Username = training.Username,
+                    ClientTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(root.CurrentTime),
+                    // Goddamn System.Text.Json, serializing to ValueKind bullsh*t...
+                    Data = root.Events
+                        .Where(o => LogItem.GetEventClassName(o) != "UserStatePushLogItem")
+                        .Select(o => o.ToString()).OfType<string>()
+                        .Select(o => { try { return JObject.Parse(o); } catch { return null; } }).OfType<JObject>()
+                }); // E.g. for real-time teacher view
+            }
+            catch (Exception ex)
+            {
+                log.LogError("Dispatcher", ex);
+            }
+        }
+
         public async Task<SyncResult> Sync(Training training, SyncInput root)
         {
+            await DispatchIncoming(training, root);
+
             var result = new SyncResult();
 
             var userRepositories = AssertSession(training, root.SessionToken, result);
-
-            await eventDispatcher.Dispatch(new TrainingSyncMessage
-            { 
-                TrainingId = training.Id,
-                Username = training.Username,
-                ClientTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(root.CurrentTime),
-                // Goddamn System.Text.Json, serializing to ValueKind bullsh*t...
-                Data = root.Events
-                    .Where(o => LogItem.GetEventClassName(o) != "UserStatePushLogItem")
-                    .Select(o => o.ToString()).OfType<string>()
-                    .Select(o => { try { return JObject.Parse(o); } catch { return null; } }).OfType<JObject>()
-            }); // E.g. for real-time teacher view
             
             var currentStoredState = (await userRepositories.UserStates.GetAll()).SingleOrDefault();
 

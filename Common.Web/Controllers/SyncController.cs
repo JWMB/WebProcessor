@@ -36,6 +36,15 @@ namespace Common.Web.Controllers
         }
 
         [Authorize]
+        [HttpPost]
+        public async Task Ping()
+        {
+            var pipelineName = User?.Claims?.FirstOrDefault(o => o.Type == "pipeline")?.Value ?? "problemsource";
+            await RunPipeline(pipelineName);
+        }
+
+
+        [Authorize]
         [HttpGet]
         public async Task DeleteData([FromQuery] string uuid) // TODO: backwards compability
         {
