@@ -1,4 +1,5 @@
-﻿using Azure.Storage.Queues;
+﻿using Azure;
+using Azure.Storage.Queues;
 using Microsoft.Extensions.Logging;
 
 namespace ProblemSource.Services
@@ -51,7 +52,12 @@ namespace ProblemSource.Services
 
             try
             {
-                await client.SendMessageAsync(Newtonsoft.Json.JsonConvert.SerializeObject(o), timeToLive: TimeSpan.FromMinutes(20));
+                await client.SendMessageAsync(Newtonsoft.Json.JsonConvert.SerializeObject(o), timeToLive: TimeSpan.FromMinutes(5));
+            }
+            catch (RequestFailedException rfEx)
+            {
+                // 413 (The request body is too large and exceeds the maximum permissible limit.)
+                log.LogError(rfEx, "SendMessageAsync");
             }
             catch (Exception ex)
             {
