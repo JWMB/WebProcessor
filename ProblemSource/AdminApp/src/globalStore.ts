@@ -23,16 +23,15 @@ export function getApi() {
     }
 }
 
-//export const trainingUpdates = writable<TrainingUpdateMessage[]>([]);
-
 export const trainingUpdateStore = (() => {
     const store = writable<TrainingUpdateMessage[]>([]);
     return {
         subscribe: store.subscribe,
         add: (item: TrainingUpdateMessage) => {
-            const n = get(store);
-            n.push(item);
-            store.set(n);    
+            // const n = get(store);
+            // n.push(item);
+            // store.set(n);
+            store.set([item]);
         }
     }
  })();

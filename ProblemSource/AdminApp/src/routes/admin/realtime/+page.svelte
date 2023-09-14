@@ -33,28 +33,28 @@
         });
     };
 
-    {
-        const now = Date.now().valueOf();
-        const xx: TrainingUpdateMessage[] = [
-            { TrainingId: 1, Username : "asd qwe", Data: [
-                {offset: 0, className: "AnswerLogItem", correct: true, answer: "-3" },
-                {offset: 0.5, className: "AnswerLogItem", correct: false, answer: "3" },
-                {offset: 1, className: "AnswerLogItem", correct: false, answer: "3" },
-                {offset: 2, className: "AnswerLogItem", correct: false, answer: "3" },
-                {offset: 3, className: "NewProblemLogItem", problem_type: "NPALS", level: 3, problem_string: "9 - 12" },
-                {offset: 4, className: "NewProblemLogItem", problem_type: "NPALS", level: 3, problem_string: "9 - 12" }
-            ].map(o => ({ time: new Date(now - o.offset * 60 * 1000), ...o}))
-            },
-            { TrainingId: 2, Username : "lke qqq", Data: [
-                {offset: 0.1, className: "hello" },
-                {offset: 4.9, className: "hello" }
-            ].map(o => ({ time: new Date(now - o.offset * 60 * 1000), ...o}))},
-        ]
-        xx.forEach(o => messageToHistory(o));
-    }
+    // { // for testing:
+    //     const now = Date.now().valueOf();
+    //     const xx: TrainingUpdateMessage[] = [
+    //         { TrainingId: 1, Username : "asd qwe", Data: [
+    //             {offset: 0, className: "AnswerLogItem", correct: true, answer: "-3" },
+    //             {offset: 0.5, className: "AnswerLogItem", correct: false, answer: "3" },
+    //             {offset: 1, className: "AnswerLogItem", correct: false, answer: "3" },
+    //             {offset: 2, className: "AnswerLogItem", correct: false, answer: "3" },
+    //             {offset: 3, className: "NewProblemLogItem", problem_type: "NPALS", level: 3, problem_string: "9 - 12" },
+    //             {offset: 4, className: "NewProblemLogItem", problem_type: "NPALS", level: 3, problem_string: "9 - 12" }
+    //         ].map(o => ({ time: new Date(now - o.offset * 60 * 1000), ...o}))
+    //         },
+    //         { TrainingId: 2, Username : "lke qqq", Data: [
+    //             {offset: 0.1, className: "hello" },
+    //             {offset: 4.9, className: "hello" }
+    //         ].map(o => ({ time: new Date(now - o.offset * 60 * 1000), ...o}))},
+    //     ]
+    //     xx.forEach(o => messageToHistory(o));
+    // }
 
     trainingUpdateStore.subscribe(msgs => { 
-        console.log("incoming", msgs);
+        // console.log("incoming", msgs);
         msgs.forEach(m => messageToHistory(m));
     });
 
@@ -83,7 +83,7 @@
             <!-- <th style="width: 800px;"> -->
             <th>
                 {#each [0, 0.5, 1, 2, 3, 4, 5] as minutes}
-                    <!-- <span style="{getPositioning(new Date(Date.now().valueOf() - minutes * 60 * 1000))}">{minutes}</span> -->
+                    <span style="{getPositioning(new Date(Date.now().valueOf() - minutes * 60 * 1000))}">{minutes}</span>
                 {/each}
             </th>
         </tr>
