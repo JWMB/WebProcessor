@@ -239,7 +239,7 @@ namespace ProblemSource
 
         public async Task<SyncResult> Sync(Training training, SyncInput root)
         {
-            await DispatchIncoming(training, root);
+            // Disable this for now (rely on the /ping endpoint being called): await DispatchIncoming(training, root);
 
             var result = new SyncResult();
 
