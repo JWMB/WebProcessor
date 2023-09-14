@@ -217,17 +217,19 @@ namespace ProblemSource
         {
             try
             {
+                // E.g. for real-time teacher view
                 await eventDispatcher.Dispatch(new TrainingSyncMessage
                 {
                     TrainingId = training.Id,
                     Username = training.Username,
                     ClientTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(root.CurrentTime),
+                    ReceivedTimestamp = DateTimeOffset.UtcNow,
                     // Goddamn System.Text.Json, serializing to ValueKind bullsh*t...
                     Data = root.Events
                         .Where(o => LogItem.GetEventClassName(o) != "UserStatePushLogItem")
                         .Select(o => o.ToString()).OfType<string>()
                         .Select(o => { try { return JObject.Parse(o); } catch { return null; } }).OfType<JObject>()
-                }); // E.g. for real-time teacher view
+                });
             }
             catch (Exception ex)
             {

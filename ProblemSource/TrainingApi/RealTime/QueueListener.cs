@@ -101,7 +101,14 @@ namespace TrainingApi.RealTime
                         }
                     }
 
-                    client.DeleteMessage(msg.MessageId, msg.PopReceipt);
+                    try
+                    {
+                        client.DeleteMessage(msg.MessageId, msg.PopReceipt);
+                    }
+                    catch (Exception inner)
+                    {
+                        log.LogInformation(inner, "Delete failed");
+                    }
                 }
             }
             catch (Exception ex)

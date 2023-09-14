@@ -28,15 +28,27 @@
             trainingInfos.push({ id: m.TrainingId, username: m.Username });
         }
 
+        const now = Date.now();
+        // Because we can't trust client timestamps, adjust them for now
+        const clientTimestamps = m.Data.map(d => new Date(d["time"] || now).valueOf());
+        clientTimestamps.sort().reverse();
+        const latestClientTimestamp = clientTimestamps[0];
+        let offset = latestClientTimestamp - now;
+        if (!!m.ReceivedTimestamp) {
+            offset = latestClientTimestamp - DateUtils.toDate(m.ReceivedTimestamp).valueOf();
+        }
+
         m.Data.forEach(d => {
-            flatHistory[m.TrainingId].push({ time: new Date(d["time"] || Date.now()), message: d, trainingId: m.TrainingId });
+            const itemTimestamp = new Date(d["time"] || now);
+            let timestamp = new Date(itemTimestamp.valueOf() - offset);
+            flatHistory[m.TrainingId].push({ time: timestamp, message: d, trainingId: m.TrainingId });
         });
     };
 
     // { // for testing:
-    //     const now = Date.now().valueOf();
+    //     const now = Date.now() - 10 * 1000;
     //     const xx: TrainingUpdateMessage[] = [
-    //         { TrainingId: 1, Username : "asd qwe", Data: [
+    //         { TrainingId: 1, Username : "asd qwe", ReceivedTimestamp: new Date(Date.now()), ClientTimestamp: new Date(Date.now()), Data: [
     //             {offset: 0, className: "AnswerLogItem", correct: true, answer: "-3" },
     //             {offset: 0.5, className: "AnswerLogItem", correct: false, answer: "3" },
     //             {offset: 1, className: "AnswerLogItem", correct: false, answer: "3" },
@@ -45,7 +57,7 @@
     //             {offset: 4, className: "NewProblemLogItem", problem_type: "NPALS", level: 3, problem_string: "9 - 12" }
     //         ].map(o => ({ time: new Date(now - o.offset * 60 * 1000), ...o}))
     //         },
-    //         { TrainingId: 2, Username : "lke qqq", Data: [
+    //         { TrainingId: 2, Username : "lke qqq", ReceivedTimestamp: new Date(now), ClientTimestamp: new Date(Date.now()), Data: [
     //             {offset: 0.1, className: "hello" },
     //             {offset: 4.9, className: "hello" }
     //         ].map(o => ({ time: new Date(now - o.offset * 60 * 1000), ...o}))},
