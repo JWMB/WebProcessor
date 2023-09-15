@@ -96,6 +96,7 @@ namespace TrainingApi.Controllers
                 {
                     Created = trainingsInfo.Count,
                     Started = trainingsInfo.Count(o => o.Summary?.TrainedDays > 0),
+                    Underway = numTrainingsWithMinDaysCompleted,
                     Limit = currentUser.Role == Roles.Admin ? 1000 : Math.Max(60, numTrainingsWithMinDaysCompleted + 35),
                     Reusable = trainingsInfo.Where(o => o.Training.Created < DateTimeOffset.UtcNow.AddDays(-1) && (o.Summary?.TrainedDays ?? 0) == 0).Select(o => o.Id).ToList()
                 }
@@ -117,7 +118,6 @@ namespace TrainingApi.Controllers
                 throw new HttpException($"{nameof(numTrainings)}:{numTrainings} exceeds accepted range", StatusCodes.Status400BadRequest);
             else if (numTrainings > maxTrainingsInGroup)
                 throw new HttpException($"{nameof(numTrainings)}:{numTrainings} cannot exceed {maxTrainingsInGroup}", StatusCodes.Status400BadRequest);
-
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);
 
             var numTrainingsToGetFromOtherGroups = 0;
@@ -382,6 +382,7 @@ namespace TrainingApi.Controllers
                 public int Limit { get; set; }
                 public int Created { get; set; }
                 public int Started { get; set; }
+                public int Underway { get; set; }
                 public List<int> Reusable { get; set; } = new();
             }
         }
