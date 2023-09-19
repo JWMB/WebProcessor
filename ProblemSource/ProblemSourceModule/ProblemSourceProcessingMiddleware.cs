@@ -75,7 +75,16 @@ namespace ProblemSource
                 case "syncunauthorized":
                 case "sync":
                 case "ping":
-                    var root = await ParseBodyOrThrow(context.Request);
+                    SyncInput root;
+                    try
+                    {
+                        root = await ParseBodyOrThrow(context.Request);
+                    }
+                    catch (Microsoft.AspNetCore.Connections.ConnectionResetException ex) when (ex.Message.Contains("The client has disconnected"))
+                    {
+                        return;
+                    }
+
                     var isValidationOnly = root.SessionToken == "validate";
                     if (!TryGetTrainingIdFromUsername(root.Uuid, isValidationOnly, out var trainingId2)) // TODO: co-opting SessionToken for now
                     {
