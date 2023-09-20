@@ -1,5 +1,6 @@
 import type { TrainingUpdateMessage } from "src/types";
 import { DateUtils } from "src/utilities/DateUtils";
+import { trainingUpdateStore } from '../globalStore.js';
 
 export class RealtimelineTools {
     public static createPositioningFunction(timespan: number = 5 * 60 * 1000) {
@@ -22,9 +23,12 @@ export class RealtimelineTools {
     }
 
     constructor(private keepAfterExpired: number = 7 * 60 * 1000) {
+        trainingUpdateStore.subscribe(msgs => { 
+            msgs.forEach(m => this.append(m));
+        });
     }
 
-    public static testData() {
+    public static testData(ids: number[] = []) {
         const now = Date.now() - 10 * 1000;
         const xx: TrainingUpdateMessage[] = [
             { TrainingId: 1, Username : "asd qwe", ReceivedTimestamp: new Date(Date.now()), ClientTimestamp: new Date(Date.now()), Data: [
@@ -42,6 +46,9 @@ export class RealtimelineTools {
                 {offset: 4.9, className: "NewPhaseLogItem", exercise: "grid", training_day: 2 }
             ].map(o => ({ time: new Date(now - o.offset * 60 * 1000), ...o}))},
         ]
+        if (ids.length) {
+            return ids.map((o, i) => ({ ...xx[i % 2], TrainingId: o }))
+        }
         return xx;
     }
 
@@ -69,8 +76,11 @@ export class RealtimelineTools {
     private flatHistory: { [key: number]: { time: Date, message: any, trainingId: number }[] } = {};
     private trainingInfos: { id: number, username: string }[] = [];
     
-    public get allData() {
-        return this.trainingInfos.map(o => ({ events: this.flatHistory[o.id], ...o }));
+    public getData(filterIds?: number[] | null) {
+        const filtered = filterIds != null
+            ? this.trainingInfos.filter(o => filterIds.indexOf(o.id) >= 0)
+            : this.trainingInfos;
+        return filtered.map(o => ({ events: this.flatHistory[o.id], ...o }));
     }
 
     public append(m: TrainingUpdateMessage) {

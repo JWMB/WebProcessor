@@ -1,5 +1,4 @@
 <script lang="ts">
-    // import logo from '/static/cleanUIAssets.png';
     import textureMapStr from '/static/cleanUIAssets.json?raw';
 	import { groupByX } from 'src/arrayUtils';
 
@@ -8,10 +7,6 @@
 
     $:visibleItems = history.map(o => ({ item: o, position: getPositioning(o.time) }))
             .filter(o => o.position != null);
-    // const getVisibleItems = () => {
-    //     return history.map(o => ({ item: o, position: getPositioning(o.time) }))
-    //         .filter(o => o.position != null);
-    // };
 
     const createLookup = () => {
         const textureMap = JSON.parse(textureMapStr);
@@ -50,8 +45,6 @@
         }
     };
     
-    // console.log("textureMap", lookup);
-
     const getColor = (item: any) =>{
         const msg = item.message;
         if (msg != null) {
@@ -85,7 +78,6 @@
     };
 
     const getTitle = (item: any) => {
-        //const arr = item.trainingId == null ? null : flatHistory[item.trainingId];
         const getPreviousOfType = (t: string) => {
             if (history == null) return null;
             const tmp = history
@@ -153,7 +145,7 @@
     .tooltip {
       position: relative;
       display: inline-block;
-      border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+      /*border-bottom: 1px dotted black;  If you want dots under the hoverable text */
     }
  
     .tooltip .tooltiptext {
@@ -175,16 +167,8 @@
 </style>
 
 {#each visibleItems as item}
-<!-- <img alt="logo" src="../cleanUIAssets.png" /> -->
 <span class="tooltip" style="color: {getColor(item.item)}; {item.position}">
     {@html getIcon(item.item)}
-    <!-- <svg xmlns="http://www.w3.org/2000/svg" fill="#00aa00" width="18" height="18" viewBox="0 0 24 24">
-        <path d="M19 0h-14c-2.762 0-5 2.239-5 5v14c0 2.761 2.238 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-8.959 17l-4.5-4.319 1.395-1.435 3.08 2.937 7.021-7.183 1.422 1.409-8.418 8.591z"/>
-    </svg> -->
-    <!-- <svg xmlns="http://www.w3.org/2000/svg" fill="#cc0000" width="18" height="18" clip-rule="evenodd" fill-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 24 24">
-        <path d="m12.002 21.534c5.518 0 9.998-4.48 9.998-9.998s-4.48-9.997-9.998-9.997c-5.517 0-9.997 4.479-9.997 9.997s4.48 9.998 9.997 9.998zm0-8c-.414 0-.75-.336-.75-.75v-5.5c0-.414.336-.75.75-.75s.75.336.75.75v5.5c0 .414-.336.75-.75.75zm-.002 3c-.552 0-1-.448-1-1s.448-1 1-1 1 .448 1 1-.448 1-1 1z" fill-rule="nonzero"/>
-    </svg> -->
-
     <span class="tooltiptext">{getTitle(item.item)}</span>
 </span>
 {/each}

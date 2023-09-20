@@ -58,6 +58,24 @@ namespace Tools
             return available.ToList();
         }
 
+        public async Task<List<(int Id, string Email)>> GetUsersFromTrainings(IEnumerable<string>? trainingUsernames = null, IEnumerable<int>? trainingIds = null)
+        {
+            var users = await userRepository.GetAll();
+
+            var trainingIdList = (trainingIds ?? new List<int>()).ToList();
+            if (trainingUsernames?.Any() == true)
+            {
+                trainingIdList.AddRange((await trainingRepository.GetAll()).Where(o => trainingUsernames.Contains(o.Username)).Select(o => o.Id));
+            }
+
+            var idToUser = users.SelectMany(o => o.Trainings.SelectMany(p => p.Value.Select(q => new { User = o, Group = p.Key, Id = q })))
+                .GroupBy(o => o.Id)
+                .ToDictionary(o => o.Key, o => o.ToList());
+
+            var result = idToUser.Where(o => trainingIdList.Contains(o.Key)).Select(o => (o.Key, o.Value.FirstOrDefault()?.User.Email ?? "")).ToList();
+            return result;
+        }
+
         public async Task<List<int>> GetTrainingsForTeacher(string email, IEnumerable<string>? groups = null)
         {
             var user = await userRepository.Get(email);

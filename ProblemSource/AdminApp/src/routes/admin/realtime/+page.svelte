@@ -12,7 +12,7 @@
         RealtimelineTools.testData().forEach(o => rtlTools.append(o));
     }
 
-    let allData = rtlTools.allData;
+    let allData = rtlTools.getData();
 
     trainingUpdateStore.subscribe(msgs => { 
         msgs.forEach(m => rtlTools.append(m));
@@ -21,7 +21,7 @@
     onMount(() => {
         const interval = setInterval(() => {
             rtlTools.clearExpired();
-            allData = rtlTools.allData;
+            allData = rtlTools.getData();
         }, 100);
         return () => clearInterval(interval);
     })
@@ -31,6 +31,7 @@
     <table>
         <tr>
             <th>User</th>
+            <th>Some other column here</th>
             <!-- <th style="width: 800px;"> -->
             <th>
                 {#each [0, 0.5, 1, 2, 3, 4, 5] as minutes}
@@ -41,8 +42,11 @@
         {#each allData as info}
         <tr>
             <td>{info.username}</td>
+            <td>blabla</td>
             <td>
-                <Realtimeline history={info.events} getPositioning={getPositioning}></Realtimeline>
+                <!-- <div style="position: relative;"> -->
+                    <Realtimeline history={info.events} getPositioning={getPositioning}></Realtimeline>
+                <!-- </div> -->
             </td>
         </tr>
     {/each}

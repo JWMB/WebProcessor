@@ -14,6 +14,9 @@ namespace Tools
             var index = 0;
             foreach (var obj in objs)
             {
+                var deleteProps = obj.Properties().Where(o => o.Name.StartsWith("_")).ToList();
+                deleteProps.ForEach(o => o.Remove());
+
                 if (isRP)
                 {
                     Stringify(obj, "distractorDimensions");
