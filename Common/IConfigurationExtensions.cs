@@ -17,7 +17,7 @@ namespace Common
             return typed;
         }
 
-        public static string SectionToJson(this IConfigurationSection section)
+        public static string SectionToJson(this IConfiguration section)
         {
             var entries = new Dictionary<string, string>();
 
@@ -36,5 +36,7 @@ namespace Common
                 ? $"[{string.Join(",", entries.OrderBy(o => int.Parse(o.Key)).Select(o => o.Value))}]"
                 : $"{{{string.Join(",", entries.Select(o => $"\"{o.Key}\": {o.Value}"))}}}";
         }
+
+        public static string ConfigToAzureConfig(this IConfiguration config) => AzureConfigEntry.ToAzureJson(AzureConfigEntry.FromJsonConfigString(SectionToJson(config)));
     }
 }
