@@ -1,41 +1,24 @@
 <script lang="ts">
-	import { trainingUpdateStore, userStore } from '../../globalStore.js';
+	import { realtimeTrainingListener, userStore } from '../../globalStore.js';
 	import { base } from '$app/paths';
-	import { Realtime } from '../../services/realtime.js';
 	import { onDestroy } from 'svelte';
-	import { Startup } from '../../startup.js';
-	import type { TrainingUpdateMessage } from '../../types.js';
+	
+	let realtimeConnected: boolean | null = realtimeTrainingListener.connected();
+	const connectionSignal = (status: boolean | null) => {
+		realtimeConnected = status;
+	}
+	realtimeTrainingListener.connectionSignal.on(connectionSignal);
 
-	const realtime = new Realtime<TrainingUpdateMessage>();
-	let realtimeConnected: boolean | null = false;
-
-	async function toggleRealtimeConnection() {
-		if (realtime.isConnected) {
-			realtimeConnected = null;
-			realtime.disconnect();
+	const toggleRealtimeConnection = async () => {
+		if (realtimeTrainingListener.connected() == true) {
+			realtimeTrainingListener.disconnect();
 		} else {
-			realtime.onConnected = () => {
-				realtimeConnected = true;
-			};
-			realtime.onDisconnected = (err) => {
-				realtimeConnected = false;
-				console.log('disconnected', err);
-			};
-			realtime.onReceived = (msg) => {
-				console.log('received', msg.Username, msg.Data);
-				trainingUpdateStore.add(msg);
-			};
-			realtimeConnected = null;
-			try {
-				await realtime.connect(Startup.resolveLocalServerBaseUrl(window.location));
-			} catch (err) {
-				console.log('error connecting', err);
-			}
+			await realtimeTrainingListener.connect();
 		}
 	}
 
 	onDestroy(() => {
-		realtime.disconnect();
+		realtimeTrainingListener.disconnect();
 	});
 </script>
 

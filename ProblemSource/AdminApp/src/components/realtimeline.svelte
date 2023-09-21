@@ -58,6 +58,11 @@
         return "#000000";
     }
 
+    const getExerciseName = (msg: any) => {
+        const name = ((msg ||{})["exercise"] || "");
+        const index = name.indexOf("#");
+        return index > 0 ? name.substring(0, index) : name;
+    }
     const getSimpleTitle = (item: any) => {
         if (item == null) return "";
 
@@ -71,7 +76,16 @@
                 return `${msg["problem_string"]} ${msg["problem_type"] || ""} level ${msg["level"]}`;
 
             } else if (className == "NewPhaseLogItem") {
-                return `${msg["exercise"]} (day ${msg["training_day"]})`;
+                return `${getExerciseName(msg)}`; // (day ${msg["training_day"]})`;
+
+            } else if (className == "PhaseEndLogItem") {
+                return `PhaseEnd`;
+
+            } else if (className == "LeaveTestLogItem") {
+                return `LeaveTest`;
+
+            } else if (className == "EndOfDayLogItem") {
+                return `EndOfDay`;
             }
         }
         return JSON.stringify(msg);
@@ -110,7 +124,7 @@
             if (className == "AnswerLogItem") {
                 return msg["correct"] ?
                 `
-<svg xmlns="http://www.w3.org/2000/svg" fill="#00aa00" width="18" height="18" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" fill="#00aa00" width="15" height="15" viewBox="0 0 24 24">
     <path d="M19 0h-14c-2.762 0-5 2.239-5 5v14c0 2.761 2.238 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-8.959 17l-4.5-4.319 1.395-1.435 3.08 2.937 7.021-7.183 1.422 1.409-8.418 8.591z"/>
 </svg>
         `:
@@ -122,11 +136,11 @@
 
             } else if (className == "NewProblemLogItem") {
                 return `
-<svg xmlns="http://www.w3.org/2000/svg" fill="#6699ff" width="18" height=18" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" fill="#6699ff" width="12" height=12" viewBox="0 0 24 24">
     <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 18.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25c.691 0 1.25.56 1.25 1.25s-.559 1.25-1.25 1.25zm1.961-5.928c-.904.975-.947 1.514-.935 2.178h-2.005c-.007-1.475.02-2.125 1.431-3.468.573-.544 1.025-.975.962-1.821-.058-.805-.73-1.226-1.365-1.226-.709 0-1.538.527-1.538 2.013h-2.01c0-2.4 1.409-3.95 3.59-3.95 1.036 0 1.942.339 2.55.955.57.578.865 1.372.854 2.298-.016 1.383-.857 2.291-1.534 3.021z"/>
 </svg>`;
             } else if (className == "NewPhaseLogItem") {
-                return `<span style="font-family:ui-monospace; font-size: x-small; font-weight: 800;">${msg["exercise"]}</span>`; 
+                return `<span style="font-family:ui-monospace; font-size: x-small; font-weight: 800;">${getExerciseName(msg)}</span>`; 
                 //return getGameImage(msg["exercise"]);
             } else {
                 // console.log("??", msg);

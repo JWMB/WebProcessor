@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { trainingUpdateStore } from '../../../globalStore.js';
 	import { onMount } from 'svelte';
 	import Realtimeline from 'src/components/realtimeline.svelte';
 	import { RealtimelineTools } from 'src/services/realtimelineTools.js';
@@ -9,14 +8,10 @@
 
     const rtlTools = new RealtimelineTools(cutoff + 2 * 60 * 1000);
     { // for testing:
-        RealtimelineTools.testData().forEach(o => rtlTools.append(o));
+        // RealtimelineTools.testData().forEach(o => rtlTools.append(o));
     }
 
     let allData = rtlTools.getData();
-
-    trainingUpdateStore.subscribe(msgs => { 
-        msgs.forEach(m => rtlTools.append(m));
-    });
 
     onMount(() => {
         const interval = setInterval(() => {

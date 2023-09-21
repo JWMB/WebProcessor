@@ -7,6 +7,8 @@ import { Assistant } from './services/assistant';
 import { Startup } from './startup';
 import { SeverityLevel, type NotificationItem } from './types';
 import type { TrainingUpdateMessage } from './types.js';
+import { Realtime } from './services/realtime';
+import { Signal0 } from './utilities/signal';
 
 let _apiFacade: ApiFacade;
 export function getApi() {
@@ -36,6 +38,41 @@ export const trainingUpdateStore = (() => {
     }
  })();
 
+export const realtimeTrainingListener = (() => { 
+    const realtime = new Realtime<TrainingUpdateMessage>();
+	let realtimeConnected: boolean | null = false;
+
+    const signal = new Signal0<boolean | null>();
+    return {
+        connectionSignal: signal,
+        connect: async () => {
+            if (realtime.isConnected) return;
+
+            realtime.onConnected = () => {
+                realtimeConnected = true;
+                signal.trigger(true);
+			};
+			realtime.onDisconnected = (err) => {
+				realtimeConnected = false;
+                signal.trigger(false);
+			};
+			realtime.onReceived = (msg) => {
+				trainingUpdateStore.add(msg);
+			};
+
+            signal.trigger(null);
+            try {
+				await realtime.connect(Startup.resolveLocalServerBaseUrl(window.location));
+			} catch (err) {
+				console.error('error connecting', err);
+			}
+        },
+        disconnect: () => realtime.disconnect(),
+        connected: () => realtimeConnected,
+        destroy: () => realtime.disconnect()
+    };
+})();
+
 export interface NotificationItemDto extends Omit<NotificationItem, "createdAt"> {
     createdAt?: Date;
 }
@@ -47,7 +84,7 @@ export const notificationsStore = (() => {
         const logFunc = item.severity == SeverityLevel.critical || item.severity == SeverityLevel.error
             ? console.error : (item.severity == SeverityLevel.warning ? console.warn : console.log);
         logFunc(item.text, item);
-
+        
         item.createdAt = item.createdAt ?? new Date(Date.now());
 
         const n = get(store);

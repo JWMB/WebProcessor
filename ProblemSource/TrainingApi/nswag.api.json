@@ -1247,7 +1247,8 @@
       "required": [
         "limit",
         "created",
-        "started"
+        "started",
+        "underway"
       ],
       "properties": {
         "limit": {
@@ -1259,6 +1260,10 @@
           "format": "int32"
         },
         "started": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "underway": {
           "type": "integer",
           "format": "int32"
         },

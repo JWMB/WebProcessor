@@ -1,6 +1,6 @@
 import type { TrainingUpdateMessage } from "src/types";
 import { DateUtils } from "src/utilities/DateUtils";
-import { trainingUpdateStore } from '../globalStore.js';
+import { realtimeTrainingListener, trainingUpdateStore } from '../globalStore.js';
 
 export class RealtimelineTools {
     public static createPositioningFunction(timespan: number = 5 * 60 * 1000) {
@@ -26,6 +26,27 @@ export class RealtimelineTools {
         trainingUpdateStore.subscribe(msgs => { 
             msgs.forEach(m => this.append(m));
         });
+    }
+
+    public get connectionSignal() {
+        return realtimeTrainingListener.connectionSignal;
+    }
+    public get isConnected() {
+        return realtimeTrainingListener.connected();
+    }
+    public async connect() {
+        await realtimeTrainingListener.connect();
+    }
+    public async disconnect() {
+        realtimeTrainingListener.disconnect();
+    }
+    public async toggleConnect() {
+        if (realtimeTrainingListener.connected()) {
+            realtimeTrainingListener.disconnect();
+        } else {
+            await realtimeTrainingListener.connect();
+        }
+            
     }
 
     public static testData(ids: number[] = []) {
@@ -84,25 +105,43 @@ export class RealtimelineTools {
     }
 
     public append(m: TrainingUpdateMessage) {
-        if (this.flatHistory[m.TrainingId] == null) {
-            this.flatHistory[m.TrainingId] = [];
+        let forTraining = this.flatHistory[m.TrainingId];
+        if (forTraining == null) {
+            forTraining = [];
+            this.flatHistory[m.TrainingId] = forTraining;
             this.trainingInfos.push({ id: m.TrainingId, username: m.Username });
         }
 
         const now = Date.now();
-        // Because we can't trust client timestamps, adjust them for now
-        const clientTimestamps = m.Data.map(d => new Date(d["time"] || now).valueOf());
-        clientTimestamps.sort().reverse();
-        const latestClientTimestamp = clientTimestamps[0];
-        let offset = latestClientTimestamp - now;
-        if (!!m.ReceivedTimestamp) {
-            offset = latestClientTimestamp - DateUtils.toDate(m.ReceivedTimestamp).valueOf();
-        }
+        // the "ping" messages are send instantly, so the diff should only be network/service latency
+        const syncNetworkLatency = 30; //TODO: can we get more "real" values? Time from training client to server, server to teacher client?
+        // e.g. client had 12:00:00 when it sent the message, 
+        // server had 12:00:10 (actual time) when it received the massage
+        // - events should be offset with 10 seconds.
+        const timeDiffSync = DateUtils.getMsBetween(m.ClientTimestamp, m.ReceivedTimestamp) - syncNetworkLatency;
+        // TODO: this client (teacher) might also have an incorrect time setting, we should consider that as well:
+        const timeDiffListener = 0;
 
+        // console.log("timeDiffSync", timeDiffSync, m.ClientTimestamp, m.ReceivedTimestamp);
+        // // Because we can't trust client timestamps, adjust them for now
+        // const clientTimestamps = m.Data.map(d => new Date(d["time"] || now).valueOf());
+        // clientTimestamps.sort().reverse();
+        // const latestClientTimestamp = clientTimestamps[0];
+        // let timeDiffClientServer = latestClientTimestamp - now;
+        // if (!!m.ReceivedTimestamp) {
+        //     timeDiffClientServer = latestClientTimestamp - DateUtils.toDate(m.ReceivedTimestamp).valueOf();
+        // }
+
+        const times = forTraining.map(o => (o.message || {})["time"]).filter(o => o != null).map(o => <number>o);
         m.Data.forEach(d => {
-            const itemTimestamp = new Date(d["time"] || now);
-            let timestamp = new Date(itemTimestamp.valueOf() - offset);
-            this.flatHistory[m.TrainingId].push({ time: timestamp, message: d, trainingId: m.TrainingId });
+            const unixTimestamp = d["time"] || now;
+            if (times.indexOf(unixTimestamp) > 0) {
+                // console.log("Identical", unixTimestamp);
+                return; // if we already have items with exact same client timestamp, skip them
+            }
+            let timestamp = new Date(unixTimestamp - timeDiffSync);
+            // console.log("pushing event", timestamp, d);
+            forTraining.push({ time: timestamp, message: d, trainingId: m.TrainingId });
         });
     };
 }

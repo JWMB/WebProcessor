@@ -1,4 +1,5 @@
-﻿using Common.Web;
+﻿using Common;
+using Common.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -39,6 +40,8 @@ var cancellationToken = cts.Token;
 
 var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
 
+//var ooo = config.ConfigToAzureConfig();
+//Console.WriteLine(ooo);
 //var tmp = ClientUtils.CsvToNVRLevelStrings(Path.Join(path, "LevelDefinitionsSO.xlsx - 2023H2.tsv")); // LevelDefinitionsSO.xlsx - 2023H2.tsv  LevelDefinitionsRP.xlsx - Cleaned.tsv
 //Console.WriteLine(tmp);
 //await new OldDbMLFeatures().Run(cancellationToken);
@@ -91,6 +94,7 @@ var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
 
 //var template = await serviceProvider.GetRequiredService<ITrainingTemplateRepository>().Get("template_2023HT");
 //var trainingMod = serviceProvider.CreateInstance<TrainingMod>();
+//var r = await trainingMod.GetUsersFromTrainings(trainingUsernames: new[] { "yuga tumuki", "wawa pimibu", "niro hudedi" });
 //await trainingMod.ChangeTrainingsToTrainingTemplate(actuallyModify: true);
 //var ids = TrainingMod.ExtractTrainingNames(File.ReadAllText(@"C:\Users\uzk446\Desktop\WebProcessor_Files\idsForParse.txt"));
 //await trainingMod.MoveTeachersTrainingsToGroup("EMAIL HERE", ids.Select(o => o.Id), "GROUP HERE", true);
