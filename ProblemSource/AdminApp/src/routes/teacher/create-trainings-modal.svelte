@@ -91,8 +91,8 @@
 	onMount(async () => {
 		createInfo = await apiFacade.trainings.getCreateTrainingsInfo();
 		// createInfo.trainingsQuota.inUse = 40; // testing
-		numTrainingsLeftInQuota = Math.max(0, createInfo.trainingsQuota.limit - createInfo.trainingsQuota.started);
-		numTrainingsForReuse = createInfo.trainingsQuota.started - createInfo.trainingsQuota.started;
+		numTrainingsLeftInQuota = Math.max(0, createInfo.trainingsQuota.limit - createInfo.trainingsQuota.created);
+		numTrainingsForReuse = createInfo.trainingsQuota.reusable?.length || 0;
 		newGroupData.noOfTrainings = Math.min(maxNumNewTrainings, 10);
 		templates = await apiFacade.trainings.getTemplates();
 	});

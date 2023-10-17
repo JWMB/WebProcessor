@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy, onMount, tick } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto } from 'src/apiClient';
 	import Tabs from 'src/components/tabs.svelte';
 	import ProgressBar from './progress-bar.svelte';
@@ -147,6 +147,7 @@
 		<button disabled={realtimeConnected == null} on:click={() => rtlTools.toggleConnect()}>{realtimeConnected  == true ? 'Disconnect' : 'Connect'}</button>
 	{/if}
 	{#if groups && groups.length > 0}
+		(Total: {groups.map(o => o.summaries.length).reduce((p, c) => p + c)} created, {groups.map(o => o.summaries.filter(p => p.trainedDays > 0).length).reduce((p, c) => p + c)} started)
 		<Tabs
 			urlParam="group"
 			tabs={groups.map((g) => {
