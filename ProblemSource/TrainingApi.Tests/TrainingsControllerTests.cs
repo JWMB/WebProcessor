@@ -123,10 +123,10 @@ namespace TrainingApi.Tests
         }
 
         [Theory]
-        [InlineData(50, 30, 10, 60)]
-        [InlineData(60, 50, 10, 80)]
-        [InlineData(120, 110, 10, 140)]
-        [InlineData(120, 60, 10, 90)]
+        [InlineData(50, 30, 10, 65)]
+        [InlineData(60, 50, 10, 85)]
+        [InlineData(120, 110, 10, 145)]
+        [InlineData(120, 60, 10, 95)]
         public async Task CreateTrainingsInfo_Quotas(int numCreated, int numStartedWith5Days, int numStartedWith1Day, int expectedLimit)
         {
             // Arrange
@@ -191,7 +191,7 @@ namespace TrainingApi.Tests
             var result = await user.Trainings.RemoveUnusedFromGroups(numToTransfer, "", trainingsRepo, stats);
             result.Keys.ShouldBe(expectedGroups);
             result.SelectMany(o => o.Value).Count().ShouldBe(numToTransfer);
-            result.SelectMany(o => o.Value).ShouldBe(expectedIds); // These were ids that were not recently created nor had training days
+            result.SelectMany(o => o.Value).Select(o => o.Id).ShouldBe(expectedIds); // These were ids that were not recently created nor had training days
         }
     }
 

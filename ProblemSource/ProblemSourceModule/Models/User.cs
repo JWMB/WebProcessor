@@ -62,7 +62,7 @@ namespace ProblemSourceModule.Models
 
         public List<int> GetAllIds()
         {
-            return Values.SelectMany(o => o).ToList();
+            return Values.SelectMany(o => o).Distinct().ToList();
         }
 
         public async Task<Dictionary<string, List<(int Id, Training Training, TrainingSummary? Summary)>>> GetTrainingsInfo(ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
@@ -78,7 +78,7 @@ namespace ProblemSourceModule.Models
             return result;
         }
 
-        public async Task<Dictionary<string, List<int>>> RemoveUnusedFromGroups(int numTrainings, string exceptGroup, ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
+        public async Task<Dictionary<string, List<Training>>> RemoveUnusedFromGroups(int numTrainings, string exceptGroup, ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
         {
             var info = await GetTrainingsInfo(trainingRepo, statisticsProvider);
 
@@ -91,7 +91,7 @@ namespace ProblemSourceModule.Models
             var numRemainingToTransfer = numTrainings;
 
             var updated = new Dictionary<string, List<int>>();
-            var source = new Dictionary<string, List<int>>();
+            var source = new Dictionary<string, List<Training>>();
 
             foreach (var kv in this.Where(o => o.Key != exceptGroup))
             {
@@ -100,7 +100,7 @@ namespace ProblemSourceModule.Models
 
                 if (forTransfer.Any())
                 {
-                    source[kv.Key] = forTransfer.ToList();
+                    source[kv.Key] = forTransfer.Select(id => trainings.Single(p => p.Id == id)).ToList();
                     updated[kv.Key] = kv.Value.Except(forTransfer).ToList();
                 }
 
@@ -108,6 +108,13 @@ namespace ProblemSourceModule.Models
                 if (numRemainingToTransfer == 0)
                     break;
             }
+
+            if (numRemainingToTransfer > 0)
+                throw new Exception("Not enough unused trainings");
+
+            // Update data only after we have verified enough trainings could be transferred
+            foreach (var item in updated)
+                this[item.Key] = item.Value;
 
             return source;
             // Note: caller updates user repo

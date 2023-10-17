@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using OldDb.Models;
 using ProblemSource.Models;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
@@ -77,6 +78,10 @@ namespace Tools
                 if (trainingPlanName == null)
                     throw new ArgumentException($"{nameof(trainingPlanName)} cannot be null");
 
+                var tp = await trainingPlanRepository.Get(trainingPlanName);
+                if (tp == null)
+                    throw new Exception($"Training plan not found: {trainingPlanName}");
+
                 foreach (var (group, numTrainings) in groupsAndNumTrainings)
                 {
                     if (!user.Trainings.ContainsKey(group))
@@ -86,9 +91,19 @@ namespace Tools
 
                     for (int i = 0; i < numTrainings; i++)
                     {
-                        var training = actuallyCreate
-                            ? await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, trainingPlanName, settings)
-                            : new Training { Id = 1, Username = "FakeTraining" };
+                        var training = new Training
+                        {
+                            TrainingPlanName = trainingPlanName,
+                            Settings = settings ?? TrainingSettings.Default,
+                            Created = DateTimeOffset.UtcNow,
+                            Username = actuallyCreate ? string.Empty : "FakeTraining"
+                        };
+
+                        if (actuallyCreate)
+                        {
+                            await trainingRepository.Add(trainingUsernameService, training);
+                        }
+
                         user.Trainings[group].Add(training.Id);
                         createdTrainings[group].Add(training.Username);
                     }
