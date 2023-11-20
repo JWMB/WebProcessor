@@ -178,17 +178,32 @@ namespace Tools
 
             var minNumDays = 15;
             List<Training> allTrainings;
-            if (false)
+            if (true)
             {
+                var earliestStart = new DateTimeOffset(2023, 6, 15, 0, 0, 0, TimeSpan.Zero);
                 var allSummaries = await CreateTrainingSummaryRepo().GetAll();
-                var includedSummaries = allSummaries.Where(o => o.TrainedDays >= 35).ToList();
+                var includedSummaries = allSummaries
+                    //.Where(o => o.TrainedDays >= 35)
+                    .Where(o => o.TrainedDays >= 6)
+                    .Where(o => o.FirstLogin > earliestStart)
+                    .ToList();
                 var trainingIds = includedSummaries.Select(o => o.Id).ToList();
                 //trainingIds = new List<int> { 16254, 16258 };
 
                 allTrainings = (await trainingsRepo.GetByIds(trainingIds)).ToList();
 
-                var overrides = allTrainings.Where(training => training.Settings.trainingPlanOverrides != null).ToList();
-                allTrainings = overrides;
+                var selectedTrainings = allTrainings
+                    .Where(training => training.Settings.trainingPlanOverrides != null)
+                    .Where(training => training.TrainingPlanName == "2023 HT template")
+                    .ToList();
+
+                var selectedIds = selectedTrainings.Select(o => o.Id).ToList();
+                var joined = selectedTrainings.Join(allSummaries, o => o.Id, o => o.Id, (t, s) => new { Training = t, Summary = s }).ToList();//.Where(o => selectedIds.Contains(o.Id)).ToList();
+
+                var dbgStats = string.Join("\n", joined.Select(o => string.Join("\t", new object[] { o.Training.Id, o.Summary.TrainedDays, o.Summary.FirstLogin, o.Summary.AvgDaysPerWeek, o.Training.TrainingPlanName, }.Select(o => o.ToString()))));
+
+                allTrainings = selectedTrainings;
+                //withOverrides.Where(o => o.TrainingPlanName == "")
             }
             else
             {
@@ -208,9 +223,9 @@ namespace Tools
             var dbg = new List<string>();
             foreach (var training in allTrainings)
             {
-                if (true)
+                if (false)
                 {
-                    var tmp = X(training);
+                    var tmp = GetMods(training);
                     dbg.Add($"{training.Id}\t{tmp.numberlineModEasy}\t{tmp.weightMod}");
                 }
                 else
@@ -242,7 +257,7 @@ namespace Tools
             var x = string.Join("\n", dbg);
         }
 
-        private (bool numberlineModEasy, string weightMod) X(Training training)
+        private (bool numberlineModEasy, string weightMod) GetMods(Training training)
         {
             var numberlineModEasy = false;
             var weightMod = "";
@@ -286,7 +301,7 @@ namespace Tools
 
             var predicted = await predictor.Predict(training, phases);
 
-            var (numberlineModEasy, weightMod) = X(training);
+            var (numberlineModEasy, weightMod) = GetMods(training);
             //var numberlineModEasy = false;
             //var weightMod = "";
             var settings = training.Settings ?? new TrainingSettings();
