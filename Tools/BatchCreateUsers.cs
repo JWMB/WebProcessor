@@ -1,13 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using OldDb.Models;
 using ProblemSource.Models;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
-using System.Linq;
 using System.Net.Mail;
 
 namespace Tools
@@ -171,6 +168,16 @@ namespace Tools
             }
 
             File.WriteAllText($"{rootPath}Sent-{DateTime.Now:dd_HH_mm}.json", JsonConvert.SerializeObject(createdUsersInfo.Select(o => o.User.Email)));
+        }
+
+        public async Task<List<string>> GetEmailsNotAlreadyCreated(string fileWithEmails)
+        {
+            var emails = File.ReadAllLines(fileWithEmails).Select(o => o.Trim().ToLower()).Where(o => o.Length > 2).ToList();
+            var existing = await userRepository.GetAll();
+            var existingEmails = existing.Select(o => o.Email.ToLower()).ToList();
+            var newEmails = emails.Where(o => existingEmails.Contains(o) == false).ToList();
+
+            return newEmails;
         }
     }
 }

@@ -80,6 +80,8 @@ namespace Tools
             //    t => partitionKey));
             //var allSummaries = await trainingSummaries.Value.GetAll();
             var allSummaries = await CreateTrainingSummaryRepo().GetAll();
+            //var start = DateTimeOffset.Parse("2023-01-01");
+            //var numTrainingsAtLeastNDays = allSummaries.Count(o => o.TrainedDays >= minTrainedDays && o.FirstLogin >= start);
 
             var dateWhenAdjustedClientWasReleased = DateTimeOffset.Parse("2023-03-01");
             var withAdjustedClient = allSummaries
@@ -200,7 +202,9 @@ namespace Tools
                 var selectedIds = selectedTrainings.Select(o => o.Id).ToList();
                 var joined = selectedTrainings.Join(allSummaries, o => o.Id, o => o.Id, (t, s) => new { Training = t, Summary = s }).ToList();//.Where(o => selectedIds.Contains(o.Id)).ToList();
 
-                var dbgStats = string.Join("\n", joined.Select(o => string.Join("\t", new object[] { o.Training.Id, o.Summary.TrainedDays, o.Summary.FirstLogin, o.Summary.AvgDaysPerWeek, o.Training.TrainingPlanName, }.Select(o => o.ToString()))));
+                var dbgStats = string.Join("\n", joined.Select(o => string.Join("\t", new object[] { 
+                    o.Training.Id, o.Summary.TrainedDays, o.Summary.FirstLogin, o.Summary.LastLogin, o.Summary.AvgDaysPerWeek.ToString("#.0"), o.Training.TrainingPlanName,
+                }.Select(o => o.ToString()))));
 
                 allTrainings = selectedTrainings;
                 //withOverrides.Where(o => o.TrainingPlanName == "")
