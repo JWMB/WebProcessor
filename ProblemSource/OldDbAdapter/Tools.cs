@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization.Infrastructure;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OldDb.Models;
 using Organization;
@@ -129,7 +128,7 @@ WHERE groups.name LIKE 'Teacher %'";
 
         public async Task X()
         {
-            var byGroupName = await GetTeachersWithTrainings(20, 15);
+            var byGroupName = await GetTeachersWithTrainings(15, 15);
             var withMostTrainings = byGroupName.OrderByDescending(o => o.Value.Count()).First();
             //await Z(withMostTrainings.Value.Take(10));
 
@@ -139,8 +138,15 @@ WHERE groups.name LIKE 'Teacher %'";
             var teachers = await dbSql.Read($"SELECT id, email FROM [admins] WHERE id IN ({string.Join(",", teacherIds)})", (reader, cols) =>
                 new { id = reader.GetInt32(0), email = reader.GetString(1) });
 
-            var emails = string.Join("\n",
-                teachers.Select(o => new { Domain = o.email.Substring(o.email.IndexOf("@") + 1), Email = o.email })
+			var disallowed = new[] { "gmail", "outlook", "hotmail", "zonline.se", "telia", "robinson.nu", "icloud", "freinet.nu", "childmind.org" };
+            var selectedTeachers = teachers
+                .Select(o => new { Domain = o.email.Substring(o.email.IndexOf("@") + 1).ToLower(), Email = o.email })
+                .Where(o => disallowed.Any(d => o.Domain.Contains(d)) == false);
+
+            var uniqueDomains = selectedTeachers.Select(o => o.Domain).Distinct().Order();
+
+			var emails = string.Join("\n",
+				selectedTeachers
                     .OrderBy(o => o.Domain)
                     .Select(o => o.Email)
                 );
