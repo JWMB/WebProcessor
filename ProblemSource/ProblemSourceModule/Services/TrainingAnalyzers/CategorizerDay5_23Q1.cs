@@ -21,7 +21,6 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             this.log = log;
         }
 
-        //public Func<Training, IUserGeneratedDataRepositoryProvider, Task<IMLFeature>> FuncCreateFeatures { get; set; } = CreateFeatures
         private static async Task<IMLFeature> CreateFeatures(Training training, IUserGeneratedDataRepositoryProvider provider)
         {
             if (!int.TryParse(training.AgeBracket.Split('-').Where(o => o.Any()).FirstOrDefault() ?? "6", out var age))
@@ -88,7 +87,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
             public const string Reasoning = "Reasoning";
         }
 
-        public static dynamic? CreateTrigger(int triggerDay, PredictedNumberlineLevel.PerformanceTier tier, (double, double) rnds)
+        public static dynamic? CreateTrigger(int triggerDay, PredictedNumberlineLevel.PerformanceTier tier, (double, double) rnds, bool useLatestVersion = true)
         {
             // TK: only nvr_so - rotation, tangram and nvr_rp can be removed from day 6.
             var plans = new
@@ -98,39 +97,41 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                 NVR_High = new Dictionary<string, int> { { GroupNames.Math, 50 }, { GroupNames.WM, 20 }, { GroupNames.Reasoning, 30 }, { "tangram", 13 }, { "nvr_so", 87 }, { "nvr_rp", 0 }, { "rotation", 0 } }, // { "NVR", 26 }, { "tangram", 4 } },
             };
 
-            //"tangram": 100, "tangram#intro": 100,
-            //"rotation": 0, "rotation#intro": 0
-
-            if (tier == PredictedNumberlineLevel.PerformanceTier.Low)
+            if (useLatestVersion)
             {
-                var trigger = TrainingSettings.CreateWeightChangeTrigger(
-                    rnds.Item1 < 0.5
-                    ? plans.NVR_Std
-                    : plans.NVR_High, triggerDay);
-
-                if (rnds.Item2 < 0.5)
+                if (tier == PredictedNumberlineLevel.PerformanceTier.Low)
                 {
-                    trigger.actionData.properties.phases = TrainingSettings.ConvertToDynamicOrThrow(new Dictionary<string, object> {
+                    var trigger = TrainingSettings.CreateWeightChangeTrigger(
+                        rnds.Item1 < 0.5
+                        ? plans.NVR_Std
+                        : plans.NVR_High, triggerDay);
+
+                    if (rnds.Item2 < 0.5)
+                    {
+                        trigger.actionData.properties.phases = TrainingSettings.ConvertToDynamicOrThrow(new Dictionary<string, object> {
                         {
                             "numberline[\\w#]*",
                             new { problemGeneratorData = new { problemFile = new { path = "numberline_easy_ola_q123.csv" } } } // Note: client updated to include this file
                         } });
+                    }
+                    return trigger;
                 }
-                return trigger;
+                else if (tier == PredictedNumberlineLevel.PerformanceTier.High)
+                {
+                    // Randomize WM vs NVR
+                    return TrainingSettings.CreateWeightChangeTrigger(
+                        rnds.Item1 < 0.5
+                        ? plans.NVR_Std
+                        : plans.WM_Std, triggerDay);
+                }
+                else
+                {
+                    // Standard NVR
+                    return TrainingSettings.CreateWeightChangeTrigger(plans.NVR_Std, triggerDay);
+                }
             }
-            else if (tier == PredictedNumberlineLevel.PerformanceTier.High)
-            {
-                // Randomize WM vs NVR
-                return TrainingSettings.CreateWeightChangeTrigger(
-                    rnds.Item1 < 0.5
-                    ? plans.NVR_Std
-                    : plans.WM_Std, triggerDay);
-            }
-            else
-            {
-                // Standard NVR
-                return TrainingSettings.CreateWeightChangeTrigger(plans.NVR_Std, triggerDay);
-            }
+
+            return null;
         }
     }
 
