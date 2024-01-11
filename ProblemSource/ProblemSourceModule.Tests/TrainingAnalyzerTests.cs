@@ -26,18 +26,20 @@ namespace ProblemSourceModule.Tests
             fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
         }
 
-        [Fact]
-        public void CategorizerDay5_23Q1_Triggers()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CategorizerDay5_23Q1_Triggers(bool useLatestVersion)
         {
-            var low00 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (0, 0));
-            var low11 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (1, 1));
-            var medium = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Medium, (0, 0));
-            var unknown = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Unknown, (0, 0));
-            var high0 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (0, 0));
-            var high1 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (1, 0));
+            var low00 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (0, 0), useLatestVersion);
+            var low11 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (1, 1), useLatestVersion);
+            var medium = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Medium, (0, 0), useLatestVersion);
+            var unknown = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Unknown, (0, 0), useLatestVersion);
+            var high0 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (0, 0), useLatestVersion);
+            var high1 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (1, 0), useLatestVersion);
 
             $"{low00!.actionData.properties.weights.WM}".ShouldBe("38");
-            $"{low11!.actionData.properties.weights.WM}".ShouldBe("20");
+            $"{low11!.actionData.properties.weights.WM}".ShouldBe(useLatestVersion ? "46" : "20");
             $"{medium!.actionData.properties.weights.WM}".ShouldBe("38"); // (medium as object).ShouldBeNull();
             $"{unknown!.actionData.properties.weights.WM}".ShouldBe("38"); //(unknown as object).ShouldBeNull();
             $"{high0!.actionData.properties.weights.WM}".ShouldBe("38");
@@ -46,6 +48,7 @@ namespace ProblemSourceModule.Tests
             $"{low00!.actionData.properties.phases}".ShouldContain("numberline[\\\\w#]*");
             $"{low11!.actionData.properties.phases}".ShouldNotContain("numberline[\\\\w#]*");
         }
+
 
         [Theory]
         [InlineData(10, true)]

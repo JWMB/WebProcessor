@@ -99,6 +99,29 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
             if (useLatestVersion)
             {
+                var plan = rnds.Item1 switch
+                {
+                    < 0.33 => plans.NVR_Std,
+                    < 0.66 => plans.NVR_High,
+                    _ => plans.WM_Std
+                };
+                var trigger = TrainingSettings.CreateWeightChangeTrigger(plan, triggerDay);
+
+                if (tier == PredictedNumberlineLevel.PerformanceTier.Low)
+                {
+                    if (rnds.Item2 < 0.5)
+                    {
+                        trigger.actionData.properties.phases = TrainingSettings.ConvertToDynamicOrThrow(new Dictionary<string, object> {
+                        {
+                            "numberline[\\w#]*",
+                            new { problemGeneratorData = new { problemFile = new { path = "numberline_easy_ola_q123.csv" } } } // Note: client updated to include this file
+                        } });
+                    }
+                }
+                return trigger;
+            }
+            else
+            {
                 if (tier == PredictedNumberlineLevel.PerformanceTier.Low)
                 {
                     var trigger = TrainingSettings.CreateWeightChangeTrigger(
@@ -130,8 +153,6 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
                     return TrainingSettings.CreateWeightChangeTrigger(plans.NVR_Std, triggerDay);
                 }
             }
-
-            return null;
         }
     }
 
