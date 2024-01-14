@@ -48,6 +48,13 @@ namespace ProblemSourceModule.Services.Storage
                     s.customData = new CustomData { };
                     s.Analyzers = new List<string> { nameof(TrainingAnalyzers.CategorizerDay5_23Q1) };
                 }) },
+                new Training { Id = 6, Username = "template_2024HT", TrainingPlanName = "2023 HT template", Settings = CreateSettings(s =>
+                {
+                    s.timeLimits = new List<decimal> { 33 };
+                    s.customData = new CustomData { };
+                    s.Analyzers = new List<string> { nameof(TrainingAnalyzers.CategorizerDay5_24Q1) };
+                }) },
+                // Note: make sure the right template is used (TrainingsController)
             };
 
             return Task.FromResult((IEnumerable<Training>)templates);

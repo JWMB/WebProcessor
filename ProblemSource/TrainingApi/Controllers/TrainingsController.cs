@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OldDb.Models;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
@@ -220,7 +219,7 @@ namespace TrainingApi.Controllers
             if (user.Role != "Admin")
             {
                 // Only provide a the default template when not an admin:
-                var preferredTemplate = "template_2023HT";
+                var preferredTemplate = "template_2024VT"; // template_2023HT
                 templates = templates.Where(o => o.Username == preferredTemplate);
                 if (!templates.Any())
                     throw new Exception($"Template missing: {preferredTemplate}");
