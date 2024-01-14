@@ -79,7 +79,7 @@ namespace TrainingApi.Tests
 
             // Assert
             response.ShouldNotBeNull();
-            response.TrainingsQuota.Limit.ShouldBe(60);
+            response.TrainingsQuota.Limit.ShouldBe(withImpersonation ? 90 : 1000);
             response.TrainingsQuota.Created.ShouldBe(wrapper.ResolvedUser.Trainings.Sum(o => o.Value.Count));
         }
 
@@ -122,11 +122,12 @@ namespace TrainingApi.Tests
             response.Count.ShouldBe(kvSelectedGroup.Value.Count);
         }
 
+        // note: added 30 more to quota
         [Theory]
-        [InlineData(50, 30, 10, 65)]
-        [InlineData(60, 50, 10, 85)]
-        [InlineData(120, 110, 10, 145)]
-        [InlineData(120, 60, 10, 95)]
+        [InlineData(50, 30, 10, 95)] 
+        [InlineData(60, 50, 10, 115)]
+        [InlineData(120, 110, 10, 175)]
+        [InlineData(120, 60, 10, 125)]
         public async Task CreateTrainingsInfo_Quotas(int numCreated, int numStartedWith5Days, int numStartedWith1Day, int expectedLimit)
         {
             // Arrange
