@@ -126,9 +126,9 @@ WHERE groups.name LIKE 'Teacher %'";
             }
         }
 
-        public async Task X()
+        public async Task GetRelevantTeachersFromOldDb()
         {
-            var byGroupName = await GetTeachersWithTrainings(15, 15);
+            var byGroupName = await GetTeachersWithTrainings(minDays: 5, minTrainings: 15);
             var withMostTrainings = byGroupName.OrderByDescending(o => o.Value.Count()).First();
             //await Z(withMostTrainings.Value.Take(10));
 
