@@ -146,7 +146,7 @@ namespace TrainingApi.Controllers
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);
 
             var numAvailableWithoutReusing = Math.Max(0, createTrainingsInfo.TrainingsQuota.Limit - createTrainingsInfo.TrainingsQuota.Created);
-            var numTrainingsToGetFromOtherGroups = numTrainings - numAvailableWithoutReusing;
+            var numTrainingsToGetFromOtherGroups = Math.Max(0, numTrainings - numAvailableWithoutReusing);
 
             if (numTrainingsToGetFromOtherGroups > 0)
             {
@@ -216,16 +216,19 @@ namespace TrainingApi.Controllers
         {
             var templates = await trainingTemplateRepository.GetAll();
             var user = userProvider.UserOrThrow;
-            if (user.Role != "Admin")
+
+            var returnOnlyDefaultTemplate = true; // no GUI for selecting template anyway right now..
+            // var returnOnlyDefaultTemplate = user.Role == "Admin" // Only provide a the default template when not an admin:
+            if (returnOnlyDefaultTemplate)
             {
-                // Only provide a the default template when not an admin:
                 var preferredTemplate = "template_2024VT"; // template_2023HT
                 templates = templates.Where(o => o.Username == preferredTemplate);
                 if (!templates.Any())
                     throw new Exception($"Template missing: {preferredTemplate}");
             }
 
-            return templates.Select(o => new TrainingTemplateDto {
+            return templates.Select(o => new TrainingTemplateDto
+            {
                 Id = o.Id,
                 Name = o.Username.Replace("template_", ""),
                 TrainingPlanName = o.TrainingPlanName,
