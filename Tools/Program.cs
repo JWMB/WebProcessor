@@ -44,6 +44,8 @@ var path = @"C:\Users\uzk446\OneDrive - Telia Company\Desktop\WebProcessor_Files
 //Console.WriteLine(ooo);
 //var tmp = ClientUtils.CsvToNVRLevelStrings(Path.Join(path, "LevelDefinitionsSO.xlsx - 2023H2.tsv")); // LevelDefinitionsSO.xlsx - 2023H2.tsv  LevelDefinitionsRP.xlsx - Cleaned.tsv
 //Console.WriteLine(tmp);
+//var oldDbTools = new OldDbAdapter.Tools(serviceProvider.GetRequiredService<AzureTableConfig>());
+//await oldDbTools.GetRelevantTeachersFromOldDb();
 //await new OldDbMLFeatures().Run(cancellationToken);
 //return;
 
