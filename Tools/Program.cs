@@ -38,8 +38,8 @@ Console.CancelKeyPress += (s, e) =>
 };
 var cancellationToken = cts.Token;
 
-var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
-
+//var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
+var path = @"C:\Users\uzk446\OneDrive - Telia Company\Desktop\WebProcessor_Files\";
 //var ooo = config.ConfigToAzureConfig();
 //Console.WriteLine(ooo);
 //var tmp = ClientUtils.CsvToNVRLevelStrings(Path.Join(path, "LevelDefinitionsSO.xlsx - 2023H2.tsv")); // LevelDefinitionsSO.xlsx - 2023H2.tsv  LevelDefinitionsRP.xlsx - Cleaned.tsv
@@ -110,11 +110,11 @@ var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
 //await trainingMod.ModifySettings(ids);
 
 //var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
-var emails = @"
-".Split('\n').Select(o => o.Trim().ToLower()).Where(o => o.Any());
+//var emails = @"
+//".Split('\n').Select(o => o.Trim().ToLower()).Where(o => o.Any());
 var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
-//var emails = await creator.GetEmailsNotAlreadyCreated(Path.Join(path, "oldemails.txt"));
-//emails = emails.Take(30).ToList();
+var emails = await creator.GetEmailsNotAlreadyCreated(Path.Join(path, "oldemails.txt"));
+emails = emails.Take(30).ToList();
 //await creator.ResetPasswordAndEmail(path, config, emails, true);
 await creator.CreateAndEmail(path, config, emails, true);
 
