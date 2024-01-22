@@ -1,4 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using AngleSharp;
+using AngleSharp.Dom;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NoK.Models.Raw;
 using System.Text.RegularExpressions;
 
@@ -7,20 +10,42 @@ namespace NoK.Tests
     public class Ass
     {
         public List<Subtask> Tasks { get; set; } = new();
+        public List<string> Alternatives { get; set; } = new();
+        public string Body { get; set; } = string.Empty;
+        public string? Suggestion { get; set; }
+        public string? ResponseType { get; set; }
+        public string? Unit { get; set; }
+        public Dictionary<string, string> Settings { get; set; } = new();
 
+
+        public static Ass FromRaw(string json)
+        {
+            var org = JsonConvert.DeserializeObject<Assignment>(json);
+            if (org == null)
+                throw new Exception("Not deserializable");
+            return Create(org);
+        }
 
         public override string ToString()
         {
-            return $"{Tasks.Count}";
+            return $"{Tasks.Count} {Body.Substring(0, 10)}...";
         }
 
         public static Ass Create(Assignment src)
         {
-            var oxos = new List<Oxo>();
+            var result = new Ass();
+
+            result.Body = src.TemplateData.Text;
+            result.Suggestion = src.TemplateData.Suggestion;
+            result.ResponseType = src.TemplateData.ResponseType ?? src.TemplateData.ResponsType;
+            result.Unit = src.TemplateData.Unit;
+
+            var intermediates = new List<Intermediate>();
             var jsonSettings = src.TemplateData.Settings as JObject;
             if (jsonSettings != null)
             {
-                var bloxo = new List<JObject>();
+                var normalized = new List<JObject>();
+                var settings = new Dictionary<string, string>();
                 if (jsonSettings is JObject jSettings)
                 {
                     foreach (var prop in jSettings.Properties())
@@ -28,47 +53,34 @@ namespace NoK.Tests
                         if (int.TryParse(prop.Name.Substring(1), out var index))
                         {
                             index--;
-                            for (var i = bloxo.Count; i <= index; i++)
-                                bloxo.Add(new());
-                            bloxo[index].Add(prop.Name.Remove(1), prop.Value);
+                            for (var i = normalized.Count; i <= index; i++)
+                                normalized.Add(new());
+                            normalized[index].Add(prop.Name.Remove(1), prop.Value);
                         }
                         else
-                        { }
+                        {
+                            settings.Add(prop.Name, prop.Value.ToString());
+                        }
                     }
                 }
-                oxos = bloxo.Select(o => o.ToObject<Oxo>() ?? new()).ToList();
+                result.Settings = settings;
+
+                intermediates = normalized.Select(o => o.ToObject<Intermediate>() ?? new()).ToList();
             }
-            var tasks = oxos
+            var tasks = intermediates
                 .Where(o => o.q != null || o.v != null)
                 .Select(o => new Subtask { Question = Process(o.q ?? o.v) ?? "", AnswerType = o.u ?? "" })
                 .ToList();
             if (!tasks.Any())
                 tasks.Add(new Subtask { Question = "", AnswerType = "" });
+            result.Tasks = tasks;
 
             foreach (var sol in src.Solutions)
             {
                 var found = FindSubtask(sol.Subtask);
                 if (found == null)
                     continue;
-                var sols = JArray.Parse(sol.Solutions);
-                if (sols != null)
-                {
-                    if (sols.Count == 1)
-                        ;
-                        //found.Solution = new Solution{  sols[0].ToString();
-                    found.FullAnswer = sols
-                        .Select(o => Process(o["text"]?.Value<string>()) ?? "")
-                        .Select(o =>
-                        {
-                            if (Regex.IsMatch(o, @"^\s*\<.+\>\s*$"))
-                            {
-
-                            }
-                            return o;
-                        })
-                        .ToList();
-                }
-
+                found.Solution = ParseSolutions(sol.Solutions) ?? new();
                 found.Answer = JArray.Parse(sol.Answers)?.Select(o => Process(o["text"]?.Value<string>())).OfType<string>().ToList();
             }
             foreach (var hint in src.Hints)
@@ -79,25 +91,26 @@ namespace NoK.Tests
                 var hints = JArray.Parse(hint.Hints);
                 if (hints.Count > 1)
                 { }
-                //found.Hints = found.Hint = .Select(o => Process(o["Text"]?.Value<string>()) ?? "")
+                found.Hint = hints.Select(o => Process(o["text"]?.Value<string>()) ?? "").ToList();
             }
 
-
-            return new Ass
+            var responseType = src.TemplateData.ResponseType; // multiple absolute checkbox show
+            if (src.TemplateData.Respons?.Any() == true)
             {
-                Tasks = tasks
-            };
-
-            string? Process(string? s)
-            {
-                return
-                    s == null
-                    ? null
-                    : ContentTools.Process(
-                        s.ReplaceRx(@"\[lucktext[^\]]*\]", "<input type=\"text\"/>")
-                           .ReplaceRx(@"(\<br\s*\/?\>\s*)+$", "")
-                       );
+                var tmp = src.TemplateData.Respons.Select(o => o.Value is string str ? str : "");
+                result.Alternatives = tmp
+                  .Select(Process)
+                  .Select(o => {
+                      var add = "";
+                      if (responseType == "multiple")
+                          add = "<input type=\"checkbox\"/>";
+                      else if (responseType == "checkbox")
+                          add = "<input type=\"checkbox\"/>";
+                      return $"{o}{add}";
+                  }).ToList();
+                // [fraction before="a)" after="=5" num="" den="-3"]
             }
+            return result;
 
             Subtask? FindSubtask(string? id)
             {
@@ -114,9 +127,67 @@ namespace NoK.Tests
                 return null;
             }
         }
+
+        private static string? Process(string? s)
+        {
+            return
+                s == null
+                ? null
+                : ContentTools.Process(
+                    s.ReplaceRx(@"\[lucktext[^\]]*\]", "<input type=\"text\"/>")
+                       .ReplaceRx(@"(\<br\s*\/?\>\s*)+$", "")
+                   );
+        }
+
+        public static List<string>? ParseSolutions(string data)
+        {
+            var sols = JArray.Parse(data);
+            if (sols == null)
+                return null;
+
+            if (sols.Count == 1)
+                ;
+            //found.Solution = new Solution{  sols[0].ToString();
+            return sols
+                .Select(o => Process(o["text"]?.Value<string>()) ?? "")
+                .Select(o =>
+                {
+                    if (Regex.IsMatch(o, @"^\s*\<.+\>\s*$", RegexOptions.Multiline))
+                    {
+                        var wirises = ParseFragment(o).OfType<IElement>()
+                            .SelectMany(o => o.GetElementsByClassName("Wirisformula").Select(ParseWiris))
+                            .Where(o => o.Any());
+                        if (wirises.Any())
+                            return string.Join("\n", wirises);
+                    }
+                    return o;
+                })
+                .ToList();
+        }
+
+        public static string ParseWiris(IElement element)
+        {
+            return (element.GetAttribute("data-mathml") ?? "")
+                               .ReplaceRx(@"«", "<")
+                               .ReplaceRx(@"»", ">")
+                               .ReplaceRx(@"¨", "\"")
+                               .ReplaceRx(@"§(#\d+;)", "&$1");
+        }
+
+        static List<INode> ParseFragment(string? html)
+        {
+            if (html?.Any() == false)
+                return new();
+            var id = Guid.NewGuid().ToString();
+            html = $"<div id={id}>{html}</div>";
+            using var context = BrowsingContext.New(Configuration.Default);
+            using var doc = context.OpenAsync(req => req.Content(html)).Result;
+            var container = doc?.GetElementById(id);
+            return container?.ChildNodes.ToList() ?? new();
+        }
     }
 
-    internal record Oxo(string? q = null, string? u = null, string? v = null, string? h = null);
+    internal record Intermediate(string? q = null, string? u = null, string? v = null, string? h = null);
 
     public class Maintask
     {
@@ -125,12 +196,11 @@ namespace NoK.Tests
 
     public class Subtask
     {
-        public Hint? Hint { get; set; }
-        public List<string>? Solution { get; set; }
+        public List<string>? Hint { get; set; }
         public List<string>? Answer { get; set; }
         public string Question { get; set; } = string.Empty;
-        public string AnswerType { get; set; } = string.Empty;
-        public List<string> FullAnswer { get; set; } = new();
+        public string? AnswerType { get; set; }
+        public List<string> Solution { get; set; } = new();
 
         public override string ToString()
         {
