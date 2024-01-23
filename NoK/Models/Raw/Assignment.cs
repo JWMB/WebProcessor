@@ -430,7 +430,7 @@ namespace NoK.Models.Raw
 
             [JsonProperty("respons", NullValueHandling = NullValueHandling.Ignore)]
             [JsonPropertyName("respons")]
-            public List<Respon> Respons { get; set; }
+            public List<object> Respons { get; set; }
 
             [JsonProperty("responsType", NullValueHandling = NullValueHandling.Ignore)]
             [JsonPropertyName("responsType")]

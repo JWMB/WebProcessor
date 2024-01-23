@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
-namespace NoK.Tests
+namespace NoK
 {
     public static class StringExtensions
     {

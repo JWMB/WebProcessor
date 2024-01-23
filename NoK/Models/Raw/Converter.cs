@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using NoK.Tests;
 
 namespace NoK.Models.Raw
 {

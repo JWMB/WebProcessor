@@ -5,28 +5,61 @@ using Newtonsoft.Json.Linq;
 using NoK.Models.Raw;
 using System.Text.RegularExpressions;
 
-namespace NoK.Tests
+namespace NoK.Models
 {
     public class Subpart
     {
         public string Title { get; set; } = string.Empty;
         public int LessonId { get; set; }
-        public List<Assignment> Assignments { get; set; } = new();
+        public List<IAssignment> Assignments { get; set; } = new();
     }
 
-    public class Assignment
+    public enum ResponseType
     {
-        public List<Subtask> Tasks { get; set; } = new();
-        public List<string> Alternatives { get; set; } = new();
+        None,
+        Multiple,
+        Absolute,
+        Checkbox,
+        Show,
+        Unknown
+    }
+
+    public interface IAssignment
+    {
+        int Id { get; }
+        string Body { get; }
+        string? Suggestion { get; }
+        Dictionary<string, string> Settings { get; }
+        ResponseType ResponseType { get; }
+        List<Subtask> Tasks { get; }
+    }
+
+    public abstract class AssignmentBase : IAssignment
+    {
+        public int Id { get; set; }
         public string Body { get; set; } = string.Empty;
         public string? Suggestion { get; set; }
-        public string? ResponseType { get; set; }
-        public string? Unit { get; set; }
         public Dictionary<string, string> Settings { get; set; } = new();
-        public int Id { get; set; }
+        public ResponseType ResponseType { get; set; }
+
+        public abstract List<Subtask> Tasks { get; }
+    }
+
+    public class AssignmentMultiChoice : AssignmentBase
+    {
+        public List<string> Alternatives { get; set; } = new();
+        public Subtask Task { get; set; }
+        public override List<Subtask> Tasks => new List<Subtask>{ Task };
+    }
+
+    public class Assignment : AssignmentBase
+    {
+        private List<Subtask> tasks = new();
+        public override List<Subtask> Tasks => tasks;
+        public string? Unit { get; set; }
 
 
-        public static Assignment FromRaw(string json)
+        public static IAssignment FromRaw(string json)
         {
             var org = JsonConvert.DeserializeObject<RawAssignment.Assignment>(json);
             if (org == null)
@@ -39,15 +72,38 @@ namespace NoK.Tests
             return $"T:{Tasks.Count} {Body.Substring(0, 10)}...";
         }
 
-        public static Assignment Create(RawAssignment.Assignment src)
+        public static IAssignment Create(RawAssignment.Assignment src)
         {
-            var result = new Assignment();
-
-            result.Body = src.TemplateData.Text;
-            result.Suggestion = src.TemplateData.Suggestion;
-            result.ResponseType = src.TemplateData.ResponseType ?? src.TemplateData.ResponsType;
-            result.Id = src.AssignmentID ?? src.AssignmentId ?? 0;
-            result.Unit = src.TemplateData.Unit;
+            AssignmentBase result;
+            if (src.TemplateData.Respons?.Any() == true)
+            {
+                var multiChoice = new AssignmentMultiChoice();
+                result = multiChoice;
+                multiChoice.Alternatives = src.TemplateData.Respons.Select(o =>
+                {
+                    var val = o switch
+                    {
+                        JProperty jp => jp.Value<string>() ?? "",
+                        JObject jo => jo.Value<string>("value") ?? "",
+                        string str => str,
+                        _ => throw new Exception($"Unknown 'Respons': {o}")
+                    };
+                    return Process(val) ?? "";
+                    //var add = switch result.ResponseType {
+                    //     ResponseType.Multiple => "<input type=\"checkbox\"/>",
+                    //    ResponseType.Checkbox => "<input type=\"checkbox\"/>",
+                    //_ => ""
+                    //}
+                    //return $"{Process(val)}{add}";
+                }).ToList();
+                // [fraction before="a)" after="=5" num="" den="-3"]
+            }
+            else
+            {
+                var regular = new Assignment();
+                regular.Unit = src.TemplateData.Unit;
+                result = regular;
+            }
 
             var intermediates = new List<Intermediate>();
             var jsonSettings = src.TemplateData.Settings as JObject;
@@ -82,7 +138,11 @@ namespace NoK.Tests
                 .ToList();
             if (!tasks.Any())
                 tasks.Add(new Subtask { Question = "", AnswerType = "" });
-            result.Tasks = tasks;
+
+            if (result is AssignmentMultiChoice mc)
+                mc.Task = tasks.Single();
+            else
+                ((Assignment)result).tasks = tasks;
 
             foreach (var sol in src.Solutions)
             {
@@ -103,22 +163,11 @@ namespace NoK.Tests
                 found.Hint = hints.Select(o => Process(o["text"]?.Value<string>()) ?? "").ToList();
             }
 
-            var responseType = src.TemplateData.ResponseType; // multiple absolute checkbox show
-            if (src.TemplateData.Respons?.Any() == true)
-            {
-                var tmp = src.TemplateData.Respons.Select(o => o.Value is string str ? str : "");
-                result.Alternatives = tmp
-                  .Select(Process)
-                  .Select(o => {
-                      var add = "";
-                      if (responseType == "multiple")
-                          add = "<input type=\"checkbox\"/>";
-                      else if (responseType == "checkbox")
-                          add = "<input type=\"checkbox\"/>";
-                      return $"{o}{add}";
-                  }).ToList();
-                // [fraction before="a)" after="=5" num="" den="-3"]
-            }
+            result.Body = src.TemplateData.Text;
+            result.Suggestion = src.TemplateData.Suggestion;
+            result.ResponseType = Enum.TryParse<ResponseType>(src.TemplateData.ResponseType ?? src.TemplateData.ResponsType, true, out var r) ? r : ResponseType.Unknown;
+            result.Id = src.AssignmentID ?? src.AssignmentId ?? 0;
+
             return result;
 
             Subtask? FindSubtask(string? id)
