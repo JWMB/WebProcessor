@@ -7,7 +7,14 @@ using System.Text.RegularExpressions;
 
 namespace NoK.Tests
 {
-    public class Ass
+    public class Subpart
+    {
+        public string Title { get; set; } = string.Empty;
+        public int LessonId { get; set; }
+        public List<Assignment> Assignments { get; set; } = new();
+    }
+
+    public class Assignment
     {
         public List<Subtask> Tasks { get; set; } = new();
         public List<string> Alternatives { get; set; } = new();
@@ -16,11 +23,12 @@ namespace NoK.Tests
         public string? ResponseType { get; set; }
         public string? Unit { get; set; }
         public Dictionary<string, string> Settings { get; set; } = new();
+        public int Id { get; set; }
 
 
-        public static Ass FromRaw(string json)
+        public static Assignment FromRaw(string json)
         {
-            var org = JsonConvert.DeserializeObject<Assignment>(json);
+            var org = JsonConvert.DeserializeObject<RawAssignment.Assignment>(json);
             if (org == null)
                 throw new Exception("Not deserializable");
             return Create(org);
@@ -28,16 +36,17 @@ namespace NoK.Tests
 
         public override string ToString()
         {
-            return $"{Tasks.Count} {Body.Substring(0, 10)}...";
+            return $"T:{Tasks.Count} {Body.Substring(0, 10)}...";
         }
 
-        public static Ass Create(Assignment src)
+        public static Assignment Create(RawAssignment.Assignment src)
         {
-            var result = new Ass();
+            var result = new Assignment();
 
             result.Body = src.TemplateData.Text;
             result.Suggestion = src.TemplateData.Suggestion;
             result.ResponseType = src.TemplateData.ResponseType ?? src.TemplateData.ResponsType;
+            result.Id = src.AssignmentID ?? src.AssignmentId ?? 0;
             result.Unit = src.TemplateData.Unit;
 
             var intermediates = new List<Intermediate>();
@@ -145,9 +154,6 @@ namespace NoK.Tests
             if (sols == null)
                 return null;
 
-            if (sols.Count == 1)
-                ;
-            //found.Solution = new Solution{  sols[0].ToString();
             return sols
                 .Select(o => Process(o["text"]?.Value<string>()) ?? "")
                 .Select(o =>

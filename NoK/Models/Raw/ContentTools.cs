@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
+using NoK.Tests;
 
-namespace NoK.Tests
+namespace NoK.Models.Raw
 {
     public static class ContentTools
     {
@@ -9,7 +10,7 @@ namespace NoK.Tests
             if (preprocess != null)
                 content = preprocess(content);
 
-            content = ContentTools.HandleFakeTags(content);
+            content = HandleFakeTags(content);
             return content;
             //return Replacer.replaceWrapped(content, '`', '`',
             //    s => SimpleMath.parseMath(s),
@@ -27,7 +28,7 @@ namespace NoK.Tests
             {
                 var rx = createRxForTag(tag);
 
-                return (string str) =>
+                return (str) =>
                 {
                     return rx.Replace(str, m =>
                     {
