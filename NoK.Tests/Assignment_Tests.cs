@@ -4,10 +4,10 @@ using Shouldly;
 
 namespace NoK.Tests
 {
-    public partial class UnitTest1
+    public class Assignment_Tests
     {
         [Fact]
-        public void Test1()
+        public void SubParts_Deserialize()
         {
             var dir = new DirectoryInfo("C:\\Users\\jonas\\Downloads\\assignments_141094_16961");
             var filenames = new[] { "assignments_141094_16961.json", "assignment2.json", "someAssignment.json" };
@@ -19,7 +19,8 @@ namespace NoK.Tests
             //var strange = assignments.SelectMany(o => o.Tasks).Where(o => o.Hint?.Count > 1 || o.Solution?.Count > 1);
             //var questions = assignments.SelectMany(o => o.Tasks).Select(o => o.Question).ToList();
 
-            var strangeMultiChoice = assignments.OfType<AssignmentMultiChoice>().Where(o => o.Alternatives.Any() == false);
+            var multiChoice = assignments.OfType<AssignmentMultiChoice>().ToList();
+            multiChoice.Where(o => o.Alternatives.Any() == false).ShouldBeEmpty();
         }
 
         [Fact]

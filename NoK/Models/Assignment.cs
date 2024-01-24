@@ -217,6 +217,8 @@ namespace NoK.Models
                     }
                     return o;
                 })
+                .Select(o => o.Trim())
+                .Where(o => o.Any())
                 .ToList();
         }
 
@@ -251,15 +253,15 @@ namespace NoK.Models
 
     public class Subtask
     {
-        public List<string>? Hint { get; set; }
-        public List<string>? Answer { get; set; }
+        public List<string> Hint { get; set; } = new();
+        public List<string> Answer { get; set; } = new();
         public string Question { get; set; } = string.Empty;
         public string? AnswerType { get; set; }
         public List<string> Solution { get; set; } = new();
 
         public override string ToString()
         {
-            return $"({(Hint == null ? "" : "H")}{(Solution == null ? "" : "S")}){Question}:{AnswerType}";
+            return $"({(Hint?.Any() != true? "" : "H")}{(Solution?.Any() != true ? "" : "S")}{(Answer?.Any() != true ? "" : "A")}){Question}:{AnswerType}";
         }
     }
 }
