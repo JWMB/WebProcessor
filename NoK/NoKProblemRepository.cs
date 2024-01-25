@@ -1,5 +1,6 @@
 ﻿using NoK.Models;
 using NoK.Models.Raw;
+using static NoK.NoKProblemRepository;
 
 namespace NoK
 {
@@ -30,11 +31,12 @@ namespace NoK
 
     public interface IUserResponse
     {
+        string ResponseText { get; }
     }
 
     public class SimpleUserResponse : IUserResponse
     {
-        public string Response { get; set; } = string.Empty;
+        public string ResponseText { get; set; } = string.Empty;
     }
 
     public class SimpleSolutionAnalysis : ISolutionAnalysis
@@ -53,19 +55,21 @@ namespace NoK
 
         public async Task<ISolutionAnalysis> Check(IStimulus stimulus, IUserResponse response)
         {
-            var src = await repo.GetSource(stimulus.Id);
-            if (src is AssignmentMultiChoice mc)
+            var task = await repo.GetSubtask(stimulus.Id);
+            if (task == null)
+                throw new Exception($"Task not found: {stimulus.Id}");
+
+            if (task.Answer.Contains(response.ResponseText))
             {
-                //mc.Task.Answer
+                return new SimpleSolutionAnalysis { IsCorrect = true };
             }
-            else if (src is Assignment rg)
-            {
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-            return new SimpleSolutionAnalysis { IsCorrect = true };
+            return new SimpleSolutionAnalysis { IsCorrect = false };
+            //if (task.Parent is AssignmentMultiChoice mc)
+            //{ }
+            //else if (task.Parent is Assignment rg)
+            //{ }
+            //else
+            //    throw new NotImplementedException();
         }
     }
 
@@ -74,32 +78,67 @@ namespace NoK
         public record Config(string AssignmentResource);
 
         private List<IAssignment> assignments;
+        private readonly Config config;
+
         public NoKProblemRepository(Config config)
         {
             var subparts = RawConverter.ReadRaw(File.ReadAllText(config.AssignmentResource));
             assignments = subparts.SelectMany(o => o.Assignments).ToList();
+            this.config = config;
+        }
+
+        public async Task<Subtask?> GetSubtask(string id)
+        {
+            var src = await GetSource(id); //assignments.SingleOrDefault(o => o.Id == int.Parse(split[0]));
+            if (src == null)
+                return null;
+
+            var split = id.Split('/');
+
+            Subtask? task = null;
+            if (split.Length > 1)
+            {
+                var index = int.Parse(split[1]);
+                if (index < src.Tasks.Count)
+                {
+                    task = src.Tasks[index];
+                }
+                else
+                { }
+            }
+            else if (src.Tasks.Any())
+            {
+                task = src.Tasks.First();
+            }
+            return task;
         }
 
         public Task<IAssignment?> GetSource(string id)
         {
-            var intId = int.Parse(id);
-            return Task.FromResult(assignments.SingleOrDefault(o => o.Id == intId));
+            var split = id.Split('/');
+            return Task.FromResult(assignments.SingleOrDefault(o => o.Id == int.Parse(split[0])));
         }
 
         public async Task<IStimulus?> GetById(string id)
         {
-            var src = await GetSource(id);
+            var src = await GetSubtask(id);
             if (src == null)
                 return null;
-            return new NoKStimulus();
+            return new NoKStimulus {
+                Presentation = src.Parent?.Body ?? "",
+                Question = src.Question ?? "",
+                Id = id,
+                SourceId = $"{nameof(NoKProblemRepository)};{config.AssignmentResource}",
+            };
         }
     }
 
     public class NoKStimulus : IStimulus
     {
         public string Id { get; set; } = string.Empty;
-        public string SourceId => "";
+        public string SourceId { get; set; } = string.Empty;
 
         public string Presentation { get; set; } = string.Empty;
+        public string Question { get; set; } = string.Empty;
     }
 }

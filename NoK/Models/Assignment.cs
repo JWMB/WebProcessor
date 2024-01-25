@@ -32,6 +32,8 @@ namespace NoK.Models
         Dictionary<string, string> Settings { get; }
         ResponseType ResponseType { get; }
         List<Subtask> Tasks { get; }
+
+        public Url? Illustration { get; }
     }
 
     public abstract class AssignmentBase : IAssignment
@@ -43,6 +45,8 @@ namespace NoK.Models
         public ResponseType ResponseType { get; set; }
 
         public abstract List<Subtask> Tasks { get; }
+
+        public Url? Illustration { get; set; }
     }
 
     public class AssignmentMultiChoice : AssignmentBase
@@ -97,6 +101,8 @@ namespace NoK.Models
                     //return $"{Process(val)}{add}";
                 }).ToList();
                 // [fraction before="a)" after="=5" num="" den="-3"]
+                if (!string.IsNullOrEmpty(src.TemplateData.Unit))
+                    throw new Exception($"Unit in {multiChoice.GetType().Name}");
             }
             else
             {
@@ -104,6 +110,9 @@ namespace NoK.Models
                 regular.Unit = src.TemplateData.Unit;
                 result = regular;
             }
+
+            if (!string.IsNullOrEmpty(src.TemplateData.Illustration))
+                result.Illustration = new Url(src.TemplateData.Illustration);
 
             var intermediates = new List<Intermediate>();
             var jsonSettings = src.TemplateData.Settings as JObject;
@@ -139,6 +148,9 @@ namespace NoK.Models
             if (!tasks.Any())
                 tasks.Add(new Subtask { Question = "", AnswerType = "" });
 
+            foreach (var task in tasks)
+                task.Parent = result;
+
             if (result is AssignmentMultiChoice mc)
                 mc.Task = tasks.Single();
             else
@@ -150,7 +162,15 @@ namespace NoK.Models
                 if (found == null)
                     continue;
                 found.Solution = ParseSolutions(sol.Solutions) ?? new();
-                found.Answer = JArray.Parse(sol.Answers)?.Select(o => Process(o["text"]?.Value<string>())).OfType<string>().ToList();
+                var answers = JArray.Parse(sol.Answers);
+                found.Answer = answers.Select(item =>
+                {
+                    if (item["text"] == null)
+                        throw new Exception($"No text node in {result.Id}/{sol.Id}");
+                    var fragments = ParseFragment($"{item["text"]}".Replace("<br>", " "));
+                    return string.Join("\n", fragments.Select(o => o.TextContent.Replace("\n", " ").Trim()).Where(o => o.Any()));
+                }).OfType<string>().ToList();
+                //found.Answer = JArray.Parse(sol.Answers)?.Select(o => Process(o["text"]?.Value<string>())).OfType<string>().ToList();
             }
             foreach (var hint in src.Hints)
             {
@@ -246,13 +266,14 @@ namespace NoK.Models
 
     internal record Intermediate(string? q = null, string? u = null, string? v = null, string? h = null);
 
-    public class Maintask
-    {
-        public List<Subtask> Subtasks { get; set; } = new();
-    }
+    //public class Maintask
+    //{
+    //    public List<Subtask> Subtasks { get; set; } = new();
+    //}
 
     public class Subtask
     {
+        public IAssignment? Parent { get; set; }
         public List<string> Hint { get; set; } = new();
         public List<string> Answer { get; set; } = new();
         public string Question { get; set; } = string.Empty;

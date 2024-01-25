@@ -1,9 +1,4 @@
 ﻿using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NoK.Tests
 {
@@ -12,13 +7,14 @@ namespace NoK.Tests
         [Fact]
         public async Task X()
         {
-            IStimuliRepository problemRepository = new NoKProblemRepository(new NoKProblemRepository.Config(""));
+            IStimuliRepository problemRepository = new NoKProblemRepository(new NoKProblemRepository.Config(@"C:\Users\jonas\Downloads\assignments_141094_16961\assignments_141094_16961.json"));
 
-            var stimulus = await problemRepository.GetById("");
+            var stimulus = await problemRepository.GetById("141087/0"); // 141087 55224
             stimulus.ShouldNotBeNull();
 
             var checker = new NoKSolutionChecker((NoKProblemRepository)problemRepository);
-            await checker.Check(stimulus, new SimpleUserResponse());
+            var analysis = await checker.Check(stimulus, new SimpleUserResponse { ResponseText = "21" });
+            analysis.IsCorrect.ShouldBeTrue();
         }
     }
 }
