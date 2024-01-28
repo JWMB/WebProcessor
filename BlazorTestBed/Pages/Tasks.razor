@@ -1,0 +1,66 @@
+﻿@page "/tasks"
+@using Newtonsoft.Json
+@inject HttpClient Http
+
+<PageTitle>Tasks</PageTitle>
+
+<h1>Tasks</h1>
+
+<div>
+    @if (selectedTask != null)
+    {
+        @((MarkupString)selectedTask.Presentation)
+        @((MarkupString)selectedTask.Question)
+        <InputText @bind-Value="userResponseText"></InputText>
+        <button @onclick=Respond></button>
+        <div>@serverResponseText</div>
+    }
+</div>
+
+@foreach (var info in summaries)
+{
+    <div @onclick="() => Get(info.Id)">@info.Id - @info.Summary</div>
+}
+
+@code {
+    //private List<string> ids = new();
+    private List<IdAndSummary> summaries = new();
+    private Stimulus? selectedTask;
+    private string userResponseText = string.Empty;
+    private string serverResponseText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tmp = await Http.GetStringAsync("https://localhost:7173/api/StimuliResponse/summaries?source=xxx"); //ids
+        summaries = JsonConvert.DeserializeObject<List<IdAndSummary>>(tmp) ?? new();
+        await Get(summaries.First().Id);
+    }
+    private record IdAndSummary(string Id, string Summary);
+
+    private async Task Get(string id)
+    {
+        var tmp = await Http.GetStringAsync($"https://localhost:7173/api/StimuliResponse?id={id}");
+        selectedTask = JsonConvert.DeserializeObject<Stimulus>(tmp);
+    }
+
+    private async Task Respond()
+    {
+        if (selectedTask == null)
+            return;
+        var userResponse = new {
+            Id = selectedTask.Id,
+            SourceId = string.Empty,
+            ResponseText = userResponseText
+        };
+        var tmp = await Http.PostAsJsonAsync($"https://localhost:7173/api/StimuliResponse", userResponse);
+        serverResponseText = await tmp.Content.ReadAsStringAsync();
+    }
+
+    class Stimulus
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Presentation { get; set; } = string.Empty;
+        public string Question { get; set; } = string.Empty;
+        //{"id":"141087/0","sourceId":"NoKStimuliRepository;C:\\Users\\jonas\\Downloads\\assignments_141094_16961\\assignments_141094_16961.json","presentation":"<p><style type=\"text/css\"></style><i>Lös uppgiften utan digitalt verktyg.</i></p><p>Beräkna</p>","question":"`(7*60)/20`"}
+    }
+}
