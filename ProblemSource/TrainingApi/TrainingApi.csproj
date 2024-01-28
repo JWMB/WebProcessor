@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\NoK\NoK.csproj" />
     <ProjectReference Include="..\OldDbAdapter\OldDbAdapter.csproj" />
     <ProjectReference Include="..\ProblemSourceModule\ProblemSourceModule.csproj" />
   </ItemGroup>

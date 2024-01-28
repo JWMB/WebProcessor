@@ -1,54 +1,28 @@
-﻿using NoK.Models;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using NoK.Models;
 using NoK.Models.Raw;
-using static NoK.NoKProblemRepository;
+using ProblemSourceModule.Services.ProblemGenerators;
 
 namespace NoK
 {
-    public interface IStimuliRepository
+    public class NoKDomain : IProblemDomain
     {
-        Task<IStimulus?> GetById(string id);
-    }
-
-    public interface ISolutionChecker
-    {
-        Task<ISolutionAnalysis> Check(IStimulus stimulus, IUserResponse response);
-    }
-
-    public interface ISolutionAnalysis
-    {
-        bool IsCorrect { get; }
-    }
-
-    public interface IHintProvider
-    {
-    }
-
-    public interface IStimulus
-    {
-        string Id { get; }
-        string SourceId { get; }
-    }
-
-    public interface IUserResponse
-    {
-        string ResponseText { get; }
-    }
-
-    public class SimpleUserResponse : IUserResponse
-    {
-        public string ResponseText { get; set; } = string.Empty;
-    }
-
-    public class SimpleSolutionAnalysis : ISolutionAnalysis
-    {
-        public bool IsCorrect { get; set; }
+        public NoKDomain(NoKStimuliRepository.Config config)
+        {
+            var repo = new NoKStimuliRepository(config);
+            StimuliRepository = repo;
+            SolutionChecker = new NoKSolutionChecker(repo);
+        }
+        public ISolutionChecker SolutionChecker { get; init; }
+        public IStimuliRepository StimuliRepository { get; init; }
     }
 
     public class NoKSolutionChecker : ISolutionChecker
     {
-        private readonly NoKProblemRepository repo;
+        private readonly NoKStimuliRepository repo;
 
-        public NoKSolutionChecker(NoKProblemRepository repo)
+        public NoKSolutionChecker(NoKStimuliRepository repo)
         {
             this.repo = repo;
         }
@@ -71,16 +45,18 @@ namespace NoK
             //else
             //    throw new NotImplementedException();
         }
+
+        public IUserResponse Deserialize(object obj) => IProblemDomain.Deserialize<SimpleUserResponse>(obj);
     }
 
-    public class NoKProblemRepository : IStimuliRepository
+    public class NoKStimuliRepository : IStimuliRepository
     {
         public record Config(string AssignmentResource);
 
         private List<IAssignment> assignments;
         private readonly Config config;
 
-        public NoKProblemRepository(Config config)
+        public NoKStimuliRepository(Config config)
         {
             var subparts = RawConverter.ReadRaw(File.ReadAllText(config.AssignmentResource));
             assignments = subparts.SelectMany(o => o.Assignments).ToList();
@@ -128,9 +104,21 @@ namespace NoK
                 Presentation = src.Parent?.Body ?? "",
                 Question = src.Question ?? "",
                 Id = id,
-                SourceId = $"{nameof(NoKProblemRepository)};{config.AssignmentResource}",
+                SourceId = $"{nameof(NoKStimuliRepository)};{config.AssignmentResource}",
             };
         }
+
+        public Task<List<string>> GetAllIds()
+        {
+            var regular = assignments.OfType<Assignment>().ToList();
+            var withAnswers = regular.Where(o => o.Tasks.Any(p => p.Answer.Count == 1)).ToList();
+            var nonNumericAnswers = withAnswers.SelectMany(o => o.Tasks).Where(o => decimal.TryParse(o.Answer.Single(), out var _) == false).ToList();
+            var withNumericAnswers = withAnswers.Except(nonNumericAnswers.Select(o => o.Parent)).ToList();
+            //var idsForWithNumericAnswers = withNumericAnswers.Select(o => o.Id).ToList();
+            return Task.FromResult(withNumericAnswers.SelectMany(o => o.Tasks.Select((_, i) => $"{o.Id}/{i}")).ToList());
+        }
+
+        public IStimulus Deserialize(object obj) => IProblemDomain.Deserialize<NoKStimulus>(obj);
     }
 
     public class NoKStimulus : IStimulus

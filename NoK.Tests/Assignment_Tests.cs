@@ -11,9 +11,7 @@ namespace NoK.Tests
         [Fact]
         public void SubParts_Deserialize()
         {
-            var dir = new DirectoryInfo("C:\\Users\\jonas\\Downloads\\assignments_141094_16961");
-            var filenames = new[] { "assignments_141094_16961.json", "assignment2.json", "someAssignment.json" };
-            var subparts = filenames.SelectMany(o => RawConverter.ReadRaw(File.ReadAllText(Path.Join(dir.FullName, o)))).ToList();
+            var subparts = LoadAllSubparts();
             var assignments = subparts.SelectMany(o => o.Assignments).ToList();
 
             var byUnit = assignments.OfType<Assignment>().GroupBy(o => o.Unit ?? "").ToDictionary(o => o.Key, o => o.ToList());
@@ -23,6 +21,22 @@ namespace NoK.Tests
 
             var multiChoice = assignments.OfType<AssignmentMultiChoice>().ToList();
             multiChoice.Where(o => o.Alternatives.Any() == false).ShouldBeEmpty();
+            multiChoice.Where(o => o.Tasks.Count() != 1).ShouldBeEmpty();
+
+            multiChoice.Where(o => o.Task.Answer.Count() != 1).ShouldBeEmpty();
+            var allMcAnswers = multiChoice.Select(o => o.Task.Answer.Single()).ToList();
+            // hm, no computer-usable answers :(
+
+            var regular = assignments.OfType<Assignment>().ToList();
+            regular.Where(o => o.Tasks.Any(p => p.Answer.Count > 1)).ShouldBeEmpty();
+            var withNoAnswers = regular.Where(o => o.Tasks.Any(p => p.Answer.Count == 0)).ToList();
+
+            var withAnswers = regular.Except(withNoAnswers).ToList();
+
+            var nonNumericAnswers = withAnswers.SelectMany(o => o.Tasks).Where(o => decimal.TryParse(o.Answer.Single(), out var _) == false).ToList();
+
+            var withNumericAnswers = withAnswers.Except(nonNumericAnswers.Select(o => o.Parent)).ToList();
+            var idsForWithNumericAnswers = withNumericAnswers.Select(o => o.Id).ToList();
         }
 
         [Fact]
@@ -37,8 +51,33 @@ namespace NoK.Tests
         public void Course_Deserialize()
         {
             var dir = new DirectoryInfo("C:\\Users\\jonas\\Downloads\\assignments_141094_16961");
-            var content = File.ReadAllText(Path.Join(dir.FullName, "course_2982.json"));
-            var aaa = JsonConvert.DeserializeObject<RawCourse.Root>(content);
+
+            var allCourses = new[] { "course_2982.json", "course_2982.json" }
+                .Select(o => File.ReadAllText(Path.Join(dir.FullName, o)))
+                .Select(JsonConvert.DeserializeObject<RawCourse.Root>).OfType<RawCourse.Root>()
+                .Select(o => o.Content)
+                .ToList();
+
+            var subparts = LoadAllSubparts();
+            var assignmentById = subparts.SelectMany(o => o.Assignments)
+                .ToDictionary(o => o.Id, o => o);
+
+            var aaa = allCourses.SelectMany(o =>
+            o.Chapters.SelectMany(p =>
+            p.Parts.SelectMany(q =>
+            q.SubParts.SelectMany(r =>
+            r.Sections.SelectMany(r => r.SectionAssignmentRelations ?? new List<RawCourse.SectionAssignmentRelation>()))))).ToList();
+
+            var joined = aaa.Select(o => o.AssignmentId == null ? null : assignmentById.TryGetValue(o.AssignmentId.Value, out var a) ? new { Assignment = a, Rel = o } : null)
+                .Where(o => o != null)
+                .ToList();
+        }
+
+        private List<Subpart> LoadAllSubparts()
+        {
+            var dir = new DirectoryInfo("C:\\Users\\jonas\\Downloads\\assignments_141094_16961");
+            var filenames = new[] { "assignments_141094_16961.json", "assignment2.json", "someAssignment.json" };
+            return filenames.SelectMany(o => RawConverter.ReadRaw(File.ReadAllText(Path.Join(dir.FullName, o)))).ToList();
         }
     }
 }

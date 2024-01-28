@@ -143,10 +143,10 @@ namespace NoK.Models
             }
             var tasks = intermediates
                 .Where(o => o.q != null || o.v != null)
-                .Select(o => new Subtask { Question = Process(o.q ?? o.v) ?? "", AnswerType = o.u ?? "" })
+                .Select(o => new Subtask { Question = Process(o.q ?? o.v) ?? "", AnswerTypeString = o.u })
                 .ToList();
             if (!tasks.Any())
-                tasks.Add(new Subtask { Question = "", AnswerType = "" });
+                tasks.Add(new Subtask { Question = "", AnswerTypeString = null });
 
             foreach (var task in tasks)
                 task.Parent = result;
@@ -182,6 +182,8 @@ namespace NoK.Models
                 { }
                 found.Hint = hints.Select(o => Process(o["text"]?.Value<string>()) ?? "").ToList();
             }
+
+            tasks.RemoveAll(o => !o.Question.Any() && !o.Solution.Any() && !o.Answer.Any());
 
             result.Body = src.TemplateData.Text;
             result.Suggestion = src.TemplateData.Suggestion;
@@ -271,14 +273,34 @@ namespace NoK.Models
     //    public List<Subtask> Subtasks { get; set; } = new();
     //}
 
+    public enum AnswerType
+    {
+        Undefined,
+        YesNo
+    }
+
     public class Subtask
     {
         public IAssignment? Parent { get; set; }
         public List<string> Hint { get; set; } = new();
         public List<string> Answer { get; set; } = new();
         public string Question { get; set; } = string.Empty;
-        public string? AnswerType { get; set; }
+        public AnswerType AnswerType { get; set; }
         public List<string> Solution { get; set; } = new();
+
+        public string? AnswerTypeString
+        {
+            set
+            {
+                AnswerType = value switch
+                {
+                    "Ja/Nej" => AnswerType.YesNo,
+                    null => AnswerType.Undefined,
+                    "" => AnswerType.Undefined,
+                    _ => throw new NotImplementedException(value)
+                };
+            }
+        }
 
         public override string ToString()
         {
