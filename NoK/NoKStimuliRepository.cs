@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using NoK.Models;
+﻿using NoK.Models;
 using NoK.Models.Raw;
 using ProblemSourceModule.Services.ProblemGenerators;
 
@@ -46,7 +44,7 @@ namespace NoK
             //    throw new NotImplementedException();
         }
 
-        public IUserResponse Deserialize(object obj) => IProblemDomain.Deserialize<SimpleUserResponse>(obj);
+        public IUserResponse Deserialize(object obj) => IProblemDomain.DeserializeWithId<SimpleUserResponse>(obj);
     }
 
     public class NoKStimuliRepository : IStimuliRepository
@@ -75,12 +73,13 @@ namespace NoK
             if (split.Length > 1)
             {
                 var index = int.Parse(split[1]);
-                if (index < src.Tasks.Count)
-                {
-                    task = src.Tasks[index];
-                }
-                else
-                { }
+                task = src.Tasks.SingleOrDefault(o => o.Index == index);
+                //if (index < src.Tasks.Count)
+                //{
+                //    task = src.Tasks[index];
+                //}
+                //else
+                //{ }
             }
             else if (src.Tasks.Any())
             {
@@ -98,27 +97,37 @@ namespace NoK
         public async Task<IStimulus?> GetById(string id)
         {
             var src = await GetSubtask(id);
-            if (src == null)
-                return null;
-            return new NoKStimulus {
+            return src == null ? null : SubtaskToStimulus(src);
+        }
+
+        private IStimulus SubtaskToStimulus(Subtask src)
+        {
+            return new NoKStimulus
+            {
                 Presentation = src.Parent?.Body ?? "",
                 Question = src.Question ?? "",
-                Id = id,
+                Id = src.Id, // $"{src.Parent.Id}/{src.Index}",
                 SourceId = $"{nameof(NoKStimuliRepository)};{config.AssignmentResource}",
             };
         }
 
-        public Task<List<string>> GetAllIds()
+        public Task<List<IStimulus>> GetAll()
         {
             var regular = assignments.OfType<Assignment>().ToList();
             var withAnswers = regular.Where(o => o.Tasks.Any(p => p.Answer.Count == 1)).ToList();
-            var nonNumericAnswers = withAnswers.SelectMany(o => o.Tasks).Where(o => decimal.TryParse(o.Answer.Single(), out var _) == false).ToList();
-            var withNumericAnswers = withAnswers.Except(nonNumericAnswers.Select(o => o.Parent)).ToList();
-            //var idsForWithNumericAnswers = withNumericAnswers.Select(o => o.Id).ToList();
-            return Task.FromResult(withNumericAnswers.SelectMany(o => o.Tasks.Select((_, i) => $"{o.Id}/{i}")).ToList());
+            var withNonNumericAnswers = withAnswers.SelectMany(o => o.Tasks).Where(o => decimal.TryParse(o.Answer.Single(), out var _) == false).ToList();
+            //var withNumericAnswers = withAnswers.Except(withNonNumericAnswers.Select(o => o.Parent)).ToList();
+            //var toExpose = withNumericAnswers;
+
+            return Task.FromResult(withNonNumericAnswers.Select(SubtaskToStimulus).ToList()); // toExpose.SelectMany(o => o.Tasks).Select(SubtaskToStimulus).ToList());
         }
 
-        public IStimulus Deserialize(object obj) => IProblemDomain.Deserialize<NoKStimulus>(obj);
+        public async Task<List<string>> GetAllIds()
+        {
+            return (await GetAll()).Select(o => o.Id).ToList(); //withNumericAnswers.SelectMany(o => o.Tasks.Select((_, i) => $"{o.Id}/{i}")).ToList());
+        }
+
+        public IStimulus Deserialize(object obj) => IProblemDomain.DeserializeWithId<NoKStimulus>(obj);
     }
 
     public class NoKStimulus : IStimulus

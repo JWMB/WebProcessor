@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NoK.Models.Raw;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace NoK.Models
 {
@@ -148,8 +149,14 @@ namespace NoK.Models
             if (!tasks.Any())
                 tasks.Add(new Subtask { Question = "", AnswerTypeString = null });
 
-            foreach (var task in tasks)
-                task.Parent = result;
+            tasks.Select((o, i) => new { Index = i, Obj = o })
+                .ToList()
+                .ForEach(o => { 
+                    o.Obj.Index = o.Index;
+                    o.Obj.Parent = result;
+                });
+            //foreach (var task in tasks)
+            //    task.Parent = result;
 
             if (result is AssignmentMultiChoice mc)
                 mc.Task = tasks.Single();
@@ -268,11 +275,6 @@ namespace NoK.Models
 
     internal record Intermediate(string? q = null, string? u = null, string? v = null, string? h = null);
 
-    //public class Maintask
-    //{
-    //    public List<Subtask> Subtasks { get; set; } = new();
-    //}
-
     public enum AnswerType
     {
         Undefined,
@@ -287,6 +289,7 @@ namespace NoK.Models
         public string Question { get; set; } = string.Empty;
         public AnswerType AnswerType { get; set; }
         public List<string> Solution { get; set; } = new();
+        public int Index { get; set; }
 
         public string? AnswerTypeString
         {
@@ -301,6 +304,8 @@ namespace NoK.Models
                 };
             }
         }
+
+        public string Id => $"{Parent?.Id}/{Index}";
 
         public override string ToString()
         {

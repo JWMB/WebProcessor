@@ -31,10 +31,20 @@ namespace TrainingApi.Controllers
             return await stimuliRepository.GetAllIds();
         }
 
+        [HttpGet]
+        [Route("summaries")]
+        public async Task<List<object>> GetAllSummaries(string? source = null)
+        {
+            var stimuliRepository = GetProblemDomain(source).StimuliRepository;
+            return (await stimuliRepository.GetAll())
+                .Select(o => (object)new { Id = o.Id, Summary = o.Presentation.Remove(Math.Min(o.Presentation.Length - 1, 20)) })
+                .ToList();
+        }
+
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] object response)
         {
-            var iresponse = IProblemDomain.Deserialize<SimpleUserResponse>(response);
+            var iresponse = IProblemDomain.DeserializeWithId<SimpleUserResponse>(response);
             var domain = GetProblemDomain(iresponse.SourceId);
             var checker = domain.SolutionChecker;
             var typedResponse = checker.Deserialize(response);

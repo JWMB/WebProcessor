@@ -9,7 +9,7 @@ namespace ProblemSourceModule.Services.ProblemGenerators
         ISolutionChecker SolutionChecker { get; }
         IStimuliRepository StimuliRepository { get; }
 
-        public static T Deserialize<T>(object obj) where T: class, IStimulus
+        public static T DeserializeWithId<T>(object obj) where T: class, IStimulusId
         {
             var stim = obj switch
             {
@@ -29,6 +29,7 @@ namespace ProblemSourceModule.Services.ProblemGenerators
     {
         Task<IStimulus?> GetById(string id);
         Task<List<string>> GetAllIds();
+        Task<List<IStimulus>> GetAll();
         IStimulus Deserialize(object obj);
     }
 
@@ -47,13 +48,18 @@ namespace ProblemSourceModule.Services.ProblemGenerators
     {
     }
 
-    public interface IStimulus
+    public interface IStimulusId
     {
         string Id { get; }
         string SourceId { get; }
     }
 
-    public interface IUserResponse : IStimulus
+    public interface IStimulus : IStimulusId
+    {
+        string Presentation { get; }
+    }
+
+    public interface IUserResponse : IStimulusId
     {
         string ResponseText { get; }
     }
