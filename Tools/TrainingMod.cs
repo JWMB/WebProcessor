@@ -133,12 +133,22 @@ namespace Tools
             var template = templateNameElseLatest == null ? templates.Last() : templates.Where(o => o.Username == templateNameElseLatest).Single();
 
             IEnumerable<Training> trainings;
+            List<TrainingSummary> trainingsTooFarAlong = new();
+            var orgTrainingIds = trainingIds?.ToList() ?? new();
             if (trainingIds == null)
             {
                 trainings = await trainingRepository.GetAll();
-                var summaries = (await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id))).OfType<TrainingSummary>();
-                var trainingsTooFarAlong = summaries.Where(o => o.TrainedDays > 3).ToList();
-                trainingIds = trainings.Select(o => o.Id).Except(trainingsTooFarAlong.Select(o => o.Id));
+                orgTrainingIds = trainings.Select(o => o.Id).ToList();
+                //TrainingSummaries.GetAll()
+                var summaries = await statisticsProvider.GetAllTrainingSummaries();
+                //var summaries = (await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id))).OfType<TrainingSummary>();
+                trainingsTooFarAlong = summaries.Where(o => o.TrainedDays > 3).ToList();
+                trainingIds = trainings.Select(o => o.Id).Except(trainingsTooFarAlong.Select(o => o.Id)).ToList();
+                {
+                    var recentlyLoggedIn = summaries.Where(o => trainingIds.Contains(o.Id) && o.LastLogin > DateTimeOffset.UtcNow.AddDays(-10)).ToList();
+                    var joined = trainings.Join(recentlyLoggedIn, o => o.Id, o => o.Id, (t, s) => new { Training = t, Summary = s });
+                    var tochange = joined.Where(o => o.Training.TrainingPlanName != template.Username).ToList();
+                }
             }
             else
                 trainings = await trainingRepository.GetByIds(trainingIds);
