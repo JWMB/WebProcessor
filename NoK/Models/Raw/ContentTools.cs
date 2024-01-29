@@ -9,9 +9,12 @@ namespace NoK.Models.Raw
             if (preprocess != null)
                 content = preprocess(content);
 
+            if (content.Contains("[vektor") || content.Contains("[exempel"))
+            { }
+
             content = HandleFakeTags(content);
             return content;
-            //return Replacer.replaceWrapped(content, '`', '`',
+            //return Replacer.ReplaceWrapped(content, "`", "`",
             //    s => SimpleMath.parseMath(s),
             //    s => s);
         }
@@ -20,7 +23,7 @@ namespace NoK.Models.Raw
         {
             Regex createRxForTag(string tag)
             {
-                return new Regex(@$"\[${tag}([^\]]+)\](.+?)?\[\/${tag}\]");
+                return new Regex(@$"\[{tag}([^\]]+)\](.+?)?\[\/{tag}\]");
             }
 
             Func<string, string> createHandleTag(string tag, Func<Dictionary<string, string>, string> render)
@@ -31,6 +34,7 @@ namespace NoK.Models.Raw
                 {
                     return rx.Replace(str, m =>
                     {
+                        // TODO: do this in C#
                         //var template = document.createElement("template");
                         var innerHtml = $"<div {m.Groups[0].Value}>{m.Groups[1].Value}</div>";
                         //template.innerHTML = innerHtml;
@@ -71,4 +75,38 @@ namespace NoK.Models.Raw
             return result;
         }
     }
+
+    public static class Replacer
+    {
+        public delegate string Replace(string s, int? start, int? end);
+        public static string ReplaceWrapped(string str, string openingString, string closingString, Replace? replaceInner = null, Replace? replaceOuter = null)
+        {
+            var index = 0;
+            var isInside = false;
+            var lookFor = openingString;
+            var parts = new List<string>();
+
+            void Add(int i, int n)
+            {
+                var part = str.Substring(i, n);
+                parts.Add((!isInside ? replaceInner?.Invoke(part, i, n) : replaceOuter?.Invoke(part, i, n)) ?? part);
+            }
+
+            while (true)
+            {
+                var next = str.IndexOf(lookFor, index);
+                isInside = !isInside;
+                if (next < 0)
+                {
+                    Add(index, str.Length);
+                    break;
+                }
+                Add(index, next);
+                lookFor = isInside ? openingString : closingString;
+                index = next + 1;
+            }
+            return parts.Any() ? string.Join("", parts) : replaceOuter == null ? str : replaceOuter(str, index, null);
+        }
+    }
+
 }

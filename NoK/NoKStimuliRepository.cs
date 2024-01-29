@@ -1,4 +1,5 @@
-﻿using NoK.Models;
+﻿using LLM;
+using NoK.Models;
 using NoK.Models.Raw;
 using ProblemSourceModule.Services.ProblemGenerators;
 
@@ -6,11 +7,11 @@ namespace NoK
 {
     public class NoKDomain : IProblemDomain
     {
-        public NoKDomain(NoKStimuliRepository.Config config)
+        public NoKDomain(NoKStimuliRepository.Config config, ISimpleCompletionService? completionService = null)
         {
             var repo = new NoKStimuliRepository(config);
             StimuliRepository = repo;
-            SolutionChecker = new NoKSolutionChecker(repo);
+            SolutionChecker = new NoKSolutionChecker(repo, completionService);
         }
         public ISolutionChecker SolutionChecker { get; init; }
         public IStimuliRepository StimuliRepository { get; init; }
@@ -19,10 +20,12 @@ namespace NoK
     public class NoKSolutionChecker : ISolutionChecker
     {
         private readonly NoKStimuliRepository repo;
+        private readonly ISimpleCompletionService? completionService;
 
-        public NoKSolutionChecker(NoKStimuliRepository repo)
+        public NoKSolutionChecker(NoKStimuliRepository repo, ISimpleCompletionService? completionService = null)
         {
             this.repo = repo;
+            this.completionService = completionService;
         }
 
         public async Task<ISolutionAnalysis> Check(IStimulus stimulus, IUserResponse response)
@@ -35,6 +38,44 @@ namespace NoK
             {
                 return new SimpleSolutionAnalysis { IsCorrect = true };
             }
+
+            if (completionService != null)
+            {
+                var prompt =
+    $"""
+Din uppgift är att försöka hjälpa användaren att lösa en matteuppgift.
+
+Om användaren gett ett korrekt svar, ska du svara "OK"
+Om användaren gett ett felaktigt svar, ska du ge en ledtråd för hur problemet kan lösas, och försöka beskriva vilka misstag användaren verkar ha gjort.
+Ge inte det korrekta svaret, ge istället ledtrådar som kan hjälpa användaren att själv lösa problemet.
+T.ex., om problemet var "3+5*8" och användaren svarar "64" så kan du svara "Glöm inte att multiplikation går före addition"
+
+Här är problemet som användaren fått:
+---
+{task.Parent?.Body}
+{task.Question}
+---
+
+Här är lite material relaterat till problemet:
+---
+{string.Join("\n", task.Solution)}
+{string.Join("\n", task.Hint)}
+{string.Join("\n", task.Answer)}
+---
+
+Användaren svarade med följande:
+---
+{response.ResponseText}
+---
+
+Återigen, lös inte problemet, utan ge användaren tips och ledtrådar om hur man kan tänka för att lösa det!
+""";
+                var completion = await completionService.GetChatCompletion(prompt);
+                if (completion?.Trim().ToUpper() == "OK")
+                    return new SimpleSolutionAnalysis { IsCorrect = true };
+                return new SimpleSolutionAnalysis { IsCorrect = false, Feedback = completion ?? "" };
+            }
+
             return new SimpleSolutionAnalysis { IsCorrect = false };
             //if (task.Parent is AssignmentMultiChoice mc)
             //{ }

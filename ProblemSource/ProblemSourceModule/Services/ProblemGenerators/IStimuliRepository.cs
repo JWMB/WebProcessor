@@ -42,6 +42,7 @@ namespace ProblemSourceModule.Services.ProblemGenerators
     public interface ISolutionAnalysis
     {
         bool IsCorrect { get; }
+        string? Feedback { get; }
     }
 
     public interface IHintProvider
@@ -76,5 +77,6 @@ namespace ProblemSourceModule.Services.ProblemGenerators
     public class SimpleSolutionAnalysis : ISolutionAnalysis
     {
         public bool IsCorrect { get; set; }
+        public string Feedback { get; set; } = string.Empty;
     }
 }

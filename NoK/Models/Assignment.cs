@@ -4,7 +4,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NoK.Models.Raw;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace NoK.Models
 {
@@ -14,6 +13,10 @@ namespace NoK.Models
         public int LessonId { get; set; }
         public List<IAssignment> Assignments { get; set; } = new();
     }
+    public class Section
+    { }
+    public class Lesson
+    { }
 
     public enum ResponseType
     {
@@ -142,6 +145,7 @@ namespace NoK.Models
 
                 intermediates = normalized.Select(o => o.ToObject<Intermediate>() ?? new()).ToList();
             }
+
             var tasks = intermediates
                 .Where(o => o.q != null || o.v != null)
                 .Select(o => new Subtask { Question = Process(o.q ?? o.v) ?? "", AnswerTypeString = o.u })
@@ -192,8 +196,8 @@ namespace NoK.Models
 
             tasks.RemoveAll(o => !o.Question.Any() && !o.Solution.Any() && !o.Answer.Any());
 
-            result.Body = src.TemplateData.Text;
-            result.Suggestion = src.TemplateData.Suggestion;
+            result.Body = Process(src.TemplateData.Text) ?? "";
+            result.Suggestion = Process(src.TemplateData.Suggestion) ?? "";
             result.ResponseType = Enum.TryParse<ResponseType>(src.TemplateData.ResponseType ?? src.TemplateData.ResponsType, true, out var r) ? r : ResponseType.Unknown;
             result.Id = src.AssignmentID ?? src.AssignmentId ?? 0;
 
@@ -217,13 +221,27 @@ namespace NoK.Models
 
         private static string? Process(string? s)
         {
-            return
-                s == null
-                ? null
-                : ContentTools.Process(
-                    s.ReplaceRx(@"\[lucktext[^\]]*\]", "<input type=\"text\"/>")
-                       .ReplaceRx(@"(\<br\s*\/?\>\s*)+$", "")
-                   );
+            if (s == null)
+                return null;
+
+            var fragments = ParseFragment(s).Where(o => o.TextContent.Trim().Any()).ToList();
+            while (true)
+            {
+                // clean up lots of unnecessary <section>
+                fragments = fragments.Where(o => o.TextContent.Trim().Any()).ToList();
+                if (fragments.Count == 1 && fragments.Single().NodeName == "SECTION")
+                {
+                    fragments = fragments.Single().ChildNodes.ToList();
+                    continue;
+                }
+                s = string.Join("\n", fragments.OfType<IElement>().Select(o => o.OuterHtml));
+                break;
+            }
+
+            return ContentTools.Process(
+                s.ReplaceRx(@"\[lucktext[^\]]*\]", "<input type=\"text\"/>")
+                    .ReplaceRx(@"(\<br\s*\/?\>\s*)+$", "")
+                );
         }
 
         public static List<string>? ParseSolutions(string data)

@@ -1,5 +1,6 @@
 ﻿using Common.Web;
 using Common.Web.Services;
+using LLM;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -8,8 +9,10 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
+using NoK;
 using PluginModuleBase;
 using ProblemSource.Services;
+using ProblemSourceModule.Services.ProblemGenerators;
 using System.Data;
 using System.Text;
 using TrainingApi.ErrorHandling;
@@ -206,6 +209,10 @@ namespace TrainingApi
         {
             //TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, config, "AppSettings");
             ConfigureAuthentication(services, config, env);
+
+            services.AddSingleton<ISimpleCompletionService>(sp => new AzureOpenAICompletionService(sp.GetRequiredService<AzureOpenAICompletionService.Config>()));
+            services.AddSingleton<IProblemDomain>(sp => 
+                new NoKDomain(new NoKStimuliRepository.Config(@"C:\Users\jonas\Downloads\assignments_141094_16961\assignments_141094_16961.json"), sp.GetService<ISimpleCompletionService>()));
 
             var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
             services.AddSingleton<ITableClientFactory, TableClientFactory>();

@@ -8,10 +8,12 @@ namespace TrainingApi.Controllers
     [Route("api/[controller]")]
     public class StimuliResponseController : ControllerBase
     {
+        private readonly IProblemDomain problemDomain;
         private readonly ILogger<UsersController> log;
 
-        public StimuliResponseController(ILogger<UsersController> logger)
+        public StimuliResponseController(IProblemDomain problemDomain, ILogger<UsersController> logger)
         {
+            this.problemDomain = problemDomain;
             log = logger;
         }
 
@@ -52,12 +54,12 @@ namespace TrainingApi.Controllers
             if (problem == null)
                 throw new Exception("not found");
             var analysis = await checker.Check(problem, typedResponse);
-            return analysis.IsCorrect ? Ok() : BadRequest();
+            return analysis.IsCorrect ? Ok() : BadRequest(analysis.Feedback);
         }
 
         private IProblemDomain GetProblemDomain(string? id = null)
         {
-            return new NoKDomain(new NoKStimuliRepository.Config(@"C:\Users\jonas\Downloads\assignments_141094_16961\assignments_141094_16961.json"));
+            return problemDomain;
         }
     }
 }
