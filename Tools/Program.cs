@@ -38,8 +38,8 @@ Console.CancelKeyPress += (s, e) =>
 };
 var cancellationToken = cts.Token;
 
-//var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
-var path = @"C:\Users\uzk446\OneDrive - Telia Company\Desktop\WebProcessor_Files\";
+var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
+
 //var ooo = config.ConfigToAzureConfig();
 //Console.WriteLine(ooo);
 //var tmp = ClientUtils.CsvToNVRLevelStrings(Path.Join(path, "LevelDefinitionsSO.xlsx - 2023H2.tsv")); // LevelDefinitionsSO.xlsx - 2023H2.tsv  LevelDefinitionsRP.xlsx - Cleaned.tsv
