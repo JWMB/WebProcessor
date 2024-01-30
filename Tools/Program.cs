@@ -44,8 +44,10 @@ var path = @"C:\Users\uzk446\OneDrive - Telia Company\Desktop\WebProcessor_Files
 //Console.WriteLine(ooo);
 //var tmp = ClientUtils.CsvToNVRLevelStrings(Path.Join(path, "LevelDefinitionsSO.xlsx - 2023H2.tsv")); // LevelDefinitionsSO.xlsx - 2023H2.tsv  LevelDefinitionsRP.xlsx - Cleaned.tsv
 //Console.WriteLine(tmp);
-//var oldDbTools = new OldDbAdapter.Tools(serviceProvider.GetRequiredService<AzureTableConfig>());
-//await oldDbTools.GetRelevantTeachersFromOldDb();
+var oldDbTools = new OldDbAdapter.Tools(serviceProvider.GetRequiredService<AzureTableConfig>());
+var emails = await oldDbTools.GetRelevantTeachersFromOldDb();
+var dbg = string.Join("\n", emails);
+
 //await new OldDbMLFeatures().Run(cancellationToken);
 //return;
 
@@ -115,7 +117,8 @@ var path = @"C:\Users\uzk446\OneDrive - Telia Company\Desktop\WebProcessor_Files
 //var emails = @"
 //".Split('\n').Select(o => o.Trim().ToLower()).Where(o => o.Any());
 var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
-var emails = await creator.GetEmailsNotAlreadyCreated(Path.Join(path, "oldemails.txt"));
+//var emails = File.ReadAllLines(Path.Join(path, "oldemails.txt")).Select(o => o.Trim().ToLower()).Where(o => o.Length > 2).ToList();
+emails = await creator.GetEmailsNotAlreadyCreated(emails);
 emails = emails.Take(30).ToList();
 //await creator.ResetPasswordAndEmail(path, config, emails, true);
 await creator.CreateAndEmail(path, config, emails, true);

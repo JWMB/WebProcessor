@@ -126,30 +126,31 @@ WHERE groups.name LIKE 'Teacher %'";
             }
         }
 
-        public async Task GetRelevantTeachersFromOldDb()
+        public async Task<List<string>> GetRelevantTeachersFromOldDb()
         {
             var byGroupName = await GetTeachersWithTrainings(minDays: 5, minTrainings: 15);
-            var withMostTrainings = byGroupName.OrderByDescending(o => o.Value.Count()).First();
+            var orderedByMostTrainings = byGroupName.OrderByDescending(o => o.Value.Count()).ToList();
             //await Z(withMostTrainings.Value.Take(10));
+            //var totalGoodTrainingsForTeachers = byGroupName.Values.SelectMany(o => o).Distinct().ToList();
 
-            var totalGoodTrainingsForTeachers = byGroupName.Values.SelectMany(o => o).Distinct().ToList();
-
-            var teacherIds = byGroupName.Select(o => int.Parse(o.Key.Replace("Teacher ", "")));
-            var teachers = await dbSql.Read($"SELECT id, email FROM [admins] WHERE id IN ({string.Join(",", teacherIds)})", (reader, cols) =>
-                new { id = reader.GetInt32(0), email = reader.GetString(1) });
-
-			var disallowed = new[] { "gmail", "outlook", "hotmail", "zonline.se", "telia", "robinson.nu", "icloud", "freinet.nu", "childmind.org" };
+            var teacherIds = orderedByMostTrainings.Select(o => int.Parse(o.Key.Replace("Teacher ", ""))).ToList();
+            var teachers = (await dbSql.Read($"SELECT id, email FROM [admins] WHERE id IN ({string.Join(",", teacherIds)})", (reader, cols) =>
+                new { id = reader.GetInt32(0), email = reader.GetString(1) }))
+                .OrderBy(o => teacherIds.IndexOf(o.id))
+                .ToList();
+ 
+            var disallowed = new[] { "gmail", "outlook", "hotmail", "zonline.se", "telia", "robinson.nu", "icloud", "freinet.nu", "childmind.org", "dibber.com", "msn.com", "bigpond.com", "me.com" };
             var selectedTeachers = teachers
                 .Select(o => new { Domain = o.email.Substring(o.email.IndexOf("@") + 1).ToLower(), Email = o.email })
                 .Where(o => disallowed.Any(d => o.Domain.Contains(d)) == false);
 
             var uniqueDomains = selectedTeachers.Select(o => o.Domain).Distinct().Order();
+            var suspect = uniqueDomains.Where(o => !o.EndsWith(".se") && !o.EndsWith(".fi") && !o.EndsWith(".dk") && !o.EndsWith(".no")).ToList();
 
-			var emails = string.Join("\n",
-				selectedTeachers
+            return selectedTeachers
                     .OrderBy(o => o.Domain)
                     .Select(o => o.Email)
-                );
+                    .ToList();
         }
     }
 
