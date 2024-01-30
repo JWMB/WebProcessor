@@ -27,6 +27,7 @@ namespace ProblemSourceModule.Services.ProblemGenerators
 
     public interface IStimuliRepository
     {
+        Task Init();
         Task<IStimulus?> GetById(string id);
         Task<List<string>> GetAllIds();
         Task<List<IStimulus>> GetAll();

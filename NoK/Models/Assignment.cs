@@ -191,7 +191,7 @@ namespace NoK.Models
                 var hints = JArray.Parse(hint.Hints);
                 if (hints.Count > 1)
                 { }
-                found.Hint = hints.Select(o => Process(o["text"]?.Value<string>()) ?? "").ToList();
+                found.Hint = hints.Select(o => Process(o["text"]?.Value<string>(), true) ?? "").ToList();
             }
 
             tasks.RemoveAll(o => !o.Question.Any() && !o.Solution.Any() && !o.Answer.Any());
@@ -219,11 +219,11 @@ namespace NoK.Models
             }
         }
 
-        private static string? Process(string? s)
+        private static string? RemoveRedundantWrapperElements(string? s)
         {
             if (s == null)
                 return null;
-
+            var modified = false;
             var fragments = ParseFragment(s).Where(o => o.TextContent.Trim().Any()).ToList();
             while (true)
             {
@@ -232,11 +232,22 @@ namespace NoK.Models
                 if (fragments.Count == 1 && fragments.Single().NodeName == "SECTION")
                 {
                     fragments = fragments.Single().ChildNodes.ToList();
+                    modified = true;
                     continue;
                 }
-                s = string.Join("\n", fragments.OfType<IElement>().Select(o => o.OuterHtml));
-                break;
+                return modified
+                    ? string.Join("\n", fragments.OfType<IElement>().Select(o => o.OuterHtml))
+                    : s;
             }
+        }
+
+        private static string? Process(string? s, bool removeRedundantWrappers = false)
+        {
+            if (s == null)
+                return null;
+
+            if (removeRedundantWrappers)
+                s = RemoveRedundantWrapperElements(s);
 
             return ContentTools.Process(
                 s.ReplaceRx(@"\[lucktext[^\]]*\]", "<input type=\"text\"/>")
@@ -251,7 +262,7 @@ namespace NoK.Models
                 return null;
 
             return sols
-                .Select(o => Process(o["text"]?.Value<string>()) ?? "")
+                .Select(o => Process(o["text"]?.Value<string>(), true) ?? "")
                 .Select(o =>
                 {
                     if (Regex.IsMatch(o, @"^\s*\<.+\>\s*$", RegexOptions.Multiline))

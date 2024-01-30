@@ -7,14 +7,76 @@ namespace NoK
 {
     public class NoKDomain : IProblemDomain
     {
+        private NoKStimuliRepository repo;
+
         public NoKDomain(NoKStimuliRepository.Config config, ISimpleCompletionService? completionService = null)
         {
-            var repo = new NoKStimuliRepository(config);
+            repo = new NoKStimuliRepository(config);
             StimuliRepository = repo;
             SolutionChecker = new NoKSolutionChecker(repo, completionService);
         }
+
+        public async Task Init()
+        {
+            await repo.Init();
+        }
+
         public ISolutionChecker SolutionChecker { get; init; }
         public IStimuliRepository StimuliRepository { get; init; }
+    }
+
+    public class BlobFileFetcher
+    {
+        private readonly Config config;
+
+        public record Config(string connectionString);
+        public BlobFileFetcher(Config config)
+        {
+            this.config = config;
+        }
+
+        public async Task<string> Fetch(string path)
+        {
+            var baseUri = config.connectionString.StartsWith("UseDevelopmentStorage") ? "http://127.0.0.1:10000/devstoreaccount1" : config.connectionString;
+            var url = new Uri(baseUri);
+            //var accountName = url.AbsolutePath.Trim('/');
+            url = url.AppendPath(path);
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            //request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
+            //    "SharedKey",
+            //    $"{accountName}:{key}");
+            request.Headers.Date = DateTimeOffset.UtcNow;
+            //x-ms-version
+            using var client = new HttpClient();
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStringAsync();
+            }
+            throw new Exception(response.StatusCode.ToString());
+        }
+    }
+
+    public static class UriExtensions
+    {
+        public static Uri WithPath(this Uri uri, string path)
+        {
+            return new Uri($"{uri.GetSchemeAndHost()}/{path}");
+        }
+        public static Uri AppendPath(this Uri uri, string path)
+        {
+            var combined = $"{uri.AbsolutePath}/{path}".Replace("//", "/");
+            return new Uri($"{uri.GetSchemeAndHost()}{combined}{uri.Query}");
+        }
+
+        public static string GetSchemeAndHost(this Uri uri)
+        {
+            var port = (uri.Scheme.ToLower() == "https" && uri.Port != 443)
+                || (uri.Scheme.ToLower() == "http" && uri.Port != 80)
+                ? $":{uri.Port}"
+                : "";
+            return $"{uri.Scheme.ToLower()}://{uri.DnsSafeHost}{port}";
+        }
     }
 
     public class NoKSolutionChecker : ISolutionChecker
@@ -92,14 +154,22 @@ Användaren svarade med följande:
     {
         public record Config(string AssignmentResource);
 
-        private List<IAssignment> assignments;
+        private List<IAssignment> assignments = new();
         private readonly Config config;
 
         public NoKStimuliRepository(Config config)
         {
-            var subparts = RawConverter.ReadRaw(File.ReadAllText(config.AssignmentResource));
-            assignments = subparts.SelectMany(o => o.Assignments).ToList();
             this.config = config;
+        }
+
+        public async Task Init()
+        {
+            var json = config.AssignmentResource.Contains(":\\")
+                ? File.ReadAllText(config.AssignmentResource)
+                : await new BlobFileFetcher(new BlobFileFetcher.Config("UseDevelopmentStorage=true")).Fetch(config.AssignmentResource);
+            //var json = await fetcher.Fetch(config.AssignmentResource); // "nok/assignments_141094_16961/assignments_141094_16961.json");
+            var subparts = RawConverter.ReadRaw(json);
+            assignments = subparts.SelectMany(o => o.Assignments).ToList();
         }
 
         public async Task<Subtask?> GetSubtask(string id)

@@ -211,10 +211,15 @@ namespace TrainingApi
             ConfigureAuthentication(services, config, env);
 
             services.AddSingleton<ISimpleCompletionService>(sp => new AzureOpenAICompletionService(sp.GetRequiredService<AzureOpenAICompletionService.Config>()));
-            services.AddSingleton<IProblemDomain>(sp => 
-                new NoKDomain(new NoKStimuliRepository.Config(@"C:\Users\jonas\Downloads\assignments_141094_16961\assignments_141094_16961.json"), sp.GetService<ISimpleCompletionService>()));
+            services.AddSingleton<IProblemDomain>(sp =>
+            {
+                var config = new NoKStimuliRepository.Config("nok/assignments_141094_16961/assignments_141094_16961.json");
+                var result = new NoKDomain(config, sp.GetService<ISimpleCompletionService>());
+                result.Init().Wait();
+                return result;
+            });
 
-            var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
+        var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
             services.AddSingleton<ITableClientFactory, TableClientFactory>();
             ServiceConfiguration.ConfigureProcessingPipelineServices(services, plugins);
             return plugins;
