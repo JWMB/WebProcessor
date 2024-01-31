@@ -1,4 +1,5 @@
 using BlazorTestBed;
+using BlazorTestBed.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
@@ -14,4 +15,5 @@ await builder.Build().RunAsync();
 
 void AddServices(IServiceCollection services)
 {
+    services.AddSingleton<StimuliResponseService>();
 }

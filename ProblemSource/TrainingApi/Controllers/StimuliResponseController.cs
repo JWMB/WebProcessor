@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using NoK;
 using ProblemSourceModule.Services.ProblemGenerators;
 
 namespace TrainingApi.Controllers
