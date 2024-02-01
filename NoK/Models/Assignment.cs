@@ -1,5 +1,6 @@
 ﻿using AngleSharp;
 using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NoK.Models.Raw;
@@ -57,7 +58,7 @@ namespace NoK.Models
     {
         public List<string> Alternatives { get; set; } = new();
         public Subtask Task { get; set; }
-        public override List<Subtask> Tasks => new List<Subtask>{ Task };
+        public override List<Subtask> Tasks => new List<Subtask> { Task };
     }
 
     public class Assignment : AssignmentBase
@@ -66,6 +67,7 @@ namespace NoK.Models
         public override List<Subtask> Tasks => tasks;
         public string? Unit { get; set; }
 
+        public bool ShowAllSubtasks { get; set; }
 
         public static IAssignment FromRaw(string json)
         {
@@ -155,7 +157,7 @@ namespace NoK.Models
 
             tasks.Select((o, i) => new { Index = i, Obj = o })
                 .ToList()
-                .ForEach(o => { 
+                .ForEach(o => {
                     o.Obj.Index = o.Index;
                     o.Obj.Parent = result;
                 });
@@ -178,7 +180,7 @@ namespace NoK.Models
                 {
                     if (item["text"] == null)
                         throw new Exception($"No text node in {result.Id}/{sol.Id}");
-                    var fragments = ParseFragment($"{item["text"]}".Replace("<br>", " "));
+                    var fragments = INodeExtensions.ParseFragment($"{item["text"]}".Replace("<br>", " "));
                     return string.Join("\n", fragments.Select(o => o.TextContent.Replace("\n", " ").Trim()).Where(o => o.Any()));
                 }).OfType<string>().ToList();
                 //found.Answer = JArray.Parse(sol.Answers)?.Select(o => Process(o["text"]?.Value<string>())).OfType<string>().ToList();
@@ -197,6 +199,62 @@ namespace NoK.Models
             tasks.RemoveAll(o => !o.Question.Any() && !o.Solution.Any() && !o.Answer.Any());
 
             result.Body = Process(src.TemplateData.Text) ?? "";
+            if (result.Body.Contains("<input"))
+            {
+                var nodes = INodeExtensions.ParseFragment(result.Body);
+                var inputs = nodes.SelectMany(o => o.DescendantsAndSelf<IHtmlInputElement>()).ToList();
+                //var matches = new Regex(@"<input").Matches(result.Body);
+                if (inputs.Any())
+                {
+                    var tmp = new Regex(@"(<br/?\s*>)[^<]*<input").Matches(result.Body);
+                    if (tmp.Count < inputs.Count)
+                    {
+                        var groupedByParent = inputs.GroupBy(o => (o.Parent as IHtmlElement)?.OuterHtml).ToList();
+                        for (int i = tasks.Count; i < groupedByParent.Count; i++)
+                            tasks.Add(new Subtask { Parent = result, Index = i });
+                        groupedByParent.Select((o, i) => new { Html = o.Key, Index = i }).ToList() //o.First().Parent
+                            .ForEach(o =>
+                            {
+                                tasks[o.Index].Question = o.Html ?? "";
+                            });
+                        nodes.ForEach(o => o.RemoveDescendants(inputs.Select(o => o.Parent).OfType<INode>()));
+                        var stripped = string.Join("\n", nodes.OfType<IHtmlElement>().Select(o => o.OuterHtml));
+
+                        result.Body = stripped;
+                    }
+                    else
+                    {
+                        if (result.Body.Contains("a)"))
+                        {
+                            var alts = new Regex(@"<br/?>\s*\w\)\s+").Matches(result.Body);
+                            if (alts.Count < 2)
+                            { }
+                            else
+                            {
+                                var questions = ExtractEmbeddedQuestions(nodes);
+
+                                result.Body = string.Join("\n", nodes.Select(o => o.ToHtml()));
+                                foreach (var item in questions)
+                                    result.Body = result.Body.Replace((item as IHtmlElement)?.InnerHtml ?? "", "");
+
+                                for (int i = tasks.Count; i < questions.Count; i++)
+                                    tasks.Add(new Subtask { Parent = result, Index = i });
+
+                                questions.Select((o, i) => new { Node = o, Index = i }).ToList()
+                                    .ForEach(o => tasks[o.Index].Question = o.Node.ToHtml() ?? ""); //(o.Parent as IHtmlElement)?.InnerHtml
+                            }
+                        }
+                        else
+                        { }
+                    }
+                    //if (tasks.Count > 1)
+                    //{ }
+                    //else if (tasks.Count == 1 && tasks.Single().Question.Any())
+                    //{
+                    //}
+                }
+            }
+
             result.Suggestion = Process(src.TemplateData.Suggestion) ?? "";
             result.ResponseType = Enum.TryParse<ResponseType>(src.TemplateData.ResponseType ?? src.TemplateData.ResponsType, true, out var r) ? r : ResponseType.Unknown;
             result.Id = src.AssignmentID ?? src.AssignmentId ?? 0;
@@ -219,12 +277,30 @@ namespace NoK.Models
             }
         }
 
+        public static List<INode> ExtractEmbeddedQuestions(IEnumerable<INode> nodes)
+        {
+            var rx = new Regex(@"^\s*\w\)\s+");
+            var candidates = nodes.SelectMany(o => o.Descendants().OfType<IText>().Where(p => rx.IsMatch(p.Text))).ToList();
+
+            return candidates.Select((o, i) =>
+            {
+                var next = i < candidates.Count - 1 ? candidates[i + 1] : null;
+                var copy = INodeExtensions.CreateCopyUntilMatch(o, node => node == next, true);
+                return copy.Parent;
+            })
+                .Where(o => o is not null)
+                .Select(o => o!)
+                //.OfType<INode>()
+                .ToList();
+            /*<p>För vilka positiva heltalsvärden på `a` är kvoten `36`/`(a`/`10)`<br>a) mindre än 1<br>`a` <input type="text"><br>b) större än 9<br>`a` <input type="text"><br>c) mindre än 9<br>`a` <input type="text"><br>d) större än 3?<br>`a` <input type="text"></p>*/
+        }
+
         private static string? RemoveRedundantWrapperElements(string? s)
         {
             if (s == null)
                 return null;
             var modified = false;
-            var fragments = ParseFragment(s).Where(o => o.TextContent.Trim().Any()).ToList();
+            var fragments = INodeExtensions.ParseFragment(s).Where(o => o.TextContent.Trim().Any()).ToList();
             while (true)
             {
                 // clean up lots of unnecessary <section>
@@ -267,7 +343,7 @@ namespace NoK.Models
                 {
                     if (Regex.IsMatch(o, @"^\s*\<.+\>\s*$", RegexOptions.Multiline))
                     {
-                        var wirises = ParseFragment(o).OfType<IElement>()
+                        var wirises = INodeExtensions.ParseFragment(o).OfType<IElement>()
                             .SelectMany(o => o.GetElementsByClassName("Wirisformula").Select(ParseWiris))
                             .Where(o => o.Any());
                         if (wirises.Any())
@@ -287,18 +363,6 @@ namespace NoK.Models
                                .ReplaceRx(@"»", ">")
                                .ReplaceRx(@"¨", "\"")
                                .ReplaceRx(@"§(#\d+;)", "&$1");
-        }
-
-        static List<INode> ParseFragment(string? html)
-        {
-            if (html?.Any() == false)
-                return new();
-            var id = Guid.NewGuid().ToString();
-            html = $"<div id={id}>{html}</div>";
-            using var context = BrowsingContext.New(Configuration.Default);
-            using var doc = context.OpenAsync(req => req.Content(html)).Result;
-            var container = doc?.GetElementById(id);
-            return container?.ChildNodes.ToList() ?? new();
         }
     }
 
@@ -338,7 +402,7 @@ namespace NoK.Models
 
         public override string ToString()
         {
-            return $"({(Hint?.Any() != true? "" : "H")}{(Solution?.Any() != true ? "" : "S")}{(Answer?.Any() != true ? "" : "A")}){Question}:{AnswerType}";
+            return $"({(Hint?.Any() != true ? "" : "H")}{(Solution?.Any() != true ? "" : "S")}{(Answer?.Any() != true ? "" : "A")}){Question}:{AnswerType}";
         }
     }
 }

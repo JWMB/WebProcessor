@@ -1,5 +1,8 @@
+using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
 using AngleSharp.Io;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NoK.Models;
 using NoK.Models.Raw;
 using Shouldly;
@@ -8,6 +11,24 @@ namespace NoK.Tests
 {
     public class Assignment_Tests
     {
+        [Fact]
+        public void CopyUntil()
+        {
+            var html =
+"""
+<p>Skriv sökta talet.</p>
+<p>För vilka positiva heltalsvärden på `a` är kvoten `36`/`(a`/`10)`<br>a) mindre än 1<br>`a` <input
+		type="text" /><br>b) större än 9<br>`a` <input type="text" /><br>c) mindre än 9<br>`a` <input
+		type="text" /><br>d) större än 3?<br>`a` <input type="text" /></p>
+""";
+            var fragments = INodeExtensions.ParseFragment(html);
+            var xx = fragments.SelectMany(o => o.DescendantsAndSelf<IText>()).First(o => o.Text.StartsWith("a)"));
+            var tmp = INodeExtensions.CreateCopyUntilMatch(xx, node => node.TextContent.StartsWith("b)"), true);
+            var aa = (tmp.Parent as IHtmlElement)?.InnerHtml;
+
+            var questions = Assignment.ExtractEmbeddedQuestions(fragments);
+        }
+
         [Fact]
         public void SubParts_Deserialize()
         {
@@ -18,6 +39,8 @@ namespace NoK.Tests
             var byType = assignments.OfType<Assignment>().GroupBy(o => o.ResponseType).ToDictionary(o => o.Key, o => o.ToList());
             //var strange = assignments.SelectMany(o => o.Tasks).Where(o => o.Hint?.Count > 1 || o.Solution?.Count > 1);
             //var questions = assignments.SelectMany(o => o.Tasks).Select(o => o.Question).ToList();
+
+            var strange = assignments.Single(o => o.Id == 141109);
 
             var multiChoice = assignments.OfType<AssignmentMultiChoice>().ToList();
             multiChoice.Where(o => o.Alternatives.Any() == false).ShouldBeEmpty();
@@ -56,6 +79,17 @@ namespace NoK.Tests
                 .Select(o => File.ReadAllText(Path.Join(dir.FullName, o)))
                 .Select(JsonConvert.DeserializeObject<RawCourse.Root>).OfType<RawCourse.Root>()
                 .Select(o => o.Content)
+                .ToList();
+
+            var toc = allCourses.Select(course =>
+                new JObject(course.Chapters.Select(chapter =>
+                    new JProperty(chapter.Name, new JObject(chapter.Parts.Select(part =>
+                        new JProperty(part.Name, new JObject(part.SubParts.Select(sp => 
+                            new JProperty(sp.Name, sp.Sections.Select(sec => sec.Name))
+                        )))
+                    )))
+                    )
+                ))
                 .ToList();
 
             var subparts = LoadAllSubparts();
