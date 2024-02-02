@@ -1,0 +1,59 @@
+﻿@page "/tasks"
+@using BlazorTestBed.Services
+@using Newtonsoft.Json
+@using static BlazorTestBed.Services.StimuliResponseService
+@inject StimuliResponseService client
+
+<PageTitle>Tasks</PageTitle>
+
+<h1>Tasks</h1>
+
+<div>
+    @if (selectedTask != null)
+    {
+        @((MarkupString)selectedTask.Presentation)
+        @((MarkupString)selectedTask.Question)
+        <InputText @bind-Value="userResponseText"></InputText>
+        <button class="btn btn-primary" @onclick=Respond>Skicka</button>
+        <div>@serverResponseText</div>
+    }
+</div>
+
+@foreach (var info in summaries)
+{
+    <div @onclick="() => Get(info.Id)">@info.Id - @info.Summary</div>
+}
+
+@code {
+    private List<IdAndSummary> summaries = new();
+    private Stimulus? selectedTask;
+    private string userResponseText = string.Empty;
+    private string serverResponseText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            summaries = await client.GetAllStimuliSummaries();
+            await Get(summaries.First().Id);
+        }
+        catch { }
+    }
+
+    private async Task Get(string id)
+    {
+        selectedTask = await client.GetStimuli(id);
+    }
+
+    private async Task Respond()
+    {
+        if (selectedTask == null)
+            return;
+        var userResponse = new UserResponse {
+            Id = selectedTask.Id,
+            SourceId = string.Empty,
+            ResponseText = userResponseText
+        };
+        serverResponseText = await client.SendResponse(userResponse);
+    }
+}
