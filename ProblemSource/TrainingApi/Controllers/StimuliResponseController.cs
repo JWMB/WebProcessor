@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using NoK;
 using ProblemSourceModule.Services.ProblemGenerators;
 
 namespace TrainingApi.Controllers
@@ -38,7 +39,11 @@ namespace TrainingApi.Controllers
         {
             var stimuliRepository = GetProblemDomain(source).StimuliRepository;
             return (await stimuliRepository.GetAll())
-                .Select(o => (object)new { Id = o.Id, Summary = o.Presentation.Remove(Math.Min(o.Presentation.Length - 1, 20)) })
+                .Select(o =>
+                {
+                    var plain = INodeExtensions.HtmlToPlainText(o.Presentation);
+                    return (object)new { Id = o.Id, Summary = plain.Remove(Math.Min(plain.Length - 1, 20)) };
+                })
                 .ToList();
         }
 

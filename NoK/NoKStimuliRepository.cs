@@ -226,7 +226,7 @@ Användaren svarade med följande:
         {
             var regular = assignments.OfType<Assignment>().ToList();
             var withAnswers = regular.Where(o => o.Tasks.Any(p => p.Answer.Count == 1)).ToList();
-            var withNonNumericAnswers = withAnswers.SelectMany(o => o.Tasks).Where(o => decimal.TryParse(o.Answer.Single(), out var _) == false).ToList();
+            var withNonNumericAnswers = withAnswers.SelectMany(o => o.Tasks).Where(o => decimal.TryParse(o.Answer.SingleOrDefault(), out var _) == false).ToList();
             //var withNumericAnswers = withAnswers.Except(withNonNumericAnswers.Select(o => o.Parent)).ToList();
             //var toExpose = withNumericAnswers;
 

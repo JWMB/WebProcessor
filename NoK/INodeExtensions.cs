@@ -17,6 +17,14 @@ namespace NoK
             return container?.ChildNodes.ToList() ?? new();
         }
 
+        public static string HtmlToPlainText(string html)
+        {
+            var fragments = ParseFragment(html);
+            if (fragments.Any() == false)
+                return html;
+            return string.Join("\n", fragments.Select(o => o.TextContent).Where(o => o.Any()));
+        }
+
         public static void RemoveDescendants(this INode parent, IEnumerable<INode> nodes)
         {
             if (!nodes.Any())
