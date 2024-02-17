@@ -174,7 +174,7 @@ namespace Tools
 
         public async Task CreateAndEmail(string rootPath, IConfiguration config, IEnumerable<string> emails, bool actuallyCreate = false)
         {
-            var useJsonFile = $"{rootPath}createdUsers.json";
+            var useJsonFile = Path.Join(rootPath, "createdUsers.json");
             List<CreateUserResult>? createdUsersInfo;
             if (File.Exists(useJsonFile))
                 createdUsersInfo = JsonConvert.DeserializeObject<List<CreateUserResult>>(File.ReadAllText(useJsonFile));
@@ -205,7 +205,7 @@ namespace Tools
                 Console.WriteLine(ex);
             }
 
-            File.WriteAllText($"{rootPath}Sent-{DateTime.Now:dd_HH_mm}.json", JsonConvert.SerializeObject(createdUsersInfo.Select(o => o.User.Email)));
+            File.WriteAllText(Path.Join(rootPath, $"Sent-{DateTime.Now:dd_HH_mm}.json"), JsonConvert.SerializeObject(createdUsersInfo.Select(o => o.User.Email)));
         }
 
         public async Task<List<string>> GetEmailsNotAlreadyCreated(IEnumerable<string> emails)

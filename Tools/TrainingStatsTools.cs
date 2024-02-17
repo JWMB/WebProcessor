@@ -182,7 +182,7 @@ namespace Tools
             List<Training> allTrainings;
             if (true)
             {
-                var earliestStart = new DateTimeOffset(2023, 6, 15, 0, 0, 0, TimeSpan.Zero);
+                var earliestStart = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero); // 2023, 6, 15
                 var allSummaries = await CreateTrainingSummaryRepo().GetAll();
                 var includedSummaries = allSummaries
                     //.Where(o => o.TrainedDays >= 35)
@@ -203,8 +203,22 @@ namespace Tools
                 var joined = selectedTrainings.Join(allSummaries, o => o.Id, o => o.Id, (t, s) => new { Training = t, Summary = s }).ToList();//.Where(o => selectedIds.Contains(o.Id)).ToList();
 
                 var dbgStats = string.Join("\n", joined.Select(o => string.Join("\t", new object[] { 
-                    o.Training.Id, o.Summary.TrainedDays, o.Summary.FirstLogin, o.Summary.LastLogin, o.Summary.AvgDaysPerWeek.ToString("#.0"), o.Training.TrainingPlanName,
+                    o.Training.Id,
+                    o.Summary.TrainedDays,
+                    o.Summary.FirstLogin.ToString("yyyy-MM-dd"),
+                    o.Summary.LastLogin.ToString("yyyy-MM-dd"),
+                    o.Summary.AvgDaysPerWeek.ToString("#.0"),
+                    o.Training.TrainingPlanName,
+                    o.Training.Settings.trainingPlanOverrides != null,
+                    GetTpOverridesSummary(o.Training.Settings.trainingPlanOverrides),
                 }.Select(o => o.ToString()))));
+
+                string GetTpOverridesSummary(object? value)
+                {
+                    var obj = (value as JObject)?["triggers"]?[0]?["actionData"]?["properties"]?["weights"] as JObject;
+                    return obj == null ? ""
+                        : string.Join("/", new[] { "Math", "WM", "Reasoning" }.Select(o => (int)(obj[o]?.Value<double>() ?? 0)));
+                }
 
                 allTrainings = selectedTrainings;
                 //withOverrides.Where(o => o.TrainingPlanName == "")
