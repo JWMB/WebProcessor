@@ -177,7 +177,10 @@ namespace Tools
             var useJsonFile = Path.Join(rootPath, "createdUsers.json");
             List<CreateUserResult>? createdUsersInfo;
             if (File.Exists(useJsonFile))
+            {
                 createdUsersInfo = JsonConvert.DeserializeObject<List<CreateUserResult>>(File.ReadAllText(useJsonFile));
+                throw new Exception("remove this if old ones should be used!");
+            }
             else
             {
                 //var emails = ReadEmails($"{rootPath}TeacherEmails.txt").Select(o => o.ToString()).ToList();

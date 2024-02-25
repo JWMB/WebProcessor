@@ -44,6 +44,7 @@ var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop
 //Console.WriteLine(ooo);
 //var tmp = ClientUtils.CsvToNVRLevelStrings(Path.Join(path, "LevelDefinitionsSO.xlsx - 2023H2.tsv")); // LevelDefinitionsSO.xlsx - 2023H2.tsv  LevelDefinitionsRP.xlsx - Cleaned.tsv
 //Console.WriteLine(tmp);
+
 var oldDbTools = new OldDbAdapter.Tools(serviceProvider.GetRequiredService<AzureTableConfig>());
 var emails = await oldDbTools.GetRelevantTeachersFromOldDb();
 var dbg = string.Join("\n", emails);
@@ -117,10 +118,12 @@ var dbg = string.Join("\n", emails);
 //var emails = @"
 //".Split('\n').Select(o => o.Trim().ToLower()).Where(o => o.Any());
 var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
-//var emails = File.ReadAllLines(Path.Join(path, "oldemails.txt")).Select(o => o.Trim().ToLower()).Where(o => o.Length > 2).ToList();
+
+//await creator.ResetPasswordAndEmail(path, config, new[] { "Marie.sellergren@grundskola.goteborg.se" }, true);
+
 emails = await creator.GetEmailsNotAlreadyCreated(emails);
-emails = emails.Take(30).ToList();
-//await creator.ResetPasswordAndEmail(path, config, emails, true);
+emails = emails.Take(80).ToList();
+
 await creator.CreateAndEmail(path, config, emails, true);
 
 //var gmailService = BatchMail.CreateGmailService(config.GetRequiredSection("Gmail"));
