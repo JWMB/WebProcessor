@@ -104,8 +104,7 @@ namespace TrainingApi
                 //app.UseSwagger();
                 //app.UseSwaggerUI();
                 app.UseOpenApi();
-                app.UseSwaggerUi3();
-
+                app.UseSwaggerUi();
                 //app.UseDeveloperExceptionPage();
             }
             else

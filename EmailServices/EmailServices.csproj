@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AngleSharp" Version="1.0.4" />
-    <PackageReference Include="Google.Apis.Gmail.v1" Version="1.60.0.2958" />
+    <PackageReference Include="AngleSharp" Version="1.1.2" />
+    <PackageReference Include="Google.Apis.Gmail.v1" Version="1.68.0.3427" />
   </ItemGroup>
 
 </Project>
