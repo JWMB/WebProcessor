@@ -57,8 +57,8 @@
     <PackageReference Include="Azure.Data.Tables" Version="12.8.0" />
     <PackageReference Include="Azure.Storage.Queues" Version="12.14.0" />
     <PackageReference Include="JWMB.AzureTableGenerics" Version="0.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
