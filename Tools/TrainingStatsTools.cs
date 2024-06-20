@@ -191,14 +191,14 @@ namespace Tools
             }
             else
             {
-                minNumDays = 15;
+                minNumDays = 10;
                 if (true)
                 {
                     var earliestStart = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero); // 2023, 6, 15
                     var allSummaries = await CreateTrainingSummaryRepo().GetAll();
                     var includedSummaries = allSummaries
                         //.Where(o => o.TrainedDays >= 35)
-                        .Where(o => o.TrainedDays >= 6)
+                        .Where(o => o.TrainedDays >= minNumDays)
                         .Where(o => o.FirstLogin > earliestStart)
                         .ToList();
                     var trainingIds = includedSummaries.Select(o => o.Id).ToList();
