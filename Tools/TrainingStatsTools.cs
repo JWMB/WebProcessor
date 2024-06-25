@@ -1,6 +1,7 @@
 ﻿using Azure.Data.Tables;
 using AzureTableGenerics;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ProblemSource;
 using ProblemSource.Models;
@@ -14,6 +15,7 @@ using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.TrainingAnalyzers;
+using System.Linq;
 using System.Reflection;
 
 namespace Tools
@@ -151,6 +153,40 @@ namespace Tools
         }
 
         private IBatchRepository<T> Create<T>(IBatchRepository<T> inner, Func<T, string> createKey) => inner;
+
+        public async Task GetUsersWithGoodTrainings()
+        {
+            var userRepo = serviceProvider.CreateInstance<AzureTableUserRepository>();
+            var users = await userRepo.GetAll();
+            var userToTrainings = users.Where(o => o.Role == "Teacher").ToDictionary(o => o.Email, o => o.Trainings.SelectMany(p => p.Value));
+
+            var allTrainingIds = userToTrainings.Values.SelectMany(o => o).Distinct().ToList();
+
+            var trainingsRepo = serviceProvider.CreateInstance<AzureTableTrainingRepository>();
+            var allTrainings = await trainingsRepo.GetByIds(allTrainingIds);
+
+            var selectedTrainings = allTrainings.Where(o => o.AgeBracket.StartsWith("7-")).ToList();
+
+            var statisticsProvider = serviceProvider.CreateInstance<StatisticsProvider>();
+            var summaries = (await statisticsProvider.GetTrainingSummaries(selectedTrainings.Select(o => o.Id))).OfType<TrainingSummary>().ToList();
+
+            var filteredIds = new List<int> { 10, 20, 25, 30 }
+                .ToDictionary(o => $"{o}", o => summaries.Where(p => p.TrainedDays >= o).Select(p => p.Id).ToList());
+            
+            var filteredUserToTrainings = userToTrainings
+                //.Select(o => new { o.Key, Ids = filteredTrainingIds.Intersect(o.Value).ToList() })
+                .Select(o => new
+                {
+                    o.Key,
+                    Ids = filteredIds
+                        .Select(p => new { p.Key, Values = p.Value.Intersect(o.Value).ToList() })
+                        .Where(p => p.Values.Any())
+                })
+                .Where(o => o.Ids.Any())
+                .ToDictionary(o => o.Key, o => o.Ids.ToDictionary(p => p.Key, p => p.Values.Count));
+
+            var output = JsonConvert.SerializeObject(filteredUserToTrainings);
+        }
 
         public async Task<List<string>> GetUsersWithSyncedTrainings()
         {
