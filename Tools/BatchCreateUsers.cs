@@ -174,10 +174,13 @@ namespace Tools
 
         public async Task CreateAndEmail(string rootPath, IConfiguration config, IEnumerable<string> emails, bool actuallyCreate = false)
         {
-            var useJsonFile = $"{rootPath}createdUsers.json";
+            var useJsonFile = Path.Join(rootPath, "createdUsers.json");
             List<CreateUserResult>? createdUsersInfo;
             if (File.Exists(useJsonFile))
+            {
                 createdUsersInfo = JsonConvert.DeserializeObject<List<CreateUserResult>>(File.ReadAllText(useJsonFile));
+                throw new Exception("remove this if old ones should be used!");
+            }
             else
             {
                 //var emails = ReadEmails($"{rootPath}TeacherEmails.txt").Select(o => o.ToString()).ToList();
@@ -205,12 +208,11 @@ namespace Tools
                 Console.WriteLine(ex);
             }
 
-            File.WriteAllText($"{rootPath}Sent-{DateTime.Now:dd_HH_mm}.json", JsonConvert.SerializeObject(createdUsersInfo.Select(o => o.User.Email)));
+            File.WriteAllText(Path.Join(rootPath, $"Sent-{DateTime.Now:dd_HH_mm}.json"), JsonConvert.SerializeObject(createdUsersInfo.Select(o => o.User.Email)));
         }
 
-        public async Task<List<string>> GetEmailsNotAlreadyCreated(string fileWithEmails)
+        public async Task<List<string>> GetEmailsNotAlreadyCreated(IEnumerable<string> emails)
         {
-            var emails = File.ReadAllLines(fileWithEmails).Select(o => o.Trim().ToLower()).Where(o => o.Length > 2).ToList();
             var existing = await userRepository.GetAll();
             var existingEmails = existing.Select(o => o.Email.ToLower()).ToList();
             var newEmails = emails.Where(o => existingEmails.Contains(o) == false).ToList();

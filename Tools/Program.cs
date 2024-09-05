@@ -38,14 +38,17 @@ Console.CancelKeyPress += (s, e) =>
 };
 var cancellationToken = cts.Token;
 
-//var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
-var path = @"C:\Users\uzk446\OneDrive - Telia Company\Desktop\WebProcessor_Files\";
+var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
+
 //var ooo = config.ConfigToAzureConfig();
 //Console.WriteLine(ooo);
 //var tmp = ClientUtils.CsvToNVRLevelStrings(Path.Join(path, "LevelDefinitionsSO.xlsx - 2023H2.tsv")); // LevelDefinitionsSO.xlsx - 2023H2.tsv  LevelDefinitionsRP.xlsx - Cleaned.tsv
 //Console.WriteLine(tmp);
+
 //var oldDbTools = new OldDbAdapter.Tools(serviceProvider.GetRequiredService<AzureTableConfig>());
-//await oldDbTools.GetRelevantTeachersFromOldDb();
+//var emails = await oldDbTools.GetRelevantTeachersFromOldDb();
+//var dbg = string.Join("\n", emails);
+
 //await new OldDbMLFeatures().Run(cancellationToken);
 //return;
 
@@ -115,9 +118,12 @@ var path = @"C:\Users\uzk446\OneDrive - Telia Company\Desktop\WebProcessor_Files
 var emails = @"
 ".Split('\n').SelectMany(o => o.Split(';')).Select(o => o.Trim().ToLower()).Where(o => o.Any());
 var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
-//var emails = await creator.GetEmailsNotAlreadyCreated(Path.Join(path, "oldemails.txt"));
-emails = emails.Take(30).ToList();
-//await creator.ResetPasswordAndEmail(path, config, emails, true);
+
+//await creator.ResetPasswordAndEmail(path, config, new[] { "Marie.sellergren@grundskola.goteborg.se" }, true);
+
+emails = await creator.GetEmailsNotAlreadyCreated(emails);
+emails = emails.Take(80).ToList();
+
 await creator.CreateAndEmail(path, config, emails, true);
 
 //var gmailService = BatchMail.CreateGmailService(config.GetRequiredSection("Gmail"));
