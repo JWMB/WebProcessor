@@ -119,7 +119,7 @@ var emails = @"
 ".Split('\n').SelectMany(o => o.Split(';')).Select(o => o.Trim().ToLower()).Where(o => o.Any());
 var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
 
-//await creator.ResetPasswordAndEmail(path, config, new[] { "Marie.sellergren@grundskola.goteborg.se" }, true);
+//await creator.ResetPasswordAndEmail(path, config, new[] { "" }, true);
 
 emails = await creator.GetEmailsNotAlreadyCreated(emails);
 emails = emails.Take(80).ToList();
