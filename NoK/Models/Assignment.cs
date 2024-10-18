@@ -85,7 +85,9 @@ namespace NoK.Models
         public static IAssignment Create(RawAssignment.Assignment src)
         {
             AssignmentBase result;
-            if (src.TemplateData.Respons?.Any() == true)
+			var tmpDbgRrsp = src.TemplateData.ResponseType ?? src.TemplateData.ResponsType;
+
+			if (src.TemplateData.Respons?.Any() == true)
             {
                 var multiChoice = new AssignmentMultiChoice();
                 result = multiChoice;
@@ -153,9 +155,26 @@ namespace NoK.Models
                 .Select(o => new Subtask { Question = Process(o.q ?? o.v) ?? "", AnswerTypeString = o.u })
                 .ToList();
             if (!tasks.Any())
-                tasks.Add(new Subtask { Question = "", AnswerTypeString = null });
+            {
+                var proposedTasks = new List<Subtask>();
+                if (src.Solutions.Any() || src.Hints.Any())
+                {
+                    var cnt = Math.Min(src.Solutions.Count(), src.Hints.Count());
+                    if (src.Solutions.Count() != src.Hints.Count())
+                    {
+						//throw new Exception($"Solutions {src.Solutions.Count()} / Hints {src.Hints.Count()} count not matching");
+					}
+					// <p><i>Lös uppgiften utan digitalt verktyg.</i></p><p>Uttrycket `(30 - a)//(2 + 4)` har värdet 3.</p><p>Vilket blir värdet om</p>
+                    // <p>a) parentesen runt täljaren tas bort [input]</p><p>b) parentesen runt nämnaren tas bort [input]</p><p>c) båda parenteserna tas bort? [input]</p>
+					proposedTasks.AddRange(Enumerable.Range(0, cnt).Select(o => new Subtask { Question = "", AnswerTypeString = null }));
+                    //var sols = ParseSolutions(src.Solutions.First().Solutions);
+                }
+                if (proposedTasks.Any() == false)
+					proposedTasks.Add(new Subtask { Question = "", AnswerTypeString = null });
+                tasks.AddRange(proposedTasks);
+			}
 
-            tasks.Select((o, i) => new { Index = i, Obj = o })
+			tasks.Select((o, i) => new { Index = i, Obj = o })
                 .ToList()
                 .ForEach(o => {
                     o.Obj.Index = o.Index;
@@ -196,66 +215,12 @@ namespace NoK.Models
                 found.Hint = hints.Select(o => Process(o["text"]?.Value<string>(), true) ?? "").ToList();
             }
 
-            tasks.RemoveAll(o => !o.Question.Any() && !o.Solution.Any() && !o.Answer.Any());
+            tasks.RemoveAll(o => !o.Solution.Any() && !o.Answer.Any()); //!o.Question.Any() && 
 
-            result.Body = Process(src.TemplateData.Text) ?? "";
-            if (result.Body.Contains("<input"))
-            {
-                var nodes = INodeExtensions.ParseFragment(result.Body);
-                var inputs = nodes.SelectMany(o => o.DescendantsAndSelf<IHtmlInputElement>()).ToList();
-                //var matches = new Regex(@"<input").Matches(result.Body);
-                if (inputs.Any())
-                {
-                    var tmp = new Regex(@"(<br/?\s*>)[^<]*<input").Matches(result.Body);
-                    if (tmp.Count < inputs.Count)
-                    {
-                        var groupedByParent = inputs.GroupBy(o => (o.Parent as IHtmlElement)?.OuterHtml).ToList();
-                        for (int i = tasks.Count; i < groupedByParent.Count; i++)
-                            tasks.Add(new Subtask { Parent = result, Index = i });
-                        groupedByParent.Select((o, i) => new { Html = o.Key, Index = i }).ToList() //o.First().Parent
-                            .ForEach(o =>
-                            {
-                                tasks[o.Index].Question = o.Html ?? "";
-                            });
-                        nodes.ForEach(o => o.RemoveDescendants(inputs.Select(o => o.Parent).OfType<INode>()));
-                        var stripped = string.Join("\n", nodes.OfType<IHtmlElement>().Select(o => o.OuterHtml));
+			result.Body = ProcessBodyAndUpdateTasks(src.TemplateData.Text, tasks, (int index) => new Subtask { Parent = result, Index = index });
 
-                        result.Body = stripped;
-                    }
-                    else
-                    {
-                        if (result.Body.Contains("a)"))
-                        {
-                            var alts = new Regex(@"<br/?>\s*\w\)\s+").Matches(result.Body);
-                            if (alts.Count < 2)
-                            { }
-                            else
-                            {
-                                var questions = ExtractEmbeddedQuestions(nodes);
 
-                                result.Body = string.Join("\n", nodes.Select(o => o.ToHtml()));
-                                foreach (var item in questions)
-                                    result.Body = result.Body.Replace((item as IHtmlElement)?.InnerHtml ?? "", "");
-
-                                for (int i = tasks.Count; i < questions.Count; i++)
-                                    tasks.Add(new Subtask { Parent = result, Index = i });
-
-                                questions.Select((o, i) => new { Node = o, Index = i }).ToList()
-                                    .ForEach(o => tasks[o.Index].Question = o.Node.ToHtml() ?? ""); //(o.Parent as IHtmlElement)?.InnerHtml
-                            }
-                        }
-                        else
-                        { }
-                    }
-                    //if (tasks.Count > 1)
-                    //{ }
-                    //else if (tasks.Count == 1 && tasks.Single().Question.Any())
-                    //{
-                    //}
-                }
-            }
-
-            result.Suggestion = Process(src.TemplateData.Suggestion) ?? "";
+			result.Suggestion = Process(src.TemplateData.Suggestion) ?? "";
             result.ResponseType = Enum.TryParse<ResponseType>(src.TemplateData.ResponseType ?? src.TemplateData.ResponsType, true, out var r) ? r : ResponseType.Unknown;
             result.Id = src.AssignmentID ?? src.AssignmentId ?? 0;
 
@@ -277,7 +242,111 @@ namespace NoK.Models
             }
         }
 
-        public static List<INode> ExtractEmbeddedQuestions(IEnumerable<INode> nodes)
+		private static string ProcessBodyAndUpdateTasks(string body, List<Subtask> tasks, Func<int, Subtask> createNewSubtask)
+		{
+            body = Process(body) ?? "";
+			if (body.Contains("<input"))
+			{
+				var nodes = INodeExtensions.ParseFragment(body);
+				var inputs = nodes.SelectMany(o => o.DescendantsAndSelf<IHtmlInputElement>()).ToList();
+				//var matches = new Regex(@"<input").Matches(result.Body);
+				if (inputs.Any())
+				{
+					var tmp = new Regex(@"(<br/?\s*>)[^<]*<input").Matches(body);
+					if (tmp.Count < inputs.Count)
+					{
+						var groupedByParent = inputs.GroupBy(o => (o.Parent as IHtmlElement)?.OuterHtml).ToList();
+						for (int i = tasks.Count; i < groupedByParent.Count; i++)
+							tasks.Add(createNewSubtask(i));
+						    groupedByParent.Select((o, i) => new { Html = o.Key, Index = i }).ToList() //o.First().Parent
+							    .ForEach(o =>
+							    {
+								    tasks[o.Index].Question = o.Html ?? "";
+							    });
+						nodes.ForEach(o => o.RemoveDescendants(inputs.Select(o => o.Parent).OfType<INode>()));
+						var stripped = string.Join("\n", nodes.OfType<IHtmlElement>().Select(o => o.OuterHtml));
+
+						body = stripped;
+					}
+					else
+					{
+                        TryHandleSectionsABC(nodes);
+					}
+					//if (tasks.Count > 1)
+					//{ }
+					//else if (tasks.Count == 1 && tasks.Single().Question.Any())
+					//{
+					//}
+				}
+			}
+            else if (tasks.All(o => string.IsNullOrEmpty(o.Question)))
+            {
+				// <p><i>Lös uppgiften utan digitalt verktyg.</i></p><p>Vi antar att siffertangenten 4 är trasig på ditt digitala verktyg.&nbsp;<br>Hur räknar du då ut</p><p>a) `14*34`</p><p>b) `478*444`?</p>
+				TryHandleSectionsABC(INodeExtensions.ParseFragment(body));
+			}
+			return body;
+
+            void TryHandleSectionsABC(List<INode> nodes)
+            {
+				if (body.Contains("a)"))
+				{
+					var alts = new Regex(@"<br/?>\s*\w\)\s+").Matches(body);
+					if (alts.Count < 2)
+					{
+                        var tmp = new Regex(@">\s*([a-f])\)\s").Matches(body);
+                        if (tmp.Count >= 2)
+                        {
+                            var consecutive = new List<Match>();
+                            var last = 'a' - 1;
+                            foreach (Match item in tmp)
+                            {
+                                var ch = item.Groups[1].Value[0];
+								if (ch == last + 1)
+                                {
+									consecutive.Add(item);
+									last = ch;
+								}
+                            }
+                            if (consecutive.Count >= 2)
+                            {
+                                try
+                                {
+                                    for (int i = 0; i < consecutive.Count; i++)
+                                    {
+                                        var toIndex = i < consecutive.Count - 1 ? consecutive[i + 1].Index : body.Length - 1;
+                                        var content = body.Substring(consecutive[i].Index, toIndex - consecutive[i].Index);
+                                        tasks[i].Question = content;
+                                    }
+									body = body.Remove(consecutive.First().Index);
+								}
+								catch (Exception ex)
+                                {
+                                }
+							}
+						}
+                    }
+					else
+					{
+						var questions = ExtractEmbeddedQuestions(nodes);
+
+						body = string.Join("\n", nodes.Select(o => o.ToHtml()));
+						foreach (var item in questions)
+							body = body.Replace((item as IHtmlElement)?.InnerHtml ?? "", "");
+
+						for (int i = tasks.Count; i < questions.Count; i++)
+							tasks.Add(createNewSubtask(i)); //
+
+						questions.Select((o, i) => new { Node = o, Index = i }).ToList()
+							.ForEach(o => tasks[o.Index].Question = o.Node.ToHtml() ?? ""); //(o.Parent as IHtmlElement)?.InnerHtml
+					}
+				}
+				else
+				{ }
+
+			}
+		}
+
+		public static List<INode> ExtractEmbeddedQuestions(IEnumerable<INode> nodes)
         {
             var rx = new Regex(@"^\s*\w\)\s+");
             var candidates = nodes.SelectMany(o => o.Descendants().OfType<IText>().Where(p => rx.IsMatch(p.Text))).ToList();
@@ -328,7 +397,8 @@ namespace NoK.Models
             return ContentTools.Process(
                 s.ReplaceRx(@"\[lucktext[^\]]*\]", "<input type=\"text\"/>")
                     .ReplaceRx(@"(\<br\s*\/?\>\s*)+$", "")
-                );
+                    .Replace("[input]", "<input type=\"text\"/>")
+				);
         }
 
         public static List<string>? ParseSolutions(string data)

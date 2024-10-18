@@ -42,7 +42,7 @@ namespace TrainingApi.Controllers
                 .Select(o =>
                 {
                     var plain = INodeExtensions.HtmlToPlainText(o.Presentation);
-                    return (object)new { Id = o.Id, Summary = plain.Remove(Math.Min(plain.Length - 1, 20)) };
+                    return (object)new { Id = o.Id, Summary = plain.Remove(Math.Min(plain.Length - 1, 50)) };
                 })
                 .ToList();
         }
