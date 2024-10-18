@@ -213,7 +213,15 @@ namespace TrainingApi
             services.AddSingleton<ISimpleCompletionService>(sp => new AzureOpenAICompletionService(sp.GetRequiredService<AzureOpenAICompletionService.Config>()));
             services.AddSingleton<IProblemDomain>(sp =>
             {
-                var config = new NoKStimuliRepository.Config("nok/assignments_141094_16961/assignments_141094_16961.json");
+                var pathToFile = "nok/assignments_141094_16961/assignments_141094_16961.json";
+				var desktop = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory));
+                if (desktop.Exists)
+                {
+                    var file = desktop.GetFiles("assignments_141094_16961.json").FirstOrDefault();
+                    if (file?.Exists == true)
+                        pathToFile = file.FullName;
+				}
+                var config = new NoKStimuliRepository.Config(pathToFile);
                 var result = new NoKDomain(config, sp.GetService<ISimpleCompletionService>());
                 result.Init().Wait();
                 return result;

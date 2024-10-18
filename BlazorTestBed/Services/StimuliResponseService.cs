@@ -5,9 +5,9 @@ namespace BlazorTestBed.Services
 {
     public class StimuliResponseService
     {
-        private Uri baseUri = new Uri("https://localhost:7173/api");
+        private Uri baseUri = new Uri("http://localhost:5174/api"); //https://localhost:7174/api  7173
 
-        public StimuliResponseService()
+		public StimuliResponseService()
         {
         }
 
