@@ -24,23 +24,19 @@ namespace NoK.Tests
             analysis.IsCorrect.ShouldBeTrue();
         }
 
-        [Fact]
-        public async Task Investigate_InlineTasks()
+        [Theory]
+		[InlineData(147964, 3)]
+		[InlineData(147963, 2)]
+		[InlineData(141107, 3)]
+		[InlineData(141109, 4)]
+		public async Task Investigate_InlineTasks(int assignmentId, int expectedNumTasks)
         {
 			var root = JsonConvert.DeserializeObject<RawAssignment.Root>(await File.ReadAllTextAsync(GetSourceFile()));
 
-			var rawAssignment = root!.Subpart.Select(o => o.Assignments.SingleOrDefault(a => a.AssignmentID == 147964)).Single();
+			var rawAssignment = root!.Subpart.Select(o => o.Assignments.SingleOrDefault(a => a.AssignmentID == assignmentId)).Single();
             var converted = Assignment.Create(rawAssignment!);
-            converted.Tasks.Count.ShouldBe(3);
-		}
-		[Fact]
-		public async Task Investigate_InlineTasks2()
-		{
-			var root = JsonConvert.DeserializeObject<RawAssignment.Root>(await File.ReadAllTextAsync(GetSourceFile()));
-
-			var rawAssignment = root!.Subpart.Select(o => o.Assignments.SingleOrDefault(a => a.AssignmentID == 147963)).Single();
-			var converted = Assignment.Create(rawAssignment!);
-			//converted.Tasks.Count.ShouldBe(3);
+			converted.Tasks.Where(o => string.IsNullOrEmpty(o.Question)).ShouldBeEmpty();
+			converted.Tasks.Count.ShouldBe(expectedNumTasks);
 		}
 
 		private string GetSourceFile()

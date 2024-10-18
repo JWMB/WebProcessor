@@ -178,10 +178,8 @@ namespace NoK.Models
                 .ToList()
                 .ForEach(o => {
                     o.Obj.Index = o.Index;
-                    o.Obj.Parent = result;
+                    //o.Obj.Parent = result;
                 });
-            //foreach (var task in tasks)
-            //    task.Parent = result;
 
             if (result is AssignmentMultiChoice mc)
                 mc.Task = tasks.Single();
@@ -217,12 +215,15 @@ namespace NoK.Models
 
             tasks.RemoveAll(o => !o.Solution.Any() && !o.Answer.Any()); //!o.Question.Any() && 
 
-			result.Body = ProcessBodyAndUpdateTasks(src.TemplateData.Text, tasks, (int index) => new Subtask { Parent = result, Index = index });
+			result.Body = ProcessBodyAndUpdateTasks(src.TemplateData.Text, tasks, (int index) => new Subtask { Index = index });
 
 
 			result.Suggestion = Process(src.TemplateData.Suggestion) ?? "";
             result.ResponseType = Enum.TryParse<ResponseType>(src.TemplateData.ResponseType ?? src.TemplateData.ResponsType, true, out var r) ? r : ResponseType.Unknown;
             result.Id = src.AssignmentID ?? src.AssignmentId ?? 0;
+
+            foreach (var task in tasks)
+                task.Parent = result;
 
             return result;
 
@@ -245,13 +246,65 @@ namespace NoK.Models
 		private static string ProcessBodyAndUpdateTasks(string body, List<Subtask> tasks, Func<int, Subtask> createNewSubtask)
 		{
             body = Process(body) ?? "";
+
+			var nodes = INodeExtensions.ParseFragment(body);
+			//var abcs = nodes.SelectMany(o => o.DescendantsAndSelf())
+			//	.Where(o => o is IHtmlElement)
+			//	.Select(o => new { Node = (IHtmlElement)o, Match = new Regex(@"^\s*(?<character>[a-f])\)\s", RegexOptions.IgnoreCase).Match(o.Text()) })
+			//	.Where(o => o.Match.Success)
+			//	.Select(o => new { o.Node, Char = o.Match.Groups["character"].Value.ToLower()[0] })
+			//	.ToList();
+
+            var abcs = nodes.SelectMany(o => o.DescendantsAndSelf())
+                .Select(o => new { Node = o, Match = new Regex(@"^\s*(?<character>[a-f])\)\s?", RegexOptions.IgnoreCase).Match(o.Text()) })
+                .Where(o => o.Match.Success)
+                .Select(o => new {
+                    Node = o.Node is IHtmlElement el ? el : o.Node.Ancestors().OfType<IHtmlElement>().First(),
+					Char = o.Match.Groups["character"].Value.ToLower()[0]
+				})
+                .ToList();
+
+			if (abcs.Count > 1)
+            {
+				var consecutive = new List<IHtmlElement>();
+				var last = 'a' - 1;
+				foreach (var item in abcs)
+				{
+					if (item.Char == last + 1)
+					{
+						consecutive.Add(item.Node);
+						last = item.Char;
+					}
+				}
+                if (consecutive.Count > 1)
+                {
+                    var orgTaskCount = tasks.Count;
+                    consecutive
+                        .Select((o, i) => new { Item = o, Index = i })
+                        .ToList()
+                        .ForEach(item =>
+                        {
+                            var existingTask = tasks.SingleOrDefault(o => o.Index == item.Index);
+							//var newTaskNeeded = item.Index < tasks.Count;
+							var task = existingTask ?? createNewSubtask(orgTaskCount + item.Index);
+                            if (existingTask == null)
+                                tasks.Add(task);
+                            task.Question = item.Item.Html();
+						});
+					body = RemoveFromBodyAndRender(consecutive);
+                    return body;
+                }
+			}
+
 			if (body.Contains("<input"))
 			{
-				var nodes = INodeExtensions.ParseFragment(body);
+
 				var inputs = nodes.SelectMany(o => o.DescendantsAndSelf<IHtmlInputElement>()).ToList();
 				//var matches = new Regex(@"<input").Matches(result.Body);
 				if (inputs.Any())
 				{
+                    // Example bad body: one <input> but multiple sections... Perhaps better to assume ABC form and try <input> as a fallback?
+					// <p><i>Lös uppgiften utan digitalt verktyg.</i></p><p>a) Beräkna `2 * 5^2 - 5` <input type="text"/></p><p>b) Eric skriver på ett prov:<br>`2 * 5^2 - 5 = 5 * 5 = 25 * 2 = 50 - 5 = 45`<br>Svaret är rätt, men läraren ger ändå Eric fel. Varför?</p><p>c) Ge exempel på hur man kan skriva en korrekt beräkning.</p>
 					var tmp = new Regex(@"(<br/?\s*>)[^<]*<input").Matches(body);
 					if (tmp.Count < inputs.Count)
 					{
@@ -259,14 +312,8 @@ namespace NoK.Models
 						for (int i = tasks.Count; i < groupedByParent.Count; i++)
 							tasks.Add(createNewSubtask(i));
 						    groupedByParent.Select((o, i) => new { Html = o.Key, Index = i }).ToList() //o.First().Parent
-							    .ForEach(o =>
-							    {
-								    tasks[o.Index].Question = o.Html ?? "";
-							    });
-						nodes.ForEach(o => o.RemoveDescendants(inputs.Select(o => o.Parent).OfType<INode>()));
-						var stripped = string.Join("\n", nodes.OfType<IHtmlElement>().Select(o => o.OuterHtml));
-
-						body = stripped;
+							    .ForEach(o => tasks[o.Index].Question = o.Html ?? "");
+                        body = RemoveFromBodyAndRender(inputs.Select(o => o.Parent).OfType<INode>());
 					}
 					else
 					{
@@ -279,10 +326,11 @@ namespace NoK.Models
 					//}
 				}
 			}
-            else if (tasks.All(o => string.IsNullOrEmpty(o.Question)))
+
+            if (tasks.All(o => string.IsNullOrEmpty(o.Question)))
             {
 				// <p><i>Lös uppgiften utan digitalt verktyg.</i></p><p>Vi antar att siffertangenten 4 är trasig på ditt digitala verktyg.&nbsp;<br>Hur räknar du då ut</p><p>a) `14*34`</p><p>b) `478*444`?</p>
-				TryHandleSectionsABC(INodeExtensions.ParseFragment(body));
+				TryHandleSectionsABC(nodes);
 			}
 			return body;
 
@@ -342,7 +390,13 @@ namespace NoK.Models
 				}
 				else
 				{ }
+			}
 
+            string RemoveFromBodyAndRender(IEnumerable<INode> remove)
+            {
+				nodes.ForEach(o => o.RemoveDescendants(remove));
+				var stripped = string.Join("\n", nodes.OfType<IHtmlElement>().Select(o => o.OuterHtml));
+				return stripped;
 			}
 		}
 
