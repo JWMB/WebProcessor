@@ -225,6 +225,18 @@ namespace NoK.Models
             foreach (var task in tasks)
                 task.Parent = result;
 
+            { // MathML conversions
+                result.Body = ReplaceAsciiMathWithMathML(result.Body);
+                foreach (var task in tasks)
+                {
+                    task.Question = ReplaceAsciiMathWithMathML(task.Question);
+                    task.Answer = task.Answer.Select(ReplaceAsciiMathWithMathML).ToList();
+                    task.Hint = task.Hint.Select(ReplaceAsciiMathWithMathML).ToList();
+                    task.Solution = task.Solution.Select(ReplaceAsciiMathWithMathML).ToList();
+                }
+            }
+
+
             return result;
 
             Subtask? FindSubtask(string? id)
@@ -243,11 +255,17 @@ namespace NoK.Models
             }
         }
 
-		private static string ProcessBodyAndUpdateTasks(string body, List<Subtask> tasks, Func<int, Subtask> createNewSubtask)
+        public static string ReplaceAsciiMathWithMathML(string text)
+        {
+            var rx = new Regex(@"`(([a-z]?[0-9,.=+*/^()\s-])+[a-z]?)`");
+            return rx.Replace(text, m => AsciiMath.Parser.ToMathMl(m.Groups[1].Value));
+        }
+
+        private static string ProcessBodyAndUpdateTasks(string body, List<Subtask> tasks, Func<int, Subtask> createNewSubtask)
 		{
             body = Process(body) ?? "";
 
-			var nodes = INodeExtensions.ParseFragment(body);
+            var nodes = INodeExtensions.ParseFragment(body);
 			//var abcs = nodes.SelectMany(o => o.DescendantsAndSelf())
 			//	.Where(o => o is IHtmlElement)
 			//	.Select(o => new { Node = (IHtmlElement)o, Match = new Regex(@"^\s*(?<character>[a-f])\)\s", RegexOptions.IgnoreCase).Match(o.Text()) })
@@ -332,7 +350,8 @@ namespace NoK.Models
 				// <p><i>Lös uppgiften utan digitalt verktyg.</i></p><p>Vi antar att siffertangenten 4 är trasig på ditt digitala verktyg.&nbsp;<br>Hur räknar du då ut</p><p>a) `14*34`</p><p>b) `478*444`?</p>
 				TryHandleSectionsABC(nodes);
 			}
-			return body;
+
+            return body;
 
             void TryHandleSectionsABC(List<INode> nodes)
             {

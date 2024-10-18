@@ -43,8 +43,10 @@ namespace NoK.Tests
 		{
 			var assignmentId = 141091;
             var rawAssignment = await GetRawAssignment(assignmentId);
-            var converted = Assignment.Create(rawAssignment!);
+            //var tmp = Assignment.ReplaceAsciiMathWithMathML(rawAssignment.TemplateData.Text);
 
+            var converted = Assignment.Create(rawAssignment!);
+            converted.Body.ShouldContain("<math>");
         }
 
         private async Task<RawAssignment.Assignment> GetRawAssignment(int assignmentId, RawAssignment.Root? root = null)
