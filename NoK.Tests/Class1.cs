@@ -31,15 +31,30 @@ namespace NoK.Tests
 		[InlineData(141109, 4)]
 		public async Task Investigate_InlineTasks(int assignmentId, int expectedNumTasks)
         {
-			var root = JsonConvert.DeserializeObject<RawAssignment.Root>(await File.ReadAllTextAsync(GetSourceFile()));
+            var rawAssignment = await GetRawAssignment(assignmentId);
 
-			var rawAssignment = root!.Subpart.Select(o => o.Assignments.SingleOrDefault(a => a.AssignmentID == assignmentId)).Single();
             var converted = Assignment.Create(rawAssignment!);
 			converted.Tasks.Where(o => string.IsNullOrEmpty(o.Question)).ShouldBeEmpty();
 			converted.Tasks.Count.ShouldBe(expectedNumTasks);
 		}
 
-		private string GetSourceFile()
+        [Fact]
+		public async Task Investigate_MathML()
+		{
+			var assignmentId = 141091;
+            var rawAssignment = await GetRawAssignment(assignmentId);
+            var converted = Assignment.Create(rawAssignment!);
+
+        }
+
+        private async Task<RawAssignment.Assignment> GetRawAssignment(int assignmentId, RawAssignment.Root? root = null)
+		{
+            root ??= JsonConvert.DeserializeObject<RawAssignment.Root>(await File.ReadAllTextAsync(GetSourceFile()));
+            var rawAssignment = root!.Subpart.Select(o => o.Assignments.SingleOrDefault(a => a.AssignmentID == assignmentId)).Single();
+			return rawAssignment;
+        }
+
+        private string GetSourceFile()
         {
 			var pathToFile = @"C:\Users\jonas\Downloads\assignments_141094_16961\assignments_141094_16961.json";
 			var desktop = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory));
