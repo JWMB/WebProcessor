@@ -98,10 +98,11 @@ var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop
 //var result = await tool.GetUsersWithSyncedTrainings();
 
 
-//var template = await serviceProvider.GetRequiredService<ITrainingTemplateRepository>().Get("template_2023HT");
-//var trainingMod = serviceProvider.CreateInstance<TrainingMod>();
+var template = await serviceProvider.GetRequiredService<ITrainingTemplateRepository>().Get("template_2024VT");
+if (template == null) throw new Exception("no such template");
+var trainingMod = serviceProvider.CreateInstance<TrainingMod>();
 //var r = await trainingMod.GetUsersFromTrainings(trainingUsernames: new[] { "yuga tumuki", "wawa pimibu", "niro hudedi" });
-//await trainingMod.ChangeTrainingsToTrainingTemplate(actuallyModify: true);
+await trainingMod.ChangeTrainingsToTrainingTemplate(templateNameElseLatest: template.Username, actuallyModify: true);
 //var ids = TrainingMod.ExtractTrainingNames(File.ReadAllText(@"C:\Users\uzk446\Desktop\WebProcessor_Files\idsForParse.txt"));
 //await trainingMod.MoveTeachersTrainingsToGroup("EMAIL HERE", ids.Select(o => o.Id), "GROUP HERE", true);
 //var allTrainings = await serviceProvider.GetRequiredService<ITrainingRepository>().GetAll();

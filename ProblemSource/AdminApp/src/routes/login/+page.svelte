@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { ErrorHandling } from 'src/errorHandling';
-	import { userStore } from 'src/globalStore';
-	import { initWidgetImplementationScript } from 'src/humany-embed';
-	import { getString } from 'src/utilities/LanguageService';
+	import { goto } from '$app/navigation';
+	import { ErrorHandling } from '../../errorHandling';
+	import { userStore } from '../../globalStore';
+	import { initWidgetImplementationScript } from '../../humany-embed';
+	import { getString } from '../../utilities/LanguageService';
 
 	let email = '';
 	let password = '';
@@ -26,15 +27,16 @@
 			isLoading = true;
 			userStore
 				.login({ username: email, password: password })
-				.then((r) => {
+				.then(() => {
 					isSuccess = true;
 					isLoading = false;
 					initWidgetImplementationScript(); // since we don't want to show help widget to non-authorized users
 					// TODO: can't find a way to preserve url parameters (e.g. using ?returnUrl= to get back to the attempted page)
 					window.history.back();
 					//handleRedirects('/login');
+					//goto('/teacher');
 				})
-				.catch((err) => {
+				.catch((err: any) => {
 					isLoading = false;
 					errors.server = ErrorHandling.getErrorObject(err).message || "Unknown error";
 				});

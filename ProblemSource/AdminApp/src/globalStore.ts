@@ -4,7 +4,7 @@ import type { LoginCredentials } from './apiClient';
 import { ApiFacade } from './apiFacade';
 import type { CurrentUserInfo } from './currentUserInfo';
 import { Assistant } from './services/assistant';
-import { Startup } from './startup';
+import { resolveLocalServerBaseUrl, Startup } from './startup';
 import { SeverityLevel, type NotificationItem } from './types';
 import type { TrainingUpdateMessage } from './types.js';
 import { Realtime } from './services/realtime';
@@ -14,7 +14,7 @@ let _apiFacade: ApiFacade;
 export function getApi() {
     if (browser) {
         if (!_apiFacade) {
-            _apiFacade = new ApiFacade(Startup.resolveLocalServerBaseUrl(window.location));
+            _apiFacade = new ApiFacade(resolveLocalServerBaseUrl(window.location));
             const urlParams = new URLSearchParams(window.location.search);
             const impersonate = urlParams.get("impersonate");
             if (impersonate != null) {

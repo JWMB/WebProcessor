@@ -17,7 +17,11 @@ export class Startup {
         }
     }
 
-    static resolveLocalServerBaseUrl(location: Location) {
-        return PUBLIC_LOCAL_SERVER_PATH || location.origin;
-    }
+    // static resolveLocalServerBaseUrl(location: Location) {
+    //     return PUBLIC_LOCAL_SERVER_PATH || location.origin;
+    // }
+}
+
+export function resolveLocalServerBaseUrl(location: Location) {
+    return PUBLIC_LOCAL_SERVER_PATH || location.origin;
 }

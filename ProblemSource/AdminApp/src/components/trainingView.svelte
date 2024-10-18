@@ -8,8 +8,8 @@
 	import ExerciseChart from './exerciseChart.svelte';
 	import TrainingDaysChart from './trainingDaysChart.svelte';
 	import { onMount } from 'svelte';
-	import { getApi } from 'src/globalStore';
-	import type { ApiFacade } from 'src/apiFacade';
+	import { getApi } from '../globalStore';
+	import type { ApiFacade } from '..//apiFacade';
 
 	const apiFacade = getApi() as ApiFacade;
 
