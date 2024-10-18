@@ -9,7 +9,7 @@ const useHttps = process.env.COMPUTERNAME !== "CND1387M7P";
 const config: UserConfig = { //
 	plugins: [
 		sveltekit(),
-	].concat(useHttps ? [basicSsl()] : []),
+	].concat(useHttps ? [new Promise(res => res([basicSsl()]))] : []),
 	server: {
 		port: 5171,
 		https: useHttps,

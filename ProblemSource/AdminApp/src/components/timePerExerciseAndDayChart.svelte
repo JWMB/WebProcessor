@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Chart } from 'chart.js';
-	import type { PhaseStatistics } from 'src/apiClient';
+	import type { PhaseStatistics } from '../apiClient';
 	import { onMount } from 'svelte';
 	import convert from 'color-convert';
 	import { groupBy, max, sum } from '../arrayUtils';

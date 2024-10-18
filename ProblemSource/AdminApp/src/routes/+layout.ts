@@ -1,19 +1,18 @@
 import { browser } from '$app/environment';
-import { goto } from '$app/navigation';
-import { base } from '$app/paths';
-import { userStore } from 'src/globalStore';
-import { Startup } from 'src/startup';
-import { initStrings } from 'src/utilities/LanguageService';
-import langstrings from 'src/utilities/language_strings.json';
+import { Startup } from '../startup';
+import { initStrings } from '../utilities/LanguageService';
+import langstrings from '../utilities/language_strings.json';
 import type { LayoutLoad } from '../../.svelte-kit/types/src/routes/$types'
-import { handleRedirects } from 'src/services/redirects';
+import { handleRedirects } from '../services/redirects';
 
-export const load: LayoutLoad = async ({ routeId }) => {
+export const load: LayoutLoad = async (args) => {
     if (browser) {
         initStrings(langstrings);
         new Startup().init(globalThis);
-        console.log("layout.load");
-        await handleRedirects(routeId || '');
+        console.log("main layout.load", args);
+        await handleRedirects(args.routeId || '');
+        // console.log("main layout.load", args.route);
+        // await handleRedirects((args.route || {}).id || '');
         return {
             pageInited: true
         }
