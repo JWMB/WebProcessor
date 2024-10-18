@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Net;
 using System.Net.Http.Json;
 
 namespace BlazorTestBed.Services
@@ -24,10 +25,10 @@ namespace BlazorTestBed.Services
             var tmp = await Client.GetStringAsync($"{baseUri}/StimuliResponse/summaries?source=xxx");
             return JsonConvert.DeserializeObject<List<IdAndSummary>>(tmp) ?? new();
         }
-        public async Task<string> SendResponse(UserResponse userResponse)
+        public async Task<(HttpStatusCode, string)> SendResponse(UserResponse userResponse)
         {
             var tmp = await Client.PostAsJsonAsync($"{baseUri}/StimuliResponse", userResponse);
-            return await tmp.Content.ReadAsStringAsync();
+            return (tmp.StatusCode, await tmp.Content.ReadAsStringAsync());
         }
 
         public class UserResponse

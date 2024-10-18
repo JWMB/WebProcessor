@@ -1,6 +1,7 @@
 ﻿@page "/tasks"
 @using BlazorTestBed.Services
 @using Newtonsoft.Json
+@using System.Net
 @using static BlazorTestBed.Services.StimuliResponseService
 @inject StimuliResponseService client
 
@@ -14,8 +15,8 @@
         @((MarkupString)selectedTask.Presentation)
         @((MarkupString)selectedTask.Question)
         <InputText @bind-Value="userResponseText"></InputText>
-        <button class="btn btn-primary" @onclick=Respond>Skicka</button>
-        <div>@serverResponseText</div>
+        <button class="btn btn-primary" @onclick=Respond>Svara</button>
+        <div>@(serverResponse == null ? "" : $"{serverResponse.Value.Item1} {serverResponse.Value.Item2}")</div>
     }
 </div>
 
@@ -28,7 +29,7 @@
     private List<IdAndSummary> summaries = new();
     private Stimulus? selectedTask;
     private string userResponseText = string.Empty;
-    private string serverResponseText = string.Empty;
+    private (HttpStatusCode, string)? serverResponse;
 
     protected override async Task OnInitializedAsync()
     {
@@ -54,6 +55,6 @@
             SourceId = string.Empty,
             ResponseText = userResponseText
         };
-        serverResponseText = await client.SendResponse(userResponse);
+        serverResponse = await client.SendResponse(userResponse);
     }
 }

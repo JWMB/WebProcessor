@@ -528,5 +528,28 @@ namespace NoK.Models
         {
             return $"({(Hint?.Any() != true ? "" : "H")}{(Solution?.Any() != true ? "" : "S")}{(Answer?.Any() != true ? "" : "A")}){Question}:{AnswerType}";
         }
+
+        public bool? CheckResponseIsCorrect(string response)
+        {
+            var rx = new Regex(@"^\s?(\d[., ]?)+$");
+            var numericalAnswers = Answer.Select(Parse);
+            var first = numericalAnswers.FirstOrDefault();
+            if (first != null)
+            {
+                var responseDec = Parse(response);
+				if (responseDec == null)
+					throw new Exception("Could not parse user response");
+                return responseDec == first;
+            }
+
+			return null;
+
+            decimal? Parse(string input)
+            {
+                if (!rx.IsMatch(input))
+                    return null;
+                return decimal.TryParse(input.Replace(" ", ""), out var decimalValue) ? (decimal?)decimalValue : null;
+			}
+        }
     }
 }
