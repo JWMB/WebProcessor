@@ -14,10 +14,83 @@ namespace NoK.Models
         public int LessonId { get; set; }
         public List<IAssignment> Assignments { get; set; } = new();
     }
-    public class Section
-    { }
-    public class Lesson
-    { }
+    //public class Section
+    //{ }
+    //public class Lesson
+    //{ }
+
+    public class ContentNode
+    {
+        public ContentNode() { }
+        public ContentNode(int id)
+        {
+            this.Id = id;
+        }
+        public ContentNode? Parent { get; private set; }
+        public IEnumerable<ContentNode> Children() => _children;
+        private List<ContentNode> _children = new();
+        public int Id { get; protected set; }
+        public string Name { get; protected set; } = string.Empty;
+
+        public void AddChild(ContentNode child)
+        {
+            child.Parent = this;
+            _children.Add(child);
+        }
+    }
+    public class Product : ContentNode
+    {
+        public string ProductInfo { get; private set; } = string.Empty;
+        public static Product Create(RawCourse.Root raw)
+        {
+            var node = new Product { ProductInfo = raw.ProductInfo };
+            foreach (var child in raw.Content.Chapters.Select(Chapter.Create))
+                node.AddChild(child);
+            return node;
+        }
+    }
+    public class Chapter : ContentNode
+    {
+        public static Chapter Create(RawCourse.Chapter raw)
+        {
+            var node = new Chapter { };
+            if (raw.HierarchyID == null)
+                throw new ArgumentNullException(nameof(raw.HierarchyID));
+            node.Id = raw.HierarchyID.Value;
+
+            foreach (var child in raw.Parts.SelectMany(o => o.SubParts).Select(SubpartX.Create))
+                node.AddChild(child);
+            return node;
+        }
+    }
+    public class SubpartX : ContentNode
+    {
+        public static SubpartX Create(RawCourse.SubPart raw)
+        {
+            var node = new SubpartX { };
+            if (raw.HierarchyID == null)
+                throw new ArgumentNullException(nameof(raw.HierarchyID));
+            node.Id = raw.HierarchyID.Value;
+
+            foreach (var child in raw.Sections.Select(o => o.Lesson).Select(Lesson.Create))
+                node.AddChild(child);
+            return node;
+        }
+    }
+    public class Lesson : ContentNode
+    {
+        public string Html { get; private set; } = string.Empty;
+        public static Lesson Create(RawCourse.Lesson raw)
+        {
+            var node = new Lesson { };
+            if (raw.Id == null)
+                throw new ArgumentNullException(nameof(raw.Id));
+            node.Id = raw.Id.Value;
+            node.Html = raw.Html;
+            return node;
+        }
+    }
+
 
     public enum ResponseType
     {
@@ -257,7 +330,7 @@ namespace NoK.Models
 
         public static string ReplaceAsciiMathWithMathML(string text)
         {
-            var rx = new Regex(@"`(([a-z]?[0-9,.=+*/^()\s-])+[a-z]?)`");
+            var rx = new Regex(@"`(((a?sin|a?cos|a?tan)?[a-z]?[0-9,.=+*/^()\s\[\]-])+[a-z]?)`");
             return rx.Replace(text, m => AsciiMath.Parser.ToMathMl(m.Groups[1].Value));
         }
 
@@ -266,12 +339,6 @@ namespace NoK.Models
             body = Process(body) ?? "";
 
             var nodes = INodeExtensions.ParseFragment(body);
-			//var abcs = nodes.SelectMany(o => o.DescendantsAndSelf())
-			//	.Where(o => o is IHtmlElement)
-			//	.Select(o => new { Node = (IHtmlElement)o, Match = new Regex(@"^\s*(?<character>[a-f])\)\s", RegexOptions.IgnoreCase).Match(o.Text()) })
-			//	.Where(o => o.Match.Success)
-			//	.Select(o => new { o.Node, Char = o.Match.Groups["character"].Value.ToLower()[0] })
-			//	.ToList();
 
             var abcs = nodes.SelectMany(o => o.DescendantsAndSelf())
                 .Select(o => new { Node = o, Match = new Regex(@"^\s*(?<character>[a-f])\)\s?", RegexOptions.IgnoreCase).Match(o.Text()) })

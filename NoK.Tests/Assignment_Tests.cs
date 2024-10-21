@@ -70,48 +70,47 @@ namespace NoK.Tests
             tmp!.Single().ShouldStartWith("<math xmlns");
         }
 
-        [Fact]
-        public void Course_Deserialize()
+        [Theory]
+        [InlineData(147964, 3)]
+        [InlineData(147963, 2)]
+        [InlineData(141107, 3)]
+        [InlineData(141109, 4)]
+        public void Investigate_InlineTasks(int assignmentId, int expectedNumTasks)
         {
-            var dir = new DirectoryInfo("C:\\Users\\jonas\\Downloads\\assignments_141094_16961");
+            var rawAssignment = GetRawAssignment(assignmentId);
 
-            var allCourses = new[] { "course_2982.json", "course_2982.json" }
-                .Select(o => File.ReadAllText(Path.Join(dir.FullName, o)))
-                .Select(JsonConvert.DeserializeObject<RawCourse.Root>).OfType<RawCourse.Root>()
-                .Select(o => o.Content)
-                .ToList();
+            var converted = Assignment.Create(rawAssignment!);
+            converted.Tasks.Where(o => string.IsNullOrEmpty(o.Question)).ShouldBeEmpty();
+            converted.Tasks.Count.ShouldBe(expectedNumTasks);
+        }
 
-            var toc = allCourses.Select(course =>
-                new JObject(course.Chapters.Select(chapter =>
-                    new JProperty(chapter.Name, new JObject(chapter.Parts.Select(part =>
-                        new JProperty(part.Name, new JObject(part.SubParts.Select(sp => 
-                            new JProperty(sp.Name, sp.Sections.Select(sec => sec.Name))
-                        )))
-                    )))
-                    )
-                ))
-                .ToList();
+        [Fact]
+        public void Investigate_MathML()
+        {
+            var assignmentId = 141091;
+            var rawAssignment = GetRawAssignment(assignmentId);
+            //var tmp = Assignment.ReplaceAsciiMathWithMathML(rawAssignment.TemplateData.Text);
 
-            var subparts = LoadAllSubparts();
-            var assignmentById = subparts.SelectMany(o => o.Assignments)
-                .ToDictionary(o => o.Id, o => o);
+            var converted = Assignment.Create(rawAssignment!);
+            converted.Body.ShouldContain("<math>");
+        }
 
-            var aaa = allCourses.SelectMany(o =>
-            o.Chapters.SelectMany(p =>
-            p.Parts.SelectMany(q =>
-            q.SubParts.SelectMany(r =>
-            r.Sections.SelectMany(r => r.SectionAssignmentRelations ?? new List<RawCourse.SectionAssignmentRelation>()))))).ToList();
+        private RawAssignment.Assignment GetRawAssignment(int assignmentId, RawAssignment.Root? root = null)
+        {
+            root ??= GetAssignments();
+            var rawAssignment = root!.Subpart.Select(o => o.Assignments.SingleOrDefault(a => a.AssignmentID == assignmentId)).Single();
+            return rawAssignment!;
+        }
 
-            var joined = aaa.Select(o => o.AssignmentId == null ? null : assignmentById.TryGetValue(o.AssignmentId.Value, out var a) ? new { Assignment = a, Rel = o } : null)
-                .Where(o => o != null)
-                .ToList();
+        private RawAssignment.Root GetAssignments()
+        {
+            return JsonConvert.DeserializeObject<RawAssignment.Root>(File.ReadAllText(Helpers.GetJsonFile("assignments_141094_16961.json")))!;
         }
 
         private List<Subpart> LoadAllSubparts()
         {
-            var dir = new DirectoryInfo("C:\\Users\\jonas\\Downloads\\assignments_141094_16961");
             var filenames = new[] { "assignments_141094_16961.json", "assignment2.json", "someAssignment.json" };
-            return filenames.SelectMany(o => RawConverter.ReadRaw(File.ReadAllText(Path.Join(dir.FullName, o)))).ToList();
+            return filenames.SelectMany(o => RawConverter.ReadRaw(File.ReadAllText(Helpers.GetJsonFile(o)))).ToList();
         }
     }
 }

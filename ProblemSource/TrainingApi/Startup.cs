@@ -212,15 +212,19 @@ namespace TrainingApi
             services.AddSingleton<ISimpleCompletionService>(sp => new AzureOpenAICompletionService(sp.GetRequiredService<AzureOpenAICompletionService.Config>()));
             services.AddSingleton<IProblemDomain>(sp =>
             {
-                var pathToFile = "nok/assignments_141094_16961/assignments_141094_16961.json";
-				var desktop = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory));
+                var filename = "assignments_141094_16961.json";
+                var desktop = new DirectoryInfo(Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "NoK"));
+                string? fullFilename = null;
                 if (desktop.Exists)
                 {
-                    var file = desktop.GetFiles("assignments_141094_16961.json").FirstOrDefault();
-                    if (file?.Exists == true)
-                        pathToFile = file.FullName;
-				}
-                var config = new NoKStimuliRepository.Config(pathToFile);
+                    var fileInfo = desktop.GetFiles(filename).FirstOrDefault();
+                    if (fileInfo?.Exists == true)
+                        fullFilename = fileInfo.FullName;
+                }
+                if (fullFilename == null)
+                    throw new FileNotFoundException(filename);
+
+                var config = new NoKStimuliRepository.Config(fullFilename);
                 var result = new NoKDomain(config, sp.GetService<ISimpleCompletionService>());
                 result.Init().Wait();
                 return result;

@@ -14,3 +14,37 @@
         </article>
     </main>
 </div>
+
+<script src="js/loader.js"></script>
+<script>
+	window.loadMultiLineEditor = () => {
+		if (window.require == null)
+			window.require = {};
+		if (window.require.paths == null)
+			window.require.paths = {};
+		if (window.require.paths.vs == null)
+			window.require.paths.vs = '/external/monaco/min/vs';
+		
+		return new Promise(res => {
+			const loadEditorIfReady = () => {
+				if (document.readyState !== "complete") return;
+
+				setTimeout(() => {
+					Loader.load([
+						"external/monaco/min/vs/editor/editor.main.css",
+						"external/monaco/min/vs/loader.js",
+						"external/monaco/min/vs/editor/editor.main.js",
+						"js/multiLineEditor.js",
+					],
+						{ skipIfTruthy: typeof MultiLineEditor == "function", delay: 500 }) //window.monaco && window.monaco.editor
+						.then(() => res()); // new MultiLineEditor("monacoContainer"));
+				}, 200);
+			};
+
+			loadEditorIfReady();
+			document.onreadystatechange = function () {
+				loadEditorIfReady();
+			}
+		});
+	}
+</script>
