@@ -97,14 +97,19 @@ namespace NoK.Tests
 
         private RawAssignment.Assignment GetRawAssignment(int assignmentId, RawAssignment.Root? root = null)
         {
-            root ??= GetAssignments();
+            root ??= GetRawAssignments();
             var rawAssignment = root!.Subpart.Select(o => o.Assignments.SingleOrDefault(a => a.AssignmentID == assignmentId)).Single();
             return rawAssignment!;
         }
 
-        private RawAssignment.Root GetAssignments()
+        private RawAssignment.Root GetRawAssignments(string filename = "assignments_141094_16961.json")
         {
-            return JsonConvert.DeserializeObject<RawAssignment.Root>(File.ReadAllText(Helpers.GetJsonFile("assignments_141094_16961.json")))!;
+            return JsonConvert.DeserializeObject<RawAssignment.Root>(File.ReadAllText(Helpers.GetJsonFile(filename)))!;
+        }
+        public static List<Assignment> GetAssignments(string filename = "assignments_141094_16961.json")
+        {
+            var raw = JsonConvert.DeserializeObject<RawAssignment.Root>(File.ReadAllText(Helpers.GetJsonFile(filename)))!;
+            return raw.Subpart.SelectMany(o => o.Assignments).Select(Assignment.Create).OfType<Assignment>().ToList();
         }
 
         private List<Subpart> LoadAllSubparts()

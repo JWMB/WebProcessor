@@ -14,17 +14,13 @@ namespace NoK.Models
         public int LessonId { get; set; }
         public List<IAssignment> Assignments { get; set; } = new();
     }
-    //public class Section
-    //{ }
-    //public class Lesson
-    //{ }
 
     public class ContentNode
     {
         public ContentNode() { }
         public ContentNode(int id)
         {
-            this.Id = id;
+            Id = id;
         }
         public ContentNode? Parent { get; private set; }
         public IEnumerable<ContentNode> Children() => _children;
@@ -37,60 +33,127 @@ namespace NoK.Models
             child.Parent = this;
             _children.Add(child);
         }
+
+        public IEnumerable<ContentNode> Descendants()
+        {
+            foreach (var child in _children)
+            {
+                yield return child;
+                foreach (var grandchild in child.Descendants())
+                    yield return grandchild;
+            }
+        }
+
+        public IEnumerable<ContentNode> Ancestors()
+        {
+            if (Parent != null)
+            {
+                yield return Parent;
+                foreach (var item in Parent.Ancestors())
+                    yield return item;
+            }
+        }
     }
-    public class Product : ContentNode
+
+    public class ProductNode : ContentNode
     {
         public string ProductInfo { get; private set; } = string.Empty;
-        public static Product Create(RawCourse.Root raw)
+        public static ProductNode Create(RawCourse.Root raw)
         {
-            var node = new Product { ProductInfo = raw.ProductInfo };
-            foreach (var child in raw.Content.Chapters.Select(Chapter.Create))
+            var node = new ProductNode { ProductInfo = raw.ProductInfo };
+            foreach (var child in raw.Content.Chapters.Select(ChapterNode.Create))
                 node.AddChild(child);
+
             return node;
         }
     }
-    public class Chapter : ContentNode
+
+    public class ChapterNode : ContentNode
     {
-        public static Chapter Create(RawCourse.Chapter raw)
+        public static ChapterNode Create(RawCourse.Chapter raw)
         {
-            var node = new Chapter { };
+            var node = new ChapterNode { };
             if (raw.HierarchyID == null)
                 throw new ArgumentNullException(nameof(raw.HierarchyID));
             node.Id = raw.HierarchyID.Value;
+            node.Name = raw.Name;
 
-            foreach (var child in raw.Parts.SelectMany(o => o.SubParts).Select(SubpartX.Create))
+            foreach (var child in raw.Parts.SelectMany(o => o.SubParts).Select(SubpartNode.Create))
                 node.AddChild(child);
             return node;
         }
     }
-    public class SubpartX : ContentNode
+    public class SubpartNode : ContentNode
     {
-        public static SubpartX Create(RawCourse.SubPart raw)
+        public static SubpartNode Create(RawCourse.SubPart raw)
         {
-            var node = new SubpartX { };
+            var node = new SubpartNode { };
             if (raw.HierarchyID == null)
                 throw new ArgumentNullException(nameof(raw.HierarchyID));
             node.Id = raw.HierarchyID.Value;
+            node.Name = raw.Name;
 
-            foreach (var child in raw.Sections.Select(o => o.Lesson).Select(Lesson.Create))
+            //foreach (var child in raw.Sections.Select(o => new { Section = o, o.Name, o.Lesson }).Select(o => LessonNode.Create(o.Lesson, o.Section.SectionAssignmentRelations)))
+            foreach (var child in raw.Sections.Select(SectionNode.Create))
                 node.AddChild(child);
             return node;
         }
     }
-    public class Lesson : ContentNode
+
+    public class SectionNode : ContentNode
     {
-        public string Html { get; private set; } = string.Empty;
-        public static Lesson Create(RawCourse.Lesson raw)
+        public List<int> AssignmentIds { get; private set; } = new();
+        public LessonNode? Lesson => Children().OfType<LessonNode>().FirstOrDefault();
+        public static SectionNode Create(RawCourse.Section raw)
         {
-            var node = new Lesson { };
+            var node = new SectionNode { };
             if (raw.Id == null)
                 throw new ArgumentNullException(nameof(raw.Id));
             node.Id = raw.Id.Value;
-            node.Html = raw.Html;
+            node.Name = raw.Name;
+
+            if (raw.SectionAssignmentRelations?.Any() == true)
+                node.AssignmentIds = raw.SectionAssignmentRelations.Select(o => o.AssignmentId).OfType<int>().ToList();
+
+            node.AddChild(LessonNode.Create(raw.Lesson));
+
             return node;
         }
     }
 
+    public class LessonNode : ContentNode
+    {
+        public string Html { get; private set; } = string.Empty;
+        public static LessonNode Create(RawCourse.Lesson raw)
+        {
+            var result = new LessonNode();
+            if (raw.Id == null)
+                throw new ArgumentNullException(nameof(raw.Id));
+            result.Id = raw.Id.Value;
+
+            result.Html = raw.Html;
+
+            return result;
+        }
+    }
+
+    //public class LessonNode : ContentNode
+    //{
+    //    public string Html { get; private set; } = string.Empty;
+    //    public List<int> AssignmentIds { get; private set; } = new();
+    //    public static LessonNode Create(RawCourse.Lesson raw, List<RawCourse.SectionAssignmentRelation>? assignmentRelations = null)
+    //    {
+    //        var node = new LessonNode { };
+    //        if (raw.Id == null)
+    //            throw new ArgumentNullException(nameof(raw.Id));
+
+    //        if (assignmentRelations?.Any() == true)
+    //            node.AssignmentIds = assignmentRelations.Select(o => o.AssignmentId).OfType<int>().ToList();
+    //        node.Id = raw.Id.Value;
+    //        node.Html = raw.Html;
+    //        return node;
+    //    }
+    //}
 
     public enum ResponseType
     {

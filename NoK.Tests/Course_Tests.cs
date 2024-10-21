@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NoK.Models;
 using NoK.Models.Raw;
+using Shouldly;
 
 namespace NoK.Tests
 {
@@ -11,8 +13,40 @@ namespace NoK.Tests
         {
             var allCourses = new[] { "course_2982.json", "course_16961.json" } //course_16961 course_2982
                 .Select(LoadCourse)
-                .Select(Models.Product.Create)
+                .Select(ProductNode.Create)
                 .ToList();
+
+            var lessons = allCourses.SelectMany(o => o.Descendants().OfType<SectionNode>()).ToList();
+
+            var assignments = Assignment_Tests.GetAssignments();
+            foreach (var item in assignments)
+            {
+                var lesson = lessons.FirstOrDefault(o => o.AssignmentIds.Contains(item.Id));
+                lesson.ShouldNotBeNull();
+                //lesson.Parent
+            }
+
+            var aaa = allCourses.Select(Rec);
+            
+            var r = System.Text.Json.JsonSerializer.Serialize(aaa.First(), options: new System.Text.Json.JsonSerializerOptions{ WriteIndented = true } );
+            System.Text.Json.Nodes.JsonObject Rec(ContentNode node)
+            {
+                //var el = System.Text.Json.JsonSerializer.SerializeToElement(node);
+                //var jnode = System.Text.Json.Nodes.JsonObject.Create(el);
+                //if (jnode == null)
+                //    throw new Exception($"Could not create JsonObject {node.Id}");
+                //jnode.Remove(nameof(ContentNode.Parent));
+
+                var jnode = new System.Text.Json.Nodes.JsonObject();
+                jnode["Name"] = $"{node.GetType().Name} - {node.Name}";
+
+                var children = new System.Text.Json.Nodes.JsonArray();
+                foreach (var child in node.Children())
+                    children.Add(Rec(child));
+                if (children.Any())
+                    jnode["Children"] = children;
+                return jnode;
+            }
         }
 
         [Fact]
