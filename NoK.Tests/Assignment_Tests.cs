@@ -85,6 +85,13 @@ namespace NoK.Tests
         }
 
         [Fact]
+        public void Investigate_StrangeAssignment()
+        {
+            var raw = GetRawAssignment(24515, filename: "assignment2.json"); //24531
+            var converted = Assignment.Create(raw!); // `20/"-5"` =
+        }
+
+        [Fact]
         public void Investigate_MathML()
         {
             var assignmentId = 141091;
@@ -95,9 +102,26 @@ namespace NoK.Tests
             converted.Body.ShouldContain("<math>");
         }
 
-        private RawAssignment.Assignment GetRawAssignment(int assignmentId, RawAssignment.Root? root = null)
+        //[Fact]
+        //public void AsciiMath_Parser_Test()
+        //{
+        //    GetRawAssignments()
+        //}
+
+        [Theory]
+        [InlineData("s=v*t")]
+        [InlineData("s = v * t")]
+        [InlineData("h(t) = 700 - 5t")]
+        public void AsciiMath_Parser_Aint_Great(string input)
         {
-            root ??= GetRawAssignments();
+            var x = AsciiMath.Parser.ToMathMl(input);
+            var replaced = Assignment.ReplaceAsciiMathWithMathML($"`{input}`");
+            //replaced.ShouldContain("<math>");
+        }
+
+        private RawAssignment.Assignment GetRawAssignment(int assignmentId, RawAssignment.Root? root = null, string? filename = null)
+        {
+            root ??= (filename == null ? GetRawAssignments() : GetRawAssignments(filename));
             var rawAssignment = root!.Subpart.Select(o => o.Assignments.SingleOrDefault(a => a.AssignmentID == assignmentId)).Single();
             return rawAssignment!;
         }

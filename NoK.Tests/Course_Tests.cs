@@ -23,7 +23,7 @@ namespace NoK.Tests
             {
                 var lesson = lessons.FirstOrDefault(o => o.AssignmentIds.Contains(item.Id));
                 lesson.ShouldNotBeNull();
-                //lesson.Parent
+                lesson.Parent!.GetType().ShouldBe(typeof(SubpartNode));
             }
 
             var aaa = allCourses.Select(Rec);
@@ -47,6 +47,32 @@ namespace NoK.Tests
                     jnode["Children"] = children;
                 return jnode;
             }
+        }
+
+        [Fact]
+        public void FindUnparseableMathFormulas()
+        {
+            var allCourses = new[] { "course_2982.json", "course_16961.json" }
+                .Select(LoadCourse)
+                .ToList();
+            var lessons = allCourses.SelectMany(crs => 
+                crs.Content.Chapters.SelectMany(c => 
+                    c.Parts.SelectMany(s => 
+                        s.SubParts.SelectMany(sp => 
+                            sp.Sections.Select(se => se.Lesson))))).ToList();
+            var aaa = lessons.Select(o =>
+            {
+                try
+                {
+                    Assignment.ReplaceAsciiMathWithMathML(o.Html, false);
+                }
+                catch (Exception ex)
+                {
+                    return $"{ex.Message} -- {o.Id}\n{o.Html}";
+                }
+                return null;
+            }).Where(o => o != null) // OfType<string>()
+            .ToList();
         }
 
         [Fact]
