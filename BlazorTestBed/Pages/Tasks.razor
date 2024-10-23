@@ -11,7 +11,7 @@
 
 <h1>Tasks</h1>
 
-<div style="overflow:scroll; height:400px;">
+<div style="overflow:scroll; height:400px; border-color: black;border-width: 2px;border-style: solid;">
     @foreach (var info in summaries)
     {
         <div @onclick="() => Get(info.Id)">@info.Id - @info.Summary</div>
@@ -21,6 +21,7 @@
 <div>
     @if (selectedTask != null)
     {
+        <b>@selectedTask.Id</b>
         @((MarkupString)selectedTask.Presentation)
         @((MarkupString)selectedTask.Question)
         @if (selectedTask.Question.Contains("<input") == false) {

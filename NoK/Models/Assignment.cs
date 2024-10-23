@@ -4,6 +4,7 @@ using AngleSharp.Html.Dom;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NoK.Models.Raw;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace NoK.Models
@@ -27,6 +28,8 @@ namespace NoK.Models
         private List<ContentNode> _children = new();
         public int Id { get; protected set; }
         public string Name { get; protected set; } = string.Empty;
+
+        public virtual string? OtherContent => null;
 
         public void AddChild(ContentNode child)
         {
@@ -58,6 +61,8 @@ namespace NoK.Models
     public class ProductNode : ContentNode
     {
         public string ProductInfo { get; private set; } = string.Empty;
+        public override string? OtherContent => ProductInfo;
+
         public static ProductNode Create(RawCourse.Root raw)
         {
             var node = new ProductNode { ProductInfo = raw.ProductInfo };
@@ -104,6 +109,7 @@ namespace NoK.Models
     {
         public List<int> AssignmentIds { get; private set; } = new();
         public LessonNode? Lesson => Children().OfType<LessonNode>().FirstOrDefault();
+
         public static SectionNode Create(RawCourse.Section raw)
         {
             var node = new SectionNode { };
@@ -124,6 +130,8 @@ namespace NoK.Models
     public class LessonNode : ContentNode
     {
         public string Html { get; private set; } = string.Empty;
+        public override string? OtherContent => Html;
+
         public static LessonNode Create(RawCourse.Lesson raw)
         {
             var result = new LessonNode();
@@ -131,29 +139,12 @@ namespace NoK.Models
                 throw new ArgumentNullException(nameof(raw.Id));
             result.Id = raw.Id.Value;
 
-            result.Html = raw.Html;
+            result.Html = Assignment.ReplaceAsciiMathWithMathML(raw.Html);
+            //result.Html = raw.Html;
 
             return result;
         }
     }
-
-    //public class LessonNode : ContentNode
-    //{
-    //    public string Html { get; private set; } = string.Empty;
-    //    public List<int> AssignmentIds { get; private set; } = new();
-    //    public static LessonNode Create(RawCourse.Lesson raw, List<RawCourse.SectionAssignmentRelation>? assignmentRelations = null)
-    //    {
-    //        var node = new LessonNode { };
-    //        if (raw.Id == null)
-    //            throw new ArgumentNullException(nameof(raw.Id));
-
-    //        if (assignmentRelations?.Any() == true)
-    //            node.AssignmentIds = assignmentRelations.Select(o => o.AssignmentId).OfType<int>().ToList();
-    //        node.Id = raw.Id.Value;
-    //        node.Html = raw.Html;
-    //        return node;
-    //    }
-    //}
 
     public enum ResponseType
     {
@@ -391,10 +382,51 @@ namespace NoK.Models
             }
         }
 
-        public static string ReplaceAsciiMathWithMathML(string text)
+        public static string ReplaceAsciiMathWithMathML(string text) => ReplaceAsciiMathWithMathML(text, true);
+
+        public static string ReplaceAsciiMathWithMathML(string text, bool ignoreException)
         {
-            var rx = new Regex(@"`(((a?sin|a?cos|a?tan)?[a-z]?[0-9,.=+*/^()\s\[\]-])+[a-z]?)`");
-            return rx.Replace(text, m => AsciiMath.Parser.ToMathMl(m.Groups[1].Value));
+            var split = text.Split('`'); // assuming that ` is never used outside of AsciiMath notation...
+            return string.Join("", split.Select((o, i) =>
+            {
+                if (i % 2 == 0) return o;
+                try
+                {
+                    var mathML = AsciiMath.Parser.ToMathMl(o);
+                    if (!mathML.Contains("<math>"))
+                    { }
+                    return mathML;
+                }
+                catch (Exception e)
+                {
+                    if (ignoreException)
+                        return o;
+                    throw new Exception(o, e);
+                }
+
+            }));
+
+            var rx = new Regex(@"`(((a?sin|a?cos|a?tan)?[a-zA-Z]?[0-9,.=+*⋅\/^()\s\[\]\}\{…-])+[a-z]?)`"); //
+            return rx.Replace(text, m =>
+            {
+                var inner = m.Groups[1].Value;
+                if (inner.Trim().Any() == false)
+                    return inner;
+                try
+                {
+                    var mathML = AsciiMath.Parser.ToMathMl(inner);
+                    if (!mathML.Contains("<math>"))
+                    { }
+                    return mathML;
+                }
+                catch (Exception e)
+                {
+                    //Console.WriteLine($"{m.Groups[1].Value} {e.GetType()}");
+                    if (ignoreException)
+                        return m.Value;
+                    throw new Exception(inner, e);
+                }
+            });
         }
 
         private static string ProcessBodyAndUpdateTasks(string body, List<Subtask> tasks, Func<int, Subtask> createNewSubtask)
