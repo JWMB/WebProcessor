@@ -52,7 +52,7 @@ namespace TrainingApi.Controllers
         {
             var iresponse = IProblemDomain.DeserializeWithId<SimpleUserResponse>(response);
             var domain = GetProblemDomain(iresponse.SourceId);
-            var checker = domain.SolutionChecker;
+            var checker = domain.GetSolutionChecker(iresponse.Id);
             var typedResponse = checker.Deserialize(response);
             var problem = await domain.StimuliRepository.GetById(typedResponse.Id);
             if (problem == null)

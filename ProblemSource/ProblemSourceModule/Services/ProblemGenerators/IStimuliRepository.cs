@@ -6,7 +6,7 @@ namespace ProblemSourceModule.Services.ProblemGenerators
 {
     public interface IProblemDomain
     {
-        ISolutionChecker SolutionChecker { get; }
+        ISolutionChecker GetSolutionChecker(string problemId, Type? problemType = null);
         IStimuliRepository StimuliRepository { get; }
 
         public static T DeserializeWithId<T>(object obj) where T: class, IStimulusId
