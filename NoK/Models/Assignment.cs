@@ -4,7 +4,6 @@ using AngleSharp.Html.Dom;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NoK.Models.Raw;
-using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace NoK.Models
@@ -56,6 +55,7 @@ namespace NoK.Models
                     yield return item;
             }
         }
+        public override string ToString() => $"{GetType().Name}:{Id}";
     }
 
     public class ProductNode : ContentNode
@@ -65,7 +65,9 @@ namespace NoK.Models
 
         public static ProductNode Create(RawCourse.Root raw)
         {
-            var node = new ProductNode { ProductInfo = raw.ProductInfo };
+            var isbn = Regex.Match($"{raw.ProductInfo}", @"ISBN:\D*(?<id>\d{11,14})");
+            var id = int.Parse(isbn.Success ? isbn.Groups["id"].Value.Substring(0, 9) : "123456789");
+            var node = new ProductNode { ProductInfo = raw.ProductInfo, Id = id };
             foreach (var child in raw.Content.Chapters.Select(ChapterNode.Create))
                 node.AddChild(child);
 

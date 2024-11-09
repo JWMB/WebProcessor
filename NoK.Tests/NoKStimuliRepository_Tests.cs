@@ -8,7 +8,7 @@ namespace NoK.Tests
         [Fact]
         public async Task GetAndCheckProblem()
         {
-			IStimuliRepository problemRepository = new NoKStimuliRepository(new NoKStimuliRepository.Config(Helpers.GetJsonFile("assignments_141094_16961.json")));
+			IStimuliRepository problemRepository = new NoKStimuliRepository(new(Helpers.GetJsonFile("assignments_141094_16961.json")));
             await problemRepository.Init();
 
             var stimulus = await problemRepository.GetById("141087/0"); // 141087 55224

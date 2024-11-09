@@ -116,7 +116,7 @@ namespace NoK.Tests
         {
             var x = AsciiMath.Parser.ToMathMl(input);
             var replaced = Assignment.ReplaceAsciiMathWithMathML($"`{input}`");
-            //replaced.ShouldContain("<math>");
+            replaced.ShouldContain("<math>");
         }
 
         private RawAssignment.Assignment GetRawAssignment(int assignmentId, RawAssignment.Root? root = null, string? filename = null)

@@ -31,7 +31,7 @@ namespace ProblemSourceModule.Services.ProblemGenerators
         Task<IStimulus?> GetById(string id);
         Task<List<string>> GetAllIds();
         Task<List<IStimulus>> GetAll();
-        IStimulus Deserialize(object obj);
+        //IStimulus Deserialize(object obj);
     }
 
     public interface ISolutionChecker
