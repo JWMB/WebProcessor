@@ -4,31 +4,67 @@ using System.Net.Http.Json;
 
 namespace BlazorTestBed.Services
 {
+    public class ApiClient
+    {
+        private static HttpClient Client = new HttpClient();
+        private Uri baseUri;
+
+        public ApiClient(string basePath)
+        {
+            baseUri = new Uri($"https://localhost:7173/api/{basePath}"); // https://localhost:7173/api"); //  7174 7173 http://localhost:5174/api
+        }
+
+        public async Task<T?> Get<T>(string pathAndQuery)
+        {
+            var tmp = await Client.GetStringAsync($"{baseUri}/{pathAndQuery}");
+            return JsonConvert.DeserializeObject<T>(tmp);
+        }
+        public async Task<T> GetOrThrow<T>(string pathAndQuery)
+        {
+            var result = await Get<T>(pathAndQuery);
+            if (result == null)
+                throw new FileNotFoundException();
+            return result;
+        }
+
+        public async Task<(HttpResponseMessage Response, TResult? Content)> Post<TBody, TResult>(string pathAndQuery, TBody body) where TResult : class
+        {
+            var response = await Client.PostAsJsonAsync($"{baseUri}/{pathAndQuery}", body);
+            var content = await response.Content.ReadAsStringAsync();
+            return (response, typeof(TResult) == typeof(string) ? content as TResult: JsonConvert.DeserializeObject<TResult>(content));
+        }
+    }
+
+    public class ContentTreeService
+    {
+        private ApiClient Client = new ApiClient("Content");
+        public async Task<TreeNodeDto> GetTreeFrom(string? id = null) =>
+            await Client.GetOrThrow<TreeNodeDto>($"tree?id={id}");
+
+        public readonly record struct TreeNodeDto(
+            string Title,
+            string Id,
+            string Type,
+            List<TreeNodeDto> Children,
+            string? Body = null,
+            string? Icon = null
+            );
+    }
+
     public class StimuliResponseService
     {
-        private Uri baseUri = new Uri(""); //https://localhost:7173/api  7174 7173 http://localhost:5174/api
+        private ApiClient Client = new ApiClient("StimuliResponse");
 
-        public StimuliResponseService()
-        {
-        }
+        public async Task<Stimulus> GetStimuli(string id) =>
+            await Client.GetOrThrow<Stimulus>($"?id={id}");
 
-        private HttpClient Client => new HttpClient();
+        public async Task<List<IdAndSummary>> GetAllStimuliSummaries() =>
+            (await Client.Get< List<IdAndSummary>>($"summaries?source=xxx")) ?? new();
 
-
-        public async Task<Stimulus> GetStimuli(string id)
-        {
-            var tmp = await Client.GetStringAsync($"{baseUri}/StimuliResponse?id={id}");
-            return JsonConvert.DeserializeObject<Stimulus>(tmp);
-        }
-        public async Task<List<IdAndSummary>> GetAllStimuliSummaries()
-        {
-            var tmp = await Client.GetStringAsync($"{baseUri}/StimuliResponse/summaries?source=xxx");
-            return JsonConvert.DeserializeObject<List<IdAndSummary>>(tmp) ?? new();
-        }
         public async Task<(HttpStatusCode, string)> SendResponse(UserResponse userResponse)
         {
-            var tmp = await Client.PostAsJsonAsync($"{baseUri}/StimuliResponse", userResponse);
-            return (tmp.StatusCode, await tmp.Content.ReadAsStringAsync());
+            var result = await Client.Post<UserResponse, string>($"", userResponse);
+            return (result.Response.StatusCode, result.Content ?? string.Empty);
         }
 
         public class UserResponse

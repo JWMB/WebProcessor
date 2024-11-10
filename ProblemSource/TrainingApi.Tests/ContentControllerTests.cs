@@ -20,7 +20,7 @@ namespace TrainingApi.Tests
         [Fact]
         public async Task GetSingle()
         {
-            var result = await sut!.GetSingle("2734");
+            var result = await sut!.GetSingle("2734", true);
             result.ShouldNotBeNull();
             result.Value.Children.Count.ShouldBe(1);
         }

@@ -18,6 +18,7 @@
     }
 </div>
 
+<div>asda @(root?.Children.Count ?? 0)</div>
 <div>
     @if (selectedTask != null)
     {
@@ -71,11 +72,13 @@
     private Stimulus? selectedTask;
     private string userResponseText = string.Empty;
     private (HttpStatusCode, string)? serverResponse;
-
+    private ContentTreeService.TreeNodeDto? root;
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            var contentTreeService = new ContentTreeService();
+            root = await contentTreeService.GetTreeFrom();
             summaries = await client.GetAllStimuliSummaries();
             await Get(summaries.First().Id);
         }
