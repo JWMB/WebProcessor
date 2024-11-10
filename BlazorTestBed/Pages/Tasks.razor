@@ -1,0 +1,121 @@
+﻿@page "/tasks"
+@using BlazorTestBed.Services
+@using Newtonsoft.Json
+@using System.Net
+@using System.Text.RegularExpressions
+@using static BlazorTestBed.Services.StimuliResponseService
+@inject StimuliResponseService client
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Tasks</PageTitle>
+
+<h1>Tasks</h1>
+
+<div style="overflow:scroll; height:400px; border-color: black;border-width: 2px;border-style: solid;">
+    @foreach (var info in summaries)
+    {
+        <div @onclick="() => Get(info.Id)">@info.Id - @info.Summary</div>
+    }
+</div>
+
+<div>asda @(root?.Children.Count ?? 0)</div>
+<div>
+    @if (selectedTask != null)
+    {
+        <b>@selectedTask.Id</b>
+        @((MarkupString)selectedTask.Presentation)
+        @((MarkupString)selectedTask.Question)
+        @if (selectedTask.Question.Contains("<input") == false) {
+            <InputText @bind-Value="userResponseText"></InputText>
+        }
+        <div>
+            <div class="grid-container">
+                <div id="monacoContainer"></div>
+                @* 		<div bind:this={editorContainer} />
+            <div>
+            {#each lines as line}
+            <div class="grid-item">{@html renderExpression(line)}</div>
+            {/each}
+            </div>
+            *@
+            </div>
+            <button on:click={evaluate}>Evaluate</button>
+            <div style="background-color:azure">_</div>
+        </div>
+
+        <button class="btn btn-primary" @onclick=Respond>Svara</button>
+        <div>@(serverResponse == null ? "" : $"{serverResponse.Value.Item1} {serverResponse.Value.Item2}")</div>
+    }
+</div>
+
+<script>
+    window.loadMultiLineEditor().then(() => new MultiLineEditor("monacoContainer"));
+</script>
+
+<style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: 400px auto;
+        background-color: #2196F3;
+        padding: 5px;
+    }
+
+    .grid-item {
+        background-color: rgba(255, 255, 255, 0.8);
+        text-align: left;
+        height: 40px;
+    }
+</style>
+
+@code {
+    private List<IdAndSummary> summaries = new();
+    private Stimulus? selectedTask;
+    private string userResponseText = string.Empty;
+    private (HttpStatusCode, string)? serverResponse;
+    private ContentTreeService.TreeNodeDto? root;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var contentTreeService = new ContentTreeService();
+            root = await contentTreeService.GetTreeFrom();
+            summaries = await client.GetAllStimuliSummaries();
+            await Get(summaries.First().Id);
+        }
+        catch { }
+    }
+
+    private async Task Get(string id)
+    {
+        selectedTask = await client.GetStimuli(id);
+        if (selectedTask != null)
+        {
+            if (selectedTask.Question.Contains("<input"))
+            {
+                var guids = new List<string>();
+                selectedTask.Question = Regex.Replace(selectedTask.Question, @"<input\s+", m => {
+                    var guid = Guid.NewGuid().ToString();
+                    guids.Add(guid);
+                    return $"<input id=\"{guid}\"";
+                });
+                Console.WriteLine(string.Join(", ", guids));
+            }
+        }
+    }
+
+    private async Task Respond()
+    {
+        if (selectedTask == null)
+            return;
+        if (selectedTask.Question.Contains("<input"))
+        {
+            //JSRuntime.InvokeAsync()
+        }
+        var userResponse = new UserResponse {
+            Id = selectedTask.Id,
+            SourceId = string.Empty,
+            ResponseText = userResponseText
+        };
+        serverResponse = await client.SendResponse(userResponse);
+    }
+}

@@ -1,4 +1,5 @@
-﻿using ProblemSource.Services.Storage.AzureTables;
+﻿using LLM;
+using ProblemSource.Services.Storage.AzureTables;
 using TrainingApi.RealTime;
 
 namespace TrainingApi
@@ -8,5 +9,7 @@ namespace TrainingApi
         public AzureTableConfig AzureTable { get; set; } = new();
         public RealTimeConfig RealTime { get; set; } = new();
         public string? SyncUrls { get; set; } = "";
+
+        public AzureOpenAICompletionService.Config? OpenAi { get; set; }
     }
 }

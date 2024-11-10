@@ -1,5 +1,6 @@
 ﻿using Common.Web;
 using Common.Web.Services;
+using LLM;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -8,8 +9,10 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
+using NoK;
 using PluginModuleBase;
 using ProblemSource.Services;
+using ProblemSourceModule.Services.ProblemGenerators;
 using System.Data;
 using System.Text;
 using TrainingApi.ErrorHandling;
@@ -104,8 +107,7 @@ namespace TrainingApi
                 //app.UseSwagger();
                 //app.UseSwaggerUI();
                 app.UseOpenApi();
-                app.UseSwaggerUi3();
-
+                app.UseSwaggerUi();
                 //app.UseDeveloperExceptionPage();
             }
             else
@@ -207,7 +209,28 @@ namespace TrainingApi
             //TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, config, "AppSettings");
             ConfigureAuthentication(services, config, env);
 
-            var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
+            services.AddSingleton<ISimpleCompletionService>(sp => new AzureOpenAICompletionService(sp.GetRequiredService<AzureOpenAICompletionService.Config>()));
+            services.AddSingleton<IProblemDomain>(sp =>
+            {
+                //var filename = "assignments_141094_16961.json";
+                var desktop = new DirectoryInfo(Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "NoK"));
+            //string? fullFilename = null;
+            //if (desktop.Exists)
+            //{
+            //    var fileInfo = desktop.GetFiles(filename).FirstOrDefault();
+            //    if (fileInfo?.Exists == true)
+            //        fullFilename = fileInfo.FullName;
+            //}
+            //if (fullFilename == null)
+            //    throw new FileNotFoundException(filename);
+
+                var config = new NoKStimuliRepository.Config(desktop.FullName); // fullFilename);
+                var result = new NoKDomain(config, sp.GetService<ISimpleCompletionService>());
+                result.Init().Wait();
+                return result;
+            });
+
+        var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
             services.AddSingleton<ITableClientFactory, TableClientFactory>();
             ServiceConfiguration.ConfigureProcessingPipelineServices(services, plugins);
             return plugins;
