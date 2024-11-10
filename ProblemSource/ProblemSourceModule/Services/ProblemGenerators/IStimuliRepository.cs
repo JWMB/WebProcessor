@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Text.Json;
+using System.Net.Http.Headers;
 
 namespace ProblemSourceModule.Services.ProblemGenerators
 {
@@ -24,6 +25,11 @@ namespace ProblemSourceModule.Services.ProblemGenerators
             return stim;
         }
     }
+
+    //public interface IStimuliSelector
+    //{
+    //    Task<IStimulus?> GetNext();
+    //}
 
     public interface IStimuliRepository
     {
