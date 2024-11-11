@@ -17,38 +17,52 @@
     {
         public int? Count => null;
 
-        public IEnumerable<decimal> GetAll()
+        public IEnumerable<decimal> GetAll() => Generate().Select(o => (decimal)o);
+
+        public static IEnumerable<int> Generate()
         {
-            var D = new Dictionary<int, int[]>();
-            var q = 2;
+            // https://eli.thegreenplace.net/2023/my-favorite-prime-number-generator/
+            yield return 2;
+            var D = new Dictionary<int, int>();
+            var q = 3;
             while (true)
             {
-                var found = D.TryGetValue(q, out var f) ? f : null;
-                if (found == null)
+                if (D.TryGetValue(q, out var p) == false)
                 {
-                    D[q * q] = [q];
+                    D[q * q] = q;
                     yield return q;
                 }
                 else
                 {
-                    foreach (var p in found)
-                    {
-                        var next = p + q;
-                        if (D.TryGetValue(next, out var v))
-                            v.Append(p);
-                        else
-                            D.Add(next, [p]);
-                    }
-
-                    D.Remove(q);
+                    var p2 = p + p;
+                    var x = q + p2;
+                    foreach (var v in D.Values)
+                        if (x == v)
+                            x += p2;
+                    D[x] = p;
                 }
-                q += 1;
+                q += 2;
             }
         }
 
-        public static List<int> GetPrimes(int value)
+        public static List<int> GetPrimeConstituents(int value)
         {
-            throw new NotImplementedException();
+            var result = new List<int>();
+            var maxPrime = (int)Math.Sqrt(value);
+            var primes = Generate().GetEnumerator();
+            while (true)
+            {
+                primes.MoveNext();
+                var prime = primes.Current;
+                if (prime > maxPrime)
+                    break;
+                while (value % prime == 0)
+                {
+                    result.Add(prime);
+                    value /= prime;
+                }
+            }
+            return result;
         }
     }
 
