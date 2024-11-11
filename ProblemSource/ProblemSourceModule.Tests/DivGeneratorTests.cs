@@ -20,5 +20,26 @@ namespace ProblemSourceModule.Tests
         {
             PrimeGenerator.GetPrimeConstituents(value).ShouldBe(expected);
         }
+
+        [Fact]
+        public void GetWeightedRandom()
+        {
+            var sut = new RandomCollectionTools(new DefaultRNG());
+            var weighted = new List<(double, string)> { (1.0, "a"), (1, "b"), (2, "c"), (0.5, "d") };
+
+            var numIterations = 1000;
+            var selected = Enumerable.Range(0, numIterations)
+                .Select(o => sut.GetWeightedRandom(weighted))
+                .GroupBy(o => o)
+                .Select(o => (o.Count() * 1.0, o.Key))
+                .ToList();
+        }
+
+        [Fact]
+        public async Task SimplifyFractionsGenerator()
+        {
+            var sut = new SimplifyFractionsGenerator(new());
+            var result = await sut.Generate();
+        }
     }
 }

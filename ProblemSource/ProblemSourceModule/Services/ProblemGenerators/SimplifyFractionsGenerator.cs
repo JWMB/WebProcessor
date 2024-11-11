@@ -4,61 +4,37 @@
     {
         private readonly Config config;
 
-        public readonly record struct Config(int NumDecimals = 0);
+        public readonly record struct Config(int NumDecimals = 0, int MinCommonFactors = 1);
         public SimplifyFractionsGenerator(Config config)
         {
             this.config = config;
         }
         public Task<IStimulus> Generate()
         {
-            throw new NotImplementedException();
-            var rnd = new Random();
+            var rnd = new DefaultRNG();
             INumberGenerator primeGenerator = new PrimeGenerator();
 
             // difficulty: size of lowest common denomitator + size of num and den?
+
             var primes = primeGenerator.GetAll().Take(5).ToList(); // up to 11
-            // TODO: more weight on lower primes
+            // more weight on lower primes
+            var weightedPrimes = primes
+                .Select((o, i) => (WeightFunc(1.0 * i / primes.Count), o))
+                .ToList();
 
-            return Task.FromResult((IStimulus)new SCDStimulus { Numerator = 1, Denominator = 1 });
+            var tools = new RandomCollectionTools(rnd);
 
-            T GetWeightedRandom<T>(List<(double weight, T value)> weighted)
-            {
-                var total = 0.0;
-                var sums = new List<double>();
-                foreach (var kvp in weighted)
-                {
-                    total += kvp.weight;
-                    sums.Add(total);
-                }
-                var rnd = new Random();
-                var r = rnd.NextDouble() * sums.Last();
-                var index = sums.FindIndex(o => o > r) - 1;
-                return weighted[index].value;
-            }
+            var common = Get(config.MinCommonFactors + rnd.Next(1));
 
-            IEnumerable<int> GetFrom(List<int> list, int count, bool unique = false)
-            {
-                var rnd = new Random();
-                if (unique)
-                {
-                    if (count > list.Count)
-                        throw new Exception("");
-                    var copy = new List<int>(list);
-                    var result = new List<int>();
-                    for (int i = 0; i < count; i++)
-                    {
-                        var index = rnd.Next(copy.Count);
-                        result.Add(copy[index]);
-                        copy.RemoveAt(index);
-                    }
-                    return result;
-                }
-                else
-                {
-                    return Enumerable.Range(0, count).Select(o => list[rnd.Next(list.Count)]);
-                }
-            }
+            var numerator = Get(rnd.Next(2)) * common;
+            var denominator = Get(rnd.Next(2)) * common;
+
+            return Task.FromResult((IStimulus)new SCDStimulus { Numerator = numerator, Denominator = denominator });
+
+            int Get(int numFactors) => (int)Enumerable.Range(0, numFactors).Concat([1]).Select(o => tools.GetWeightedRandom(weightedPrimes)).Aggregate((p, c) => p * c);
+            double WeightFunc(double x) => 1.0 - x; // Math.Pow(x, 0.3);
         }
+
         public class SCDStimulus : IStimulus
         {
             public decimal Numerator { get; set; }
@@ -68,6 +44,8 @@
             public string Id => Presentation;
 
             public string SourceId => string.Empty;
+
+            public override string ToString() => Presentation;
         }
     }
 }
