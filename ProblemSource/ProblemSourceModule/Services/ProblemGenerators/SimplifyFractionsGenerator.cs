@@ -1,11 +1,11 @@
 ﻿namespace ProblemSourceModule.Services.ProblemGenerators
 {
-    public class LeastCommonDenominatorGenerator : IStimuliGenerator
+    public class SimplifyFractionsGenerator : IStimuliGenerator
     {
         private readonly Config config;
 
         public readonly record struct Config(int NumDecimals = 0);
-        public LeastCommonDenominatorGenerator(Config config)
+        public SimplifyFractionsGenerator(Config config)
         {
             this.config = config;
         }
