@@ -47,8 +47,10 @@
 
         public static List<int> GetPrimeConstituents(int value)
         {
+            if (value <= 2)
+                return [value];
             var result = new List<int>();
-            var maxPrime = (int)Math.Sqrt(value);
+            var maxPrime = (int)Math.Ceiling(0.5 * value);
             var primes = Generate().GetEnumerator();
             while (true)
             {

@@ -29,13 +29,26 @@
             var numerator = Get(rnd.Next(2)) * common;
             var denominator = Get(rnd.Next(2)) * common;
 
-            return Task.FromResult((IStimulus)new SCDStimulus { Numerator = numerator, Denominator = denominator });
+            return Task.FromResult((IStimulus)new SFStimulus { Numerator = numerator, Denominator = denominator });
 
             int Get(int numFactors) => (int)Enumerable.Range(0, numFactors).Concat([1]).Select(o => tools.GetWeightedRandom(weightedPrimes)).Aggregate((p, c) => p * c);
             double WeightFunc(double x) => 1.0 - x; // Math.Pow(x, 0.3);
         }
 
-        public class SCDStimulus : IStimulus
+        public static SFStimulus Simplify(SFStimulus stimulus)
+        {
+            var scale = Math.Max(stimulus.Numerator.Scale, stimulus.Denominator.Scale);
+            var factToInts = (int)Math.Pow(10, scale);
+            var primesNum = PrimeGenerator.GetPrimeConstituents((int)(stimulus.Numerator * factToInts));
+            var primesDenom = PrimeGenerator.GetPrimeConstituents((int)(stimulus.Denominator * factToInts));
+
+            var common = primesNum.Intersect(primesDenom).ToList();
+            var divideBy = 1.0M / factToInts * common.Aggregate((p, c) => p * c);
+
+            return new SFStimulus { Numerator = (int)(stimulus.Numerator / divideBy), Denominator = (int)(stimulus.Denominator / divideBy) };
+        }
+
+        public class SFStimulus : IStimulus
         {
             public decimal Numerator { get; set; }
             public decimal Denominator { get; set; }
@@ -46,6 +59,33 @@
             public string SourceId => string.Empty;
 
             public override string ToString() => Presentation;
+        }
+
+        public class SFSolutionChecker : ISolutionChecker
+        {
+            public Task<ISolutionAnalysis> Check(IStimulus stimulus, IUserResponse response)
+            {
+                var typed = stimulus as SFStimulus;
+                if (typed == null)
+                    throw new NotImplementedException();
+                var simplified = SimplifyFractionsGenerator.Simplify(typed);
+
+                // TODO: if not correct, try simplifying response and if so give info that it can be simplified further (and if it would be correct or not)
+
+                var correct = Clean(simplified.Presentation) == Clean(response.ResponseText);
+                return Task.FromResult((ISolutionAnalysis)new SimpleSolutionAnalysis {
+                    IsCorrect = simplified.Denominator == 1
+                        ? correct || Clean(response.ResponseText) == $"{simplified.Numerator}"
+                        : correct,
+                });
+
+                string Clean(string s) => s.Replace(" ", "");
+            }
+
+            public IUserResponse Deserialize(object obj)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }

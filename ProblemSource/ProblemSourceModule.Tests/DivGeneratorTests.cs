@@ -41,5 +41,20 @@ namespace ProblemSourceModule.Tests
             var sut = new SimplifyFractionsGenerator(new());
             var result = await sut.Generate();
         }
+
+        [Theory]
+        [InlineData(10, 2, "5/1")]
+        [InlineData(2.4, 2.1, "8/7")]
+        [InlineData(1650, 330, "5/1")]
+        public async Task SimplifyFractionsChecker(decimal num, decimal den, string response)
+        {
+            var sut = new SimplifyFractionsGenerator.SFSolutionChecker();
+
+            var result = await sut.Check(
+                new SimplifyFractionsGenerator.SFStimulus {  Numerator = num, Denominator = den },
+                new SimpleUserResponse { ResponseText = response });
+
+            result.IsCorrect.ShouldBeTrue();
+        }
     }
 }
