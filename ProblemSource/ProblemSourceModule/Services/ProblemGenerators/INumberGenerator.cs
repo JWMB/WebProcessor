@@ -45,11 +45,21 @@
             }
         }
 
-        public static List<int> GetPrimeConstituents(int value)
+        public static List<int> GetPrimeConstituents(int value, bool include1 = false)
         {
-            if (value <= 2)
-                return [value];
             var result = new List<int>();
+            if (value < 0)
+            {
+                value = -value;
+                result.Add(-1);
+            }
+            if (value <= 2)
+            {
+                if (value == 0 || (value == 1 && include1 == false))
+                    return result;
+                return [value];
+            }
+
             var maxPrime = (int)Math.Ceiling(0.5 * value);
             var primes = Generate().GetEnumerator();
             while (true)
