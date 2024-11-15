@@ -10,10 +10,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="9.0.0" />
+    <!--<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="9.0.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="4.8.0" />
-    <PackageReference Include="Azure.Core" VersionOverride="1.38.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="9.0.0" />-->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="4.11.0" />
+	<PackageReference Include="Microsoft.CodeAnalysis.Common" VersionOverride="4.11.0" />
+	  <!--<PackageReference Include="Azure.Core" VersionOverride="1.38.0" />-->
+
   </ItemGroup>
 </Project>

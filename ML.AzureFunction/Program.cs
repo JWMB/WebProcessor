@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Hosting;
 
 var host = new HostBuilder()
-    .ConfigureFunctionsWebApplication()
+    .ConfigureAppConfiguration(cb => { })
+    //.ConfigureFunctionsWebApplication()
     .Build();
 
 host.Run();
