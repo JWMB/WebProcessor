@@ -1,10 +1,21 @@
 ﻿using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Text.Json;
-using System.Net.Http.Headers;
 
 namespace ProblemSourceModule.Services.ProblemGenerators
 {
+    public interface IProblemDomainFactory
+    {
+        IProblemDomain? Get(string? id);
+        public IProblemDomain GetOrThrow(string? id)
+        {
+            var result = Get(id);
+            if (result == null)
+                throw new Exception($"IProblemDomain not found: {id}");
+            return result;
+        }
+    }
+
     public interface IProblemDomain
     {
         ISolutionChecker GetSolutionChecker(string problemId, Type? problemType = null);

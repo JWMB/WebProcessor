@@ -210,24 +210,27 @@ namespace TrainingApi
             ConfigureAuthentication(services, config, env);
 
             services.AddSingleton<ISimpleCompletionService>(sp => new AzureOpenAICompletionService(sp.GetRequiredService<AzureOpenAICompletionService.Config>()));
-            services.AddSingleton<IProblemDomain>(sp =>
+            services.AddSingleton<IProblemDomainFactory>(sp =>
             {
+                var result = new ProblemDomainFactory();
                 //var filename = "assignments_141094_16961.json";
                 var desktop = new DirectoryInfo(Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "NoK"));
-            //string? fullFilename = null;
-            //if (desktop.Exists)
-            //{
-            //    var fileInfo = desktop.GetFiles(filename).FirstOrDefault();
-            //    if (fileInfo?.Exists == true)
-            //        fullFilename = fileInfo.FullName;
-            //}
-            //if (fullFilename == null)
-            //    throw new FileNotFoundException(filename);
+                //string? fullFilename = null;
+                //if (desktop.Exists)
+                //{
+                //    var fileInfo = desktop.GetFiles(filename).FirstOrDefault();
+                //    if (fileInfo?.Exists == true)
+                //        fullFilename = fileInfo.FullName;
+                //}
+                //if (fullFilename == null)
+                //    throw new FileNotFoundException(filename);
 
                 var config = new NoKStimuliRepository.Config(desktop.FullName); // fullFilename);
-                var result = new NoKDomain(config, sp.GetService<ISimpleCompletionService>());
-                result.Init().Wait();
+                var pd = new NoKDomain(config, sp.GetService<ISimpleCompletionService>());
+                pd.Init().Wait();
+                result.Add("nok", pd);
                 return result;
+
             });
 
         var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
@@ -341,6 +344,25 @@ namespace TrainingApi
                     return CookieAuthenticationDefaults.AuthenticationScheme;
                 };
             });
+        }
+    }
+
+    public class ProblemDomainFactory : IProblemDomainFactory
+    {
+        private Dictionary<string, IProblemDomain> problemDomains = new();
+
+        public void Add(string id, IProblemDomain problemDomain)
+        {
+            problemDomains.Add(id.ToLower(), problemDomain);
+        }
+
+        public IProblemDomain? Get(string? id)
+        {
+            if (id == null)
+                id = "";
+            if (problemDomains.TryGetValue(id.ToLower(), out var result))
+                return result;
+            return problemDomains.First().Value;
         }
     }
 }

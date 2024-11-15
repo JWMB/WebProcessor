@@ -8,19 +8,19 @@ namespace TrainingApi.Controllers
     [Route("api/[controller]")]
     public class StimuliResponseController : ControllerBase
     {
-        private readonly IProblemDomain problemDomain;
+        private readonly IProblemDomainFactory problemDomainFactory;
         private readonly ILogger<UsersController> log;
 
-        public StimuliResponseController(IProblemDomain problemDomain, ILogger<UsersController> logger)
+        public StimuliResponseController(IProblemDomainFactory problemDomainFactory, ILogger<UsersController> logger)
         {
-            this.problemDomain = problemDomain;
+            this.problemDomainFactory = problemDomainFactory;
             log = logger;
         }
 
         [HttpGet]
         public async Task<IStimulus?> Get(string id, string? source = null)
         {
-            var stimuliRepository = GetProblemDomain(source).StimuliRepository;
+            var stimuliRepository = problemDomainFactory.GetOrThrow(source).StimuliRepository;
             var stim = await stimuliRepository.GetById(id);
             return stim;
         }
@@ -29,7 +29,7 @@ namespace TrainingApi.Controllers
         [Route("ids")]
         public async Task<List<string>> GetAllIds(string? source = null)
         {
-            var stimuliRepository = GetProblemDomain(source).StimuliRepository;
+            var stimuliRepository = problemDomainFactory.GetOrThrow(source).StimuliRepository;
             return await stimuliRepository.GetAllIds();
         }
 
@@ -37,7 +37,7 @@ namespace TrainingApi.Controllers
         [Route("summaries")]
         public async Task<List<object>> GetAllSummaries(string? source = null)
         {
-            var stimuliRepository = GetProblemDomain(source).StimuliRepository;
+            var stimuliRepository = problemDomainFactory.GetOrThrow(source).StimuliRepository;
             return (await stimuliRepository.GetAll())
                 .Select(o =>
                 {
@@ -51,7 +51,7 @@ namespace TrainingApi.Controllers
         public async Task<IActionResult> Post([FromBody] object response)
         {
             var iresponse = IProblemDomain.DeserializeWithId<SimpleUserResponse>(response);
-            var domain = GetProblemDomain(iresponse.SourceId);
+            var domain = problemDomainFactory.GetOrThrow(iresponse.SourceId);
             var checker = domain.GetSolutionChecker(iresponse.Id);
             var typedResponse = checker.Deserialize(response);
             var problem = await domain.StimuliRepository.GetById(typedResponse.Id);
@@ -59,11 +59,6 @@ namespace TrainingApi.Controllers
                 throw new Exception("not found");
             var analysis = await checker.Check(problem, typedResponse);
             return analysis.IsCorrect ? Ok() : BadRequest(analysis.Feedback);
-        }
-
-        private IProblemDomain GetProblemDomain(string? id = null)
-        {
-            return problemDomain;
         }
     }
 }
