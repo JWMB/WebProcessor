@@ -24,15 +24,28 @@ namespace Common.Web
             config.GetSection(sectionKey).Bind(appSettings);
             services.AddSingleton(appSettings.GetType(), appSettings!);
 
+            RecurseBind(appSettings, services, config);
+
+            // https://kaylumah.nl/2021/11/29/validated-strongly-typed-ioptions.html
+            // If we want to inject IOptions<Type> instead of just Type, this is needed: https://stackoverflow.com/a/61157181 services.ConfigureOptions(instance)
+            //services.Configure<AceKnowledgeOptions>(config.GetSection("AceKnowledge"));
+
+            return appSettings;
+        }
+
+        private static void RecurseBind(object appSettings, IServiceCollection services, IConfiguration config)
+        {
             var props = appSettings.GetType()
-                .GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
-                .Where(o => !o.PropertyType.IsSealed); // TODO: (low) better check than IsSealed (also unit test)
+    .GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+    .Where(o => !o.PropertyType.IsSealed); // TODO: (low) better check than IsSealed (also unit test)
 
             foreach (var prop in props)
             {
                 var instance = prop.GetValue(appSettings);
                 //config.GetSection(prop.Name).Bind(instance);
                 services.AddSingleton(instance!.GetType(), instance!);
+
+                RecurseBind(instance, services, config);
 
                 //var asOptions = Microsoft.Extensions.Options.Options.Create(instance);
                 //services.ConfigureOptions(instance);
@@ -57,11 +70,6 @@ namespace Common.Web
                     }
                 }
             }
-            // https://kaylumah.nl/2021/11/29/validated-strongly-typed-ioptions.html
-            // If we want to inject IOptions<Type> instead of just Type, this is needed: https://stackoverflow.com/a/61157181 services.ConfigureOptions(instance)
-            //services.Configure<AceKnowledgeOptions>(config.GetSection("AceKnowledge"));
-
-            return appSettings;
         }
     }
 }

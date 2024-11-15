@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using TrainingApi.Services;
@@ -38,10 +37,10 @@ namespace TrainingApi.RealTime
 
     public class CommHub : Hub<ICommHub>
     {
-        private static CommHub? instanceSingletonProtector;
+        //private static CommHub? instanceSingletonProtector;
         private readonly IConnectionsRepository connectionsRepository;
         private readonly IUserRepository userRepository;
-
+            
         //public static CommHub? Instance => instanceSingletonProtector;
         public CommHub(IConnectionsRepository connectionsRepository, IUserRepository userRepository)
         {

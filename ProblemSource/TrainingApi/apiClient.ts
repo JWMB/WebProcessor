@@ -1079,6 +1079,36 @@ export class SyncClient {
         return Promise.resolve<void>(null as any);
     }
 
+    ping(): Promise<void> {
+        let url_ = this.baseUrl + "/api/Sync/Ping";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPing(_response);
+        });
+    }
+
+    protected processPing(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
     deleteData(uuid: string | undefined): Promise<void> {
         let url_ = this.baseUrl + "/api/Sync/DeleteData?";
         if (uuid === null)
@@ -1242,6 +1272,7 @@ export interface Quota {
     limit: number;
     created: number;
     started: number;
+    underway: number;
     reusable?: number[] | undefined;
 }
 

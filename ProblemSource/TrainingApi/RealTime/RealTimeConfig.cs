@@ -1,4 +1,6 @@
-﻿namespace TrainingApi.RealTime
+﻿using ProblemSource.Services;
+
+namespace TrainingApi.RealTime
 {
     public class RealTimeConfig
     {

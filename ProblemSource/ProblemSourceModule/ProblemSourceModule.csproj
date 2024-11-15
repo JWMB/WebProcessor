@@ -10,6 +10,7 @@
     <None Remove="Resources\2017 HT template Default.json" />
     <None Remove="Resources\2018 VT template Default.json" />
     <None Remove="Resources\2023 HT template Preview.json" />
+    <None Remove="Resources\2023 HT template.json" />
     <None Remove="Resources\2023 VT template JonasTest.json" />
     <None Remove="Resources\DebugPlan.json" />
     <None Remove="Resources\JuliaMLModel_Reg.zip" />
@@ -23,6 +24,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\2023 HT template.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources\2023 HT template Preview.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>

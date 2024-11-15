@@ -1,4 +1,5 @@
-﻿using Common.Web;
+﻿using Common;
+using Common.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProblemSource;
+using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.Storage;
@@ -36,7 +38,16 @@ Console.CancelKeyPress += (s, e) =>
 };
 var cancellationToken = cts.Token;
 
-var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
+var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
+
+//var ooo = config.ConfigToAzureConfig();
+//Console.WriteLine(ooo);
+//var tmp = ClientUtils.CsvToNVRLevelStrings(Path.Join(path, "LevelDefinitionsSO.xlsx - 2023H2.tsv")); // LevelDefinitionsSO.xlsx - 2023H2.tsv  LevelDefinitionsRP.xlsx - Cleaned.tsv
+//Console.WriteLine(tmp);
+
+//var oldDbTools = new OldDbAdapter.Tools(serviceProvider.GetRequiredService<AzureTableConfig>());
+//var emails = await oldDbTools.GetRelevantTeachersFromOldDb();
+//var dbg = string.Join("\n", emails);
 
 //await new OldDbMLFeatures().Run(cancellationToken);
 //return;
@@ -78,6 +89,7 @@ var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
 //}
 
 //var tool = new TrainingStatsTools(serviceProvider);
+//await tool.GetUsersWithSyncedTrainings();
 //await tool.ExportTrainingsKIFormat();
 
 //var result = await tool.GetTrainingIdsToTeachers(new[] { 9514, 9513, 9510, 936, 933, 91, 7857, 7821, 7205, 7204, 6109, 5949, 5447, 5019, 4990, 4957, 4933, 4356, 4111, 4050, 3931, 3523, 3507, 3413, 3396, 3342, 3340, 3338, 3336, 3320, 3315, 3312, 3309, 3156, 3081, 2442, 2435, 2425, 2423, 2421, 2278, 22760, 2203, 2202, 2201, 2198, 2197, 2195, 2193, 2182, 2144, 2142, 19068, 17908, 16266, 16236, 13835, 13834, 13830, 128, 126, 121, 120, 111, 10118, 10048, 100 });
@@ -88,6 +100,8 @@ var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
 
 //var template = await serviceProvider.GetRequiredService<ITrainingTemplateRepository>().Get("template_2023HT");
 //var trainingMod = serviceProvider.CreateInstance<TrainingMod>();
+//var r = await trainingMod.GetUsersFromTrainings(trainingUsernames: new[] { "yuga tumuki", "wawa pimibu", "niro hudedi" });
+//await trainingMod.ChangeTrainingsToTrainingTemplate(actuallyModify: true);
 //var ids = TrainingMod.ExtractTrainingNames(File.ReadAllText(@"C:\Users\uzk446\Desktop\WebProcessor_Files\idsForParse.txt"));
 //await trainingMod.MoveTeachersTrainingsToGroup("EMAIL HERE", ids.Select(o => o.Id), "GROUP HERE", true);
 //var allTrainings = await serviceProvider.GetRequiredService<ITrainingRepository>().GetAll();
@@ -102,8 +116,14 @@ var path = @"C:\Users\uzk446\Desktop\WebProcessor_Files\";
 
 //var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
 var emails = @"
-".Split('\n').Select(o => o.Trim().ToLower()).Where(o => o.Any());
+".Split('\n').SelectMany(o => o.Split(';')).Select(o => o.Trim().ToLower()).Where(o => o.Any());
 var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
+
+//await creator.ResetPasswordAndEmail(path, config, new[] { "" }, true);
+
+emails = await creator.GetEmailsNotAlreadyCreated(emails);
+emails = emails.Take(80).ToList();
+
 await creator.CreateAndEmail(path, config, emails, true);
 
 //var gmailService = BatchMail.CreateGmailService(config.GetRequiredSection("Gmail"));
@@ -147,7 +167,9 @@ IServiceProvider InititalizeServices(IConfigurationRoot config)
     var section = config.GetRequiredSection("AppSettings:AzureTable");
     //var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
     //services.AddSingleton(tableConfig);
+    services.AddSingleton<AzureQueueConfig>();
     services.AddTransient(sp => TypedConfiguration.Bind<AzureTableConfig>(section));
+    services.AddScoped<IStatisticsProvider, StatisticsProvider>();
 
     var loggerFactory = LoggerFactory.Create(builder =>
     {

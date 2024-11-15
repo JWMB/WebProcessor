@@ -10,7 +10,7 @@ namespace ProblemSourceModule.Models
         public TrainingSettings Settings { get; set; } = TrainingSettings.Default;
         public string AgeBracket { get; set; } = string.Empty;
 
-        public DateTimeOffset Created { get; set; }
+        public DateTimeOffset Created { get; set; } = DateTimeOffset.FromUnixTimeMilliseconds(0);
 
         public int GetAgeBracketLower() => int.TryParse(AgeBracket.Split('-').Where(o => o.Any()).FirstOrDefault() ?? "6", out var age) ? age : 6;
     }

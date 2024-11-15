@@ -43,7 +43,7 @@ namespace Organization.Tests
             public int Value { get; }
         }
 
-        [Fact]
+        [Fact(Skip = "missing local files")]
         public void ReadSchools()
         {
             List<SchoolBase> schools;

@@ -38,6 +38,7 @@
             .map(week => {
                 const startedThisWeek = startAndLatest.filter(o => o.startWeek == week);
 
+                // count: how many trained during this week
                 const timeSeries = weekArray.map(w => ({ 
                     week: w,
                     count: week > w ? 0 : startedThisWeek.filter(o => o.latestWeek >= w).length
@@ -52,24 +53,17 @@
             }).filter(o => o.timeSeries.filter(x => x.count > 0).length > 0);
 
             console.log("stackToLeft", stackToLeft);
-        const pp = stackToLeft
-            ? perWeek.map(o => {
+        const pp = perWeek.map(o => {
                 return <ChartDataset<"bar">>{
                         label: `Week of ${DateUtils.toIsoDate(weekToDate(o.week))}`,
-                        data: o.timeSeries.filter(x => x.week >= o.week).map(ww => ww.count),
-                        fill: true,
-                        backgroundColor: o.colorStr,
-                        borderColor: 'rgb(0, 0, 0)',
-                }})
-            : perWeek.map(o => {
-                return <ChartDataset<"bar">>{
-                        label: `Week of ${DateUtils.toIsoDate(weekToDate(o.week))}`,
-                        data: o.timeSeries.map(ww => ww.count),
+                        data: stackToLeft 
+                            ? o.timeSeries.filter(x => x.week >= o.week).map(ww => ww.count)
+                            : o.timeSeries.map(ww => ww.count),
                         fill: true,
                         backgroundColor: o.colorStr,
                         borderColor: 'rgb(0, 0, 0)',
                 }});
-
+                
         return pp;
     }
 

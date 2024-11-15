@@ -56,8 +56,10 @@
 	}
 
 
+	let isCreating = false;
 	let createdTrainingUsernames: string[] = [];
 	async function createTrainings(num: number, groupName: string, numMinutes: number, ageBracket: string, reuseTrainingsNotStarted: boolean) {
+		isCreating = true;
 		error = null;
 		try {
 			if (!ageBracket) throw "Age span must be set";
@@ -76,7 +78,9 @@
 				reuseTrainingsNotStarted: reuseTrainingsNotStarted
 			};
 			createdTrainingUsernames = await apiFacade.trainings.postGroup(dto, groupName, num);
+			isCreating = false;
 		} catch (err) {
+			isCreating = false;
 			error = ErrorHandling.getErrorObject(err).message;
 			throw err;
 		}
@@ -87,8 +91,8 @@
 	onMount(async () => {
 		createInfo = await apiFacade.trainings.getCreateTrainingsInfo();
 		// createInfo.trainingsQuota.inUse = 40; // testing
-		numTrainingsLeftInQuota = Math.max(0, createInfo.trainingsQuota.limit - createInfo.trainingsQuota.started);
-		numTrainingsForReuse = createInfo.trainingsQuota.started - createInfo.trainingsQuota.started;
+		numTrainingsLeftInQuota = Math.max(0, createInfo.trainingsQuota.limit - createInfo.trainingsQuota.created);
+		numTrainingsForReuse = createInfo.trainingsQuota.reusable?.length || 0;
 		newGroupData.noOfTrainings = Math.min(maxNumNewTrainings, 10);
 		templates = await apiFacade.trainings.getTemplates();
 	});
@@ -150,7 +154,7 @@
 					<div class="actions">
 						<button class="secondary" on:click={closeModal}>Cancel</button>
 						<button class="primary" style="opacity:{newGroupData.noOfTrainings <= 0 || newGroupData.noOfTrainings > maxNumNewTrainings ? 0.5 : 1}" type="submit" value="Create"
-							disabled={newGroupData.noOfTrainings <= 0}
+							disabled={newGroupData.noOfTrainings <= 0 || isCreating}
 							on:click={() => createTrainings(newGroupData.noOfTrainings, newGroupData.name, newGroupData.timePerDay, newGroupData.ageBracket, newGroupData.reuseTrainings)}>
 							Create
 						</button>

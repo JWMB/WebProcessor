@@ -10,25 +10,13 @@ namespace ProblemSourceModule.Services.Storage
     {
         Task<IEnumerable<Training>> GetByIds(IEnumerable<int> ids);
 
-        async Task<Training> Add(ITrainingPlanRepository trainingPlanRepository, ITrainingUsernameService usernameService, string trainingPlan, TrainingSettings? settings, string? ageBracket = null)
+        async Task<int> Add(ITrainingUsernameService usernameService, Training training)
         {
-            var tp = await trainingPlanRepository.Get(trainingPlan);
-            if (tp == null)
-                throw new Exception($"Training plan not found: {trainingPlan}");
-
-            var training = new Training
-            {
-                TrainingPlanName = trainingPlan,
-                Settings = settings ?? TrainingSettings.Default,
-                AgeBracket = ageBracket ?? "",
-                Created = DateTimeOffset.UtcNow,
-            };
-
             var id = await Add(training);
 
             training.Username = usernameService.FromId(id);
             await Update(training);
-            return training;
+            return training.Id;
         }
     }
 }

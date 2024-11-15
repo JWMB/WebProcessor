@@ -8,7 +8,7 @@
     {
         private readonly Func<CancellationToken, Task> workFunction;
         private readonly ILogger<TimedHostedService> logger;
-        private readonly TimeSpan period = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan period = TimeSpan.FromSeconds(2);
         private int executionCount = 0;
         public bool IsEnabled { get; set; } = true;
 
@@ -82,57 +82,57 @@
         }
     }
 
-    public class TimedHostedServiceInner : IHostedService, IDisposable
-    {
-        private int executionCount = 0;
-        private readonly Func<Task> workFunction;
-        private readonly ILogger<TimedHostedServiceInner> logger;
-        private Timer? timer = null;
-        private CancellationToken? cancellationToken;
+    //public class TimedHostedServiceInner : IHostedService, IDisposable
+    //{
+    //    private int executionCount = 0;
+    //    private readonly Func<Task> workFunction;
+    //    private readonly ILogger<TimedHostedServiceInner> logger;
+    //    private Timer? timer = null;
+    //    private CancellationToken? cancellationToken;
 
-        public TimedHostedServiceInner(Func<Task> workFunction, ILogger<TimedHostedServiceInner> logger)
-        {
-            this.workFunction = workFunction;
-            this.logger = logger;
-        }
+    //    public TimedHostedServiceInner(Func<Task> workFunction, ILogger<TimedHostedServiceInner> logger)
+    //    {
+    //        this.workFunction = workFunction;
+    //        this.logger = logger;
+    //    }
 
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            if (this.cancellationToken != null)
-                throw new Exception("Already running - stop first");
+    //    public Task StartAsync(CancellationToken cancellationToken)
+    //    {
+    //        if (this.cancellationToken != null)
+    //            throw new Exception("Already running - stop first");
 
-            this.cancellationToken = cancellationToken;
+    //        this.cancellationToken = cancellationToken;
 
-            logger.LogInformation("Timed Hosted Service running.");
+    //        logger.LogInformation("Timed Hosted Service running.");
 
-            timer = new Timer(DoWork, null, TimeSpan.Zero,
-                TimeSpan.FromSeconds(1));
+    //        timer = new Timer(DoWork, null, TimeSpan.Zero,
+    //            TimeSpan.FromSeconds(1));
 
-            return Task.CompletedTask;
-        }
+    //        return Task.CompletedTask;
+    //    }
 
-        private void DoWork(object? state)
-        {
-            var count = Interlocked.Increment(ref executionCount);
+    //    private void DoWork(object? state)
+    //    {
+    //        var count = Interlocked.Increment(ref executionCount);
 
-            //await workFunction.Invoke();
-            logger.LogInformation(
-                "Timed Hosted Service is working. Count: {Count}", count);
-        }
+    //        //await workFunction.Invoke();
+    //        logger.LogInformation(
+    //            "Timed Hosted Service is working. Count: {Count}", count);
+    //    }
 
-        public Task StopAsync(CancellationToken stoppingToken)
-        {
-            logger.LogInformation("Timed Hosted Service is stopping.");
+    //    public Task StopAsync(CancellationToken stoppingToken)
+    //    {
+    //        logger.LogInformation("Timed Hosted Service is stopping.");
 
-            timer?.Change(Timeout.Infinite, 0);
+    //        timer?.Change(Timeout.Infinite, 0);
 
-            cancellationToken = null;
-            return Task.CompletedTask;
-        }
+    //        cancellationToken = null;
+    //        return Task.CompletedTask;
+    //    }
 
-        public void Dispose()
-        {
-            timer?.Dispose();
-        }
-    }
+    //    public void Dispose()
+    //    {
+    //        timer?.Dispose();
+    //    }
+    //}
 }

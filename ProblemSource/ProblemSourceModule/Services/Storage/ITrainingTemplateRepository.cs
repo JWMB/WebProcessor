@@ -42,12 +42,19 @@ namespace ProblemSourceModule.Services.Storage
                     s.timeLimits = new List<decimal> { 30 };
                     s.customData = new CustomData { allowMultipleLogins = true, unlockAllPlanets = true, canEnterCompleted = true };
                 }) },
-                new Training { Id = 5, Username = "template_2023HT", TrainingPlanName = "2023 HT template Preview", Settings = CreateSettings(s =>
+                new Training { Id = 5, Username = "template_2023HT", TrainingPlanName = "2023 HT template", Settings = CreateSettings(s =>
                 {
-                    s.timeLimits = new List<decimal> { 30 };
+                    s.timeLimits = new List<decimal> { 33 };
                     s.customData = new CustomData { };
                     s.Analyzers = new List<string> { nameof(TrainingAnalyzers.CategorizerDay5_23Q1) };
                 }) },
+                new Training { Id = 6, Username = "template_2024VT", TrainingPlanName = "2023 HT template", Settings = CreateSettings(s =>
+                {
+                    s.timeLimits = new List<decimal> { 33 };
+                    s.customData = new CustomData { };
+                    s.Analyzers = new List<string> { nameof(TrainingAnalyzers.CategorizerDay5_24Q1) };
+                }) },
+                // Note: make sure the right template is used (TrainingsController)
             };
 
             return Task.FromResult((IEnumerable<Training>)templates);

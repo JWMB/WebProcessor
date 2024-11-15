@@ -51,7 +51,8 @@ namespace TrainingApi.Controllers
         [HttpPost]
         public async Task<string> Post(TrainingCreateDto dto)
         {
-            var training = await CreateTraining(dto);
+            var template = await GetTemplate(dto.BaseTemplateId);
+            var training = (await CreateTrainings(1, dto, template)).Single();
             return training.Username;
         }
 
@@ -70,16 +71,40 @@ namespace TrainingApi.Controllers
                 await trainingRepository.RemoveByIdIfExists(id);
         }
 
-        private async Task<Training> CreateTraining(TrainingCreateDto dto, IEnumerable<Training>? templates = null)
+        private async Task<Training> GetTemplate(int templateId, IEnumerable<Training>? templates = null)
         {
             templates = templates ?? await trainingTemplateRepository.GetAll();
-            var template = templates.SingleOrDefault(o => o.Id == dto.BaseTemplateId);
+            var template = templates.SingleOrDefault(o => o.Id == templateId);
             if (template == null)
-                throw new Exception($"Template not found: {dto.BaseTemplateId}");
-            dto.TrainingSettings ??= template.Settings;
+                throw new Exception($"Template not found: {templateId}");
+            return template;
+        }
+
+        private void UpdateTrainingObject(TrainingCreateDto dto, Training template, Training training) //, string trainingPlanName)
+        {
+            training.TrainingPlanName = template.TrainingPlanName;
+            training.Settings = dto.TrainingSettings ?? template.Settings ?? TrainingSettings.Default;
             // TODO: trainingPlanOverrides is incorrectly serialized, so we can't use the one from the DTO
-            dto.TrainingSettings.trainingPlanOverrides = template.Settings.trainingPlanOverrides;
-            return await trainingRepository.Add(trainingPlanRepository, trainingUsernameService, dto.TrainingPlan ?? template.TrainingPlanName, dto.TrainingSettings, dto.AgeBracket);
+            training.Settings.trainingPlanOverrides = template.Settings?.trainingPlanOverrides;
+
+            training.AgeBracket = dto.AgeBracket ?? "";
+        }
+
+        private async Task<List<Training>> CreateTrainings(int count, TrainingCreateDto dto, Training template)
+        {
+            var tp = await trainingPlanRepository.Get(template.TrainingPlanName); // trainingPlanName
+            if (tp == null)
+                throw new Exception($"Training plan not found: {template.TrainingPlanName}");
+
+            var result = new List<Training>();
+            for (int i = 0; i < count; i++)
+            {
+                var training = new Training();
+                UpdateTrainingObject(dto, template, training);
+                await trainingRepository.Add(trainingUsernameService, training);
+                result.Add(training);
+            }
+            return result;
         }
 
         [HttpGet]
@@ -89,15 +114,15 @@ namespace TrainingApi.Controllers
             var currentUser = userProvider.UserOrThrow;
 
             var trainingsInfo = (await currentUser.Trainings.GetTrainingsInfo(trainingRepository, statisticsProvider)).SelectMany(o => o.Value).ToList();
-
-            var numTrainingsWithMinDaysCompleted = trainingsInfo.Count(o => o.Summary?.TrainedDays >= 5); // summaries.Count(o => o.TrainedDays >= 5);
+            var numTrainingsWithMinDaysCompleted = trainingsInfo.Count(o => o.Summary?.TrainedDays >= 5);
 
             return new CreateTrainingsInfoDto { 
                 TrainingsQuota = new CreateTrainingsInfoDto.Quota
                 {
                     Created = trainingsInfo.Count,
                     Started = trainingsInfo.Count(o => o.Summary?.TrainedDays > 0),
-                    Limit = currentUser.Role == Roles.Admin ? 1000 : Math.Max(60, numTrainingsWithMinDaysCompleted + 30),
+                    Underway = numTrainingsWithMinDaysCompleted,
+                    Limit = (currentUser.Role == Roles.Admin && true) ? 1000 : 30 + Math.Max(60, numTrainingsWithMinDaysCompleted + 35),
                     Reusable = trainingsInfo.Where(o => o.Training.Created < DateTimeOffset.UtcNow.AddDays(-1) && (o.Summary?.TrainedDays ?? 0) == 0).Select(o => o.Id).ToList()
                 }
             };
@@ -118,46 +143,48 @@ namespace TrainingApi.Controllers
                 throw new HttpException($"{nameof(numTrainings)}:{numTrainings} exceeds accepted range", StatusCodes.Status400BadRequest);
             else if (numTrainings > maxTrainingsInGroup)
                 throw new HttpException($"{nameof(numTrainings)}:{numTrainings} cannot exceed {maxTrainingsInGroup}", StatusCodes.Status400BadRequest);
-
             if (string.IsNullOrEmpty(groupName) || groupName.Length > 20) throw new HttpException($"Bad parameter: {nameof(groupName)}", StatusCodes.Status400BadRequest);
 
-            var numTrainingsToGetFromOtherGroups = 0;
+            var numAvailableWithoutReusing = Math.Max(0, createTrainingsInfo.TrainingsQuota.Limit - createTrainingsInfo.TrainingsQuota.Created);
+            var numTrainingsToGetFromOtherGroups = Math.Max(0, numTrainings - numAvailableWithoutReusing);
 
-            if (user.Role != Roles.Admin)
+            if (numTrainingsToGetFromOtherGroups > 0)
             {
-                var currentNumTrainings = createTrainingsInfo.TrainingsQuota.Created;
-                var maxTotalTrainings = createTrainingsInfo.TrainingsQuota.Limit;
-
-                var numAvailableWithoutReusing = createTrainingsInfo.TrainingsQuota.Limit - createTrainingsInfo.TrainingsQuota.Created;
-
-                numTrainingsToGetFromOtherGroups = numTrainings - numAvailableWithoutReusing;
-
-                if (numTrainingsToGetFromOtherGroups > 0)
-                {
-                    if (!dto.ReuseTrainingsNotStarted || createTrainingsInfo.TrainingsQuota.Reusable.Count < numTrainingsToGetFromOtherGroups)
-                        throw new HttpException($"You are allowed max {maxTotalTrainings} trainings. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
-                }
-                //if (dto.ReuseTrainingsNotStarted)
-                //{
-                //    maxTotalTrainings += createTrainingsInfo.TrainingsQuota.Reusable.Count; //Math.Max(0, createTrainingsInfo.TrainingsQuota.Created - createTrainingsInfo.TrainingsQuota.Started);
-                //}
-                //if (numTrainings + currentNumTrainings > maxTotalTrainings)
-                //{
-                //    throw new HttpException($"You are allowed max {maxTotalTrainings} trainings. You have {Math.Max(0, maxTotalTrainings - currentNumTrainings)} left.", StatusCodes.Status400BadRequest);
-                //}
+                if (!dto.ReuseTrainingsNotStarted || createTrainingsInfo.TrainingsQuota.Reusable.Count < numTrainingsToGetFromOtherGroups)
+                    throw new HttpException(
+                        $"You are allowed max {createTrainingsInfo.TrainingsQuota.Limit} trainings.<br/>" 
+                        + $"You already have {createTrainingsInfo.TrainingsQuota.Created}.", StatusCodes.Status400BadRequest);
             }
 
-            var templates = await trainingTemplateRepository.GetAll();
+            var template = await GetTemplate(dto.BaseTemplateId);
+
+            var trainings = new List<Training>();
 
             // TODO: first move / reset 
             if (numTrainingsToGetFromOtherGroups > 0)
             {
-                //var idsToUse = (await user.Trainings.RemoveUnusedFromGroups(numTrainingsToGetFromOtherGroups, groupName, trainingRepository, statisticsProvider)).SelectMany(o => o.Value);
+                var trainingsToReuse = (await user.Trainings.RemoveUnusedFromGroups(numTrainingsToGetFromOtherGroups, exceptGroup: groupName, trainingRepository, statisticsProvider))
+                    .SelectMany(o => o.Value)
+                    .ToList();
+
+                if (trainingsToReuse.Count < numTrainingsToGetFromOtherGroups)
+                    throw new HttpException("Failed to reuse unused trainings");
+                if (trainingsToReuse.Count > numTrainingsToGetFromOtherGroups)
+                    throw new HttpException("Failed to reuse unused trainings");
+                                    //.Take(numTrainingsToGetFromOtherGroups)
+
+                foreach (var training in trainingsToReuse)
+                {
+                    UpdateTrainingObject(dto, template, training);
+                    await trainingRepository.Update(training);
+                }
+
+                trainings.AddRange(trainingsToReuse);
             }
 
-            var trainings = new List<Training>();
-            for (int i = 0; i < numTrainings; i++)
-                trainings.Add(await CreateTraining(dto, templates));
+            var numLeftToCreate = numTrainings - numTrainingsToGetFromOtherGroups;
+            if (numLeftToCreate > 0)
+                trainings.AddRange(await CreateTrainings(numLeftToCreate, dto, template));
 
             if (!user.Trainings.TryGetValue(groupName, out var list))
             {
@@ -185,20 +212,22 @@ namespace TrainingApi.Controllers
 
         [HttpGet]
         [Route("templates")]
-        public async Task<IEnumerable<TrainingTemplateDto>> GetTemplates()
+        public async Task<IEnumerable<TrainingTemplateDto>> GetTemplates(bool returnOnlyDefaultTemplate = true)
         {
             var templates = await trainingTemplateRepository.GetAll();
             var user = userProvider.UserOrThrow;
-            if (user.Role != "Admin")
+
+            // var returnOnlyDefaultTemplate = user.Role == "Admin" // Only provide a the default template when not an admin:
+            if (returnOnlyDefaultTemplate == true)
             {
-                // Only provide a the default template when not an admin:
-                var preferredTemplate = "template_2023HT";
+                var preferredTemplate = "template_2024VT"; // template_2023HT
                 templates = templates.Where(o => o.Username == preferredTemplate);
                 if (!templates.Any())
                     throw new Exception($"Template missing: {preferredTemplate}");
             }
 
-            return templates.Select(o => new TrainingTemplateDto {
+            return templates.Select(o => new TrainingTemplateDto
+            {
                 Id = o.Id,
                 Name = o.Username.Replace("template_", ""),
                 TrainingPlanName = o.TrainingPlanName,
@@ -384,6 +413,7 @@ namespace TrainingApi.Controllers
                 public int Limit { get; set; }
                 public int Created { get; set; }
                 public int Started { get; set; }
+                public int Underway { get; set; }
                 public List<int> Reusable { get; set; } = new();
             }
         }

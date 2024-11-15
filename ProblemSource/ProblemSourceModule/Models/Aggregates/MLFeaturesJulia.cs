@@ -136,7 +136,7 @@ namespace ProblemSource.Models.Aggregates
             {
                 ByExercise = featuresByExercise,
                 MeanTimeIncrease = featuresByExercise.Values.Any() ? featuresByExercise.Values.Average(o => o.MeanTimeIncrease) : 0,
-                TrainingTime20Min = trainingSettings.timeLimits.FirstOrDefault() == 20M,
+                TrainingTime20Min = trainingSettings?.timeLimits.FirstOrDefault() == 20M,
                 Age6_7 = age == 6,
                 Age = age,
                 FinalNumberLineLevel = (float?)levelNumberlineAroundDay35,

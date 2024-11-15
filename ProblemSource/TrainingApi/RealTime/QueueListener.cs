@@ -1,5 +1,7 @@
 ﻿using Azure.Storage.Queues;
+using Azure.Storage.Queues.Models;
 using Newtonsoft.Json.Linq;
+using ProblemSource.Services;
 using System.Text;
 using TrainingApi.Services;
 
@@ -58,44 +60,81 @@ namespace TrainingApi.RealTime
             }
         }
 
+        private bool isWorking;
+
         public async Task Receive(CancellationToken cancellationToken)
         {
+            if (isWorking) // For now at least, don't do work in parallel (messages might be sent out-of-order)
+                return;
+
+            isWorking = true;
+
+            var start = DateTimeOffset.UtcNow;
+            var processedCnt = 0;
+
             try
             {
-                var response = await client.ReceiveMessagesAsync(cancellationToken);
+                var response = await client.ReceiveMessagesAsync(32, cancellationToken: cancellationToken);
                 var msgs = response.Value;
                 foreach (var msg in msgs)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
 
-                    var jObj = ParseMessage(msg.Body);
+                    await ProcessMessage(msg);
+                    processedCnt++;
 
-                    if (jObj != null)
+                    try
                     {
-                        var trainingId = jObj.Value<int?>("trainingId");
-                        if (trainingId.HasValue)
-                        {
-                            // find which clients should receive events:
-                            var sendToIds = chatHub.UserConnections
-                                .Where(kv => accessResolver.HasAccess(kv.Value, trainingId.Value, AccessLevel.Read))
-                                .Select(kv => kv.Key)
-                                .ToList();
-
-                            if (sendToIds.Any())
-                            {
-                                await chatHub.Hub.Clients.Clients(sendToIds).ReceiveMessage(jObj.ToString());
-                            }
-                        }
+                        await client.DeleteMessageAsync(msg.MessageId, msg.PopReceipt, cancellationToken);
                     }
-
-                    client.DeleteMessage(msg.MessageId, msg.PopReceipt);
+                    catch (Exception inner)
+                    {
+                        log.LogInformation(inner, "Delete failed");
+                    }
                 }
             }
             catch (Exception ex)
             {
                 log.LogError(ex, "Receive error");
             }
+
+            if (processedCnt > 0)
+                log.LogInformation($"Processed {processedCnt} msg in {DateTimeOffset.UtcNow - start}");
+
+            isWorking = false;
         }
+
+        private async Task ProcessMessage(QueueMessage msg)
+        {
+            JObject? jObj = null;
+            try
+            {
+                jObj = ParseMessage(msg.Body);
+            }
+            catch (Exception ex)
+            {
+                log.LogError($"Parse error: {msg.Body}", ex);
+            }
+
+            if (jObj != null)
+            {
+                var typed = jObj.ToObject<TrainingSyncMessage>(); // TODO: we really just want to know if we can parse to ITrainingMessage
+                if (typed != null)
+                {
+                    // find which clients should receive events:
+                    var sendToIds = chatHub.UserConnections
+                        .Where(kv => accessResolver.HasAccess(kv.Value, typed.TrainingId, AccessLevel.Read))
+                        .Select(kv => kv.Key)
+                        .ToList();
+
+                    if (sendToIds.Any())
+                    {
+                        await chatHub.Hub.Clients.Clients(sendToIds).ReceiveMessage(jObj.ToString());
+                    }
+                }
+            }
+        }
+
     }
 }

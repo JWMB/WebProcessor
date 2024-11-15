@@ -27,13 +27,30 @@ namespace TrainingApi.Tests
             var client = ts.CreateClient(user);
 
             // Act
-            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"{basePath}templates");
+            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"{basePath}templates?returnOnlyDefaultTemplate=false");
 
             // Assert
             var template = response!.Single(o => o.Name == "NumberlineTest training");
             template.Settings.trainingPlanOverrides.ShouldNotBeNull();
             template.Settings.trainingPlanOverrides!.ToString()!.ShouldContain("[[[]]"); //TODO: ShouldNotContain
         }
+
+        [Fact]
+        public async Task GetTemplates_ReturnOnlyDefaultsTrue()
+        {
+            // Arrange
+            var ts = new MyTestServer();
+
+            var user = new User { Email = "tester", Role = Roles.Admin };
+            var client = ts.CreateClient(user);
+
+            // Act
+            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"{basePath}templates");
+
+            // Assert
+            response!.Count.ShouldBe(1);
+        }
+
 
         [Fact]
         public async Task TrainingsSummaryDoesNotSkipWhenNoTrainedDays()
@@ -79,7 +96,7 @@ namespace TrainingApi.Tests
 
             // Assert
             response.ShouldNotBeNull();
-            response.TrainingsQuota.Limit.ShouldBe(60);
+            response.TrainingsQuota.Limit.ShouldBe(withImpersonation ? 90 : 1000);
             response.TrainingsQuota.Created.ShouldBe(wrapper.ResolvedUser.Trainings.Sum(o => o.Value.Count));
         }
 
@@ -122,11 +139,12 @@ namespace TrainingApi.Tests
             response.Count.ShouldBe(kvSelectedGroup.Value.Count);
         }
 
+        // note: added 30 more to quota
         [Theory]
-        [InlineData(50, 30, 10, 60)]
-        [InlineData(60, 50, 10, 80)]
-        [InlineData(120, 110, 10, 140)]
-        [InlineData(120, 60, 10, 90)]
+        [InlineData(50, 30, 10, 95)] 
+        [InlineData(60, 50, 10, 115)]
+        [InlineData(120, 110, 10, 175)]
+        [InlineData(120, 60, 10, 125)]
         public async Task CreateTrainingsInfo_Quotas(int numCreated, int numStartedWith5Days, int numStartedWith1Day, int expectedLimit)
         {
             // Arrange
@@ -191,7 +209,7 @@ namespace TrainingApi.Tests
             var result = await user.Trainings.RemoveUnusedFromGroups(numToTransfer, "", trainingsRepo, stats);
             result.Keys.ShouldBe(expectedGroups);
             result.SelectMany(o => o.Value).Count().ShouldBe(numToTransfer);
-            result.SelectMany(o => o.Value).ShouldBe(expectedIds); // These were ids that were not recently created nor had training days
+            result.SelectMany(o => o.Value).Select(o => o.Id).ShouldBe(expectedIds); // These were ids that were not recently created nor had training days
         }
     }
 

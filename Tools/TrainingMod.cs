@@ -5,6 +5,8 @@ using ProblemSourceModule.Services.Storage.AzureTables;
 using System.Text.RegularExpressions;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Models;
+using ProblemSource.Services;
+using ProblemSourceModule.Models.Aggregates;
 
 namespace Tools
 {
@@ -12,11 +14,15 @@ namespace Tools
     {
         private readonly ITrainingRepository trainingRepository;
         private readonly IUserRepository userRepository;
+        private readonly ITrainingTemplateRepository templateRepo;
+        private readonly IStatisticsProvider statisticsProvider;
 
-        public TrainingMod(ITrainingRepository trainingRepository, IUserRepository userRepository)
+        public TrainingMod(ITrainingRepository trainingRepository, IUserRepository userRepository, ITrainingTemplateRepository templateRepo, IStatisticsProvider statisticsProvider)
         {
             this.trainingRepository = trainingRepository;
             this.userRepository = userRepository;
+            this.templateRepo = templateRepo;
+            this.statisticsProvider = statisticsProvider;
         }
 
         public static List<(string Name, int Id)> ExtractTrainingNames(string input)
@@ -50,6 +56,24 @@ namespace Tools
                 await userRepository.Update(user);
 
             return available.ToList();
+        }
+
+        public async Task<List<(int Id, string Email)>> GetUsersFromTrainings(IEnumerable<string>? trainingUsernames = null, IEnumerable<int>? trainingIds = null)
+        {
+            var users = await userRepository.GetAll();
+
+            var trainingIdList = (trainingIds ?? new List<int>()).ToList();
+            if (trainingUsernames?.Any() == true)
+            {
+                trainingIdList.AddRange((await trainingRepository.GetAll()).Where(o => trainingUsernames.Contains(o.Username)).Select(o => o.Id));
+            }
+
+            var idToUser = users.SelectMany(o => o.Trainings.SelectMany(p => p.Value.Select(q => new { User = o, Group = p.Key, Id = q })))
+                .GroupBy(o => o.Id)
+                .ToDictionary(o => o.Key, o => o.ToList());
+
+            var result = idToUser.Where(o => trainingIdList.Contains(o.Key)).Select(o => (o.Key, o.Value.FirstOrDefault()?.User.Email ?? "")).ToList();
+            return result;
         }
 
         public async Task<List<int>> GetTrainingsForTeacher(string email, IEnumerable<string>? groups = null)
@@ -100,6 +124,52 @@ namespace Tools
             {
                 training.Settings.timeLimits = new List<decimal> { 20 };
                 await trainingRepository.Update(training);
+            }
+        }
+
+        public async Task ChangeTrainingsToTrainingTemplate(string? templateNameElseLatest = null, IEnumerable<int>? trainingIds = null, bool actuallyModify = false)
+        {
+            var templates = await templateRepo.GetAll();
+            var template = templateNameElseLatest == null ? templates.Last() : templates.Where(o => o.Username == templateNameElseLatest).Single();
+
+            IEnumerable<Training> trainings;
+            if (trainingIds == null)
+            {
+                trainings = await trainingRepository.GetAll();
+                var summaries = (await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id))).OfType<TrainingSummary>();
+                var trainingsTooFarAlong = summaries.Where(o => o.TrainedDays > 3).ToList();
+                trainingIds = trainings.Select(o => o.Id).Except(trainingsTooFarAlong.Select(o => o.Id));
+            }
+            else
+                trainings = await trainingRepository.GetByIds(trainingIds);
+
+
+            foreach (var trainingId in trainingIds)
+            {
+                var training = trainings.Single(o => o.Id == trainingId);
+                training.TrainingPlanName = template.TrainingPlanName;
+
+                if (training.Settings == null)
+                {
+                    training.Settings = template.Settings;
+                }
+                else
+                {
+                    if (training.Settings.uniqueGroupWeights != null || training.Settings.triggers != null || training.Settings.trainingPlanOverrides != null)
+                    {
+                        continue;
+                    }
+                    var currentTimeLimits = training.Settings.timeLimits;
+                    training.Settings = template.Settings;
+                    training.Settings.timeLimits = currentTimeLimits;
+                }
+
+                // TODO: if we stored the original template used, we could create a diff between this training's settings and the template's
+                // and then make those changes applying the new template's settings
+                // Right now we don't provide a GUI to make any changes except for the timeLimits, so not a big deal
+
+                if (actuallyModify)
+                    await trainingRepository.Update(training);
             }
         }
 

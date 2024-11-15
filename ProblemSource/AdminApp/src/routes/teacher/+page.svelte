@@ -1,18 +1,40 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto } from 'src/apiClient';
 	import Tabs from 'src/components/tabs.svelte';
 	import ProgressBar from './progress-bar.svelte';
 	import CreateTrainingsModal from './create-trainings-modal.svelte';
 	import { openModal } from 'svelte-modals';
 	import Switch from 'src/components/switch.svelte';
-	import { assistanStore, getApi } from 'src/globalStore';
+	import { assistanStore, getApi, userStore } from 'src/globalStore';
 	import type { ApiFacade } from 'src/apiFacade';
 	import { getString } from 'src/utilities/LanguageService';
 	import { TrainingDayTools } from 'src/services/trainingDayTools';
 	import { DateUtils } from 'src/utilities/DateUtils';
+	import { Avatar } from 'src/services/avatar';
+	import Realtimeline from 'src/components/realtimeline.svelte';
+	import { RealtimelineTools } from 'src/services/realtimelineTools';
 
 	const apiFacade = getApi() as ApiFacade;
+
+	// const showRealtimeButton = false; // For now, don't show it at all...
+	const showRealtimeButton = $userStore?.role == "Admin";
+	const rtlTools = new RealtimelineTools(2 * 60 * 1000);
+
+	let realtimeConnected: boolean | null = rtlTools.isConnected;
+	const connectionSignal = (status: boolean | null) => {
+		realtimeConnected = status;
+	}
+	rtlTools.connectionSignal.on(connectionSignal);
+
+	let allRealtimeData = rtlTools.getData();
+	const getRealtimeData = () => {
+		allRealtimeData = rtlTools.getData(detailedTrainingsData.map(o => o.id));
+	}
+	const getRealtimeDataForId = (trainingId: number) => {
+		const forTraining = allRealtimeData.filter(o => o.id == trainingId);
+		return forTraining.length ? forTraining[0].events : [];
+	};
 
 	let detailedTrainingsData: TrainingSummaryWithDaysDto[] = [];
 	let showStatsForLast7days = false;
@@ -26,7 +48,18 @@
 	let groups: { group: string; summaries: TrainingSummaryDto[] }[];
 	let lastTrainingOccasionInGroup: Date | null = null;
 
-	onMount(() => getData());
+	onMount(() => { 
+		getData();
+        const interval = setInterval(() => {
+            rtlTools.clearExpired();
+			getRealtimeData();
+        }, 100);
+        return () => clearInterval(interval);
+	});
+	onDestroy(() => {
+		rtlTools.connectionSignal.off(connectionSignal);
+		rtlTools.disconnect();
+	});
 
 	async function getData() {
 		if (apiFacade == null) {
@@ -39,6 +72,8 @@
 
 	async function onSelectGroup(groupId: string) {
 		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId);
+		// RealtimelineTools.testData(detailedTrainingsData.map(o => o.id)).forEach(o => rtlTools.append(o));;
+		getRealtimeData();
 	}
 
 	function getAccuracyWarningLevel(training: { accuracyWarningThreshold: number }, accuracy: number) {
@@ -108,8 +143,11 @@
 
 <div class="teacher-view">
 	<h2>{getString('teacher_groups_header')}</h2>
-
+	{#if showRealtimeButton}
+		<button disabled={realtimeConnected == null} on:click={() => rtlTools.toggleConnect()}>{realtimeConnected  == true ? 'Disconnect' : 'Connect'}</button>
+	{/if}
 	{#if groups && groups.length > 0}
+		(Total: {groups.map(o => o.summaries.length).reduce((p, c) => p + c)} created, {groups.map(o => o.summaries.filter(p => p.trainedDays > 0).length).reduce((p, c) => p + c)} started)
 		<Tabs
 			urlParam="group"
 			tabs={groups.map((g) => {
@@ -169,7 +207,13 @@
 			</tr>
 			{#each trainings as t (t.id)}
 				<tr on:click={() => onSelectTraining(t.id)} class="training-row">
-					<td class="user-column">{t.username}&nbsp;<a href="/admin/teacher/training?id={t.id.toString()}" title="id={t.id.toString()}" target="_blank">^</a></td>
+					<td class="user-column">
+						<div style="display: flex">
+							{@html Avatar.create(t.username)}
+							<span>&nbsp;{t.username}&nbsp;</span>
+							<a rel="noreferrer" href="/admin/teacher/training?id={t.id.toString()}" title="id={t.id.toString()}" target="_blank">^</a>
+						</div>
+					</td>
 					<td>
 						<ProgressBar value={t.trainedDays} max={t.trainedDaysMax} suffix="" decimals={0} color={t.isDaysTrainedLow ? '#ff5959' : '#c7a0fc'} />
 					</td>
@@ -185,9 +229,12 @@
 					</td>
 					{/each}
 					<td>
-					{#each t.comments as c}
+						{#if getRealtimeDataForId(t.id).length}
+						<Realtimeline history={getRealtimeDataForId(t.id)} getPositioning={RealtimelineTools.createPositioningFunction(5 * 60 * 1000)} ></Realtimeline>
+						{/if}
+					<!-- {#each t.comments as c}
 						{c.description}
-					{/each}
+					{/each} -->
 					</td>
 				</tr>
 			{/each}

@@ -9,10 +9,4 @@ namespace TrainingApi
         public RealTimeConfig RealTime { get; set; } = new();
         public string? SyncUrls { get; set; } = "";
     }
-
-    public class AzureQueueConfig
-    {
-        public string ConnectionString { get; set; } = "";
-        public string QueueName { get; set; } = "";
-    }
 }

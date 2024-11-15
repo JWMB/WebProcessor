@@ -1,42 +1,24 @@
 <script lang="ts">
-	import { notificationsStore, userStore } from '../../globalStore.js';
+	import { realtimeTrainingListener, userStore } from '../../globalStore.js';
 	import { base } from '$app/paths';
-	import { Realtime } from '../../services/realtime.js';
 	import { onDestroy } from 'svelte';
-	import { Startup } from '../../startup.js';
-	import type { TrainingUpdateMessage } from '../../types.js';
+	
+	let realtimeConnected: boolean | null = realtimeTrainingListener.connected();
+	const connectionSignal = (status: boolean | null) => {
+		realtimeConnected = status;
+	}
+	realtimeTrainingListener.connectionSignal.on(connectionSignal);
 
-	const realtime = new Realtime<TrainingUpdateMessage>();
-	let realtimeConnected: boolean | null = false;
-
-	async function toggleRealtimeConnection() {
-		if (realtime.isConnected) {
-			realtimeConnected = null;
-			realtime.disconnect();
+	const toggleRealtimeConnection = async () => {
+		if (realtimeTrainingListener.connected() == true) {
+			realtimeTrainingListener.disconnect();
 		} else {
-			realtime.onConnected = () => {
-				realtimeConnected = true;
-			};
-			realtime.onDisconnected = (err) => {
-				realtimeConnected = false;
-				console.log('disconnected', err);
-			};
-			realtime.onReceived = (msg) => {
-				console.log('received', msg.username, msg.events);
-				notificationsStore.add({ createdAt: new Date(Date.now()), text: msg.username });
-				// $notifications = [...$notifications, { createdAt: new Date(Date.now()), text: msg.username }];
-			};
-			realtimeConnected = null;
-			try {
-				await realtime.connect(Startup.resolveLocalServerBaseUrl(window.location));
-			} catch (err) {
-				console.log('error connecting', err);
-			}
+			await realtimeTrainingListener.connect();
 		}
 	}
 
 	onDestroy(() => {
-		realtime.disconnect();
+		realtimeTrainingListener.disconnect();
 	});
 </script>
 
@@ -47,6 +29,7 @@
 		<a href="{base}/admin/teacher">Teacher</a>
 		<a href="{base}/admin/overview">Overview</a>
 		<a href="{base}/teacher">Teacher2</a>
+		<a href="{base}/admin/realtime">Realtime</a>
 		<button disabled={realtimeConnected == null} on:click={() => toggleRealtimeConnection()}>{realtimeConnected == true ? 'Disconnect' : 'Connect'}</button>
 	{/if}
 </nav>

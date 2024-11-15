@@ -1,4 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using ProblemSource.Services;
 
 namespace TrainingApi.RealTime
 {
@@ -11,6 +14,11 @@ namespace TrainingApi.RealTime
             services.AddSingleton<QueueListener>();
             services.AddSingleton<CommHubWrapper>();
             services.AddHostedService(sp => new TimedHostedService(sp.GetRequiredService<QueueListener>().Receive, sp.GetRequiredService<ILogger<TimedHostedService>>()));
+
+            var registered = services.FirstOrDefault(o => o.ServiceType == typeof(IEventDispatcher));
+            if (registered != null)
+                services.Remove(registered);
+            services.AddSingleton<IEventDispatcher, AzureQueueEventDispatcher>();
         }
 
         public void Configure(WebApplication app, string pathPattern)

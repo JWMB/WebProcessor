@@ -3,19 +3,23 @@
     import AllTrainingsOverTimeChart from "../../../components/allTrainingsOverTimeChart.svelte";
 	import { getApi } from '../../../globalStore';
 	import DateInput from "src/components/DateInput.svelte";
+	import type { TrainingSummaryDto } from "src/apiClient";
 
-    let stackLeft = true;
+    let stackLeft = false;
     let startDate = DateUtils.addDays(Date.now(), -30 * 6);
-    async function lazyLoading() {
-        return await getApi()?.trainings.getAllSummaries();
-	}
+
+    let summaries: TrainingSummaryDto[] | undefined = undefined;
+    async function loadData() {
+        summaries = undefined;
+        summaries = await getApi()?.trainings.getAllSummaries();
+    } 
 </script>
 
-{#await lazyLoading() then data}
-    total count: {data?.length}
-    <!--TODO: chart is not updated..?-->
-    <div>Stack left: <input type="checkbox" checked={stackLeft}></div>
-    <DateInput bind:date={startDate}></DateInput>
-
-    <AllTrainingsOverTimeChart data={data} stackToLeft={stackLeft} startDate={startDate} ></AllTrainingsOverTimeChart>
-{/await}
+<div>Stack left: <input type="checkbox" bind:checked={stackLeft}></div>
+<DateInput bind:date={startDate}></DateInput>
+<button on:click={loadData}>Load</button>
+stackLeft? {stackLeft}
+{#if summaries}
+total count: {summaries?.length}
+<AllTrainingsOverTimeChart data={summaries} stackToLeft={stackLeft} startDate={startDate} ></AllTrainingsOverTimeChart>
+{/if}

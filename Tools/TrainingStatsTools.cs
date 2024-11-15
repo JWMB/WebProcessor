@@ -1,6 +1,7 @@
 ﻿using Azure.Data.Tables;
 using AzureTableGenerics;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ProblemSource;
 using ProblemSource.Models;
@@ -14,6 +15,7 @@ using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.TrainingAnalyzers;
+using System.Linq;
 using System.Reflection;
 
 namespace Tools
@@ -80,6 +82,8 @@ namespace Tools
             //    t => partitionKey));
             //var allSummaries = await trainingSummaries.Value.GetAll();
             var allSummaries = await CreateTrainingSummaryRepo().GetAll();
+            //var start = DateTimeOffset.Parse("2023-01-01");
+            //var numTrainingsAtLeastNDays = allSummaries.Count(o => o.TrainedDays >= minTrainedDays && o.FirstLogin >= start);
 
             var dateWhenAdjustedClientWasReleased = DateTimeOffset.Parse("2023-03-01");
             var withAdjustedClient = allSummaries
@@ -150,6 +154,40 @@ namespace Tools
 
         private IBatchRepository<T> Create<T>(IBatchRepository<T> inner, Func<T, string> createKey) => inner;
 
+        public async Task GetUsersWithGoodTrainings()
+        {
+            var userRepo = serviceProvider.CreateInstance<AzureTableUserRepository>();
+            var users = await userRepo.GetAll();
+            var userToTrainings = users.Where(o => o.Role == "Teacher").ToDictionary(o => o.Email, o => o.Trainings.SelectMany(p => p.Value));
+
+            var allTrainingIds = userToTrainings.Values.SelectMany(o => o).Distinct().ToList();
+
+            var trainingsRepo = serviceProvider.CreateInstance<AzureTableTrainingRepository>();
+            var allTrainings = await trainingsRepo.GetByIds(allTrainingIds);
+
+            var selectedTrainings = allTrainings.Where(o => o.AgeBracket.StartsWith("7-")).ToList();
+
+            var statisticsProvider = serviceProvider.CreateInstance<StatisticsProvider>();
+            var summaries = (await statisticsProvider.GetTrainingSummaries(selectedTrainings.Select(o => o.Id))).OfType<TrainingSummary>().ToList();
+
+            var filteredIds = new List<int> { 10, 20, 25, 30 }
+                .ToDictionary(o => $"{o}", o => summaries.Where(p => p.TrainedDays >= o).Select(p => p.Id).ToList());
+            
+            var filteredUserToTrainings = userToTrainings
+                //.Select(o => new { o.Key, Ids = filteredTrainingIds.Intersect(o.Value).ToList() })
+                .Select(o => new
+                {
+                    o.Key,
+                    Ids = filteredIds
+                        .Select(p => new { p.Key, Values = p.Value.Intersect(o.Value).ToList() })
+                        .Where(p => p.Values.Any())
+                })
+                .Where(o => o.Ids.Any())
+                .ToDictionary(o => o.Key, o => o.Ids.ToDictionary(p => p.Key, p => p.Values.Count));
+
+            var output = JsonConvert.SerializeObject(filteredUserToTrainings);
+        }
+
         public async Task<List<string>> GetUsersWithSyncedTrainings()
         {
             var userRepo = serviceProvider.CreateInstance<AzureTableUserRepository>();
@@ -170,29 +208,73 @@ namespace Tools
             return allUsersWithSummaries;
         }
 
-        public async Task ExportTrainingsKIFormat()
+        public async Task ExportTrainingsKIFormat(Func<Task<IEnumerable<Training>>>? getTrainings = null, Func<Task<IEnumerable<int>>>? getTrainingIds = null)
         {
             var path = @"C:\temp\_KIExport";
 
             var trainingsRepo = serviceProvider.CreateInstance<AzureTableTrainingRepository>();
+            int? minNumDays = null;
 
-            var minNumDays = 15;
             List<Training> allTrainings;
-            if (false)
+            if (getTrainings != null)
             {
-                var allSummaries = await CreateTrainingSummaryRepo().GetAll();
-                var includedSummaries = allSummaries.Where(o => o.TrainedDays >= 35).ToList();
-                var trainingIds = includedSummaries.Select(o => o.Id).ToList();
-                //trainingIds = new List<int> { 16254, 16258 };
-
+                allTrainings = (await getTrainings()).ToList();
+            }
+            else if (getTrainingIds != null)
+            {
+                var trainingIds = (await getTrainingIds()).ToList();
                 allTrainings = (await trainingsRepo.GetByIds(trainingIds)).ToList();
-
-                var overrides = allTrainings.Where(training => training.Settings.trainingPlanOverrides != null).ToList();
-                allTrainings = overrides;
             }
             else
             {
-                allTrainings = (await trainingsRepo.GetAll()).ToList();
+                minNumDays = 10;
+                if (true)
+                {
+                    var earliestStart = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero); // 2023, 6, 15
+                    var allSummaries = await CreateTrainingSummaryRepo().GetAll();
+                    var includedSummaries = allSummaries
+                        //.Where(o => o.TrainedDays >= 35)
+                        .Where(o => o.TrainedDays >= minNumDays)
+                        .Where(o => o.FirstLogin > earliestStart)
+                        .ToList();
+                    var trainingIds = includedSummaries.Select(o => o.Id).ToList();
+                    //trainingIds = new List<int> { 16254, 16258 };
+
+                    allTrainings = (await trainingsRepo.GetByIds(trainingIds)).ToList();
+
+                    var selectedTrainings = allTrainings
+                        .Where(training => training.Settings.trainingPlanOverrides != null)
+                        .Where(training => training.TrainingPlanName == "2023 HT template")
+                        .ToList();
+
+                    var selectedIds = selectedTrainings.Select(o => o.Id).ToList();
+                    var joined = selectedTrainings.Join(allSummaries, o => o.Id, o => o.Id, (t, s) => new { Training = t, Summary = s }).ToList();//.Where(o => selectedIds.Contains(o.Id)).ToList();
+
+                    var dbgStats = string.Join("\n", joined.Select(o => string.Join("\t", new object[] {
+                    o.Training.Id,
+                    o.Summary.TrainedDays,
+                    o.Summary.FirstLogin.ToString("yyyy-MM-dd"),
+                    o.Summary.LastLogin.ToString("yyyy-MM-dd"),
+                    o.Summary.AvgDaysPerWeek.ToString("#.0"),
+                    o.Training.TrainingPlanName,
+                    o.Training.Settings.trainingPlanOverrides != null,
+                    GetTpOverridesSummary(o.Training.Settings.trainingPlanOverrides),
+                }.Select(o => o.ToString()))));
+
+                    string GetTpOverridesSummary(object? value)
+                    {
+                        var obj = (value as JObject)?["triggers"]?[0]?["actionData"]?["properties"]?["weights"] as JObject;
+                        return obj == null ? ""
+                            : string.Join("/", new[] { "Math", "WM", "Reasoning" }.Select(o => (int)(obj[o]?.Value<double>() ?? 0)));
+                    }
+
+                    allTrainings = selectedTrainings;
+                    //withOverrides.Where(o => o.TrainingPlanName == "")
+                }
+                else
+                {
+                    allTrainings = (await trainingsRepo.GetAll()).ToList();
+                }
             }
 
             Console.WriteLine($"Including {allTrainings.Count} trainings");
@@ -202,15 +284,15 @@ namespace Tools
 
             var predictor = new CachedPredictor(path);
 
-            using var fileStream = File.OpenWrite(Path.Combine(path, "KIExport.csv"));
+            using var fileStream = File.OpenWrite(Path.Combine(path, $"KIExport{DateTime.Now:yyyyMMddTHHmm}.csv"));
             using var writer = new StreamWriter(fileStream);
 
             var dbg = new List<string>();
             foreach (var training in allTrainings)
             {
-                if (true)
+                if (false)
                 {
-                    var tmp = X(training);
+                    var tmp = GetMods(training);
                     dbg.Add($"{training.Id}\t{tmp.numberlineModEasy}\t{tmp.weightMod}");
                 }
                 else
@@ -242,7 +324,7 @@ namespace Tools
             var x = string.Join("\n", dbg);
         }
 
-        private (bool numberlineModEasy, string weightMod) X(Training training)
+        private (bool numberlineModEasy, string weightMod) GetMods(Training training)
         {
             var numberlineModEasy = false;
             var weightMod = "";
@@ -286,7 +368,7 @@ namespace Tools
 
             var predicted = await predictor.Predict(training, phases);
 
-            var (numberlineModEasy, weightMod) = X(training);
+            var (numberlineModEasy, weightMod) = GetMods(training);
             //var numberlineModEasy = false;
             //var weightMod = "";
             var settings = training.Settings ?? new TrainingSettings();

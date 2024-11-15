@@ -26,26 +26,74 @@ namespace ProblemSourceModule.Tests
             fixture = new Fixture().Customize(new AutoMoqCustomization() { ConfigureMembers = true });
         }
 
-        [Fact]
-        public void CategorizerDay5_23Q1_Triggers()
+        [Theory]
+        [InlineData(typeof(TrainingModCreator_23Q1))]
+        [InlineData(typeof(TrainingModCreator_24Q1))]
+        public void CategorizerDay5_Triggers(Type creatorType)
         {
-            var low00 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (0, 0));
-            var low11 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (1, 1));
-            var medium = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Medium, (0, 0));
-            var unknown = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Unknown, (0, 0));
-            var high0 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (0, 0));
-            var high1 = CategorizerDay5_23Q1.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (1, 0));
+            ITrainingModCreator trainingModsCreator = (ITrainingModCreator)Activator.CreateInstance(creatorType)!; // new CreateTrainingMods_23Q1();
+            var trainingDay = 0; // doesn't matter for this test
+            // expected WM Weights
+            var wmWeights = new
+            {
+                NVR_Std = "38",
+                NVR_High = "20",
+                WM_Std = "46"
+            };
 
+            foreach (var rnd in new[] { 0.0, 0.5, 1.0 })
+            {
+                foreach (var tier in new[] { PredictedNumberlineLevel.PerformanceTier.Low, PredictedNumberlineLevel.PerformanceTier.Medium, PredictedNumberlineLevel.PerformanceTier.High } )
+                {
+                    var expectedWMWeight = trainingModsCreator is TrainingModCreator_24Q1
+                        ? rnd switch
+                        {
+                            0.0 => wmWeights.NVR_Std,
+                            0.5 => wmWeights.NVR_High,
+                            _ => wmWeights.WM_Std
+                        } // the rest is fdr the old TrainingModCreator_23Q1
+                        : tier == PredictedNumberlineLevel.PerformanceTier.Low
+                            ? rnd switch
+                            {
+                                0.0 => wmWeights.NVR_Std,
+                                0.5 => wmWeights.NVR_High,
+                                _ => wmWeights.NVR_High,
+                            }
+                            : (tier == PredictedNumberlineLevel.PerformanceTier.Medium
+                                ? wmWeights.NVR_Std
+                                // PerformanceTier.High
+                                : rnd switch
+                                {
+                                    0.0 => wmWeights.NVR_Std,
+                                    0.5 => wmWeights.WM_Std,
+                                    _ => wmWeights.WM_Std,
+                                });
+                    var trigger = trainingModsCreator.CreateTrigger(trainingDay, tier, (rnd, 0));
+                    $"{trigger!.actionData.properties.weights.WM}".ShouldBe(expectedWMWeight);
+                }
+            }
+
+            var low00 = trainingModsCreator.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (0, 0));
             $"{low00!.actionData.properties.weights.WM}".ShouldBe("38");
-            $"{low11!.actionData.properties.weights.WM}".ShouldBe("20");
-            $"{medium!.actionData.properties.weights.WM}".ShouldBe("38"); // (medium as object).ShouldBeNull();
-            $"{unknown!.actionData.properties.weights.WM}".ShouldBe("38"); //(unknown as object).ShouldBeNull();
-            $"{high0!.actionData.properties.weights.WM}".ShouldBe("38");
-            $"{high1!.actionData.properties.weights.WM}".ShouldBe("46");
-
             $"{low00!.actionData.properties.phases}".ShouldContain("numberline[\\\\w#]*");
+
+            var low11 = trainingModsCreator.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Low, (1, 1));
+            $"{low11!.actionData.properties.weights.WM}".ShouldBe(trainingModsCreator is TrainingModCreator_23Q1 ? "20" : "46");
             $"{low11!.actionData.properties.phases}".ShouldNotContain("numberline[\\\\w#]*");
+
+            var medium = trainingModsCreator.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Medium, (0, 0));
+            $"{medium!.actionData.properties.weights.WM}".ShouldBe("38"); // (medium as object).ShouldBeNull();
+
+            var unknown = trainingModsCreator.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.Unknown, (0, 0));
+            $"{unknown!.actionData.properties.weights.WM}".ShouldBe("38"); //(unknown as object).ShouldBeNull();
+
+            var high0 = trainingModsCreator.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (0, 0));
+            $"{high0!.actionData.properties.weights.WM}".ShouldBe("38");
+
+            var high1 = trainingModsCreator.CreateTrigger(5, PredictedNumberlineLevel.PerformanceTier.High, (1, 0));
+            $"{high1!.actionData.properties.weights.WM}".ShouldBe("46");
         }
+
 
         [Theory]
         [InlineData(10, true)]
