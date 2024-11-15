@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -22,7 +22,12 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Xunit.SkippableFact" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" VersionOverride="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" VersionOverride="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" VersionOverride="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" VersionOverride="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="9.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OldDb\OldDb.csproj" />
