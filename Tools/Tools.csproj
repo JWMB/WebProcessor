@@ -24,6 +24,7 @@
     <PackageReference Include="Microsoft.ML.FastTree" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="System.Data.SqlClient" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
