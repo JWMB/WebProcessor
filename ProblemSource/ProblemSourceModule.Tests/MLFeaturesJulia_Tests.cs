@@ -123,7 +123,7 @@ namespace ProblemSourceModule.Tests
             features.ToArray().ShouldBe(expected.ToArray(), ignoreOrder: false);
         }
 
-        [Fact]
+        [Fact(Skip = "missing local files")]
         public void X()
         {
             //account_id,training_day,exercise,correct,response_time,level,problem_time,phase_type
