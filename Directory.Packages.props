@@ -5,22 +5,22 @@
     <NoWarn>$(NoWarn);NU1507</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="AngleSharp" Version="1.0.4" />
+    <PackageVersion Include="AngleSharp" Version="1.1.2" />
     <PackageVersion Include="AutoBogus" Version="2.13.1" />
     <PackageVersion Include="AutoBogus.FakeItEasy" Version="2.13.1" />
     <PackageVersion Include="AutoFixture" Version="4.18.0" />
     <PackageVersion Include="AutoFixture.AutoMoq" Version="4.18.0" />
-    <PackageVersion Include="Azure.Core" Version="1.33.0" />
-    <PackageVersion Include="Azure.Data.Tables" Version="12.8.0" />
-    <PackageVersion Include="Azure.Storage.Queues" Version="12.14.0" />
+    <PackageVersion Include="Azure.Core" Version="1.44.1" />
+    <PackageVersion Include="Azure.Data.Tables" Version="12.9.1" />
+    <PackageVersion Include="Azure.Storage.Queues" Version="12.21.0" />
     <PackageVersion Include="Bogus" Version="34.0.2" />
     <PackageVersion Include="ClosedXML" Version="0.102.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
     <PackageVersion Include="DeepCloner" Version="0.10.4" />
-    <PackageVersion Include="Google.Apis.Gmail.v1" Version="1.60.0.2958" />
-    <PackageVersion Include="JWMB.AzureTableGenerics" Version="0.0.3" />
-    <PackageVersion Include="Microsoft.ApplicationInsights" Version="2.21.0" />
-    <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.21.0" />
+    <PackageVersion Include="Google.Apis.Gmail.v1" Version="1.68.0.3427" />
+    <PackageVersion Include="JWMB.AzureTableGenerics" Version="0.0.5" />
+    <PackageVersion Include="Microsoft.ApplicationInsights" Version="2.22.0" />
+    <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
@@ -40,18 +40,18 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.ML" Version="2.0.1" />
+    <PackageVersion Include="Microsoft.ML" Version="4.0.0" />
     <PackageVersion Include="Microsoft.ML.AutoML" Version="0.20.1" />
     <PackageVersion Include="Microsoft.ML.FastTree" Version="2.0.1" />
     <PackageVersion Include="Microsoft.ML.LightGbm" Version="2.0.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.6.3" />
     <PackageVersion Include="Moq" Version="4.18.4" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageVersion Include="NSwag.AspNetCore" Version="13.19.0" />
-    <PackageVersion Include="NSwag.MSBuild" Version="13.19.0" />
+    <PackageVersion Include="NSwag.AspNetCore" Version="14.1.0" />
+    <PackageVersion Include="NSwag.MSBuild" Version="14.1.0" />
     <PackageVersion Include="Shouldly" Version="4.2.1" />
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-    <PackageVersion Include="System.Data.SqlClient" Version="4.8.6" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.0.0" />
+    <PackageVersion Include="System.Data.SqlClient" Version="4.9.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.2.0" />
     <PackageVersion Include="xunit" Version="2.4.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.5" />
