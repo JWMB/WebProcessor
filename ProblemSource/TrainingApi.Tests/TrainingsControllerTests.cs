@@ -27,13 +27,30 @@ namespace TrainingApi.Tests
             var client = ts.CreateClient(user);
 
             // Act
-            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"{basePath}templates");
+            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"{basePath}templates?returnOnlyDefaultTemplate=false");
 
             // Assert
             var template = response!.Single(o => o.Name == "NumberlineTest training");
             template.Settings.trainingPlanOverrides.ShouldNotBeNull();
             template.Settings.trainingPlanOverrides!.ToString()!.ShouldContain("[[[]]"); //TODO: ShouldNotContain
         }
+
+        [Fact]
+        public async Task GetTemplates_ReturnOnlyDefaultsTrue()
+        {
+            // Arrange
+            var ts = new MyTestServer();
+
+            var user = new User { Email = "tester", Role = Roles.Admin };
+            var client = ts.CreateClient(user);
+
+            // Act
+            var response = await client.GetFromJsonAsync<List<TrainingTemplateDto>>($"{basePath}templates");
+
+            // Assert
+            response!.Count.ShouldBe(1);
+        }
+
 
         [Fact]
         public async Task TrainingsSummaryDoesNotSkipWhenNoTrainedDays()

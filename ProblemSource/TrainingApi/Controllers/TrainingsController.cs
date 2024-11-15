@@ -212,14 +212,13 @@ namespace TrainingApi.Controllers
 
         [HttpGet]
         [Route("templates")]
-        public async Task<IEnumerable<TrainingTemplateDto>> GetTemplates()
+        public async Task<IEnumerable<TrainingTemplateDto>> GetTemplates(bool returnOnlyDefaultTemplate = true)
         {
             var templates = await trainingTemplateRepository.GetAll();
             var user = userProvider.UserOrThrow;
 
-            var returnOnlyDefaultTemplate = true; // no GUI for selecting template anyway right now..
             // var returnOnlyDefaultTemplate = user.Role == "Admin" // Only provide a the default template when not an admin:
-            if (returnOnlyDefaultTemplate)
+            if (returnOnlyDefaultTemplate == true)
             {
                 var preferredTemplate = "template_2024VT"; // template_2023HT
                 templates = templates.Where(o => o.Username == preferredTemplate);
