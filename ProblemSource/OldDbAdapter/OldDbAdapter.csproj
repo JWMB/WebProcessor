@@ -1,19 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+    <PackageReference Include="System.Data.SqlClient" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Organization\Organization.csproj" />
     <ProjectReference Include="..\OldDb\OldDb.csproj" />
     <ProjectReference Include="..\ProblemSourceModule\ProblemSourceModule.csproj" />
   </ItemGroup>
-
 </Project>

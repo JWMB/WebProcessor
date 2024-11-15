@@ -1,0 +1,60 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <NoWarn>$(NoWarn);NU1507</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="AngleSharp" Version="1.0.4" />
+    <PackageVersion Include="AutoBogus" Version="2.13.1" />
+    <PackageVersion Include="AutoBogus.FakeItEasy" Version="2.13.1" />
+    <PackageVersion Include="AutoFixture" Version="4.18.0" />
+    <PackageVersion Include="AutoFixture.AutoMoq" Version="4.18.0" />
+    <PackageVersion Include="Azure.Core" Version="1.33.0" />
+    <PackageVersion Include="Azure.Data.Tables" Version="12.8.0" />
+    <PackageVersion Include="Azure.Storage.Queues" Version="12.14.0" />
+    <PackageVersion Include="Bogus" Version="34.0.2" />
+    <PackageVersion Include="ClosedXML" Version="0.102.0" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.0" />
+    <PackageVersion Include="DeepCloner" Version="0.10.4" />
+    <PackageVersion Include="Google.Apis.Gmail.v1" Version="1.60.0.2958" />
+    <PackageVersion Include="JWMB.AzureTableGenerics" Version="0.0.3" />
+    <PackageVersion Include="Microsoft.ApplicationInsights" Version="2.21.0" />
+    <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.21.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.8" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker" Version="1.16.0" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.0.13" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.11.0" />
+    <PackageVersion Include="Microsoft.Azure.WebJobs" Version="3.0.37" />
+    <PackageVersion Include="Microsoft.Azure.WebJobs.Logging.ApplicationInsights" Version="3.0.35" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.6.0" />
+    <PackageVersion Include="Microsoft.Data.Analysis" Version="0.20.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
+    <PackageVersion Include="Microsoft.ML" Version="2.0.1" />
+    <PackageVersion Include="Microsoft.ML.AutoML" Version="0.20.1" />
+    <PackageVersion Include="Microsoft.ML.FastTree" Version="2.0.1" />
+    <PackageVersion Include="Microsoft.ML.LightGbm" Version="2.0.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.6.3" />
+    <PackageVersion Include="Moq" Version="4.18.4" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="NSwag.AspNetCore" Version="13.19.0" />
+    <PackageVersion Include="NSwag.MSBuild" Version="13.19.0" />
+    <PackageVersion Include="Shouldly" Version="4.2.1" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageVersion Include="System.Data.SqlClient" Version="4.8.6" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="7.2.0" />
+    <PackageVersion Include="xunit" Version="2.4.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.5" />
+    <PackageVersion Include="Xunit.SkippableFact" Version="1.4.13" />
+  </ItemGroup>
+</Project>
