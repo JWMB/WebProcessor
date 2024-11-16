@@ -227,30 +227,30 @@ namespace Tools
             }
             else
             {
+                //allTrainings = (await trainingsRepo.GetAll()).ToList();
+
                 minNumDays = 10;
-                if (true)
-                {
-                    var earliestStart = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero); // 2023, 6, 15
-                    var allSummaries = await CreateTrainingSummaryRepo().GetAll();
-                    var includedSummaries = allSummaries
-                        //.Where(o => o.TrainedDays >= 35)
-                        .Where(o => o.TrainedDays >= minNumDays)
-                        .Where(o => o.FirstLogin > earliestStart)
-                        .ToList();
-                    var trainingIds = includedSummaries.Select(o => o.Id).ToList();
-                    //trainingIds = new List<int> { 16254, 16258 };
+                var earliestStart = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero); // 2023, 6, 15
+                var allSummaries = await CreateTrainingSummaryRepo().GetAll();
+                var includedSummaries = allSummaries
+                    //.Where(o => o.TrainedDays >= 35)
+                    .Where(o => o.TrainedDays >= minNumDays)
+                    .Where(o => o.FirstLogin > earliestStart)
+                    .ToList();
+                var trainingIds = includedSummaries.Select(o => o.Id).ToList();
+                //trainingIds = new List<int> { 16254, 16258 };
 
-                    allTrainings = (await trainingsRepo.GetByIds(trainingIds)).ToList();
+                allTrainings = (await trainingsRepo.GetByIds(trainingIds)).ToList();
 
-                    var selectedTrainings = allTrainings
-                        .Where(training => training.Settings.trainingPlanOverrides != null)
-                        .Where(training => training.TrainingPlanName == "2023 HT template")
-                        .ToList();
+                var selectedTrainings = allTrainings
+                    .Where(training => training.Settings.trainingPlanOverrides != null)
+                    .Where(training => training.TrainingPlanName == "2023 HT template")
+                    .ToList();
 
-                    var selectedIds = selectedTrainings.Select(o => o.Id).ToList();
-                    var joined = selectedTrainings.Join(allSummaries, o => o.Id, o => o.Id, (t, s) => new { Training = t, Summary = s }).ToList();//.Where(o => selectedIds.Contains(o.Id)).ToList();
+                var selectedIds = selectedTrainings.Select(o => o.Id).ToList();
+                var joined = selectedTrainings.Join(allSummaries, o => o.Id, o => o.Id, (t, s) => new { Training = t, Summary = s }).ToList();//.Where(o => selectedIds.Contains(o.Id)).ToList();
 
-                    var dbgStats = string.Join("\n", joined.Select(o => string.Join("\t", new object[] {
+                var dbgStats = string.Join("\n", joined.Select(o => string.Join("\t", new object[] {
                     o.Training.Id,
                     o.Summary.TrainedDays,
                     o.Summary.FirstLogin.ToString("yyyy-MM-dd"),
@@ -261,20 +261,15 @@ namespace Tools
                     GetTpOverridesSummary(o.Training.Settings.trainingPlanOverrides),
                 }.Select(o => o.ToString()))));
 
-                    string GetTpOverridesSummary(object? value)
-                    {
-                        var obj = (value as JObject)?["triggers"]?[0]?["actionData"]?["properties"]?["weights"] as JObject;
-                        return obj == null ? ""
-                            : string.Join("/", new[] { "Math", "WM", "Reasoning" }.Select(o => (int)(obj[o]?.Value<double>() ?? 0)));
-                    }
-
-                    allTrainings = selectedTrainings;
-                    //withOverrides.Where(o => o.TrainingPlanName == "")
-                }
-                else
+                string GetTpOverridesSummary(object? value)
                 {
-                    allTrainings = (await trainingsRepo.GetAll()).ToList();
+                    var obj = (value as JObject)?["triggers"]?[0]?["actionData"]?["properties"]?["weights"] as JObject;
+                    return obj == null ? ""
+                        : string.Join("/", new[] { "Math", "WM", "Reasoning" }.Select(o => (int)(obj[o]?.Value<double>() ?? 0)));
                 }
+
+                allTrainings = selectedTrainings;
+                //withOverrides.Where(o => o.TrainingPlanName == "")
             }
 
             Console.WriteLine($"Including {allTrainings.Count} trainings");

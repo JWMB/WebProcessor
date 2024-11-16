@@ -8,7 +8,6 @@
     <PackageReference Include="Azure.Data.Tables" />
     <PackageReference Include="Microsoft.ApplicationInsights" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" VersionOverride="8.0.1" />
   </ItemGroup>
