@@ -62,7 +62,7 @@ namespace TrainingApi.Tests
         }
 
         [SkippableFact]
-        public async Task CreateToken()
+        public void CreateToken()
         {
             var token = GenerateToken(expiry: TimeSpan.FromDays(365 * 5));
         }

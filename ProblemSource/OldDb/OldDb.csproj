@@ -14,6 +14,8 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="9.0.0" />-->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="4.11.0" />
+	<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" VersionOverride="4.11.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" VersionOverride="4.11.0" />
 	<PackageReference Include="Microsoft.CodeAnalysis.Common" VersionOverride="4.11.0" />
 	<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
 	<PackageReference Include="System.Text.Encodings.Web" />
