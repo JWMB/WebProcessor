@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="4.11.0" />
 	<PackageReference Include="Microsoft.CodeAnalysis.Common" VersionOverride="4.11.0" />
 	<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+	<PackageReference Include="System.Text.Encodings.Web" />
 	  <!--<PackageReference Include="Azure.Core" VersionOverride="1.38.0" />-->
 
   </ItemGroup>
