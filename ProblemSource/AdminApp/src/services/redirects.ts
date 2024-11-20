@@ -7,7 +7,11 @@ export async function handleRedirects(routeId: string) {
     await userStore.inited;
     const user = get(userStore);
 
-    console.log("handleRedirect", user, routeId);
+    console.log("handleRedirect", user, routeId, window.location.pathname);
+    
+    if (/\/login$/.test(window.location.pathname)) {
+        return;
+    }
 
     if (!user) {
         const returnUrl = window.location.pathname.substring(base.length) + window.location.search;
