@@ -11,7 +11,10 @@ export async function handleRedirects(routeId: string) {
 
     if (!user) {
         const returnUrl = window.location.pathname.substring(base.length) + window.location.search;
-        const next = base + '/login' + "?returnUrl=" + encodeURIComponent(returnUrl);
+        const next = base + '/login' + 
+            (window.location.search.indexOf("returnUrl") >= 0 
+            ? window.location.search
+             : "?returnUrl=" + encodeURIComponent(returnUrl));
 
         console.log("next", next);
 
