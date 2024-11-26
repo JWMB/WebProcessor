@@ -208,9 +208,9 @@ namespace Tools
             return allUsersWithSummaries;
         }
 
-        public async Task ExportTrainingsKIFormat(Func<Task<IEnumerable<Training>>>? getTrainings = null, Func<Task<IEnumerable<int>>>? getTrainingIds = null)
+        public async Task ExportTrainingsKIFormat(string path, Func<Task<IEnumerable<Training>>>? getTrainings = null, Func<Task<IEnumerable<int>>>? getTrainingIds = null)
         {
-            var path = @"C:\temp\_KIExport";
+            //var path = @"C:\temp\_KIExport";
 
             var trainingsRepo = serviceProvider.CreateInstance<AzureTableTrainingRepository>();
             int? minNumDays = null;
@@ -230,10 +230,9 @@ namespace Tools
                 //allTrainings = (await trainingsRepo.GetAll()).ToList();
 
                 minNumDays = 10;
-                var earliestStart = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero); // 2023, 6, 15
+                var earliestStart = new DateTimeOffset(2024, 04, 01, 0, 0, 0, TimeSpan.Zero);
                 var allSummaries = await CreateTrainingSummaryRepo().GetAll();
                 var includedSummaries = allSummaries
-                    //.Where(o => o.TrainedDays >= 35)
                     .Where(o => o.TrainedDays >= minNumDays)
                     .Where(o => o.FirstLogin > earliestStart)
                     .ToList();
