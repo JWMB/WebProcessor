@@ -257,9 +257,12 @@ namespace TrainingApi.Controllers
             summaries ??= (await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id))).OfType<TrainingSummary>();
             var summariesAsDict = summaries.ToDictionary(o => o.Id, o => o);
 
-            return trainings.Select(training => 
-                TrainingSummaryDto.Create<TrainingSummaryDto>(training, summariesAsDict.GetValueOrDefault(training.Id, null))
-                ).ToList();
+            return summariesAsDict?.Any() != true
+                ? new()
+                : trainings.Select(training => new { Training = training, Summary = summariesAsDict!.GetValueOrDefault(training.Id, null) })
+                    .Where(o => o.Summary != null)
+                    .Select(o => TrainingSummaryDto.Create<TrainingSummaryDto>(o.Training, o.Summary!))
+                    .ToList();
         }
 
         [HttpPost]

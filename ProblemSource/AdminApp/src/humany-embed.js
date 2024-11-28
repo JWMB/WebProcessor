@@ -2,7 +2,7 @@
 const defaultRootUrl = "//ki-study.humany.net/";
 
 export function initWidgetImplementationScript(implementationUriName) {
-    const c = defaultRootUrl + (implementationUriName || "default") + "/embed.js";
+    let c = defaultRootUrl + (implementationUriName || "default") + "/embed.js";
     for (var h, i = /[?&]{1}(humany[^=]*)=([^&#]*)/g; h = i.exec(window.location.search);)
         c += (-1 < c.indexOf("?") ? "&" : "?") + h[1] + "=" + h[2];
 

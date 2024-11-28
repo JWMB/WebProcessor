@@ -26,7 +26,7 @@ namespace Tools
                 Directory.CreateDirectory(folderPath);
 
             var filename = Path.Join(folderPath, $"{trainingId}.json");
-            List<Phase> phases;
+            List<Phase>? phases;
             if (File.Exists(filename))
             {
                 phases = JsonConvert.DeserializeObject<List<Phase>>(File.ReadAllText(filename));

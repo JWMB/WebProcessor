@@ -8,7 +8,7 @@ env:
   AZURE_WEBAPP_NAME: kistudysync
   AZURE_WEBAPP_PACKAGE_PATH: ProblemSource\TrainingApi\publish
   CONFIGURATION: Release
-  DOTNET_CORE_VERSION: 7.0.x
+  DOTNET_CORE_VERSION: 9
   WORKING_DIRECTORY: ProblemSource\TrainingApi
   ADMINAPP_DIRECTORY: ProblemSource\AdminApp
 jobs:

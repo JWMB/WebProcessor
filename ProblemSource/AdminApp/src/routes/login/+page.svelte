@@ -32,7 +32,13 @@
 					isLoading = false;
 					initWidgetImplementationScript(); // since we don't want to show help widget to non-authorized users
 					// TODO: can't find a way to preserve url parameters (e.g. using ?returnUrl= to get back to the attempted page)
-					window.history.back();
+					// window.history.back();
+
+					const url = new URL(location.href);
+					const baseUrl = url.pathname.replace("/login", "");
+					window.location.href = url.searchParams.get('returnUrl') != null
+						? `${baseUrl}${url.searchParams.get('returnUrl')}`
+						: `${baseUrl}/teacher`
 					//handleRedirects('/login');
 					//goto('/teacher');
 				})

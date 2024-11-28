@@ -1,11 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <None Remove="Resources\2017 HT template Default.json" />
     <None Remove="Resources\2018 VT template Default.json" />
@@ -16,13 +14,11 @@
     <None Remove="Resources\JuliaMLModel_Reg.zip" />
     <None Remove="Resources\testplan.json" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="Resources\JuliaMLModel_Reg.zip">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
   <ItemGroup>
     <EmbeddedResource Include="Resources\2023 HT template.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -58,16 +54,18 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </EmbeddedResource>
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Azure.Data.Tables" Version="12.8.0" />
-    <PackageReference Include="Azure.Storage.Queues" Version="12.14.0" />
-    <PackageReference Include="JWMB.AzureTableGenerics" Version="0.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Azure.Data.Tables" />
+    <PackageReference Include="Azure.Storage.Queues" />
+    <PackageReference Include="JWMB.AzureTableGenerics" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="9.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="System.Text.Encodings.Web" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Common.Web\Common.Web.csproj" />
     <ProjectReference Include="..\..\Common\Common.csproj" />
@@ -75,5 +73,4 @@
     <ProjectReference Include="..\..\MLTools\ML.Dynamic.csproj" />
     <ProjectReference Include="..\..\PluginModuleBase\PluginModuleBase.csproj" />
   </ItemGroup>
-
 </Project>

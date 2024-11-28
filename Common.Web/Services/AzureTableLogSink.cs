@@ -23,7 +23,7 @@ namespace Common.Web.Services
 
             // TODO: use ExpandableTableEntityConverter instead
             var entity = new TableEntity(uuid, ((long)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds).ToString());
-            AzureTableHelpers.SetLongString(entity, Newtonsoft.Json.JsonConvert.SerializeObject(data));
+            AzureTableHelpers.SetLongString(entity, System.Text.Json.JsonSerializer.Serialize(data));
 
             await client.CreateIfNotExistsAsync();
             await client.AddEntityAsync(entity);

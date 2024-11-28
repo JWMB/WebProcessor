@@ -37,12 +37,12 @@ namespace Tools
 
             return $"[{string.Join(",\n", objs.Select(o => JsonConvert.SerializeObject(o, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore })))}]";
 
-            void Remove(JObject obj, string prop)
-            {
-                if (obj[prop] == null)
-                    return;
-                obj[prop]!.Remove();
-            }
+            //void Remove(JObject obj, string prop)
+            //{
+            //    if (obj[prop] == null)
+            //        return;
+            //    obj[prop]!.Remove();
+            //}
 
             void Stringify(JObject o, string prop)
             {

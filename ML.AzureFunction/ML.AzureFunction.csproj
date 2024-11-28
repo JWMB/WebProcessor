@@ -1,38 +1,40 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
-    <OutputType>Exe</OutputType>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Remove="Resources\Models\JuliaMLModel_Reg.zip" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Resources\Models\JuliaMLModel_Reg.zip">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.16.0" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.0.13" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.11.0" />
-    <PackageReference Include="Microsoft.ML.LightGbm" Version="2.0.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\MLTools\ML.Dynamic.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="host.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="local.settings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
-  </ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<AzureFunctionsVersion>v4</AzureFunctionsVersion>
+		<OutputType>Exe</OutputType>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Remove="Resources\Models\JuliaMLModel_Reg.zip" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="Resources\Models\JuliaMLModel_Reg.zip">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Azure.Functions.Worker" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" />
+		<PackageReference Include="Microsoft.ML.LightGbm" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+		<PackageReference Include="System.Text.Encodings.Web" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\MLTools\ML.Dynamic.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="host.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="local.settings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</None>
+	</ItemGroup>
+	<ItemGroup>
+		<Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
+	</ItemGroup>
 </Project>

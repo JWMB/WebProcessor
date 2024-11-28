@@ -1,14 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="AngleSharp" Version="1.0.4" />
-    <PackageReference Include="Google.Apis.Gmail.v1" Version="1.60.0.2958" />
+    <PackageReference Include="AngleSharp" />
+    <PackageReference Include="Google.Apis.Gmail.v1" />
   </ItemGroup>
-
 </Project>

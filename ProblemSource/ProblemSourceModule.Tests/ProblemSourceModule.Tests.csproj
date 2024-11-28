@@ -1,46 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
-	<LangVersion>preview</LangVersion>
-	<UserSecretsId>304b0607-e4db-455a-946a-4e3c98ee4b45</UserSecretsId>
+    <LangVersion>preview</LangVersion>
+    <UserSecretsId>304b0607-e4db-455a-946a-4e3c98ee4b45</UserSecretsId>
   </PropertyGroup>
-
   <ItemGroup>
     <None Remove="AzureTable\training1054598.txt" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="AzureTable\training1054598.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="AutoFixture" Version="4.18.0" />
-    <PackageReference Include="AutoFixture.AutoMoq" Version="4.18.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.3" />
-    <PackageReference Include="Moq" Version="4.18.4" />
-    <PackageReference Include="Shouldly" Version="4.2.1" />
-    <PackageReference Include="xunit" Version="2.4.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+    <PackageReference Include="AutoFixture" />
+    <PackageReference Include="AutoFixture.AutoMoq" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="System.Text.Encodings.Web" />
+    <PackageReference Include="System.Text.RegularExpressions" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="6.0.0">
+    <PackageReference Include="coverlet.collector">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
+    <PackageReference Include="Xunit.SkippableFact" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\ProblemSourceModule\ProblemSourceModule.csproj" />
   </ItemGroup>
-
 </Project>
