@@ -22,6 +22,7 @@ namespace ProblemSource.Models.Aggregates
             return training_day == typed.training_day && exercise == typed.exercise && phase_type == typed.phase_type && time == typed.time && problems.Count() == typed.problems.Count();
         }
 
+        public override int GetHashCode() => $"{id} {training_day} {exercise} {time}".GetHashCode();
 
         public static Phase Create(NewPhaseLogItem newPhase) //, string userId)
         {

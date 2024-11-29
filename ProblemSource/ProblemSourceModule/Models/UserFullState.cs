@@ -43,6 +43,8 @@ namespace ProblemSource.Models
                 return false;
             return exercise_stats.trainingDay == typed.exercise_stats.trainingDay && exercise_stats.lastTimeStamp == typed.exercise_stats.lastTimeStamp;
         }
+
+        public override int GetHashCode() => $"{exercise_stats.trainingDay} {exercise_stats.lastLogin} {exercise_stats.gameRuns.Count}".GetHashCode();
     }
 
     public class UserFullState : IUserServerSettings, IUserGeneratedState

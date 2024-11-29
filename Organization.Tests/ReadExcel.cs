@@ -71,7 +71,7 @@ namespace Organization.Tests
             };
 
                 schools = new List<SchoolBase>();
-                foreach (var sheet in wb.Worksheets)
+                foreach (var sheet in wb.Worksheets.OfType<IXLWorksheet>())
                 {
                     if (schoolSheets.TryGetValue(sheet.Name, out var type))
                     {
@@ -112,7 +112,7 @@ namespace Organization.Tests
                             };
                         }
 
-                        var lastRowIndex = sheet.LastRowUsed().RowNumber();
+                        var lastRowIndex = sheet.LastRowUsed()?.RowNumber() ?? 0;
                         for (int rowNum = 2; rowNum <= lastRowIndex; rowNum++)
                         {
                             var row = sheet.Row(rowNum);

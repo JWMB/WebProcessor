@@ -131,11 +131,10 @@ namespace ProblemSource.Models
 
                 foreach (var item in group.exercises)
                 {
-                    var leaf = new DynamicNodeLeaf { id = (string)item["id"], weight = Convert.ToDecimal(item["weight"]) };
                     var gameDef = ((JObject)item.data).ToObject<GameDefinition>();
                     if (gameDef == null)
                         throw new Exception("Couldn't deserialize GameDefinition");
-                    leaf.Game = gameDef;
+                    var leaf = new DynamicNodeLeaf { id = (string)item["id"], weight = Convert.ToDecimal(item["weight"]), Game = gameDef };
                     leaf.unlockCriteria = ParseCriteria(item.unlockCriteria);
                     leaf.lockCriteria = ParseCriteria(item.lockCriteria);
 
@@ -227,7 +226,7 @@ namespace ProblemSource.Models
 
         //public override bool IsLeaf() => true;
 
-        public GameDefinition Game { get; set; }
+        public required GameDefinition Game { get; init; }
     }
 
     public class DynamicNodeParent : DynamicNode
@@ -350,8 +349,8 @@ namespace ProblemSource.Models
             {
                 //No adjustment present in settings, so add it
                 var node = GetDescendantById(id);
-                if (node == null)
-                    this.SetAdjustmentsInBranch(node, stats);
+                if (node != null)
+                    SetAdjustmentsInBranch(node, stats);
             }
         }
 
@@ -456,7 +455,7 @@ namespace ProblemSource.Models
                 var newTargetWeight = kv.Value;
 
                 var oldAmassedAdjustment = GetAmassedAdjustmentValueInSettings(kv.Key, stats);
-                if (oldAmassedAdjustment != null)
+                if (oldAmassedAdjustment != null && node.Parent != null)
                 {
                     var aAt = node.Parent.GetAmassedAndTargetWeights(node.Parent.Children, stats);
 

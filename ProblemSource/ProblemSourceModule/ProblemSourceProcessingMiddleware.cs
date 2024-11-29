@@ -242,7 +242,7 @@ namespace ProblemSource
             }
             catch (Exception ex)
             {
-                log.LogError("Dispatcher", ex);
+                log.LogError(ex, "Dispatcher");
             }
         }
 

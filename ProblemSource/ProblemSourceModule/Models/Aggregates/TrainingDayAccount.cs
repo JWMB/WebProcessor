@@ -25,6 +25,8 @@ namespace ProblemSource.Models.Aggregates
             return $"{TrainingDay} {StartTime} rTime:{ResponseMinutes} #corr:{NumCorrectAnswers} #q:{NumQuestions} #racewon:{NumRacesWon}";
         }
 
+        public override int GetHashCode() => $"{AccountId} {this}".GetHashCode();
+
         public override bool Equals(object? obj)
         {
             if (obj == null || obj is TrainingDayAccount typed == false)

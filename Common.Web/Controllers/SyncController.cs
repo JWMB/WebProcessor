@@ -56,7 +56,7 @@ namespace Common.Web.Controllers
         {
             if (HttpContext.Request.Headers.TryGetValue(HeaderNames.UserAgent, out var ua))
             {
-                log.LogInformation($"Request UserAgent", ua.ToString());
+                log.LogInformation($"Request UserAgent {ua}");
             }
 
             try

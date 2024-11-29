@@ -18,7 +18,7 @@ namespace ProblemSourceModule.Models
     //Todo: And/or will generate different results if their lists are empty, what does a empty list mean?
     public class BooleanAndCriteria : ICriteria
     {
-        public ICriteria[] subCriteria;
+        public ICriteria[] subCriteria = [];
         public bool isFulfilled(ExerciseStats stats)
 		{
 			return subCriteria.Any() == false
@@ -29,7 +29,7 @@ namespace ProblemSourceModule.Models
 
     public class BooleanOrCriteria : ICriteria
     {
-        public ICriteria[] subCriteria;
+        public ICriteria[] subCriteria = [];
         public bool isFulfilled(ExerciseStats stats)
         {
             return subCriteria.Any() == false
@@ -40,8 +40,8 @@ namespace ProblemSourceModule.Models
 
     public class BooleanNotCriteria : ICriteria
     {
-        public ICriteria subCriteria;
-        public bool isFulfilled(ExerciseStats stats) => !subCriteria.isFulfilled(stats);
+        public ICriteria? subCriteria;
+        public bool isFulfilled(ExerciseStats stats) => subCriteria == null || !subCriteria.isFulfilled(stats);
     }
 
     public enum MagnitudeComparisonType
