@@ -37,7 +37,7 @@ jobs:
     - name: azuright
       uses: potatoqualitee/azuright@v1.1
     - name: Test
-      run: dotnet test --no-build --verbosity normal --filter Category!=Local
+      run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build --verbosity normal --filter Category!=Local
     - name: Publish
       run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
     - name: Create admin folder
