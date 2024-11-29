@@ -1,0 +1,73 @@
+name: API + FrontEnd
+on:
+  push:
+    branches: [ "master", "release" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+	env:
+  AZURE_WEBAPP_NAME: kistudysync
+  AZURE_WEBAPP_PACKAGE_PATH: ProblemSource\TrainingApi\publish
+  CONFIGURATION: Release
+  DOTNET_CORE_VERSION: 9
+  WORKING_DIRECTORY: ProblemSource\TrainingApi
+  ADMINAPP_DIRECTORY: ProblemSource\AdminApp
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: build frontend
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+    - run: npm install
+      working-directory: ProblemSource\AdminApp # TODO: how to use ADMINAPP_DIRECTORY?
+    - run: npm run build
+      working-directory: ProblemSource\AdminApp
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
+    - name: Restore
+      run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
+    - name: Build
+      run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install & run Azurite
+      run: npm install -g azurite
+    - name: Run Azurite in Background
+      shell: bash
+      run: azurite-table &
+    # - name: Test ################ On github, getting "No connection could be made because the target machine actively refused it. (127.0.0.1:10002)""
+    #   run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --filter Category!=Local
+  publish:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/release'
+    steps:
+    - name: Publish
+      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+    - name: Create admin folder
+      run: mkdir TrainingApi/publish/StaticFiles/Admin
+      working-directory: ProblemSource
+    - name: Copy admin
+      run: mv -v AdminApp/build/* TrainingApi/publish/StaticFiles/Admin
+      shell: bash
+      working-directory: ProblemSource
+    - name: Deploy to Azure WebApp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.kistudysync_FFFF }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    - name: Publish Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: webapp
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
