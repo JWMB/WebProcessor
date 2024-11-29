@@ -1,4 +1,4 @@
-name: API + FrontEnd kistudysync
+name: API + FrontEnd
 on:
   push:
     branches:
@@ -34,6 +34,8 @@ jobs:
       run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
     # - name: Test ################ On github, getting "No connection could be made because the target machine actively refused it. (127.0.0.1:10002)""
     #   run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --filter Category!=Local
     - name: Publish
       run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
     - name: Create admin folder
