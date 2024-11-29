@@ -36,6 +36,7 @@ jobs:
       run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
   test:
     runs-on: ubuntu-latest
+    needs: build
     steps:
     - name: Install & run Azurite
       run: npm install -g azurite
