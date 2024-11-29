@@ -6,7 +6,7 @@ on:
     branches: [ "master" ]
   workflow_dispatch:
 
-	env:
+env:
   AZURE_WEBAPP_NAME: kistudysync
   AZURE_WEBAPP_PACKAGE_PATH: ProblemSource\TrainingApi\publish
   CONFIGURATION: Release
