@@ -8,6 +8,11 @@ namespace ProblemSource.Services.Storage
 {
     public static class MemoryCacheExtensions
     {
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning disable CS8603 // Possible null reference return.
+
         //private static readonly Lazy<Func<MemoryCache, object>> GetCoherentState =
         //    new Lazy<Func<MemoryCache, object>>(() =>
         //        CreateGetter<MemoryCache, object>(
@@ -85,6 +90,11 @@ namespace ProblemSource.Services.Storage
                     static cache => ((ICollection<string>)_getStringEntries8010.Value(_getCoherentState.Value(cache)).Keys)
                         .Concat((ICollection<object>)_getNonStringEntries8010.Value(_getCoherentState.Value(cache)).Keys)
             };
+
+#pragma warning restore CS8603 // Possible null reference return.
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8604 // Possible null reference argument.
 
         public static IEnumerable GetKeys(this IMemoryCache memoryCache) =>
             _getKeys((MemoryCache)memoryCache);

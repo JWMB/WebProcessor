@@ -61,8 +61,8 @@ namespace Tools
             var tableClientFactory = serviceProvider.GetRequiredService<ITypedTableClientFactory>();
             var trainingSummaries = new Lazy<IBatchRepository<TrainingSummary>>(() =>
                 Create(new AutoConvertTableEntityRepositoryBatch<TrainingSummary>(tableClientFactory.TrainingSummaries,
-            new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
-            t => partitionKey));
+                    new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none", partitionKey)), new TableFilter("none", partitionKey)),
+                    t => partitionKey));
             return trainingSummaries.Value;
         }
 
@@ -152,7 +152,7 @@ namespace Tools
             return stateById;
         }
 
-        private IBatchRepository<T> Create<T>(IBatchRepository<T> inner, Func<T, string> createKey) => inner;
+        private IBatchRepository<T> Create<T>(IBatchRepository<T> inner, Func<T, string?> createKey) => inner;
 
         public async Task GetUsersWithGoodTrainings()
         {
@@ -286,8 +286,10 @@ namespace Tools
             {
                 if (false)
                 {
+#pragma warning disable CS0162 // Unreachable code detected
                     var tmp = GetMods(training);
                     dbg.Add($"{training.Id}\t{tmp.numberlineModEasy}\t{tmp.weightMod}");
+#pragma warning restore CS0162 // Unreachable code detected
                 }
                 else
                 {

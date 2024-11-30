@@ -39,6 +39,8 @@ namespace ProblemSource.Models.Aggregates
             return training_day == typed.training_day && exercise == typed.exercise && phase_type == typed.phase_type && timestamp == typed.timestamp;
         }
 
+        public override int GetHashCode() => $"{id} {phase_id} {training_day}".GetHashCode();
+
         //Score,Target score,Planet target score
         public static string UniqueIdWithinUser(PhaseStatistics p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{Math.Abs(p.timestamp.ToUnixTimestamp())}";
 

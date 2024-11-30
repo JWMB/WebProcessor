@@ -277,7 +277,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
 
         class ValuesWithPrediction
         {
-            public Dictionary<string, object> Values { get; set; } = new();
+            public Dictionary<string, object?> Values { get; set; } = new();
             public float Predicted { get; set; }
             public int Actual { get; set; }
         }
@@ -298,7 +298,7 @@ INNER JOIN groups ON groups.id = accounts_groups.group_id
             return (float?)prediction;
         }
 
-        private List<ValuesWithPrediction> Predict(List<Dictionary<string, object>> rows, ITransformer model, DataViewSchema schema, ColumnInfo colInfo)
+        private List<ValuesWithPrediction> Predict(List<Dictionary<string, object?>> rows, ITransformer model, DataViewSchema schema, ColumnInfo colInfo)
         {
             var type = MLDynamicPredict.CreateType(schema);
             var predictor = new MLDynamicPredict(schema, model, colInfo);

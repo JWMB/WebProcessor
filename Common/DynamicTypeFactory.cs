@@ -6,7 +6,7 @@ namespace Common
 {
     public static class DynamicTypeFactory
     {
-        public static object CreateInstance(Type type, Dictionary<string, object> props)
+        public static object CreateInstance(Type type, Dictionary<string, object?> props)
         {
             var inst = CreateInstance(type);
             foreach (var item in props)

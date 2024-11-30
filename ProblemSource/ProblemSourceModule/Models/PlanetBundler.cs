@@ -55,6 +55,8 @@ namespace ProblemSourceModule.Models
                         }
                         catch (Exception ex)
                         {
+                            // TODO: log
+                            Console.WriteLine(ex.ToString());
                         }
                     }
                 }
@@ -121,7 +123,7 @@ namespace ProblemSourceModule.Models
         public static void init() => _planetInfos = new();
 
         private static PlanetInfo? _currentPlanet;
-        public static PlanetInfo currentPlanet => _currentPlanet;
+        public static PlanetInfo currentPlanet => _currentPlanet == null ? throw new NullReferenceException() : _currentPlanet;
 
 
         public static List<PlanetInfo> getPlanetsOnlyUsedGameId(string gameId, bool useSharedId = true)
@@ -138,7 +140,7 @@ namespace ProblemSourceModule.Models
         {
             if (_planetInfos?.Any() != true && tp != null && exerciseStats != null)
                 _planetInfos = PlanetBundler.deserializePlanets(tp, exerciseStats);
-            return _planetInfos;
+            return _planetInfos ?? [];
         }
 
         public static void decidedFuturePlanet(PlanetInfo planet)
@@ -300,7 +302,7 @@ namespace ProblemSourceModule.Models
             var removed = notCompletedPlanetGameIds.Where(id => availablePureGameIds.FirstOrDefault(_ => _ == id) == null).ToList();
 
             //planets that shouldn't be available - set them to completed if they have been used, remove them if not:
-            var unavailable = existingPlanets.Where(_ => !_.isCompleted).Where(_ => removed.IndexOf(_.nextGame.id) >= 0);
+            var unavailable = existingPlanets.Where(_ => !_.isCompleted).Where(_ => _.nextGame != null && removed.IndexOf(_.nextGame.id) >= 0);
             foreach (var _ in unavailable.Where(_ => _.isUnlocked == true))
                 _.setOverrideIsCompleted(true); // _.numMedals = 3);
             foreach (var _ in unavailable.Where(_ => _.isUnlocked == false))
@@ -339,7 +341,7 @@ namespace ProblemSourceModule.Models
             //available that are not in existing:
             var notInExisting = available.Where(_ =>
                 existingPlanets.Where(p => !p.isCompleted)
-                    .FirstOrDefault(p => p.nextGame.id == _.id || PlanetBundler.getGameIdFromPlanetId(p.nextGame.id) == _.id) == null);
+                    .FirstOrDefault(p => p.nextGame != null && (p.nextGame.id == _.id || PlanetBundler.getGameIdFromPlanetId(p.nextGame.id) == _.id)) == null);
             var planets = existingPlanets.Concat(notInExisting.Select(_ => fAddPlanet(_))).ToList();
 
             var definedGames = tp.getDefinedGames();
@@ -380,7 +382,7 @@ namespace ProblemSourceModule.Models
             }
 
             foreach (var _ in planets.Where(_ => _.nextGame != null))
-                _.gameId = _.nextGame.id;
+                _.gameId = _.nextGame!.id;
 
             planets = planets.Where(_ => _.visibleOnMenu).ToList();
 

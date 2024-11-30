@@ -25,6 +25,8 @@ namespace ProblemSourceModule.Models.Aggregates
 
         public override string ToString() => $"{Id}: days:{TrainedDays} first:{FirstLogin:MM-dd HH:mm} last:{LastLogin:MM-dd HH:mm}";
 
+        public override int GetHashCode() => ToString().GetHashCode();
+
         public override bool Equals(object? obj)
         {
             if (obj == null || obj is TrainingSummary typed == false)
