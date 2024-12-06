@@ -1,7 +1,4 @@
 <script lang="ts">
-	export const prerender = false;
-	export const ssr = false;
-
 	import { base } from '$app/paths';
 	import NotificationBar from 'src/components/notificationBar.svelte';
 	import { Modals, closeModal } from 'svelte-modals';
@@ -43,7 +40,7 @@
 {/if}
 
 {#if $userStore}
-<a href="//ki-study.humany.net/teacher">Help</a>
+	<a href="//ki-study.humany.net/teacher">Help</a>
 {/if}
 
 <NotificationBar />
