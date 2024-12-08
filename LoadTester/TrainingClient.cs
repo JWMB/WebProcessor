@@ -30,7 +30,7 @@ public class TrainingClient
         isRunning = true;
         this.skipRegularSync = skipRegularSync;
         this.pauseFactor = pauseFactor;
-        await Sync();
+        await StartOfDaySync();
 
         if (numDays != null)
             untilDay = Math.Min(untilDay, this.day + numDays.Value);
@@ -47,7 +47,7 @@ public class TrainingClient
         }
 
         if (skipRegularSync)
-            await Sync();
+            await Sync(false);
 
         isRunning = false;
     }
@@ -55,7 +55,7 @@ public class TrainingClient
     private async Task PerformOneDaysTraining()
     {
         if (!skipRegularSync)
-            await Sync();
+            await StartOfDaySync();
 
         var startTime = currentTime;
 
@@ -86,7 +86,7 @@ public class TrainingClient
             await ExitGame();
 
             if (!skipRegularSync)
-                await Sync();
+                await Sync(false);
         }
 
         var elapsed = currentTime - startTime;
@@ -96,7 +96,7 @@ public class TrainingClient
         if (skipRegularSync)
             this.day++;
         else
-            await Sync();
+            await Sync(false);
     }
 
     private List<LogItem> log = [];
@@ -173,12 +173,24 @@ public class TrainingClient
 
     private long CurrentTimestamp => currentTime.ToUnixTimeMilliseconds();
 
-    public async Task Sync()
+    public async Task StartOfDaySync()
     {
+        var state = await Sync(true);
+        if (state == null)
+            throw new NullReferenceException();
+
+        this.day = state.exercise_stats.trainingDay + 1;
+    }
+
+    public async Task<UserFullState?> Sync(bool requestState)
+    {
+        var loggedDays = log.OfType<NewPhaseLogItem>().Select(o => o.training_day);
+        var maxDay = loggedDays.Any() ? loggedDays.Max() : 0; // this.day;
         var toSend = log.Concat([new UserStatePushLogItem
         { 
             exercise_stats = new ExerciseStats 
             {
+                trainingDay = maxDay
             },
             user_data = new
             {
@@ -187,14 +199,12 @@ public class TrainingClient
 
         foreach (var item in toSend)
             item.className = item.GetType().Name;
-        //item.type
-        var byTimestamp = toSend.GroupBy(o => o.time).ToDictionary(o => o.Key, o => o.ToList());
 
         var payload = new SyncInput
         {
             Uuid = username,
             SessionToken = sessionId,
-            RequestState = sessionId == null,
+            RequestState = requestState,
             CurrentTime = CurrentTimestamp,
             Events = toSend.ToArray()
         };
@@ -203,14 +213,9 @@ public class TrainingClient
 
         Console.WriteLine($"Send {username} {System.Text.Json.JsonSerializer.Serialize(payload).Length}");
         var result = await syncClient.Sync(payload);
-        
-        var state = System.Text.Json.JsonSerializer.Deserialize<UserFullState>(result.state);
-        if (state == null)
-        { }
-        else
-        {
-            this.day = state.exercise_stats.trainingDay + 1;
-            //state.exercise_stats.GetGameStatsSharedId
-        }
+
+        return result.state == null || requestState == false
+            ? null
+            : System.Text.Json.JsonSerializer.Deserialize<UserFullState>(result.state);
     }
 }

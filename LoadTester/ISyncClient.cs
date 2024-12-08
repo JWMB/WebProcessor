@@ -36,8 +36,6 @@ public class SyncClient : ISyncClient
         var req = new HttpRequestMessage(HttpMethod.Post, new Uri(config.Url, path));
         req.Headers.Add("Authorization", "Bearer " + config.Jwt);
 
-        //var jsonOptions = new JsonOptions();
-        //jsonOptions.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         req.Content = JsonContent.Create(payload, options: new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy .CamelCase });
         var response = await client.SendAsync(req);
 

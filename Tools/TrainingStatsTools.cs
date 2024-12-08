@@ -252,8 +252,8 @@ namespace Tools
                 var dbgStats = string.Join("\n", joined.Select(o => string.Join("\t", new object[] {
                     o.Training.Id,
                     o.Summary.TrainedDays,
-                    o.Summary.FirstLogin.ToString("yyyy-MM-dd"),
-                    o.Summary.LastLogin.ToString("yyyy-MM-dd"),
+                    o.Summary.FirstLogin?.ToString("yyyy-MM-dd") ?? string.Empty,
+                    o.Summary.LastLogin?.ToString("yyyy-MM-dd") ?? string.Empty,
                     o.Summary.AvgDaysPerWeek.ToString("#.0"),
                     o.Training.TrainingPlanName,
                     o.Training.Settings.trainingPlanOverrides != null,

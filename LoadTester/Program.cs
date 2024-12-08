@@ -10,7 +10,7 @@ var configuration = new ConfigurationBuilder()
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
 
 var usernames = await GetUsernames(configuration["AdminApi:Group"]!);
-usernames = usernames.Take(1);
+//usernames = usernames.Take(1);
 
 var clientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
 var syncClient = new SyncClient(configuration.GetSection("SyncClient").Get<SyncClient.Config>()!, clientFactory);
@@ -24,11 +24,12 @@ var initTasks = clients
 
 await Task.WhenAll(initTasks);
 
-
 // here we start the actual load test
+var rnd = new Random();
+var minSecsBetweenStarts = 0.01;
 var tasks = clients
     .Select((o, i) => new { Index = i, Client = o })
-    .Select(item => item.Client.StartTraining(numDays: 5, pauseFactor: 1, initialPause: TimeSpan.FromSeconds(0.1 * item.Index)))
+    .Select(item => item.Client.StartTraining(numDays: 5, pauseFactor: 0.1f, initialPause: TimeSpan.FromSeconds(minSecsBetweenStarts * (rnd.NextDouble() + item.Index)))
     .ToList();
 
 await Task.WhenAll(tasks);
