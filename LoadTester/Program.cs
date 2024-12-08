@@ -29,7 +29,7 @@ var rnd = new Random();
 var minSecsBetweenStarts = 0.01;
 var tasks = clients
     .Select((o, i) => new { Index = i, Client = o })
-    .Select(item => item.Client.StartTraining(numDays: 5, pauseFactor: 0.1f, initialPause: TimeSpan.FromSeconds(minSecsBetweenStarts * (rnd.NextDouble() + item.Index)))
+    .Select(item => item.Client.StartTraining(numDays: 5, pauseFactor: 0.1f, initialPause: TimeSpan.FromSeconds(minSecsBetweenStarts * (rnd.NextDouble() + item.Index))))
     .ToList();
 
 await Task.WhenAll(tasks);
