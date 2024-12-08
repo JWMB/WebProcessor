@@ -12,8 +12,6 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using System.Security.Claims;
-using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
-using static ProblemSource.Services.LogEventsToPhases;
 
 namespace ProblemSource
 {
