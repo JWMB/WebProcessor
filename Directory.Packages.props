@@ -18,7 +18,7 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="DeepCloner" Version="0.10.4" />
     <PackageVersion Include="Google.Apis.Gmail.v1" Version="1.68.0.3427" />
-    <PackageVersion Include="JWMB.AzureTableGenerics" Version="0.0.5" />
+    <PackageVersion Include="JWMB.AzureTableGenerics" Version="0.0.6-preview.1" />
     <PackageVersion Include="Microsoft.ApplicationInsights" Version="2.22.0" />
     <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
