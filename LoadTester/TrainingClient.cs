@@ -1,38 +1,70 @@
-﻿using ProblemSource.Models;
+﻿using Microsoft.EntityFrameworkCore.Storage;
+using ProblemSource.Models;
 using ProblemSource.Models.LogItems;
-using System.Net.Http.Json;
 
-internal class TrainingClient
+public class TrainingClient
 {
     private readonly string username;
-    private readonly IHttpClientFactory clientFactory;
-
-    public TrainingClient(string username, IHttpClientFactory clientFactory)
+    private readonly ISyncClient syncClient;
+    private readonly bool enablePing;
+    private float pauseFactor = 0;
+    public TrainingClient(string username, ISyncClient syncClient, bool enablePing = false)
     {
         this.username = username;
-        this.clientFactory = clientFactory;
+        this.syncClient = syncClient;
+        this.enablePing = enablePing;
     }
 
     private GameRunStats GetLatestGameStat(string gameId)
     {
         return new GameRunStats { gameId = gameId, trainingDay = day, highestLevel = 3, lastLevel = 3, won = true };
     }
-    //private GameRunStats CreateGameRunStats(IEnumerable<LogItem> items)
-    //{
-    //}
 
-    public async Task PerformOneDaysTraining(TimeSpan initialPause)
+    private bool isRunning = false;
+    private bool skipRegularSync = false;
+    public async Task StartTraining(int untilDay = 40, int? numDays = null, float pauseFactor = 0, TimeSpan? initialPause = null, bool skipRegularSync = false)
     {
-        await Task.Delay(initialPause);
+        if (isRunning)
+            throw new Exception("Already running");
+
+        isRunning = true;
+        this.skipRegularSync = skipRegularSync;
+        this.pauseFactor = pauseFactor;
+        await Sync();
+
+        if (numDays != null)
+            untilDay = Math.Min(untilDay, this.day + numDays.Value);
+
+        if (this.day > untilDay)
+            return;
+
+        if (initialPause != null)
+            await Task.Delay(initialPause.Value);
+
+        while (this.day <= untilDay)
+        {
+            await PerformOneDaysTraining();
+        }
+
+        if (skipRegularSync)
+            await Sync();
+
+        isRunning = false;
+    }
+
+    private async Task PerformOneDaysTraining()
+    {
+        if (!skipRegularSync)
+            await Sync();
 
         var startTime = currentTime;
 
-        await EnterDay(1);
+        await EnterDay(this.day);
         var gameIds = new[] { "WM_grid", "WM_numbers", "WM_moving", "WM_3dgrid" };
         foreach (var gameId in gameIds)
         {
             await EnterGame(gameId);
-            Console.WriteLine($"{username}: Enter {gameId}");
+            Console.WriteLine($"{username}: Day {this.day} Enter {gameId}");
 
             var lastStat = GetLatestGameStat(gameId);
             var level = lastStat.lastLevel;
@@ -53,12 +85,18 @@ internal class TrainingClient
 
             await ExitGame();
 
-            await Send();
+            if (!skipRegularSync)
+                await Sync();
         }
 
         var elapsed = currentTime - startTime;
 
         await ExitDay();
+
+        if (skipRegularSync)
+            this.day++;
+        else
+            await Sync();
     }
 
     private List<LogItem> log = [];
@@ -100,26 +138,42 @@ internal class TrainingClient
     {
         item.time = await GetAndOffsetTime(TimeSpan.FromMilliseconds(item.time));
         log.Add(item);
+
+        if (enablePing)
+        {
+            if (new[] { typeof(NewPhaseLogItem), typeof(NewProblemLogItem), typeof(AnswerLogItem), typeof(PhaseEndLogItem), typeof(LeaveTestLogItem), typeof(EndOfDayLogItem) }
+                .Contains(item.GetType()))
+            {
+                var body = new SyncInput
+                {
+                    Uuid = username,
+                    CurrentTime = CurrentTimestamp,
+                    Events = [item]
+                };
+
+                await syncClient.Ping(body);
+            }
+        }
     }
 
     private async Task<long> GetAndOffsetTime(TimeSpan? amount = null)
     {
         if (amount != null)
         {
-            currentTime.Add(amount.Value);
+            currentTime = currentTime.Add(amount.Value);
             await Delay(amount.Value);
         }
         return CurrentTimestamp;
     }
     private async Task Delay(TimeSpan timeSpan)
     {
-        if (true)
-            await Task.Delay(timeSpan);
+        if (pauseFactor > 0)
+            await Task.Delay(timeSpan * pauseFactor);
     }
 
-    private long CurrentTimestamp => currentTime.ToUnixTimeSeconds();
+    private long CurrentTimestamp => currentTime.ToUnixTimeMilliseconds();
 
-    public async Task Send()
+    public async Task Sync()
     {
         var toSend = log.Concat([new UserStatePushLogItem
         { 
@@ -134,6 +188,7 @@ internal class TrainingClient
         foreach (var item in toSend)
             item.className = item.GetType().Name;
         //item.type
+        var byTimestamp = toSend.GroupBy(o => o.time).ToDictionary(o => o.Key, o => o.ToList());
 
         var payload = new SyncInput
         {
@@ -141,25 +196,21 @@ internal class TrainingClient
             SessionToken = sessionId,
             RequestState = sessionId == null,
             CurrentTime = CurrentTimestamp,
-            Events = [toSend]
+            Events = toSend.ToArray()
         };
 
         log.Clear();
 
         Console.WriteLine($"Send {username} {System.Text.Json.JsonSerializer.Serialize(payload).Length}");
-        return;
-        using var client = clientFactory.CreateClient();
-
-        var req = new HttpRequestMessage(HttpMethod.Post, "");
-        req.Content = JsonContent.Create(new { A = 1 });
-        var response = await client.SendAsync(req);
-
-        if (!response.IsSuccessStatusCode)
+        var result = await syncClient.Sync(payload);
+        
+        var state = System.Text.Json.JsonSerializer.Deserialize<UserFullState>(result.state);
+        if (state == null)
+        { }
+        else
         {
-            return;
+            this.day = state.exercise_stats.trainingDay + 1;
+            //state.exercise_stats.GetGameStatsSharedId
         }
-
-        var content = await response.Content.ReadAsStringAsync();
     }
-         
 }
