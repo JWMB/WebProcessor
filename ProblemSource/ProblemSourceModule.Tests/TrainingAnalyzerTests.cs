@@ -311,7 +311,7 @@ namespace ProblemSourceModule.Tests
                 TrainingDay = summary.TrainedDays,
                 RemainingMinutes = 0,
                 ResponseMinutes = totalMinutesTrained,
-                EndTimeStamp = summary.LastLogin.UtcDateTime
+                EndTimeStamp = summary.LastLogin?.UtcDateTime ?? DateTime.MinValue
             };
             trainingDaySummaries.Setup(o => o.GetAll()).ReturnsAsync(new List<TrainingDayAccount> { trainingDay });
             repoProvider.Setup(o => o.TrainingDays).Returns(trainingDaySummaries.Object);
