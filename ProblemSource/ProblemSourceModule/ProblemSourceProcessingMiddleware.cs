@@ -276,7 +276,14 @@ namespace ProblemSource
                     // Log incoming data - but remove large State items
                     // Warning: modifying incoming data instead of making a copy
                     root.Events = root.Events.Where(o => LogItem.GetEventClassName(o) != "UserStatePushLogItem").ToArray();
-                    await dataSink.Log(root.Uuid, root);
+                    try
+                    {
+                        await dataSink.Log(root.Uuid, root);
+                    }
+                    catch (Exception ex)
+                    {
+                        log.LogError(ex, $"Uuid: {root.Uuid} Sink size: {JsonConvert.SerializeObject(root).Length}");
+                    }
 
                     var errorLogItems = logItems.OfType<ErrorLogItem>().ToList();
                     if (errorLogItems.Any())
