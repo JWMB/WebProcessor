@@ -10,7 +10,7 @@ var configuration = new ConfigurationBuilder()
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
 
 var admin = new AdminClient(configuration.GetSection("AdminApi").Get<AdminClient.Config>()!);
-var usernames = await admin.GetUsernames(configuration["AdminApi:Group"]!);
+var usernames = await admin.GetUsernamesAndDelete(configuration["AdminApi:Group"]!);
 //usernames = usernames.Take(1);
 
 var clientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();

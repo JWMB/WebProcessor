@@ -43,6 +43,7 @@ public class TrainingClient
 
         while (this.day <= untilDay)
         {
+            Console.WriteLine($"{username}: Start day {this.day}/{untilDay}");
             await PerformOneDaysTraining();
         }
 

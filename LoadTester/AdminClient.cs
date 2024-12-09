@@ -12,14 +12,16 @@ namespace LoadTester
             this.config = config;
         }
 
-        public async Task<IEnumerable<string>> GetUsernames(string group)
+        public async Task<IEnumerable<string>> GetUsernamesAndDelete(string group)
         {
             using var client = new HttpClient();
 
+            Console.WriteLine("Get trainings");
             var summaries = await GetGroupTrainings(group);
 
             foreach (var trainingId in summaries.Where(o => o.TrainedDays > 0).Select(o => o.Id))
             {
+                Console.WriteLine($"Delete {trainingId}");
                 var req = new HttpRequestMessage(HttpMethod.Delete, GetUri($"trainings?id={trainingId}"));
                 AddAuth(req);
                 var response = await client.SendAsync(req);
