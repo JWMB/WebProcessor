@@ -13,11 +13,12 @@ export const load: LayoutLoad = async (args) => {
 		initStrings(langstrings);
 		new Startup().init(globalThis);
 		console.log('main layout.load', args);
-		await handleRedirects(args.routeId || '');
+		await handleRedirects(args.route.id || '');
 		// console.log("main layout.load", args.route);
 		// await handleRedirects((args.route || {}).id || '');
 		return {
-			pageInited: true
+			pageInited: true,
+			route: args.route
 		};
 	}
 };

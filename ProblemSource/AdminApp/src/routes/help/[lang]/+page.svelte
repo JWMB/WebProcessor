@@ -10,13 +10,14 @@
 	}
 </script>
 
-<h1>Math App 2 - Help center</h1>
 {#each categories as category}
-	<h2>{category.title}</h2>
-	{#each getPostOfCategory(category.slug) as post}
-		<Question question={post.title}>
-			<svelte:component this={post.content} />
-			<a href={'./' + post.lang + '/' + post.slug}>Link</a>
-		</Question>
-	{/each}
+	{#if getPostOfCategory(category.slug).length > 0}
+		<h3>{category.title}</h3>
+		{#each getPostOfCategory(category.slug) as post}
+			<Question question={post.title}>
+				<svelte:component this={post.content} />
+				<a href={'./' + post.lang + '/' + post.slug}>Link</a>
+			</Question>
+		{/each}
+	{/if}
 {/each}

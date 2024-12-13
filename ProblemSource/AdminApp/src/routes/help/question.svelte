@@ -21,7 +21,7 @@
 		{/if}
 	</div>
 	<div class="content">
-		<h3>{question}</h3>
+		<h4>{question}</h4>
 		{#if showAnswer}
 			<div transition:ExpandTransition|local>
 				<div class="answer"><slot /></div>
@@ -41,18 +41,23 @@
 		padding: 10px;
 		border-radius: 8px;
 	}
+	h4 {
+		margin-top: 10px;
+		margin-bottom: 10px;
+	}
 	.icon {
-		font-size: 24px;
+		font-size: 20px;
 		border-radius: 50%;
-		background: gray;
+		background: #9fb8df;
 		display: flex;
-		width: 40px;
-		height: 40px;
-		min-width: 40px;
-		min-height: 40px;
+		width: 30px;
+		height: 30px;
+		min-width: 30px;
+		min-height: 30px;
 		align-items: center;
 		justify-content: center;
 		color: white;
+		margin-top: 4px;
 	}
 
 	h3 {
