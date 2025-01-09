@@ -40,6 +40,12 @@ var cancellationToken = cts.Token;
 
 var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
 
+//await new FixAzureTableQuotedDateTime(serviceProvider.GetRequiredService<AzureTableConfig>().ConnectionString)
+//    .Fix(new Dictionary<string, List<(string, Type)>> {
+//        { 
+//            "rekeyedvektorTrainingSummaries", new List<(string, Type)> { ("FirstLogin", typeof(DateTimeOffset)), ("LastLogin", typeof(DateTimeOffset)) }
+//        }
+//    }, null); // "RowKey eq '034413'"
 //var ooo = config.ConfigToAzureConfig();
 //Console.WriteLine(ooo);
 //var tmp = ClientUtils.CsvToNVRLevelStrings(Path.Join(path, "LevelDefinitionsSO.xlsx - 2023H2.tsv")); // LevelDefinitionsSO.xlsx - 2023H2.tsv  LevelDefinitionsRP.xlsx - Cleaned.tsv
@@ -90,7 +96,7 @@ var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop
 
 var tool = new TrainingStatsTools(serviceProvider);
 //await tool.GetUsersWithSyncedTrainings();
-await tool.ExportTrainingsKIFormat(path);
+//await tool.ExportTrainingsKIFormat(path);
 
 //var result = await tool.GetTrainingIdsToTeachers(new[] { 9514, 9513, 9510, 936, 933, 91, 7857, 7821, 7205, 7204, 6109, 5949, 5447, 5019, 4990, 4957, 4933, 4356, 4111, 4050, 3931, 3523, 3507, 3413, 3396, 3342, 3340, 3338, 3336, 3320, 3315, 3312, 3309, 3156, 3081, 2442, 2435, 2425, 2423, 2421, 2278, 22760, 2203, 2202, 2201, 2198, 2197, 2195, 2193, 2182, 2144, 2142, 19068, 17908, 16266, 16236, 13835, 13834, 13830, 128, 126, 121, 120, 111, 10118, 10048, 100 });
 //var oo = result.Select(o => new { Email = o.Key, Count = o.Value.SelectMany(p => p.Value).Count(), Value = o.Value }).OrderByDescending(o => o.Count).ToList();
