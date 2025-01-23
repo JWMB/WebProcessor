@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { showHelpPage } from '../../components/helpWidget.svelte';
 	import { ErrorHandling } from '../../errorHandling';
 	import { userStore } from '../../globalStore';
 	import { initWidgetImplementationScript } from '../../humany-embed';
@@ -35,16 +36,14 @@
 					// window.history.back();
 
 					const url = new URL(location.href);
-					const baseUrl = url.pathname.replace("/login", "");
-					window.location.href = url.searchParams.get('returnUrl') != null
-						? `${baseUrl}${url.searchParams.get('returnUrl')}`
-						: `${baseUrl}/teacher`
+					const baseUrl = url.pathname.replace('/login', '');
+					window.location.href = url.searchParams.get('returnUrl') != null ? `${baseUrl}${url.searchParams.get('returnUrl')}` : `${baseUrl}/teacher`;
 					//handleRedirects('/login');
 					//goto('/teacher');
 				})
 				.catch((err: any) => {
 					isLoading = false;
-					errors.server = ErrorHandling.getErrorObject(err).message || "Unknown error";
+					errors.server = ErrorHandling.getErrorObject(err).message || 'Unknown error';
 				});
 		}
 	};
@@ -84,6 +83,9 @@
 			{/if}
 		{/if}
 	</form>
+	<div>
+		<button class="inline-button" on:click={() => showHelpPage('en/about-the-project')}>About this project</button>
+	</div>
 </div>
 
 <style>
@@ -94,6 +96,7 @@
 		left: 0;
 		right: 0;
 		display: flex;
+		flex-direction: column;
 		justify-content: center;
 		align-items: center;
 		background: white;
@@ -101,8 +104,6 @@
 	form {
 		background: #fff;
 		width: 250px;
-		min-height: 300px;
-		margin: auto 0;
 	}
 
 	input,
