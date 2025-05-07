@@ -60,7 +60,7 @@ namespace ProblemSource
             {
                 case "deletedata":
                     var uuid = context.Request.Query["uuid"].FirstOrDefault() ?? "";
-                    if (!TryGetTrainingIdFromUsername(uuid, false, out var trainingId))
+                    if (!usernameHashing.TryGetTrainingIdFromUsername(uuid, false, out var trainingId))
                         result = new SyncResult { error = $"Username not found ({uuid})" };
                     else
                     {
@@ -86,7 +86,7 @@ namespace ProblemSource
                     }
 
                     var isValidationOnly = root.SessionToken == "validate";
-                    if (!TryGetTrainingIdFromUsername(root.Uuid, isValidationOnly, out var trainingId2)) // TODO: co-opting SessionToken for now
+                    if (!usernameHashing.TryGetTrainingIdFromUsername(root.Uuid, isValidationOnly, out var trainingId2)) // TODO: co-opting SessionToken for now
                     {
                         result = new SyncResult { error = $"Username not found ({root.Uuid})" };
                     }
@@ -119,7 +119,7 @@ namespace ProblemSource
 
         public async Task<SyncResult> Sync(SyncInput root, ClaimsPrincipal user)
         {
-            if (!TryGetTrainingIdFromUsername(root.Uuid, false, out var trainingId2)) // TODO: co-opting SessionToken for now
+            if (!usernameHashing.TryGetTrainingIdFromUsername(root.Uuid, false, out var trainingId2)) // TODO: co-opting SessionToken for now
             {
                 return new SyncResult { error = $"Username not found ({root.Uuid})" };
             }
@@ -166,44 +166,6 @@ namespace ProblemSource
                 throw new ArgumentException("input: incorrect format");
 
             return root;
-        }
-
-        private bool TryGetTrainingIdFromUsername(string uuid, bool validateOnly, out int trainingId)
-        {
-            // TODO: use regular asp.net model validation
-            trainingId = -1;
-
-            // TODO: use regular model validation
-            if (string.IsNullOrEmpty(uuid))
-                return false;
-
-            // Handle common user input mistakes:
-            uuid = uuid.Trim().Replace("  ", " ");
-
-            // TODO: client has already dehashed (but should not, let server handle ui)
-            var dehashedUuid = uuid.Contains(" ") ? usernameHashing.Dehash(uuid) : uuid;
-
-            if (dehashedUuid == null)
-            {
-                if (validateOnly)
-                {
-                    if (!uuid.Contains(" ") && uuid.Length > 4) // allow for forgotten space
-                        dehashedUuid = usernameHashing.Dehash(uuid.Insert(4, " "));
-
-                    if (dehashedUuid == null)
-                        return false;
-                }
-                else
-                    return false;
-            }
-
-            var id = mnemoJapanese.ToIntWithRandom(dehashedUuid);
-            if (id == null)
-                return false;
-
-            trainingId = id.Value;
-
-            return true;
         }
 
         private IUserGeneratedDataRepositoryProvider AssertSession(Training training, string? sessionToken, SyncResult? syncResultForUpdating)

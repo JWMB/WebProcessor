@@ -106,7 +106,7 @@
         private readonly int numHashCharacters;
         private readonly MnemoJapanese mnemoJapanese;
 
-        public UsernameHashing(MnemoJapanese mnemoJapanese, int numHashCharacters = 2)
+		public UsernameHashing(MnemoJapanese mnemoJapanese, int numHashCharacters = 2)
         {
             this.mnemoJapanese = mnemoJapanese;
             this.numHashCharacters = numHashCharacters;
@@ -161,5 +161,43 @@
 
             return username;
         }
-    }
+
+		public bool TryGetTrainingIdFromUsername(string uuid, bool validateOnly, out int trainingId)
+		{
+			// TODO: use regular asp.net model validation
+			trainingId = -1;
+
+			// TODO: use regular model validation
+			if (string.IsNullOrEmpty(uuid))
+				return false;
+
+			// Handle common user input mistakes:
+			uuid = uuid.Trim().Replace("  ", " ");
+
+			// TODO: client has already dehashed (but should not, let server handle ui)
+			var dehashedUuid = uuid.Contains(" ") ? Dehash(uuid) : uuid;
+
+			if (dehashedUuid == null)
+			{
+				if (validateOnly)
+				{
+					if (!uuid.Contains(" ") && uuid.Length > 4) // allow for forgotten space
+						dehashedUuid = Dehash(uuid.Insert(4, " "));
+
+					if (dehashedUuid == null)
+						return false;
+				}
+				else
+					return false;
+			}
+
+			var id = mnemoJapanese.ToIntWithRandom(dehashedUuid);
+			if (id == null)
+				return false;
+
+			trainingId = id.Value;
+
+			return true;
+		}
+	}
 }

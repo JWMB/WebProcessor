@@ -208,7 +208,18 @@ namespace Tools
             return allUsersWithSummaries;
         }
 
-        public async Task ExportTrainingsKIFormat(string path, Func<Task<IEnumerable<Training>>>? getTrainings = null, Func<Task<IEnumerable<int>>>? getTrainingIds = null)
+        public async Task<List<Training>> GetTrainingsFromUserIds(IEnumerable<string> userIds)
+        {
+			var hashing = serviceProvider.GetRequiredService<UsernameHashing>();
+            var ids = userIds.Select(userid => {
+				return hashing.TryGetTrainingIdFromUsername(userid.ToLower(), true, out var id) ? (int?)id : null;
+			}).OfType<int>().ToList();
+
+			var trainingsRepo = serviceProvider.CreateInstance<AzureTableTrainingRepository>();
+            return (await trainingsRepo.GetByIds(ids)).ToList();
+		}
+
+		public async Task ExportTrainingsKIFormat(string path, Func<Task<IEnumerable<Training>>>? getTrainings = null, Func<Task<IEnumerable<int>>>? getTrainingIds = null)
         {
             //var path = @"C:\temp\_KIExport";
 
