@@ -8,7 +8,8 @@ namespace ProblemSource.Services
         // TODO: if we have >1 server instances, this session concept doesn't work. Sure, ARRAffinity but instances can be recycled
         // Either we use a separate single-instance session server, or a pub/sub service so all instances share (some) sessions info
         GetOrCreateSessionResult GetOrOpenSession(string userId, string? sessionToken = null);
-    }
+		GetOrCreateSessionResult? GetByUserId(string userId);
+	}
 
     public class Session
     {
@@ -53,7 +54,6 @@ namespace ProblemSource.Services
         public bool AlreadyExisted { get; set; }
         public Session Session { get; }
         public ErrorTypes Error { get; set; }
-
         public enum ErrorTypes
         {
             OK,
@@ -73,7 +73,16 @@ namespace ProblemSource.Services
         private object _listLock = new object();
         private List<Session> sessions = new();
 
-        public GetOrCreateSessionResult GetOrOpenSession(string userId, string? sessionToken = null)
+        public GetOrCreateSessionResult? GetByUserId(string userId)
+        {
+            lock (_listLock)
+            {
+                var existing = sessions.Where(_ => _.UserId == userId && _.SessionState == Session.SessionStates.Active).FirstOrDefault();
+                return existing == null ? null : new GetOrCreateSessionResult(existing) { AlreadyExisted = true };
+			}
+        }
+
+		public GetOrCreateSessionResult GetOrOpenSession(string userId, string? sessionToken = null)
         {
             lock (_listLock)
             {
@@ -102,7 +111,7 @@ namespace ProblemSource.Services
                         //TODO: send message to others and await logout, timeout or activity from them.
                         //For now, put those into _overtakenSessions and disallow further activity
                         otherOngoing.ForEach(_ => _.SessionState = Session.SessionStates.Overtaken);
-                    }
+					}
                 }
                 var result = new GetOrCreateSessionResult(foundBySessionToken == null ? CreateSession(userId) : foundBySessionToken)
                 {

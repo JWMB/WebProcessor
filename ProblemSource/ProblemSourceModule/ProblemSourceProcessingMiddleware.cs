@@ -100,10 +100,26 @@ namespace ProblemSource
                         }
                         else
                         {
-                            result = isValidationOnly
-                                ? new SyncResult { messages = $"redirect:/index2.html?autologin={root.Uuid}" }
-                                : await Sync(root, context.User);
-                        }
+                            var redirectToNewClient = false;
+                            if (trainingId2 % 10 == 6) // redirect some users to the new client
+                            {
+                                var training = await GetTrainingOrThrow(trainingId2, context.User);
+								var sessionInfo = sessionManager.GetByUserId(training.Username);
+                                if (sessionInfo?.AlreadyExisted != true) // if they encounter a problem and reload, switch back to original client
+                                {
+                                    var session = AssertSession(training, null, null);
+                                    var days = await session.TrainingDays.GetAll();
+                                    if (days.Any() && days.Max(o => o.TrainingDay) == 7)
+                                        redirectToNewClient = true;
+                                }
+							}
+                            if (redirectToNewClient)
+								result = new SyncResult { messages = $"redirect://indexnew.html?autologin={root.Uuid}" };
+                            else
+                                result = isValidationOnly
+                                    ? new SyncResult { messages = $"redirect://index2.html?autologin={root.Uuid}" }
+                                    : await Sync(root, context.User);
+						}
                     }
                     break;
 
