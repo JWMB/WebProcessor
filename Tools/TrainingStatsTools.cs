@@ -219,6 +219,35 @@ namespace Tools
             return (await trainingsRepo.GetByIds(ids)).ToList();
 		}
 
+		public async Task ExportGameStats(IEnumerable<int> trainingIds, IEnumerable<int> trainingDays)
+        {
+			var xrepo = serviceProvider.CreateInstance<AzureTableUserGeneratedDataRepositoriesProviderFactory>();
+            var rows = new List<(int trainingDay, string game, decimal maxLevel)>();
+            foreach (var id in trainingIds)
+            {
+				var userRepos = xrepo.Create(id);
+				rows.AddRange(
+					(await userRepos.PhaseStatistics.GetAll())
+					.Where(o => trainingDays.Contains(o.training_day))
+                    .Select(o => (o.training_day, o.exercise, o.level_max)).ToList()
+                    );
+			}
+            var result = rows
+                .GroupBy(o => $"{o.game}__{o.trainingDay}")
+                .Select(o => new
+                {
+                    Game = o.First().game,
+                    Day = o.First().trainingDay,
+                    MaxMax = o.Select(p => p.maxLevel).Max(),
+                    MinMax = o.Select(p => p.maxLevel).Min(),
+                    Count = o.Count()
+                })
+                .OrderBy(o => o.Day)
+                .ThenBy(o => o.Game)
+                .ToList();
+            var str = string.Join("\n", result.Select(o => $"{o.Day}\t{o.Game}\t{o.MinMax}\t{o.MaxMax}\t{o.Count}"));
+		}
+
 		public async Task ExportTrainingsKIFormat(string path, Func<Task<IEnumerable<Training>>>? getTrainings = null, Func<Task<IEnumerable<int>>>? getTrainingIds = null)
         {
             //var path = @"C:\temp\_KIExport";
