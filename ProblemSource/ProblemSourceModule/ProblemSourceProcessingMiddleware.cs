@@ -101,7 +101,11 @@ namespace ProblemSource
                         else
                         {
                             var redirectToNewClient = false;
-                            if (trainingId2 % 10 == 6) // redirect some users to the new client
+                            if (context.Request.Query["newclient"].FirstOrDefault() == "1")
+                            {
+                                redirectToNewClient = true;
+							}
+							else if (trainingId2 % 10 == 6) // redirect some users to the new client
                             {
                                 var training = await GetTrainingOrThrow(trainingId2, context.User);
 								var sessionInfo = sessionManager.GetByUserId(training.Username);
@@ -109,7 +113,7 @@ namespace ProblemSource
                                 {
                                     var session = AssertSession(training, null, null);
                                     var days = await session.TrainingDays.GetAll();
-                                    if (days.Any() && days.Max(o => o.TrainingDay) == 7)
+                                    if (days.Any() && days.Max(o => o.TrainingDay) == 5)
                                         redirectToNewClient = true;
                                 }
 							}
