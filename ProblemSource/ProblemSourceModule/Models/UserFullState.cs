@@ -79,7 +79,12 @@ namespace ProblemSource.Models
         /// <summary>
         /// Regex patterns of ITrainingAnalyzer type names to execute
         /// </summary>
-        public List<string>? Analyzers { get; set; } 
+        public List<string>? Analyzers { get; set; }
+        
+        /// <summary>
+        /// For redirecting to a specific client app
+        /// </summary>
+        public string? RedirectToClient { get; set; }
 
         public static TrainingSettings Default => new TrainingSettings { timeLimits = new List<decimal> { 33 } };
 
