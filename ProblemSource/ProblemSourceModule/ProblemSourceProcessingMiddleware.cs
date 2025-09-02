@@ -104,26 +104,26 @@ namespace ProblemSource
                             if (context.Request.Query["newclient"].FirstOrDefault() == "1")
                             {
                                 redirectToNewClient = "indexnew.html";
-							}
-							else
+                            }
+                            else
                             {
                                 var training = await GetTrainingOrThrow(trainingId2, context.User);
                                 if (!string.IsNullOrEmpty(training.Settings.RedirectToClient))
                                 {
-									redirectToNewClient = training.Settings.RedirectToClient;
+                                    redirectToNewClient = training.Settings.RedirectToClient;
                                 }
-								else if (trainingId2 % 10 == 6) // redirect some users to the new client
-								{
-                                    var sessionInfo = sessionManager.GetByUserId(training.Username);
-                                    if (sessionInfo?.AlreadyExisted != true) // if they encounter a problem and reload, switch back to original client
-                                    {
-                                        var session = AssertSession(training, null, null);
-                                        var days = await session.TrainingDays.GetAll();
-                                        if (days.Any() && days.Max(o => o.TrainingDay) == 5)
-                                            redirectToNewClient = "indexnew.html";
-                                    }
-                                }
-							}
+                                //else if (trainingId2 % 10 == 6) // redirect some users to the new client
+                                //{
+                                //    var sessionInfo = sessionManager.GetByUserId(training.Username);
+                                //    if (sessionInfo?.AlreadyExisted != true) // if they encounter a problem and reload, switch back to original client
+                                //    {
+                                //        var session = AssertSession(training, null, null);
+                                //        var days = await session.TrainingDays.GetAll();
+                                //        if (days.Any() && days.Max(o => o.TrainingDay) == 5)
+                                //            redirectToNewClient = "indexnew.html";
+                                //    }
+                                //}
+                            }
                             if (!string.IsNullOrEmpty(redirectToNewClient))
 								result = new SyncResult { messages = $"redirect://{redirectToNewClient}?autologin={root.Uuid}" };
                             else
