@@ -109,7 +109,7 @@ namespace ProblemSource
                                 }
                                 else
                                 {
-                                    var training = await GetTrainingOrThrow(trainingId2, context.User);
+                                    var training = await GetTrainingOrThrow(trainingId2, context.User, $"uuid: {root.Uuid}");
                                     if (!string.IsNullOrEmpty(training.Settings.RedirectToClient))
                                     {
                                         redirectToNewClient = training.Settings.RedirectToClient;
@@ -166,14 +166,14 @@ namespace ProblemSource
             }
         }
 
-        private async Task<Training> GetTrainingOrThrow(int id, ClaimsPrincipal user)
+        private async Task<Training> GetTrainingOrThrow(int id, ClaimsPrincipal user, string? additionalMessage = null)
         {
             if (user == null) // For actual sync, we require an authenticated user
-                throw new Exception("Unauthenticated"); // TODO: some HttpException with status code
+                throw new Exception($"Unauthenticated {additionalMessage}"); // TODO: some HttpException with status code
 
             var training = await trainingRepository.Get(id);
             if (training == null)
-                throw new Exception($"Username not found ({id})");
+                throw new Exception($"Username not found ({id}) {additionalMessage}");
 
             return training;
         }
