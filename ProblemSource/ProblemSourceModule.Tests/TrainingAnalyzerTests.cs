@@ -298,6 +298,53 @@ namespace ProblemSourceModule.Tests
             result.ShouldNotBeNull();
         }
 
+        [Fact]
+        public async Task AiCoachAnalyzer_Test()
+        {
+            var sut = new AiCoachAnalyzer();
+            var training = new Training { Settings = new TrainingSettings { timeLimits = [33] }, AgeBracket = "4-5" };
+			var repoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
+
+            var summary = new TrainingSummary { TrainedDays = 5 };
+			var trainingSummaries = new Mock<IBatchRepository<TrainingSummary>>();
+			trainingSummaries.Setup(o => o.GetAll()).ReturnsAsync(new List<TrainingSummary> { summary });
+			repoProvider.Setup(o => o.TrainingSummaries).Returns(trainingSummaries.Object);
+
+			var trainingDaySummaries = new Mock<IBatchRepository<TrainingDayAccount>>();
+			var trainingDays = Enumerable.Range(1, summary.TrainedDays).Select(day => new TrainingDayAccount
+			{
+				TrainingDay = day,
+				RemainingMinutes = 10,
+				ResponseMinutes = 20,
+                StartTime = DateTime.UtcNow.AddDays(-day),
+				EndTimeStamp = DateTime.UtcNow.AddDays(-day).AddMinutes(30)
+			});
+			trainingDaySummaries.Setup(o => o.GetAll()).ReturnsAsync(trainingDays.ToList());
+			repoProvider.Setup(o => o.TrainingDays).Returns(trainingDaySummaries.Object);
+			repoProvider.Setup(o => o.Phases).Returns(new Mock<IBatchRepository<Phase>>().Object);
+
+			var exercises = new[] { "WM_grid#intro", "WM_grid", "nvr_so" };
+			var phaseStatistics = new Mock<IBatchRepository<PhaseStatistics>>();
+			phaseStatistics.Setup(o => o.GetAll()).ReturnsAsync(CreatePhaseStatistics(exercises, 3, summary.TrainedDays));
+			repoProvider.Setup(o => o.PhaseStatistics).Returns(phaseStatistics.Object);
+
+            var bracketProviders = new[] { (training, repoProvider.Object) };
+
+			var prompt = await sut.CreatePrompt(training, repoProvider.Object, bracketProviders);
+
+			List<PhaseStatistics> CreatePhaseStatistics(IEnumerable<string> exercises, decimal level, int toTrainingDay)
+			{
+                return exercises.SelectMany(exercise => 
+                    Enumerable.Range(1, toTrainingDay).Select(day => new PhaseStatistics { exercise = exercise, training_day = day, level_max = level }))
+                    .ToList();
+				//return new List<PhaseStatistics>
+    //            {
+    //                new PhaseStatistics { exercise = "WM_grid#intro", level_max = level },
+				//	new PhaseStatistics { exercise = "WM_grid", level_max = level }
+				//};
+			}
+		}
+
         private IUserGeneratedDataRepositoryProvider MockIUserGeneratedDataRepositoryProvider(TrainingSummary summary, int totalMinutesTrained = 33)
         {
             var repoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
