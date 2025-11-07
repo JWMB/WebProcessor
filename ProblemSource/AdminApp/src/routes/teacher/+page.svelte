@@ -146,6 +146,12 @@
 	{#if showRealtimeButton}
 		<button disabled={realtimeConnected == null} on:click={() => rtlTools.toggleConnect()}>{realtimeConnected  == true ? 'Disconnect' : 'Connect'}</button>
 	{/if}
+	<div style="padding:5px; background-color:#cef; margin: 10px">
+		<p>Vi söker engagerade och IT-kunniga lärare för ett nytt kollaborativt initiativ att ta fram gratis och öppna läromedel.
+		Läs mer på <a href="https://github.com/JWMB/CurricuLLM/blob/main/README.md">github</a>.</p>
+		<p>Skicka ett <a href="mailto:jonas.beckeman@outlook.com?subject=Öppna läromedel">mail</a> om du eller en lärare du känner är intresserad av att hjälpa till! </p>
+		<p>Vi jobbar även på nya versioner av Vektor, med fler typer av övningar. Anmäl intresse för att prova nya versioner <a href="mailto:jonas.beckeman@outlook.com?subject=Vektor v2">här.</a></p>
+	</div>
 	{#if groups && groups.length > 0}
 		(Total: {groups.map(o => o.summaries.length).reduce((p, c) => p + c)} created, {groups.map(o => o.summaries.filter(p => p.trainedDays > 0).length).reduce((p, c) => p + c)} started)
 		<Tabs
