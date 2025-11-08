@@ -95,7 +95,38 @@ var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop
 //    await copier.CopyPhases(srcProviderFactory.Create(srcId), dstId, p => p.training_day <= 4, deleteInDst: p => true);
 //}
 
-var tool = new TrainingStatsTools(serviceProvider);
+if (false)
+{
+
+    var tool = new TrainingStatsTools(serviceProvider);
+    var analyzer = new AiCoachAnalyzer();
+    var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();
+    //var allTrainings = new List<Training> { (await trainingRepository.Get(42985))! }; //allTrainings.Single(o => o.Username == "suzi sajobi");
+    var allTrainings = await trainingRepository.GetAll();
+    //allTrainings = allTrainings.Where(o => o.AgeBracket == "5-6").ToList(); // 4-5 5-6 8-9
+
+    var byAgeBracket = allTrainings.GroupBy(o => o.AgeBracket).ToDictionary(o => o.Key, o => o.ToList());
+
+    if (false)
+    {
+        var normCreator = new TrainingNormCreator(serviceProvider.GetRequiredService<IStatisticsProvider>(), serviceProvider.GetRequiredService<ITypedTableClientFactory>());
+        foreach (var (bracket, trainings) in byAgeBracket.OrderBy(o => o.Key))
+            await normCreator.Create(trainings.Where(o => o.Username.StartsWith("norm_") == false), new Training { AgeBracket = bracket, Username = $"norm_{bracket}" });
+    }
+
+    if (true)
+    {
+        var normedTrainings = allTrainings.Where(o => o.Username.StartsWith("norm_"));
+
+        var normedProviders = normedTrainings
+            .Where(o => o.AgeBracket == "8-9") //5-6
+            .Select(o => (o, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(o.Id)));
+
+        var training = (await trainingRepository.Get(2262))!; //allTrainings.Single(o => o.Username == "suzi sajobi");
+        var aoa = await analyzer.CreatePrompt(training, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(training.Id), normedProviders);
+    }
+}
+
 //await tool.GetUsersWithSyncedTrainings();
 //var trainings = await tool.GetTrainingsFromUserIds("yono ku, kuro segugo, Manu Zuzoke, mipa musiho, mope puruhe, musi semuki, nabo kekegu".Split(",").Select(o => o.Trim()));
 //var uuidToId = string.Join("\n", trainings.Select(o => $"{o.Username}\t{o.Id}"));
