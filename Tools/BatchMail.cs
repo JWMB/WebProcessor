@@ -3,6 +3,7 @@ using EmailServices;
 using Microsoft.Extensions.Configuration;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
+using static ProblemSourceModule.Services.CreateUserWithTrainings;
 using static Tools.BatchCreateUsers;
 
 namespace Tools

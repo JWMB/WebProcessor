@@ -36,8 +36,8 @@ namespace Common.Web
         private static void RecurseBind(object appSettings, IServiceCollection services, IConfiguration config)
         {
             var props = appSettings.GetType()
-    .GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
-    .Where(o => !o.PropertyType.IsSealed); // TODO: (low) better check than IsSealed (also unit test)
+                .GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+                .Where(o => !o.PropertyType.IsSealed); // TODO: (low) better check than IsSealed (also unit test)
 
             foreach (var prop in props)
             {

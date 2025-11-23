@@ -2,6 +2,7 @@
 using Common.Web.Services;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
@@ -10,6 +11,7 @@ using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using PluginModuleBase;
 using ProblemSource.Services;
+using ProblemSourceModule.Services;
 using System.Data;
 using System.Text;
 using TrainingApi.ErrorHandling;
@@ -26,12 +28,18 @@ namespace TrainingApi
         public void ConfigureServices(IServiceCollection services, ConfigurationManager configurationManager, IWebHostEnvironment env)
         {
             services.AddScoped<IStatisticsProvider, StatisticsProvider>();
-            services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
 
+            services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
             services.AddTransient<ICurrentUserProvider, WebUserProvider>();
             services.AddTransient<IAccessResolver, AccessResolver>();
 
-            var appSettings = TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, configurationManager, "AppSettings");
+            services.AddSingleton<CreateUserWithTrainings>();
+
+            var apiKeyUsers = new List<ApiKeyUser>();
+            configurationManager.GetSection("AppSettings:ApiKeyUsers").Bind(apiKeyUsers);
+			services.AddSingleton<IApiKeyRepository>(sp => new InMemoryApiKeyRepository(apiKeyUsers));
+
+			var appSettings = TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, configurationManager, "AppSettings");
 
             if (appSettings.RealTime.Enabled)
             {
@@ -269,6 +277,16 @@ namespace TrainingApi
                 options.DefaultAuthenticateScheme = combinedScheme;
                 options.DefaultForbidScheme = combinedScheme;
 
+                //var authSchemeBuilderMars = new AuthenticationSchemeBuilder(ApiKeyAuthenticationSchemeHandler.SchemeName);
+                //authSchemeBuilderMars.HandlerType = typeof(ApiKeyAuthenticationSchemeHandler);
+                //            // Override already registered schemas
+                //            var existing = options.Schemes.SingleOrDefault(s => s.Name == authSchemeBuilderMars.Name);
+                //if (existing != null)
+                //	existing.HandlerType = authSchemeBuilderMars.HandlerType;
+                //options.SchemeMap[authSchemeBuilderMars.Name] = authSchemeBuilderMars;
+
+            }).AddScheme<ApiKeyAuthenticationSchemeOptions, ApiKeyAuthenticationSchemeHandler>(ApiKeyAuthenticationSchemeHandler.SchemeName, options =>
+            {
             }).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
             {
                 options.ExpireTimeSpan = TimeSpan.FromDays(1);

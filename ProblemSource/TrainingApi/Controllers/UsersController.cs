@@ -8,6 +8,8 @@ using TrainingApi.Services;
 using ProblemSourceModule.Models;
 using System.ComponentModel.DataAnnotations;
 using TrainingApi.ErrorHandling;
+using ProblemSourceModule.Services;
+using ProblemSourceModule.Services.Storage.AzureTables;
 
 namespace TrainingApi.Controllers
 {
@@ -18,13 +20,18 @@ namespace TrainingApi.Controllers
         private readonly IUserRepository userRepository;
         private readonly IAuthenticateUserService authenticateUserService;
         private readonly ICurrentUserProvider userProvider;
+        private readonly CreateUserWithTrainings createUserWithTrainings;
+        private readonly ITrainingRepository trainingRepository;
         private readonly ILogger<UsersController> log;
 
-        public UsersController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ICurrentUserProvider userProvider, ILogger<UsersController> logger)
+        public UsersController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ICurrentUserProvider userProvider, 
+            CreateUserWithTrainings createUserWithTrainings, ITrainingRepository trainingRepository, ILogger<UsersController> logger)
         {
             this.userRepository = userRepository;
             this.authenticateUserService = authenticateUserService;
             this.userProvider = userProvider;
+            this.createUserWithTrainings = createUserWithTrainings;
+            this.trainingRepository = trainingRepository;
             log = logger;
         }
 
@@ -74,7 +81,47 @@ namespace TrainingApi.Controllers
             });
         }
 
-        [Authorize(Policy = RolesRequirement.Admin)]
+		[Authorize(Policy = RolesRequirement.Admin, AuthenticationSchemes = $"{ApiKeyAuthenticationSchemeHandler.SchemeName},{CookieAuthenticationDefaults.AuthenticationScheme}")]
+		[HttpGet("trainingUsername/{id}")]
+		public async Task<IActionResult> GetTrainingUsername(int id)
+        {
+			var role = User.Identity?.IsAuthenticated == true ? User.FindFirstValue(ClaimTypes.Role) : null;
+			if (role != Roles.Admin)
+				return new ForbidResult();
+            var training = await trainingRepository.Get(id);
+			return Ok(new { Username = training?.Username ?? "", Id = id });
+        }
+
+		[Authorize(Policy = RolesRequirement.Admin, AuthenticationSchemes = $"{ApiKeyAuthenticationSchemeHandler.SchemeName},{CookieAuthenticationDefaults.AuthenticationScheme}")]
+		[HttpPost("getOrCreate")]
+        public async Task<ActionResult<GetUserDto>> GetOrCreateFromApp([FromQuery] string username)
+        {
+			if (string.IsNullOrEmpty(username))
+				return new BadRequestResult();
+
+			if (User?.Identity?.IsAuthenticated != true)
+                return new ForbidResult();
+            //var callingUsername = User.FindFirstValue(ClaimTypes.Name);
+            //if (callingUsername == null)
+            //    return new ForbidResult();
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            if (role != Roles.Admin)
+				return new ForbidResult();
+
+            var user = await userRepository.Get(username);
+			if (user == null)
+            {
+                var trainingPlan = "chatclientplan";
+				var createdResult = await createUserWithTrainings.CreateUser(username, new Dictionary<string, int>
+                {
+                    ["self"] = 1
+                }, trainingPlan, new ProblemSource.Models.TrainingSettings { }, actuallyCreate: true);
+                user = createdResult.User;
+			}
+			return new GetUserDto { Username = user.Email, Trainings = user.Trainings, Role = user.Role };
+        }
+
+		[Authorize(Policy = RolesRequirement.Admin)]
         [HttpPatch]
         [Route("id")]
         public async Task<ActionResult> Patch([FromQuery] string id, [FromBody] PatchUserDto dto)

@@ -92,7 +92,7 @@ namespace TrainingApi.Services
 
         public static User FakeDevUser => new User { Email = "dev", Role = Roles.Admin };
 
-        public static ClaimsPrincipal CreatePrincipal(User user, bool isIntegrationTestUser = false)
+        public static ClaimsPrincipal CreatePrincipal(User user, bool isIntegrationTestUser = false, string? authenticationType = null)
         {
             // TODO: move
             var claims = new List<Claim>
@@ -104,7 +104,7 @@ namespace TrainingApi.Services
             if (isIntegrationTestUser)
                 claims.Add(new Claim(ClaimTypes.Actor, "IntegrationTest"));
 
-            return new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+            return new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType ?? CookieAuthenticationDefaults.AuthenticationScheme));
         }
     }
 }

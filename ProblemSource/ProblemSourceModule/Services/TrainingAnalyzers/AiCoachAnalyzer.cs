@@ -1,4 +1,5 @@
-﻿using ProblemSource.Models;
+﻿using Common;
+using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
@@ -15,6 +16,8 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 				* 5 sessions per week, except holiday weeks
 				* Thursday sessions will be in a noisy setting
 				""".Trim();
+
+			var audience = $"a parent of the trainee (who is {training.AgeBracket} years old)"; // $"the trainee, {training.AgeBracket} years old";
 
 			var earlierCoachingSessions = new[]
 			{
@@ -243,6 +246,8 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 					{ToMarkdownTable(earlierCoachingSessions)}
 					""" : ""
 				)}
+
+				This text will be read by {audience}, so adjust your language and the complexity of the text accordingly.
 				""".Trim();
 
 			return prompt;
@@ -321,6 +326,115 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 				return maxLevel;
 			}
 		}
+
+		public interface IGameAnalysis
+		{
+			decimal GetExpectedResponseFactor(Problem p, Answer a);
+		}
+
+		public static Dictionary<string, List<XX>> GetTrialAnalysis(IEnumerable<Phase> phases)
+		{
+			// per exercise: average response time per level
+			var tmp = phases.GroupBy(o => o.exercise)
+				.ToDictionary(
+				byEx => byEx.Key,
+				byEx => {
+					var responseTimesFirstCorrect = byEx
+						.SelectMany(phase =>
+							phase.problems.Select(p => new { Level = p.level, Answer = p.answers.FirstOrDefault() }).Where(o => o.Answer?.correct == true))
+						.GroupBy(o => (int)o.Level)
+						.ToDictionary(
+							o => o.Key,
+							o => new {
+								Avg = decimal.Round(o.Select(p => (decimal)p.Answer!.response_time).Average(), 2),
+								SD = decimal.Round(o.Select(p => (decimal)p.Answer!.response_time).StdDev(), 2),
+								Count = o.Count()
+							});
+
+					var tmp = byEx.SelectMany(phase => phase.problems
+					.Select(p => {
+						var first = p.answers.FirstOrDefault();
+						if (first == null)
+							return null;
+						var last = p.answers.Last();
+						return
+						new XX
+						{
+							Day = phase.training_day,
+							Level = p.level,
+							Correct = first.correct,
+							ResponseTime = first.response_time,
+							Tries = first.tries,
+							PhaseTime = p.time,
+							Time = first.time,
+							LastTime = last.time,
+							LastResponseTime = last.response_time,
+							AnswerCount = p.answers.Count
+						};
+					})).Where(o => o != null).ToList(); //))).ToList();
+					return tmp.OrderBy(o => o.Day).ThenBy(o => o.Time).ToList();
+				});
+
+			var statsByGame = tmp.ToDictionary(
+				byEx => byEx.Key,
+				byEx => byEx.Value.Skip(30).GroupBy(o => (int)o.Level)
+				.ToDictionary(
+					o => o.Key,
+					o => {
+						var xx = o.ToList();
+						var poa = xx.Select((x, i) =>
+						{
+							var lastTrial = i > 0 ? xx[i - 1] : null;
+							return new {
+								TD = lastTrial == null ? 0 : x.Time - lastTrial.Time,
+								Last = lastTrial == null ? 0 : lastTrial.ResponseTime,
+								TimeDiff = lastTrial == null ? 0 : x.PhaseTime - lastTrial.PhaseTime - lastTrial.ResponseTime,
+								TimeDiffX = lastTrial == null ? 0 : x.Time - lastTrial.Time - lastTrial.ResponseTime,
+								RespTime = x.ResponseTime,
+								PDiff = lastTrial == null ? 0 : x.PhaseTime - lastTrial.PhaseTime
+							};
+						}).ToList();
+						// avg time on incorrect doesn't make sense for WM since input is aborted after first mistake - we'd need to know # input items
+						var correct = o.Where(p => p.Correct).ToList();
+						return new
+						{
+							Avg = correct.Any() == false ? 0 :double.Round(correct.Select(p => p.ResponseTime).Average(), 2),
+							Count = correct.Count,
+							StdDev = correct.Any() == false ? 0 : decimal.Round(correct.Select(p => (decimal)p.ResponseTime).StdDev(), 2),
+						};
+					})
+			);
+
+			var aaa = tmp.Select(kv =>
+			{
+				var statsByLevel = statsByGame[kv.Key];
+
+				foreach (var trial in kv.Value)
+				{
+					var stats = statsByLevel[(int)trial.Level];
+					var diff = trial.ResponseTime - stats.Avg;
+				}
+				return 0;
+			});
+
+			return tmp;
+		}
+
+		public class XX
+		{
+			public int Day { get; set; }
+			public decimal Level { get; set; }
+			public bool Correct { get; set; }
+			public int ResponseTime { get; set; }
+			public int Tries { get; set; }
+			public long Time { get; set; }
+			public long PhaseTime { get; set; }
+			public int LastResponseTime { get; set; }
+			public long LastTime { get; set; }
+			public int AnswerCount { get; set; }
+			public override string ToString() => $"{Level} {Correct} {ResponseTime} {Tries}";
+		}
+
 		public async Task<bool> Analyze(Training training, IUserGeneratedDataRepositoryProvider provider, List<LogItem>? latestLogItems)
 		{
 			throw new NotImplementedException();

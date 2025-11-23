@@ -1,4 +1,5 @@
 ﻿using Common;
+using Common.LLM;
 using Common.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -11,6 +12,7 @@ using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.TrainingAnalyzers;
 using Tools;
@@ -97,14 +99,26 @@ var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop
 
 if (false)
 {
+	var azConfig = config.GetSection("LlmServices:Azure")!;
+	var llm = new AzureOpenAIRESTService(
+		new LlmModelSpecification { AvailableOnServices = ["Azure"], DeploymentName = "gpt-5-mini" },
+		new LlmServiceSpecification { ApiKey = azConfig["ApiKey"]!, ResourceUri = azConfig["ResourceUri"]!, Name = "gpt-5-mini" }
+		);
 
-    var tool = new TrainingStatsTools(serviceProvider);
+    //var trpm = await llm.Invoke("what version are you");
+	var trainingId = 3115; //42985 2262
+	string? ageBracket = "6-7"; // 4-5 5-6 6-7 8-9
+
+    var ugdr = serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(trainingId);
+	var tmp = AiCoachAnalyzer.GetTrialAnalysis(await ugdr.Phases.GetAll());
+
+	var tool = new TrainingStatsTools(serviceProvider);
     var analyzer = new AiCoachAnalyzer();
     var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();
-    //var allTrainings = new List<Training> { (await trainingRepository.Get(42985))! }; //allTrainings.Single(o => o.Username == "suzi sajobi");
+    //var allTrainings = new List<Training> { (await trainingRepository.Get(trainingId))! }; //  allTrainings.Single(o => o.Username == "suzi sajobi");
     var allTrainings = await trainingRepository.GetAll();
-    //allTrainings = allTrainings.Where(o => o.AgeBracket == "5-6").ToList(); // 4-5 5-6 8-9
-
+    if (ageBracket != null)
+        allTrainings = allTrainings.Where(o => o.AgeBracket == ageBracket).ToList();
     var byAgeBracket = allTrainings.GroupBy(o => o.AgeBracket).ToDictionary(o => o.Key, o => o.ToList());
 
     if (false)
@@ -119,12 +133,14 @@ if (false)
         var normedTrainings = allTrainings.Where(o => o.Username.StartsWith("norm_"));
 
         var normedProviders = normedTrainings
-            .Where(o => o.AgeBracket == "8-9") //5-6
-            .Select(o => (o, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(o.Id)));
+            .Where(o => o.AgeBracket == "6-7") //5-6 8-9
+			.Select(o => (o, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(o.Id)));
 
-        var training = (await trainingRepository.Get(2262))!; //allTrainings.Single(o => o.Username == "suzi sajobi");
-        var aoa = await analyzer.CreatePrompt(training, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(training.Id), normedProviders);
-    }
+        var training = (await trainingRepository.Get(trainingId))!; //allTrainings.Single(o => o.Username == "suzi sajobi");
+        var prompt = await analyzer.CreatePrompt(training, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(training.Id), normedProviders);
+
+        var result = await llm.Invoke(prompt);
+	}
 }
 
 //await tool.GetUsersWithSyncedTrainings();
@@ -210,6 +226,8 @@ IServiceProvider InititalizeServices(IConfigurationRoot config)
     services.AddSingleton<AzureQueueConfig>();
     services.AddTransient(sp => TypedConfiguration.Bind<AzureTableConfig>(section));
     services.AddScoped<IStatisticsProvider, StatisticsProvider>();
+
+    services.AddSingleton<CreateUserWithTrainings>();
 
     var loggerFactory = LoggerFactory.Create(builder =>
     {

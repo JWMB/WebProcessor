@@ -1,0 +1,901 @@
+{
+  "__type": "LinearTrainingPlan",
+  "minUnlockedExercises": 20,
+  "maxUnlockedExercises": 20,
+  "tests": [
+    {
+      "title": "Numberline",
+      "id": "numberline",
+      "phases": [
+        {
+          "type": "PhaseArrows",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 7
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "NPals",
+      "id": "npals",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 11
+            },
+            "end": {
+              "type": "TIME",
+              "value": 90
+            }
+          },
+          "type": "PhaseTenPals",
+          "stimuliType": "NPALS",
+          "levels": {
+            "definitions": [
+              {
+                "maxValueRange": "5",
+                "barType": "2COLOR/BARS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 0
+              },
+              {
+                "maxValueRange": "5",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 1
+              },
+              {
+                "maxValueRange": "5",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 2
+              },
+              {
+                "maxValueRange": "5",
+                "barType": "HIDDENBARIGHT/NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 3
+              },
+              {
+                "maxValueRange": "5",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 4
+              },
+              {
+                "maxValueRange": "5",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 8,
+                "level": 5
+              },
+              {
+                "maxValueRange": "5",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 7,
+                "level": 6
+              },
+              {
+                "maxValueRange": "5",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 6,
+                "level": 7
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "2COLOR/BARS",
+                "chunking": 5,
+                "maxTimePerItem": 9,
+                "level": 8
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 5,
+                "maxTimePerItem": 9,
+                "level": 9
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 5,
+                "maxTimePerItem": 9,
+                "level": 10
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 11
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "HIDDENBARIGHT/NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 12
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 13
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 8,
+                "level": 14
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 7,
+                "level": 15
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 6,
+                "level": 16
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "HIDDENBARIGHT/NUMBERS",
+                "chunking": 5,
+                "maxTimePerItem": 7,
+                "level": 17
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "NUMBERS",
+                "chunking": 5,
+                "maxTimePerItem": 5,
+                "level": 18
+              },
+              {
+                "maxValueRange": "15",
+                "barType": "2COLOR/BARS",
+                "chunking": 5,
+                "maxTimePerItem": 9,
+                "level": 19
+              },
+              {
+                "maxValueRange": "15",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 5,
+                "maxTimePerItem": 9,
+                "level": 20
+              },
+              {
+                "maxValueRange": "15",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 10,
+                "maxTimePerItem": 9,
+                "level": 21
+              },
+              {
+                "maxValueRange": "15",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 22
+              },
+              {
+                "maxValueRange": "15",
+                "barType": "HIDDENBARIGHT/NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 23
+              },
+              {
+                "maxValueRange": "15",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 24
+              },
+              {
+                "maxValueRange": "15",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 8,
+                "level": 25
+              },
+              {
+                "maxValueRange": "15",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 7,
+                "level": 26
+              },
+              {
+                "maxValueRange": "15",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 6,
+                "level": 27
+              },
+              {
+                "maxValueRange": "15",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 5,
+                "level": 28
+              },
+              {
+                "maxValueRange": "10",
+                "barType": "NUMBERS",
+                "chunking": 5,
+                "maxTimePerItem": 5,
+                "level": 29
+              },
+              {
+                "maxValueRange": "20",
+                "barType": "2COLOR/BARS",
+                "chunking": 5,
+                "maxTimePerItem": 9,
+                "level": 30
+              },
+              {
+                "maxValueRange": "20",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 5,
+                "maxTimePerItem": 9,
+                "level": 31
+              },
+              {
+                "maxValueRange": "20",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 10,
+                "maxTimePerItem": 9,
+                "level": 32
+              },
+              {
+                "maxValueRange": "20",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 33
+              },
+              {
+                "maxValueRange": "20",
+                "barType": "HIDDENBARIGHT/NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 9,
+                "level": 34
+              },
+              {
+                "maxValueRange": "20",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 8,
+                "level": 35
+              },
+              {
+                "maxValueRange": "20",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 7,
+                "level": 36
+              },
+              {
+                "maxValueRange": "20",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 6,
+                "level": 37
+              },
+              {
+                "maxValueRange": "20",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 5,
+                "level": 38
+              },
+              {
+                "maxValueRange": "10,15,20",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 5,
+                "maxTimePerItem": 9,
+                "level": 39
+              },
+              {
+                "maxValueRange": "10,15,20",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 5,
+                "maxTimePerItem": 8,
+                "level": 40
+              },
+              {
+                "maxValueRange": "10,15,20",
+                "barType": "2COLOR/BARS/NUMBERS",
+                "chunking": 5,
+                "maxTimePerItem": 7,
+                "level": 41
+              },
+              {
+                "maxValueRange": "10,15,20",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 7,
+                "level": 42
+              },
+              {
+                "maxValueRange": "10,15,20",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 6,
+                "level": 43
+              },
+              {
+                "maxValueRange": "10,15,20",
+                "barType": "NUMBERS",
+                "chunking": 0,
+                "maxTimePerItem": 5,
+                "level": 44
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "Grid",
+      "id": "WM_grid",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "dynamicValue": {
+                "type": "MEDALS",
+                "values": [
+                  4,
+                  2,
+                  4
+                ],
+                "adaptAfterNoOfFails": 2
+              }
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseWorkingMemory",
+          "stimuliType": "WM_GRID",
+          "settings": {
+            "size": {
+              "x": 4,
+              "y": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Twist",
+      "id": "WM_rotate",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "dynamicValue": {
+                "type": "MEDALS",
+                "values": [
+                  6,
+                  6,
+                  6
+                ],
+                "adaptAfterNoOfFails": 2
+              }
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseWorkingMemory",
+          "stimuliType": "WM_ROTATE",
+          "settings": {
+            "size": {
+              "x": 4,
+              "y": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Circle",
+      "id": "WM_circle",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "dynamicValue": {
+                "type": "MEDALS",
+                "values": [
+                  6,
+                  6,
+                  6
+                ],
+                "adaptAfterNoOfFails": 2
+              }
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseWorkingMemory",
+          "stimuliType": "WM_CIRCLE",
+          "settings": {
+            "size": {
+              "x": 10,
+              "y": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Numbers",
+      "id": "WM_numbers",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "dynamicValue": {
+                "type": "MEDALS",
+                "values": [
+                  6,
+                  6,
+                  6
+                ],
+                "adaptAfterNoOfFails": 2
+              }
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseWorkingMemory",
+          "stimuliType": "WM_NUMBERS",
+          "settings": {
+            "size": {
+              "x": 3,
+              "y": 3
+            },
+            "sequenceModifiers": {
+              "post": "Reverse"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Crush",
+      "id": "WM_crush",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "dynamicValue": {
+                "type": "MEDALS",
+                "values": [
+                  6,
+                  6,
+                  6
+                ],
+                "adaptAfterNoOfFails": 2
+              }
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseWorkingMemory",
+          "stimuliType": "WM_CRUSH",
+          "settings": {
+            "numItems": -1
+          }
+        }
+      ]
+    },
+    {
+      "title": "Flags",
+      "id": "flags",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 12
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseQnA",
+          "stimuliType": "QnA",
+          "problemFactory": {
+            "¤type": "QnACountriesProblemFactory",
+            "config": {
+              "filter": [
+                {
+                  "property": "Region",
+                  "match": "(europe|Americas)"
+                },
+                {
+                  "property": "Index",
+                  "range": {
+                    "min": 0.0,
+                    "max": 0.3
+                  }
+                }
+              ],
+              "question": {
+                "mapping": [ { "source": "Flag" } ],
+                "numItems": 1 // 3
+              },
+              "alternative": {
+                "mapping": [ { "source": "Name" } ],
+                "numItems": 6
+              },
+              "responseMode": "SingleChoice" //Connect
+            },
+            "levels": {
+              "1": {
+                "filter": [
+                  {
+                    "property": "Index",
+                    "range": {
+                      "min": 0.1,
+                      "max": 0.5
+                    }
+                  }
+                ]
+              }
+            }
+            //"question": {
+            //  "property": "Flag",
+            //  "propertyX": "Capital",
+            //  "numItems": 1
+            //},
+            //"alternative": {
+            //  "property": "Name",
+            //  "numItems": 5
+            //},
+            //"responseMode": "SingleChoice",
+
+            //"question": {
+            //  "text": "Sortera länderna efter antal invånare (flest överst)",
+            //  "property": "Population",
+            //  "numItems": 1
+            //},
+            //"alternative": {
+            //  "property": "Name",
+            //  "numItems": 5
+            //},
+            //"responseMode": "Sort"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Flags",
+      "id": "flags2",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 12
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseQnA",
+          "stimuliType": "QnA",
+          "problemFactory": {
+            "¤type": "QnACountriesProblemFactory",
+            "config": {
+              "question": {
+                "mapping": [ { "source": "Flag" } ],
+                "numItems": 1
+              },
+              "alternative": {
+                "mapping": [ { "source": "Name" } ],
+                "numItems": 3
+              },
+              "responseMode": "SingleChoice"
+            },
+            "levels": {
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Fractions",
+      "id": "fractions",
+      "phases": [
+        {
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 12
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "AgnosticGame",
+          "problemFactory": {
+            "¤type": "SimplifyFractionsStimuliFactory",
+            "numDecimals": 1,
+            "minCommonFactors": 1
+          }
+        }
+      ]
+    },
+    {
+      "title": "Course",
+      "id": "course",
+      "phases": [
+        {
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 12
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "AgnosticGame",
+          "problemFactory": {
+            "¤type": "CourseStimuliFactory",
+            "assignmentResources": [ "C:\\Users\\JonasBeckeman\\Desktop\\Div\\NoK\\assignments_141094_16961.json" ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "CurricuLLM",
+      "id": "curricullm",
+      "phases": [
+        {
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 12
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          //"type": "AgnosticGame",
+          "type": "PhaseQnA",
+          "problemFactory": {
+            //"¤type": "CurricuLlmStimuliFactory"
+            "¤type": "QnACurricuLlmStimuliFactory",
+            "config": {
+              "filter": [
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Capitals",
+      "id": "capitals",
+      "phases": [
+        {
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 12
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseQnA",
+          "stimuliType": "QnA",
+          "problemFactory": {
+            "¤type": "QnACountriesProblemFactory",
+            "config": {
+              "filter": [
+                {
+                  "property": "Region",
+                  "match": "(europe)"
+                },
+                {
+                  "property": "Index",
+                  "range": {
+                    "min": 0.0,
+                    "max": 1.0
+                  }
+                }
+              ],
+              "question": {
+                "mapping": [ { "source": "Name" } ],
+                "numItems": 3
+              },
+              "alternative": {
+                "mapping": [ { "source": "Capital" } ],
+                "numItems": 6
+              },
+              "responseMode": "Connect"
+            },
+            "levels": {
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Words",
+      "id": "words",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 12
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseQnA",
+          "stimuliType": "QnA",
+          "problemFactory": {
+            "¤type": "QnAVocabularyProblemFactory",
+            "levels": {
+              "1": {
+                "question": { "numItems": 2 }
+              }
+            },
+            "config": {
+              //"filter": null,
+              "question": {
+                "mapping": [ { "source": "Value" } ],
+                "numItems": 3
+              },
+              "alternative": {
+                "mapping": [ { "source": "Synonyms" } ],
+                "numItems": 6
+              },
+              "responseMode": "Connect"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Q'n'A",
+      "id": "QnA",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 6
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseQnA",
+          "stimuliType": "QnA",
+          "problemFactory": {
+            "¤type": "QnAStimuliFactoryDataSet",
+            "levels": {
+              //"0": {
+              //  "question": { "columns": { "text": "Question" } },
+              //  "answer": { "columns": { "image": "Image" } }
+              //}
+            },
+            "config": {
+              "source": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrXSm6EzNDSIgjc4wB6CSmChDgRT-W-EuQMabmuxECIdOv0rGwilAJxSqhh_TyHp0vWpEyHYo__lBZ/pub?output=tsv",
+              "question": {
+                "mapping": [ { "source": "Question" } ],
+                "numItems": 2
+              },
+              "alternative": {
+                "mapping": [
+                  {
+                    "source": "Answer",
+                    "target": "Text"
+                  },
+                  {
+                    "source": "Image",
+                    "target": "Image"
+                  }
+                ],
+                "numItems": 5
+              },
+              "responseMode": "Connect"
+              //"responseMode": "SingleChoice"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Sequential Order",
+      "id": "NVR_SO",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 6
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseNVR",
+          "stimuliType": "NVR_SO",
+          "ProblemFactory": {
+          }
+        }
+      ]
+    }
+  ]
+}

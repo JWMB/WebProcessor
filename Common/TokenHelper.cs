@@ -31,7 +31,6 @@ namespace Common
                         .ToList();
                 }
             }
-                
         }
 
         public static (JwtSecurityToken, string) CreateToken(string signingKey, CreateTokenParams parameters)
