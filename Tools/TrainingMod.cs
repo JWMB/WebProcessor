@@ -101,7 +101,38 @@ namespace Tools
             }
         }
 
-        public async Task ModifySettings(IEnumerable<int> ids)
+        public static async Task ModifyTimeSpent(int trainingId, ITypedTableClientFactory tableClientFactory)
+        {
+			var ugdr = (new AzureTableUserGeneratedDataRepositoriesProviderFactory(tableClientFactory)).Create(trainingId);
+            var userState = (await ugdr.UserStates.GetAll()).Single();
+            var gameId = "nvr_rp";
+			if (userState.exercise_stats.trainingPlanSettings.changes.Any() == true)
+            {
+                var change = userState.exercise_stats.trainingPlanSettings.changes.Last();
+                if (change.change is Newtonsoft.Json.Linq.JObject jo)
+                {
+                    var path = $"weights.{gameId}";
+					var val = jo.SelectToken(path) as Newtonsoft.Json.Linq.JValue;
+                    if (val != null && val.Value as long? > 0)
+                    {
+                        val.Value = 0L;
+					}
+                }
+			}
+			var lastGameRun = userState.exercise_stats.gameRuns.LastOrDefault(o => o.gameId == gameId);
+            if (lastGameRun != null)
+            {
+				lastGameRun.won = true;
+                lastGameRun.lastLevel = 12;
+				lastGameRun.highestLevel = 12;
+			}
+			var tmp = userState.exercise_stats.planetInfos?.OfType<Newtonsoft.Json.Linq.JObject>().LastOrDefault(o => o.Value<string>("gameId") == gameId);
+            if (tmp != null)
+                tmp["numMedals"] = 3;
+			await ugdr.UserStates.Upsert([userState]);
+		}
+
+		public async Task ModifySettings(IEnumerable<int> ids)
         {
             var trainings = await trainingRepository.GetByIds(ids);
 
