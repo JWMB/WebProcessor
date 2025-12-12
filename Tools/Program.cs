@@ -43,6 +43,7 @@ var cancellationToken = cts.Token;
 
 var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
 
+//await TrainingMod.ModifyTimeSpent(42434, serviceProvider.GetRequiredService<ITypedTableClientFactory>());
 //await new FixAzureTableQuotedDateTime(serviceProvider.GetRequiredService<AzureTableConfig>().ConnectionString)
 //    .Fix(new Dictionary<string, List<(string, Type)>> {
 //        { 

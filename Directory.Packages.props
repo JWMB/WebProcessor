@@ -47,6 +47,7 @@
     <PackageVersion Include="Microsoft.ML.FastTree" Version="4.0.0" />
     <PackageVersion Include="Microsoft.ML.LightGbm" Version="4.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="MongoDB.Driver" Version="3.5.2" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="NSwag.AspNetCore" Version="14.2.0" />

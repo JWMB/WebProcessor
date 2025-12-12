@@ -1,7 +1,6 @@
 ﻿using Azure.Data.Tables;
 using AzureTableGenerics;
 using ProblemSource.Services.Storage.AzureTables;
-using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models;
 
 namespace ProblemSourceModule.Services.Storage.AzureTables
@@ -25,7 +24,10 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
 
         private static int latestMax = 0; // TODO: ugly performance hack while waiting to port to SQL
         private object _lock = new object();
-        public Task<int> Add(Training item)
+
+        public Task Add(Training item) => AddGetId(item);
+
+		public Task<int> AddGetId(Training item)
         {
             // Warning: multi-instance concurrency 
             lock (_lock)
@@ -39,9 +41,10 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
         }
 
         public async Task Update(Training item) => await repo.Update(item);
-        public async Task<int> Upsert(Training item) => int.Parse(await repo.Upsert(item));
+		//public async Task<int> Upsert(Training item) => int.Parse(await repo.Upsert(item));
+		public async Task Upsert(Training item) => await repo.Upsert(item);
 
-        public async Task Remove(Training item) => await repo.Remove(item);
+		public async Task Remove(Training item) => await repo.Remove(item);
 
         public async Task<IEnumerable<Training>> GetAll() => await repo.GetAll();
 
