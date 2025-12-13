@@ -17,6 +17,7 @@
     <PackageVersion Include="ClosedXML" Version="0.104.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="DeepCloner" Version="0.10.4" />
+    <PackageVersion Include="EphemeralMongo7" Version="2.0.0" />
     <PackageVersion Include="Google.Apis.Gmail.v1" Version="1.68.0.3427" />
     <PackageVersion Include="JWMB.AzureTableGenerics" Version="0.0.6-preview.10" />
     <PackageVersion Include="Microsoft.ApplicationInsights" Version="2.22.0" />
@@ -47,6 +48,7 @@
     <PackageVersion Include="Microsoft.ML.FastTree" Version="4.0.0" />
     <PackageVersion Include="Microsoft.ML.LightGbm" Version="4.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="Mongo2Go" Version="4.1.0" />
     <PackageVersion Include="MongoDB.Driver" Version="3.5.2" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
