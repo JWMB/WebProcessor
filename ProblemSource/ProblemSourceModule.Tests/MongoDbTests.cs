@@ -41,48 +41,41 @@ namespace ProblemSourceModule.Tests
 
 			retrieved?.Username.ShouldBe(training.Username);
 
+			var training2 = new Training { Username = "ABXC", Created = DateTimeOffset.UtcNow };
+			var id2 = await sut.AddGetId(training2);
+			(await sut.Get(id2))!.Username.ShouldBe(training2.Username);
+
 			var collections = await (await db.ListCollectionsAsync()).ToListAsync();
 
 			var phaseA = new Phase { exercise = "a", phase_type = "TEST", training_day = 1, time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
 
-			var batchRepo = new MongoTrainingBatchRepository<Phase, string>(db, Phase.UniqueIdWithinUser, id);
-			var collectionName = batchRepo.GetCollection().CollectionNamespace.CollectionName;
+			var ugdr = new MongoUserGeneratedDataRepositoryProvider(db, id);
+			var phasesRepo = ugdr.Phases; // new MongoTrainingBatchRepository<Phase, string>(db, Phase.UniqueIdWithinUser, id);
+
+			var mongoTyped = (MongoTrainingBatchRepository<Phase, string>)phasesRepo;
+			var collectionName = mongoTyped.GetCollection().CollectionNamespace.CollectionName;
 			await db.DropCollectionAsync(collectionName);
 			//collections = await (await db.ListCollectionsAsync()).ToListAsync();
 
-			var result = await batchRepo.Upsert([phaseA]);
+			var result = await phasesRepo.Upsert([phaseA]);
 			result.Added.Count().ShouldBe(1);
 			result.Updated.Count().ShouldBe(0);
 
-			var underlyingCollection = batchRepo.GetCollection();
+			var underlyingCollection = mongoTyped.GetCollection();
 			var count = await underlyingCollection.CountDocumentsAsync(o => true);
 			count.ShouldBe(1);
 
 			var phaseB = new Phase { exercise = "a", phase_type = "TEST", training_day = 2, time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
 
-			result = await batchRepo.Upsert([phaseA, phaseB]);
+			result = await phasesRepo.Upsert([phaseA, phaseB]);
 			result.Added.Count().ShouldBe(1);
 			result.Updated.Count().ShouldBe(1);
 			count = await underlyingCollection.CountDocumentsAsync(o => true);
 			count.ShouldBe(2);
 
 
-			//await MongoTools.DropCollection<MongoDocumentWrapper<Phase>>(db);
-			//var phaseColl = MongoTools.GetCollection<MongoDocumentWrapper<Phase>>(db);
-
-			//var allPhases = await (await phaseColl.FindAsync(o => true)).ToListAsync();
-
-			//var ugdr = new MongoUserGeneratedDataRepositoryProvider(db, id);
-
-			//var result = await ugdr.Phases.Upsert([phase]);
-			//result.Added.Count().ShouldBe(1);
-			//result.Updated.Count().ShouldBe(0);
-
-			//result = await ugdr.Phases.Upsert([phase]);
-			//result.Added.Count().ShouldBe(0);
-			//result.Updated.Count().ShouldBe(1);
+			var ugdr2 = new MongoUserGeneratedDataRepositoryProvider(db, id2);
+			(await ugdr2.Phases.GetAll()).ShouldBeEmpty();
 		}
-
-
 	}
 }

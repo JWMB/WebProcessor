@@ -19,8 +19,6 @@ using Tools;
 
 var config = CreateConfig();
 
-//var azureTableSection = config.GetRequiredSection("AppSettings:AzureTable");
-//var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(azureTableSection);
 var serviceProvider = InititalizeServices(config);
 
 Console.WriteLine("Run tooling?");
@@ -173,6 +171,7 @@ if (false)
 
 //var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
 var emails = @"
+jonas.beckeman+123@gmail.com
 ".Split('\n').SelectMany(o => o.Split(';')).Select(o => o.Trim().ToLower()).Where(o => o.Any());
 var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 using PluginModuleBase;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
@@ -11,6 +12,7 @@ using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
+using ProblemSourceModule.Services.Storage.MongoDb;
 using ProblemSourceModule.Services.TrainingAnalyzers;
 using System.Linq;
 
@@ -57,8 +59,14 @@ namespace ProblemSource
             services.AddMemoryCache();
 
             services.AddSingleton<ITrainingTemplateRepository, StaticTrainingTemplateRepository>();
-            ConfigureForAzureTables(services);
-            ConfigureUsernameHashing(services);
+
+            var storageIsMongo = true;
+            if (storageIsMongo)
+				ConfigureForMongoDb(services);
+            else
+				ConfigureForAzureTables(services);
+
+			ConfigureUsernameHashing(services);
         }
 
         public void ConfigureForAzureTables(IServiceCollection services, bool useCaching = true)
@@ -67,7 +75,10 @@ namespace ProblemSource
             services.AddSingleton<ITypedTableClientFactory, TypedTableClientFactory>();
             services.UpsertSingleton<ITableClientFactory>(sp => sp.GetRequiredService<ITypedTableClientFactory>());
 
-            if (useCaching)
+			services.AddSingleton<ITrainingSummaryRepository, MongoTrainingSummaryRepository>();
+
+
+			if (useCaching)
                 services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, CachingAzureTableUserGeneratedDataRepositoriesProviderFactory>();
             else
                 services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
@@ -75,7 +86,22 @@ namespace ProblemSource
             services.AddSingleton<ITrainingRepository, AzureTableTrainingRepository>();
         }
 
-        public void ConfigureUsernameHashing(IServiceCollection services)
+        public void ConfigureForMongoDb(IServiceCollection services)
+        {
+            var connectionString = "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
+            var database = "_Training";
+            var client = new MongoClient(connectionString);
+            services.AddSingleton<IMongoDatabase>(sp => client.GetDatabase(database));
+
+            services.AddSingleton<ITrainingSummaryRepository, MongoTrainingSummaryRepository>();
+			services.AddSingleton<IUserRepository, MongoUserRepository>();
+
+            services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, MongoUserGeneratedDataRepositoryProviderFactory>();
+
+			services.AddSingleton<ITrainingRepository, MongoTrainingRepository>();
+		}
+
+		public void ConfigureUsernameHashing(IServiceCollection services)
         {
             services.AddSingleton(new MnemoJapanese(2));
             services.AddSingleton(sp => new UsernameHashing(sp.GetRequiredService<MnemoJapanese>(), 2));

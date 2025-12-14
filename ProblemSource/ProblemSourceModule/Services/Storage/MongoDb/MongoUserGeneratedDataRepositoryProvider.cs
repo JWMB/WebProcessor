@@ -1,39 +1,53 @@
-﻿//using MongoDB.Driver;
-//using ProblemSource.Models;
-//using ProblemSource.Models.Aggregates;
-//using ProblemSource.Services.Storage;
-//using ProblemSourceModule.Models.Aggregates;
+﻿using MongoDB.Driver;
+using ProblemSource.Models;
+using ProblemSource.Models.Aggregates;
+using ProblemSource.Services.Storage;
+using ProblemSourceModule.Models.Aggregates;
 
-//namespace ProblemSourceModule.Services.Storage.MongoDb
-//{
-//    public class MongoUserGeneratedDataRepositoryProvider : IUserGeneratedDataRepositoryProvider
-//    {
-//        private readonly IMongoDatabase db;
-//        private readonly int trainingId;
-//		private readonly string Key = $"{nameof(MongoDocumentWrapper<int>.RowKey)}";
-//		//private readonly string Key = $"{nameof(MongoDocumentWrapper<int>)}.{nameof(MongoDocumentWrapper<int>.RowKey)}";
+namespace ProblemSourceModule.Services.Storage.MongoDb
+{
+    public class MongoUserGeneratedDataRepositoryProviderFactory : IUserGeneratedDataRepositoryProviderFactory
+    {
+        private readonly IMongoDatabase db;
 
-//        public MongoUserGeneratedDataRepositoryProvider(IMongoDatabase db, int trainingId)
-//        {
-//            this.db = db;
-//            this.trainingId = trainingId;
-//        }
+        public MongoUserGeneratedDataRepositoryProviderFactory(IMongoDatabase db)
+        {
+            this.db = db;
+        }
+        public IUserGeneratedDataRepositoryProvider Create(int userId)
+        {
+			return new MongoUserGeneratedDataRepositoryProvider(db, userId);
+        }
+    }
 
-//        public IBatchRepository<Phase> Phases
-//			=> new MongoTrainingBatchRepository<Phase, string>(db, Phase.UniqueIdWithinUser, trainingId); //Key, 
+    public class MongoUserGeneratedDataRepositoryProvider : IUserGeneratedDataRepositoryProvider
+	{
+		private readonly IMongoDatabase db;
+		private readonly int trainingId;
+		//private readonly string Key = $"{nameof(MongoDocumentWrapper<int>.RowKey)}";
+		//private readonly string Key = $"{nameof(MongoDocumentWrapper<int>)}.{nameof(MongoDocumentWrapper<int>.RowKey)}";
 
-//		public IBatchRepository<TrainingDayAccount> TrainingDays
-//			=> new MongoTrainingBatchRepository<TrainingDayAccount, int>(db, item => item.TrainingDay, trainingId); // "AccountId", 
+		public MongoUserGeneratedDataRepositoryProvider(IMongoDatabase db, int trainingId)
+		{
+			this.db = db;
+			this.trainingId = trainingId;
+		}
 
-//		public IBatchRepository<PhaseStatistics> PhaseStatistics
-//			=> new MongoTrainingBatchRepository<PhaseStatistics, string>(db, ProblemSource.Models.Aggregates.PhaseStatistics.UniqueIdWithinUser, trainingId); // "account_id", 
+		public IBatchRepository<Phase> Phases
+			=> new MongoTrainingBatchRepository<Phase, string>(db, Phase.UniqueIdWithinUser, trainingId); //Key, 
 
-//		public IBatchRepository<TrainingSummary> TrainingSummaries
-//			=> new MongoTrainingBatchRepository<TrainingSummary, string>(db, item => "x", trainingId); // "AccountId", 
+		public IBatchRepository<TrainingDayAccount> TrainingDays
+			=> new MongoTrainingBatchRepository<TrainingDayAccount, int>(db, item => item.TrainingDay, trainingId); // "AccountId", 
 
-//		public IBatchRepository<UserGeneratedState> UserStates
-//			=> new MongoTrainingBatchRepository<UserGeneratedState, string>(db, item => "x", trainingId); // Key, 
+		public IBatchRepository<PhaseStatistics> PhaseStatistics
+			=> new MongoTrainingBatchRepository<PhaseStatistics, string>(db, ProblemSource.Models.Aggregates.PhaseStatistics.UniqueIdWithinUser, trainingId); // "account_id", 
 
-//		public Task RemoveAll() => throw new NotImplementedException();
-//    }
-//}
+		public IBatchRepository<TrainingSummary> TrainingSummaries
+			=> new MongoTrainingBatchRepository<TrainingSummary, string>(db, item => "x", trainingId); // "AccountId", 
+
+		public IBatchRepository<UserGeneratedState> UserStates
+			=> new MongoTrainingBatchRepository<UserGeneratedState, string>(db, item => "x", trainingId); // Key, 
+
+		public Task RemoveAll() => throw new NotImplementedException();
+	}
+}

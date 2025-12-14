@@ -45,23 +45,14 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		//{
 		//	return ([], []);
 		//}
-		public async Task<(IEnumerable<TDocument> Added, IEnumerable<TDocument> Updated)> Upsert(IEnumerable<TDocument> items, Func<MongoDocumentWrapper<TDocument>, FilterDefinition<MongoDocumentWrapper<TDocument>>> createFilter)
+		public async Task<(IEnumerable<TDocument> Added, IEnumerable<TDocument> Updated)> Upsert(IEnumerable<TDocument> items, FilterDefinition<MongoDocumentWrapper<TDocument>>? globalFilter = null) //, Func<MongoDocumentWrapper<TDocument>, FilterDefinition<MongoDocumentWrapper<TDocument>>> createFilter)
 		{
-			var result = await collection.Upsert(items.Select(CreateWrapped), createFilter);
+			var result = await collection.Upsert(items.Select(CreateWrapped), globalFilter); //createFilter
 			return (result.Added.Select(o => o.Document), result.Updated.Select(o => o.Document));
-			//var list = items.ToList();
-			//var models = items.Select(o => new ReplaceOneModel<TDocument>(createFilter(o), o) { IsUpsert = true });
-			////InsertOneModel
-			//var results = await collection.BulkWriteAsync(models, new BulkWriteOptions { });
-			//var upsertedIndices = results.Upserts.Select(o => o.Index).ToList();
-
-			//var upserted = upsertedIndices.Select(o => list[o]);
-
-			//return (list.Except(upserted), upserted);
 		}
 
-		public Task Update(TDocument item) => collection.Update(CreateWrapped(item));
-		public Task Upsert(TDocument item) => collection.Upsert(CreateWrapped(item));
+		public Task Update(TDocument item) => Upsert([item]); // TODO: throw if not already existing collection.Update(CreateWrapped(item));
+		public Task Upsert(TDocument item) => Upsert([item]); // collection.Upsert(CreateWrapped(item));
 		public async Task<TDocument?> Get(TId id)
         {
             var found = await collection.Get(id);
@@ -72,5 +63,10 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         public async Task<List<TDocument>> Get(IEnumerable<TId> ids) => (await collection.Get(ids)).Select(o => o.Document).ToList();
 
 		public async Task<IEnumerable<TDocument>> GetAll() => (await collection.GetAll()).Select(o => o.Document).ToList();
+		public async Task<IEnumerable<TDocument>> GetAll(FilterDefinition<MongoDocumentWrapper<TDocument>> filter)
+			=> (await collection.ListAsync(filter)).Select(o => o.Document).ToList();
+		public async Task<int> RemoveAll(FilterDefinition<MongoDocumentWrapper<TDocument>> filter)
+			=> await collection.RemoveAsync(filter);
+
 	}
 }

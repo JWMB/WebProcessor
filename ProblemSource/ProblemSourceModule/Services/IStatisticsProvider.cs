@@ -4,6 +4,7 @@ using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Models.Aggregates;
+using ProblemSourceModule.Services.Storage;
 
 namespace ProblemSource.Services
 {
@@ -18,12 +19,15 @@ namespace ProblemSource.Services
     public class StatisticsProvider : IStatisticsProvider
     {
         private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory;
-        private readonly ITypedTableClientFactory typedTableClientFactory;
+        private readonly ITrainingSummaryRepository trainingSummaryRepository;
 
-        public StatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory, ITypedTableClientFactory typedTableClientFactory)
+        //private readonly ITypedTableClientFactory typedTableClientFactory;
+
+        public StatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory, ITrainingSummaryRepository trainingSummaryRepository) //ITypedTableClientFactory typedTableClientFactory)
         {
             this.userGeneratedDataRepositoryProviderFactory = userGeneratedDataRepositoryProviderFactory;
-            this.typedTableClientFactory = typedTableClientFactory;
+            this.trainingSummaryRepository = trainingSummaryRepository;
+            //this.typedTableClientFactory = typedTableClientFactory;
         }
 
         private IUserGeneratedDataRepositoryProvider GetDataProvider(int trainingId) =>
@@ -49,14 +53,15 @@ namespace ProblemSource.Services
 
         public async Task<List<TrainingSummary>> GetAllTrainingSummaries()
         {
-            var q = typedTableClientFactory.TrainingSummaries.QueryAsync<TableEntity>("");
-            var converter = new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none"));
-            var result = new List<TrainingSummary>();
-            await foreach (var item in q)
-            {
-                result.Add(converter.ToPoco(item));
-            }
-            return result;
+            return await trainingSummaryRepository.GetAll();
+            //var q = typedTableClientFactory.TrainingSummaries.QueryAsync<TableEntity>("");
+            //var converter = new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none"));
+            //var result = new List<TrainingSummary>();
+            //await foreach (var item in q)
+            //{
+            //    result.Add(converter.ToPoco(item));
+            //}
+            //return result;
         }
     }
 }
