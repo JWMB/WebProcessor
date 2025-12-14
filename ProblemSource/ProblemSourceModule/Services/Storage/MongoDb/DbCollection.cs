@@ -24,12 +24,10 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         }
 
 		public IMongoCollection<TDocument> GetCollection() => collection;
-		public FilterDefinition<TDocument> GetIdFilter(TDocument id) => GetIdFilter(getId(id), idField); // Builders<TDocument>.Filter.Eq(idField, id);
+		//public FilterDefinition<TDocument> GetIdFilter(TDocument id) => GetIdFilter(getId(id), idField); // Builders<TDocument>.Filter.Eq(idField, id);
 		public FilterDefinition<TDocument> GetIdFilter(TId id) => GetIdFilter(id, idField); // Builders<TDocument>.Filter.Eq(idField, id);
 		public FilterDefinition<TDocument> GetIdFilter(IEnumerable<TId> ids) => GetIdFilter(ids, idField); // Builders<TDocument>.Filter.AnyIn(idField, ids);
 
-		//      public static FilterDefinition<TDocument> GetIdFilter<TId_>(TId_ id, string idField) => Builders<TDocument>.Filter.Eq(idField, id);
-		//public static FilterDefinition<TDocument> GetIdFilter<TId_>(IEnumerable<TId_> ids, string idField) => Builders<TDocument>.Filter.AnyIn(idField, ids);
 		public static FilterDefinition<TDocument> GetIdFilter(TId id, string idField) => Builders<TDocument>.Filter.Eq(idField, id);
 		public static FilterDefinition<TDocument> GetIdFilter(IEnumerable<TId> ids, string idField) => Builders<TDocument>.Filter.AnyIn(idField, ids);
 
@@ -44,12 +42,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		}
 
 		public async Task Update(TDocument item) => await collection.FindOneAndReplaceAsync(GetIdFilter(getId(item)), item);
-		public async Task Upsert(TDocument item)
-		{
-			await Upsert([item]);
-			//var filter = GetFilter([item]);
-			//await collection.FindOneAndReplaceAsync(GetIdFilter(getId(item)), item, new FindOneAndReplaceOptions<TDocument, TDocument> { IsUpsert = true });
-		}
+		public Task Upsert(TDocument item) => Upsert([item]);
 
 		public async Task<List<TDocument>> ListAsync(FilterDefinition<TDocument> filter, CancellationToken cancellationToken = default)
 		{

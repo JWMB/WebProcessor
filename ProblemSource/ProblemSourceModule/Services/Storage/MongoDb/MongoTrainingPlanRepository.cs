@@ -14,7 +14,6 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
     {
 		private SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
-		//public MongoTrainingRepository(IMongoDatabase db) : base(db, $"{nameof(MongoDocumentWrapper<int>.Document)}.{nameof(Training.Id)}", u => u.Document.Id)
 		public MongoTrainingRepository(IMongoDatabase db) : base(db, u => u.Id, item => new MongoDocumentWrapper<Training>(item, o => o.Id.ToString()))
 		{ }
 

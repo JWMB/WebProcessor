@@ -24,8 +24,6 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 	{
 		private readonly IMongoDatabase db;
 		private readonly int trainingId;
-		//private readonly string Key = $"{nameof(MongoDocumentWrapper<int>.RowKey)}";
-		//private readonly string Key = $"{nameof(MongoDocumentWrapper<int>)}.{nameof(MongoDocumentWrapper<int>.RowKey)}";
 
 		public MongoUserGeneratedDataRepositoryProvider(IMongoDatabase db, int trainingId)
 		{

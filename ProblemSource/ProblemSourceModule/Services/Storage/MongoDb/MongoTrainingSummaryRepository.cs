@@ -13,6 +13,5 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         }
 
         public async Task<List<TrainingSummary>> GetAll() => (await collection.GetAll()).ToList();
-        //Task<List<TrainingSummary>> ITrainingSummaryRepository.GetAll() => base.GetAll();
     }
 }

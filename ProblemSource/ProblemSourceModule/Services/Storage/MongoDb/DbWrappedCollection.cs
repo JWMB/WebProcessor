@@ -25,26 +25,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		private MongoDocumentWrapper<TDocument> CreateWrapped(TDocument item) => createWrapped(item); // new MongoDocumentWrapper<TDocument>(item, o => getId(o)?.ToString() ?? "");
 
 		public Task Remove(TDocument item) => collection.Remove(CreateWrapped(item));
-		//public async Task<int> RemoveAsync(FilterDefinition<TDocument> filter, CancellationToken cancellationToken = default)
-		//{
-		//	var result = await collection.RemoveAsync(filter, cancellationToken);
-		//	return (int)result.DeletedCount;
-		//}
-		//public async Task<List<TDocument>> ListAsync(FilterDefinition<TDocument> filter, CancellationToken cancellationToken = default)
-		//{
-		//	return (await collection.ListAsync(filter)).Select(o => o.Document).ToList();
-		//	//return await (await collection.FindAsync<TDocument>(filter, null, cancellationToken)).ToListAsync(cancellationToken);
-		//}
 
-		//public string GetIdFilter(MongoDocumentWrapper<TDocument> item)
-		//{
-		//	return "AAA";
-		//}
-
-		//public async Task<(IEnumerable<TDocument> Added, IEnumerable<TDocument> Updated)> Upsert(IEnumerable<TDocument> items, Func<TDocument, FilterDefinition<TDocument>> createFilter)
-		//{
-		//	return ([], []);
-		//}
 		public async Task<(IEnumerable<TDocument> Added, IEnumerable<TDocument> Updated)> Upsert(IEnumerable<TDocument> items, FilterDefinition<MongoDocumentWrapper<TDocument>>? globalFilter = null) //, Func<MongoDocumentWrapper<TDocument>, FilterDefinition<MongoDocumentWrapper<TDocument>>> createFilter)
 		{
 			var result = await collection.Upsert(items.Select(CreateWrapped), globalFilter); //createFilter
