@@ -24,7 +24,6 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         }
 
 		public IMongoCollection<TDocument> GetCollection() => collection;
-		//public FilterDefinition<TDocument> GetIdFilter(TDocument id) => GetIdFilter(getId(id), idField); // Builders<TDocument>.Filter.Eq(idField, id);
 		public FilterDefinition<TDocument> GetIdFilter(TId id) => GetIdFilter(id, idField); // Builders<TDocument>.Filter.Eq(idField, id);
 		public FilterDefinition<TDocument> GetIdFilter(IEnumerable<TId> ids) => GetIdFilter(ids, idField); // Builders<TDocument>.Filter.AnyIn(idField, ids);
 
@@ -67,9 +66,6 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         {
 			var itemsWithId = items.Select(o => new { Id = getId(o), Item = o }).ToList();
 
-			//var projection = new FindExpressionProjectionDefinition<TDocument, X>(p => new X { Id = p.Id, SubId = getId(p) });
-			//ProjectionDefinition<BsonDocument> projection = $$"""{ "Id": "Id", "SubId": "{{idField}}" }""";
-			//var tmpAll = await collection.Find(o => true).ToListAsync();
 			var projection = Builders<TDocument>.Projection.Include(idField); //Include("Id").
 			var tmpX = (await collection.Find(GetFilter(items, globalFilter)).Project(projection).ToListAsync())
 				.Select(o => new { Id = o["_id"].AsObjectId, SubId = o[idField]?.ToString() })
@@ -77,12 +73,9 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 				.Where(o => o.SubId != null).ToList();
 			if (tmpX == null)
 				throw new Exception("A");
-			//var bsonIdById = tmpX.ToDictionary(o => o.SubId!, o => o.Id);
 
 			var toInsert = itemsWithId.Where(o => tmpX.Any(p => p.SubId?.Equals(o.Id) == true) == false).ToList();
 			var toReplace = itemsWithId.Where(o => tmpX.Any(p => p.SubId?.Equals(o.Id) == true) == true).ToList();
-			//var toInsert = itemsWithId.Select(o => bsonIdById.GetValueOrDefault(o.Id!.ToString())).ToList();
-			//var toReplace = itemsWithId.Where(o => tmpX.Any(p => p.SubId?.Equals(o.Id) == true) == true).ToList();
 
 			var models = toInsert.Select(o => (WriteModel<TDocument>)new InsertOneModel<TDocument>(o.Item)).ToList();
 
