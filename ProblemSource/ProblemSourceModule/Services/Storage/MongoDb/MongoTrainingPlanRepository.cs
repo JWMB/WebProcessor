@@ -5,7 +5,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 {
     public class MongoUserRepository : DbWrappedCollection<User, string>, IUserRepository
     {
-        public MongoUserRepository(IMongoDatabase db) : base(db, nameof(User.Email), u => u.Document.Email)
+        public MongoUserRepository(IMongoDatabase db) : base(db, u => u.Email, item => new MongoDocumentWrapper<User>(item, o => o.Email)) //nameof(User.Email), u => u.Document.Email
 		{ }
         public async Task Add(User item) => await Upsert(item);
 	}
@@ -14,7 +14,8 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
     {
 		private SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
-		public MongoTrainingRepository(IMongoDatabase db) : base(db, $"{nameof(MongoDocumentWrapper<int>.Document)}.{nameof(Training.Id)}", u => u.Document.Id)
+		//public MongoTrainingRepository(IMongoDatabase db) : base(db, $"{nameof(MongoDocumentWrapper<int>.Document)}.{nameof(Training.Id)}", u => u.Document.Id)
+		public MongoTrainingRepository(IMongoDatabase db) : base(db, u => u.Id, item => new MongoDocumentWrapper<Training>(item, o => o.Id.ToString()))
 		{ }
 
         public Task Add(Training item) => AddGetId(item);

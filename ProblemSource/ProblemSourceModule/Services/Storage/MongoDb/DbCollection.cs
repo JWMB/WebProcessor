@@ -1,8 +1,10 @@
-﻿using MongoDB.Driver;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 
 namespace ProblemSourceModule.Services.Storage.MongoDb
 {
-    public class DbCollection<TDocument, TId>
+    public class DbCollection<TDocument, TId> where TDocument : DocumentBase
     {
         protected IMongoCollection<TDocument> collection;
         private readonly string idField;
@@ -21,6 +23,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 			return getId(item);
         }
 
+		public IMongoCollection<TDocument> GetCollection() => collection;
 		public FilterDefinition<TDocument> GetIdFilter(TDocument id) => GetIdFilter(getId(id), idField); // Builders<TDocument>.Filter.Eq(idField, id);
 		public FilterDefinition<TDocument> GetIdFilter(TId id) => GetIdFilter(id, idField); // Builders<TDocument>.Filter.Eq(idField, id);
 		public FilterDefinition<TDocument> GetIdFilter(IEnumerable<TId> ids) => GetIdFilter(ids, idField); // Builders<TDocument>.Filter.AnyIn(idField, ids);
@@ -55,18 +58,50 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 
 		public async Task<(IEnumerable<TDocument> Added, IEnumerable<TDocument> Updated)> Upsert(IEnumerable<TDocument> items, Func<TDocument, FilterDefinition<TDocument>> createFilter)
         {
-            var list = items.ToList();
-            var models = items.Select(o => new ReplaceOneModel<TDocument>(createFilter(o), o) { IsUpsert = true });
-            //InsertOneModel
+			var itemsWithId = items.Select(o => new { Id = getId(o), Item = o }).ToList();
+
+			var filter = Builders<TDocument>.Filter.In(idField, itemsWithId.Select(o => o.Id));
+			//var projection = new FindExpressionProjectionDefinition<TDocument, X>(p => new X { Id = p.Id, SubId = getId(p) });
+			//ProjectionDefinition<BsonDocument> projection = $$"""{ "Id": "Id", "SubId": "{{idField}}" }""";
+			var tmpAll = await collection.Find(o => true).ToListAsync();
+			var projection = Builders<TDocument>.Projection.Include(idField); //Include("Id").
+			var tmpX = (await collection.Find(filter).Project(projection).ToListAsync())
+				.Select(o => new { Id = o["_id"].AsObjectId, SubId = o[idField]?.ToString() })
+				//.Select(o => BsonSerializer.Deserialize<X>(o))
+				.Where(o => o.SubId != null).ToList();
+			if (tmpX == null)
+				throw new Exception("A");
+			//var bsonIdById = tmpX.ToDictionary(o => o.SubId!, o => o.Id);
+
+			var toInsert = itemsWithId.Where(o => tmpX.Any(p => p.SubId?.Equals(o.Id) == true) == false).ToList();
+			var toReplace = itemsWithId.Where(o => tmpX.Any(p => p.SubId?.Equals(o.Id) == true) == true).ToList();
+			//var toInsert = itemsWithId.Select(o => bsonIdById.GetValueOrDefault(o.Id!.ToString())).ToList();
+			//var toReplace = itemsWithId.Where(o => tmpX.Any(p => p.SubId?.Equals(o.Id) == true) == true).ToList();
+
+			var models = toInsert.Select(o => (WriteModel<TDocument>)new InsertOneModel<TDocument>(o.Item)).ToList();
+
+			models.AddRange(toReplace.Select(o =>
+			{
+				var found = tmpX.Single(p => p.SubId?.Equals(o.Id) == true);
+				if (found == null)
+					throw new Exception("aaa");
+				o.Item.Id = found.Id;
+				return new ReplaceOneModel<TDocument>(createFilter(o.Item), o.Item);
+			}));
+
 			var results = await collection.BulkWriteAsync(models, new BulkWriteOptions { });
-            var upsertedIndices = results.Upserts.Select(o => o.Index).ToList();
-
-            var upserted = upsertedIndices.Select(o => list[o]);
-
-			return (list.Except(upserted), upserted);
+			// hm, we can't tell which were inserted and which were replaced?!
+			return (toInsert.Select(o => o.Item), toReplace.Select(o => o.Item));
 		}
 
-        public async Task<long> CountDocumentsAsync(FilterDefinition<TDocument>? filter = null)
+		private class X
+		{
+			public ObjectId Id { get; set; }
+			//public object? SubId { get; set; }
+			public TId? SubId { get; set; }
+		}
+
+		public async Task<long> CountDocumentsAsync(FilterDefinition<TDocument>? filter = null)
         {
 			return await collection.CountDocumentsAsync(filter ?? Builders<TDocument>.Filter.Empty, filter == null ? new CountOptions { Hint = "_id_" } : null);
 		}
