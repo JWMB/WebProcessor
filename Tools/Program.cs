@@ -153,6 +153,7 @@ if (false)
 //await tool.OverallStats(5);
 //var result = await tool.GetUsersWithSyncedTrainings();
 
+//await TrainingMod.ModifyTimeSpent(, "nvr_rp", serviceProvider.GetRequiredService<ITypedTableClientFactory>());
 
 //var template = await serviceProvider.GetRequiredService<ITrainingTemplateRepository>().Get("template_2023HT");
 //var trainingMod = serviceProvider.CreateInstance<TrainingMod>();

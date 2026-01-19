@@ -101,11 +101,11 @@ namespace Tools
             }
         }
 
-        public static async Task ModifyTimeSpent(int trainingId, ITypedTableClientFactory tableClientFactory)
+        public static async Task ModifyTimeSpent(int trainingId, string gameId, ITypedTableClientFactory tableClientFactory)
         {
 			var ugdr = (new AzureTableUserGeneratedDataRepositoriesProviderFactory(tableClientFactory)).Create(trainingId);
             var userState = (await ugdr.UserStates.GetAll()).Single();
-            var gameId = "nvr_rp";
+            //var gameId = "nvr_rp";
 			if (userState.exercise_stats.trainingPlanSettings.changes.Any() == true)
             {
                 var change = userState.exercise_stats.trainingPlanSettings.changes.Last();
