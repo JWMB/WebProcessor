@@ -1,16 +1,17 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 
 namespace ProblemSourceModule.Services.Storage.MongoDb
 {
-    public class DbCollection<TDocument, TId> where TDocument : DocumentBase
+    public class DbCollectionWithId<TDocument, TId> where TDocument : DocumentBase
     {
         protected IMongoCollection<TDocument> collection;
         private readonly string idField;
         private readonly Func<TDocument, TId> getId;
 
-        public DbCollection(IMongoDatabase db, string idField, Func<TDocument, TId> getId)
+        public DbCollectionWithId(IMongoDatabase db, string idField, Func<TDocument, TId> getId)
         {
 			collection = db.GetCollection<TDocument>(MongoTools.GetCollectionName<TDocument>());
             this.idField = idField;
@@ -45,7 +46,8 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 
 		public async Task<List<TDocument>> ListAsync(FilterDefinition<TDocument> filter, CancellationToken cancellationToken = default)
 		{
-			return await (await collection.FindAsync<TDocument>(filter, null, cancellationToken)).ToListAsync(cancellationToken);
+			var cursor = await collection.FindAsync<TDocument>(filter, null, cancellationToken);
+			return await cursor.ToListAsync(cancellationToken);
 		}
 		public async Task<int> RemoveAsync(FilterDefinition<TDocument> filter, CancellationToken cancellationToken = default)
 		{
@@ -88,6 +90,8 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 				return new ReplaceOneModel<TDocument>(Builders<TDocument>.Filter.Eq(p => p.Id, found.Id), o.Item); //createFilter(o.Item)
 			}));
 
+			if (models.Any() == false)
+				return ([], []);
 			var results = await collection.BulkWriteAsync(models, new BulkWriteOptions { });
 			// hm, we can't tell which were inserted and which were replaced?!
 			return (toInsert.Select(o => o.Item), toReplace.Select(o => o.Item));
@@ -103,6 +107,64 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		public async Task<long> CountDocumentsAsync(FilterDefinition<TDocument>? filter = null)
         {
 			return await collection.CountDocumentsAsync(filter ?? Builders<TDocument>.Filter.Empty, filter == null ? new CountOptions { Hint = "_id_" } : null);
+		}
+	}
+
+
+	public class XObjectCustomSerializer : SerializerBase<object?>
+	{
+		public override object? Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+		{
+			//var name = context.Reader.ReadName(MongoDB.Bson.IO.Utf8NameDecoder.Instance);
+
+			if (context.Reader.State == MongoDB.Bson.IO.BsonReaderState.Value)
+			{
+				//context.Reader.ReadNull();
+				var rr = context.Reader.GetCurrentBsonType();
+				if (rr == BsonType.Null)
+				{
+					context.Reader.ReadNull();
+					return null;
+				}
+			}
+			var ntype = args.NominalType;
+			if (context.Reader.CurrentBsonType == BsonType.Null)
+			{
+				context.Reader.ReadNull();
+				return null;
+			}
+			var json = context.Reader.ReadString();
+			var value = System.Text.Json.JsonSerializer.Deserialize<Newtonsoft.Json.Linq.JObject>(json);
+			return value;
+		}
+
+		public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object? value)
+		{
+			var serializerOptions = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+			if (value == null)
+			{
+				context.Writer.WriteNull();
+				return;
+			}
+
+			var json = System.Text.Json.JsonSerializer.Serialize(value, serializerOptions);
+			context.Writer.WriteString(json);
+		}
+	}
+	public class JObjectCustomSerializer : SerializerBase<Newtonsoft.Json.Linq.JObject>
+	{
+		public override Newtonsoft.Json.Linq.JObject Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+		{
+			var json = context.Reader.ReadString();
+			var value = System.Text.Json.JsonSerializer.Deserialize<Newtonsoft.Json.Linq.JObject>(json);
+			return value!;
+		}
+
+		public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, Newtonsoft.Json.Linq.JObject value)
+		{
+			var serializerOptions = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+			var json = System.Text.Json.JsonSerializer.Serialize(value, serializerOptions);
+			context.Writer.WriteString(json);
 		}
 	}
 }

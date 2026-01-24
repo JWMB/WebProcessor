@@ -52,7 +52,7 @@ namespace ProblemSourceModule.Tests
 			var ugdr = new MongoUserGeneratedDataRepositoryProvider(db, id);
 			var phasesRepo = ugdr.Phases; // new MongoTrainingBatchRepository<Phase, string>(db, Phase.UniqueIdWithinUser, id);
 
-			var mongoTyped = (MongoTrainingBatchRepository<Phase, string>)phasesRepo;
+			var mongoTyped = (MongoTrainingAssociatedBatchRepository<Phase, string>)phasesRepo;
 			var collectionName = mongoTyped.GetCollection().CollectionNamespace.CollectionName;
 			await db.DropCollectionAsync(collectionName);
 			//collections = await (await db.ListCollectionsAsync()).ToListAsync();

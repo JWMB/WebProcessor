@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using ProblemSource;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
@@ -40,6 +41,20 @@ Console.CancelKeyPress += (s, e) =>
 var cancellationToken = cts.Token;
 
 var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
+
+IMongoDatabase? mongoDb;
+{
+	var connectionString = "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
+	var database = "_Training";
+	var client = new MongoClient(connectionString);
+    mongoDb = client.GetDatabase(database);
+
+    MongoDB.Bson.Serialization.BsonSerializer.RegisterSerializer(new ProblemSourceModule.Services.Storage.MongoDb.XObjectCustomSerializer());
+    //MongoDB.Bson.Serialization.BsonSerializer.RegisterSerializer(new ProblemSourceModule.Services.Storage.MongoDb.JObjectCustomSerializer());
+
+    var migrator = new MigrateToMongoDb(serviceProvider.GetRequiredService<ITypedTableClientFactory>(), serviceProvider.GetRequiredService<ITrainingRepository>(), mongoDb);
+    await migrator.Migrate();
+}
 
 //await TrainingMod.ModifyTimeSpent(42434, serviceProvider.GetRequiredService<ITypedTableClientFactory>());
 //await new FixAzureTableQuotedDateTime(serviceProvider.GetRequiredService<AzureTableConfig>().ConnectionString)
@@ -240,8 +255,9 @@ IServiceProvider InititalizeServices(IConfigurationRoot config)
     var module = new ProblemSource.ProblemSourceModule();
     module.ConfigureServices(services);
     var serviceProvider = services.BuildServiceProvider();
-    module.Configure(new App(serviceProvider));
-    return serviceProvider;
+    module.Configure(new App(serviceProvider), initAzureStorage: false);
+
+	return serviceProvider;
 }
 
 class App : IApplicationBuilder

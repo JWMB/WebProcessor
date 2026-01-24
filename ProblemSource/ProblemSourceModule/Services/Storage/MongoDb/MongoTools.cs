@@ -17,11 +17,11 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
             if (type.GenericTypeArguments.Any())
             {
                 if (type.GetGenericTypeDefinition() == typeof(MongoDocumentWrapper<>))
-                {
                     return type.GenericTypeArguments[0].Name;
-				}
-            }
-            return type.Name;
+				if (type.GetGenericTypeDefinition() == typeof(MongoTrainingAssociatedDocumentWrapper<>))
+					return type.GenericTypeArguments[0].Name;
+			}
+			return type.Name;
         }
 	}
 }

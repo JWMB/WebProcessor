@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using PluginModuleBase;
 using ProblemSource.Services;
@@ -60,7 +61,7 @@ namespace ProblemSource
 
             services.AddSingleton<ITrainingTemplateRepository, StaticTrainingTemplateRepository>();
 
-            var storageIsMongo = true;
+            var storageIsMongo = false;
             if (storageIsMongo)
 				ConfigureForMongoDb(services);
             else
@@ -91,9 +92,11 @@ namespace ProblemSource
             var connectionString = "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
             var database = "_Training";
             var client = new MongoClient(connectionString);
-            services.AddSingleton<IMongoDatabase>(sp => client.GetDatabase(database));
+            services.AddSingleton(sp => client.GetDatabase(database));
 
-            services.AddSingleton<ITrainingSummaryRepository, MongoTrainingSummaryRepository>();
+			//BsonSerializer.RegisterSerializer(new JObjectCustomSerializer());
+
+			services.AddSingleton<ITrainingSummaryRepository, MongoTrainingSummaryRepository>();
 			services.AddSingleton<IUserRepository, MongoUserRepository>();
 
             services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, MongoUserGeneratedDataRepositoryProviderFactory>();
@@ -109,17 +112,23 @@ namespace ProblemSource
         }
 
         public void Configure(IApplicationBuilder app)
+             => Configure(app, true);
+
+		public void Configure(IApplicationBuilder app, bool initAzureStorage)
         {
             var serviceProvider = app.ApplicationServices;
             serviceProvider.GetService<IProcessingMiddlewarePipelineRepository>()?
                 .Register("problemsource", serviceProvider.GetRequiredService<ProblemSourceProcessingMiddleware>());
 
-            // Initializing TableClientFactory on startup, in order to get an early error:
-            var tableClientFactory = serviceProvider.GetService<ITypedTableClientFactory>() as TypedTableClientFactory;
-            tableClientFactory?.Init().Wait();
+            if (initAzureStorage)
+            {
+                // Initializing TableClientFactory on startup, in order to get an early error:
+                var tableClientFactory = serviceProvider.GetService<ITypedTableClientFactory>() as TypedTableClientFactory;
+                tableClientFactory?.Init().Wait();
 
-            var queueEventDispatcher = serviceProvider.GetService<IEventDispatcher>() as AzureQueueEventDispatcher;
-            queueEventDispatcher?.Init().Wait();
+                var queueEventDispatcher = serviceProvider.GetService<IEventDispatcher>() as AzureQueueEventDispatcher;
+                queueEventDispatcher?.Init().Wait();
+            }
         }
     }
 }

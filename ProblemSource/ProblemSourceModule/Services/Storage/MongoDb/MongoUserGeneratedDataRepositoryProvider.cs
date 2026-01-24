@@ -32,19 +32,19 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		}
 
 		public IBatchRepository<Phase> Phases
-			=> new MongoTrainingBatchRepository<Phase, string>(db, Phase.UniqueIdWithinUser, trainingId); //Key, 
+			=> new MongoTrainingAssociatedBatchRepository<Phase, string>(db, Phase.UniqueIdWithinUser, trainingId); //Key, 
 
 		public IBatchRepository<TrainingDayAccount> TrainingDays
-			=> new MongoTrainingBatchRepository<TrainingDayAccount, int>(db, item => item.TrainingDay, trainingId); // "AccountId", 
+			=> new MongoTrainingAssociatedBatchRepository<TrainingDayAccount, int>(db, item => item.TrainingDay, trainingId); // "AccountId", 
 
 		public IBatchRepository<PhaseStatistics> PhaseStatistics
-			=> new MongoTrainingBatchRepository<PhaseStatistics, string>(db, ProblemSource.Models.Aggregates.PhaseStatistics.UniqueIdWithinUser, trainingId); // "account_id", 
+			=> new MongoTrainingAssociatedBatchRepository<PhaseStatistics, string>(db, ProblemSource.Models.Aggregates.PhaseStatistics.UniqueIdWithinUser, trainingId); // "account_id", 
 
 		public IBatchRepository<TrainingSummary> TrainingSummaries
-			=> new MongoTrainingBatchRepository<TrainingSummary, string>(db, item => "x", trainingId); // "AccountId", 
+			=> new MongoTrainingAssociatedBatchRepository<TrainingSummary, string>(db, item => "x", trainingId); // "AccountId", 
 
 		public IBatchRepository<UserGeneratedState> UserStates
-			=> new MongoTrainingBatchRepository<UserGeneratedState, string>(db, item => "x", trainingId); // Key, 
+			=> new MongoTrainingAssociatedBatchRepository<UserGeneratedState, string>(db, item => "x", trainingId); // Key, 
 
 		public Task RemoveAll() => throw new NotImplementedException();
 	}
