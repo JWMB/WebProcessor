@@ -80,8 +80,8 @@ namespace Tools
 			Console.WriteLine("Reading trainings...");
 			var allMongoTrainings = (await mdbTrainings.GetCollection().Find(o => true).Project(o => o.RowKey).ToListAsync()).Select(int.Parse).ToList();
 
-			//var trainings = (await trainingRepository.GetAll()).ToList();
-			var trainings = await trainingRepository.GetByIds([3, 7]);
+			var trainings = (await trainingRepository.GetAll()).ToList();
+			//var trainings = await trainingRepository.GetByIds([3, 7]);
 			Console.WriteLine($"{trainings.Count()} trainings found, {allMongoTrainings.Count} in MongoDB");
 
 			//var aaq = new MongoTrainingBatchRepository<Training, int>(db, d => d.Id, trainingId);

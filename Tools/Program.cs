@@ -255,7 +255,7 @@ IServiceProvider InititalizeServices(IConfigurationRoot config)
     var module = new ProblemSource.ProblemSourceModule();
     module.ConfigureServices(services);
     var serviceProvider = services.BuildServiceProvider();
-    module.Configure(new App(serviceProvider), initAzureStorage: false);
+    module.Configure(new App(serviceProvider), initAzureStorage: true);
 
 	return serviceProvider;
 }
