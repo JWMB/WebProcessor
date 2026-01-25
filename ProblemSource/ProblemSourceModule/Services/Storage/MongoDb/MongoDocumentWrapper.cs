@@ -17,6 +17,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 				RowKey = getId(doc);
         }
 
+		//[BsonS]
 		public string RowKey { get; set; } = string.Empty;
 
 		public required TDocument Document { get; set; }

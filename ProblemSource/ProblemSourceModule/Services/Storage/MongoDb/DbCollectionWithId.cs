@@ -32,8 +32,11 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		public static FilterDefinition<TDocument> GetIdFilter(IEnumerable<TId> ids, string idField) => Builders<TDocument>.Filter.AnyIn(idField, ids);
 
 		public async Task<TDocument?> Get(TId id) => await (await collection.FindAsync(GetIdFilter(id))).FirstOrDefaultAsync();
-		public async Task<List<TDocument>> Get(IEnumerable<TId> ids) => await (await collection.FindAsync(GetIdFilter(ids))).ToListAsync();
-
+		public async Task<List<TDocument>> Get(IEnumerable<TId> ids) //=> await (await collection.FindAsync(GetIdFilter(ids))).ToListAsync();
+		{
+			var filter = GetIdFilter(ids);
+			return await (await collection.FindAsync(filter)).ToListAsync();
+		}
 		public async Task<IEnumerable<TDocument>> GetAll() => await collection.Find(o => true).ToListAsync();
 
 		public async Task Remove(TDocument item)
@@ -95,13 +98,6 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 			var results = await collection.BulkWriteAsync(models, new BulkWriteOptions { });
 			// hm, we can't tell which were inserted and which were replaced?!
 			return (toInsert.Select(o => o.Item), toReplace.Select(o => o.Item));
-		}
-
-		private class X
-		{
-			public ObjectId Id { get; set; }
-			//public object? SubId { get; set; }
-			public TId? SubId { get; set; }
 		}
 
 		public async Task<long> CountDocumentsAsync(FilterDefinition<TDocument>? filter = null)

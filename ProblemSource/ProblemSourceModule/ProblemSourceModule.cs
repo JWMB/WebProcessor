@@ -104,6 +104,15 @@ namespace ProblemSource
 			var client = new MongoClient(connectionString);
             services.AddSingleton(sp => client.GetDatabase(database));
 
+			// DocumentBase MongoDocumentWrapper
+			//BsonClassMap.RegisterClassMap<DocumentBase>(cm =>
+			//{
+			//	cm.AutoMap();
+			//	//cm.MapIdProperty(c => c.Id)
+			//	//	.SetIdGenerator(MongoDB.Bson.Serialization.IdGenerators.StringObjectIdGenerator.Instance)
+			//	//	.SetSerializer(new MongoDB.Bson.Serialization.Serializers.StringSerializer(MongoDB.Bson.BsonType.ObjectId));
+			//});
+
 			BsonSerializer.RegisterSerializer(new XObjectCustomSerializer());
 
 			services.AddSingleton<ITrainingSummaryRepository, MongoTrainingSummaryRepository>();

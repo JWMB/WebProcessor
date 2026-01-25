@@ -34,10 +34,6 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 
 		private FilterDefinition<MongoTrainingAssociatedDocumentWrapper<TDocument>> GetTrainingIdFilter()
 			=> DbCollectionWithId<MongoTrainingAssociatedDocumentWrapper<TDocument>, int>.GetIdFilter(trainingId, $"{nameof(MongoTrainingAssociatedDocumentWrapper<TDocument>.TrainingId)}");
-		//private FilterDefinition<MongoTrainingAssociatedDocumentWrapper<TDocument>> GetTrainingIdFilter()
-		//{
-		//	return DbCollection<MongoTrainingAssociatedDocumentWrapper<TDocument>, int>.GetIdFilter(trainingId, $"{nameof(MongoTrainingAssociatedDocumentWrapper<TDocument>.TrainingId)}");
-		//}
 
 		public async Task<IEnumerable<TDocument>> GetAll() //=> await collection.GetAll(GetTrainingIdFilter())
 		{
