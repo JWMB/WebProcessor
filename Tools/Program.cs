@@ -52,7 +52,10 @@ IMongoDatabase? mongoDb;
     MongoDB.Bson.Serialization.BsonSerializer.RegisterSerializer(new ProblemSourceModule.Services.Storage.MongoDb.XObjectCustomSerializer());
     //MongoDB.Bson.Serialization.BsonSerializer.RegisterSerializer(new ProblemSourceModule.Services.Storage.MongoDb.JObjectCustomSerializer());
 
-    var migrator = new MigrateToMongoDb(serviceProvider.GetRequiredService<ITypedTableClientFactory>(), serviceProvider.GetRequiredService<ITrainingRepository>(), mongoDb);
+    var migrator = new MigrateToMongoDb(serviceProvider.GetRequiredService<ITypedTableClientFactory>(),
+        serviceProvider.GetRequiredService<ITrainingRepository>(),
+		serviceProvider.GetRequiredService<IUserRepository>(),
+		mongoDb);
     await migrator.Migrate();
 }
 
@@ -253,7 +256,7 @@ IServiceProvider InititalizeServices(IConfigurationRoot config)
     services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
 
     var module = new ProblemSource.ProblemSourceModule();
-    module.ConfigureServices(services);
+    module.ConfigureServices(services, config);
     var serviceProvider = services.BuildServiceProvider();
     module.Configure(new App(serviceProvider), initAzureStorage: true);
 

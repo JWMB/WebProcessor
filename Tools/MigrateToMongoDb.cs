@@ -5,6 +5,7 @@ using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
+using ProblemSourceModule.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.Storage.MongoDb;
 using System;
 using System.Collections.Generic;
@@ -18,15 +19,17 @@ namespace Tools
     {
         private readonly ITypedTableClientFactory tableClientFactory;
         private readonly ITrainingRepository trainingRepository;
+        private readonly IUserRepository userRepository;
         private readonly IMongoDatabase db;
 
         //private readonly IUserGeneratedDataRepositoryProvider userGeneratedDataRepositoryProvider;
 
         // , IUserGeneratedDataRepositoryProvider userGeneratedDataRepositoryProvider
-        public MigrateToMongoDb(ITypedTableClientFactory tableClientFactory, ITrainingRepository trainingRepository, IMongoDatabase db)
+        public MigrateToMongoDb(ITypedTableClientFactory tableClientFactory, ITrainingRepository trainingRepository, IUserRepository userRepository, IMongoDatabase db)
 		{
             this.tableClientFactory = tableClientFactory;
             this.trainingRepository = trainingRepository;
+            this.userRepository = userRepository;
             this.db = db;
 			//this.userGeneratedDataRepositoryProvider = userGeneratedDataRepositoryProvider;
 		}
@@ -75,12 +78,19 @@ namespace Tools
 		{
             var mdbRepoFactory = new MongoUserGeneratedDataRepositoryProviderFactory(db);
 
+			Console.WriteLine("Reading users...");
+			var users = await userRepository.GetAll();
+			var mdbUsers = new MongoUserRepository(db);
+			await mdbUsers.Upsert(users);
+
 			//var mdbTrainings = new DbWrappedCollection<Training, int>(db, d => d.Id, d => new MongoDocumentWrapper<Training>(d));
 			var mdbTrainings = new MongoTrainingRepository(db);
 			Console.WriteLine("Reading trainings...");
 			var allMongoTrainings = (await mdbTrainings.GetCollection().Find(o => true).Project(o => o.RowKey).ToListAsync()).Select(int.Parse).ToList();
 
-			var trainings = (await trainingRepository.GetAll()).ToList();
+			var trainings = (await trainingRepository.GetAll())
+				.Where(o => o.Id > 32431)
+				.ToList();
 			//var trainings = await trainingRepository.GetByIds([3, 7]);
 			Console.WriteLine($"{trainings.Count()} trainings found, {allMongoTrainings.Count} in MongoDB");
 

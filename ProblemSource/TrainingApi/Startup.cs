@@ -163,7 +163,8 @@ namespace TrainingApi
                         var referer = context.Request.GetTypedHeaders().Referer;
                         // when from swagger and localhost
                         var autologin = referer?.AbsolutePath.Contains("/swagger/") == true
-                            || referer?.AbsoluteUri.StartsWith("http://localhost:") == true;
+                            || referer?.AbsoluteUri.StartsWith("http://localhost:") == true
+                            || referer?.AbsoluteUri.StartsWith("https://localhost") == true;
 
                         if (!autologin)
                         {
@@ -216,8 +217,8 @@ namespace TrainingApi
             ConfigureAuthentication(services, config, env);
 
             var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
-            services.AddSingleton<ITableClientFactory, TableClientFactory>();
-            ServiceConfiguration.ConfigureProcessingPipelineServices(services, plugins);
+            //services.AddSingleton<ITableClientFactory, TableClientFactory>();
+            ServiceConfiguration.ConfigureProcessingPipelineServices(services, config, plugins);
             return plugins;
         }
 

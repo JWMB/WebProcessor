@@ -21,7 +21,7 @@ namespace ProblemSource
 {
     public class ProblemSourceModule : IPluginModule
     {
-        public void ConfigureServices(IServiceCollection services)
+        public void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
             services.AddSingleton<ITrainingPlanRepository, EmbeddedTrainingPlanRepository>();
             services.AddSingleton<IAggregationService, AggregationService>();
@@ -61,9 +61,16 @@ namespace ProblemSource
 
             services.AddSingleton<ITrainingTemplateRepository, StaticTrainingTemplateRepository>();
 
-            var storageIsMongo = false;
+        	var storageIsMongo = false;
+			config ??= services.Select(o => o.ImplementationInstance).OfType<IConfigurationRoot>().Single();
+			{
+				if (config != null)
+                {
+					storageIsMongo = config["AppSettings:Storage:Type"] == "MongoDB";
+                }
+            }
             if (storageIsMongo)
-				ConfigureForMongoDb(services);
+				ConfigureForMongoDb(services, config!);
             else
 				ConfigureForAzureTables(services);
 
@@ -87,14 +94,17 @@ namespace ProblemSource
             services.AddSingleton<ITrainingRepository, AzureTableTrainingRepository>();
         }
 
-        public void ConfigureForMongoDb(IServiceCollection services)
+        public void ConfigureForMongoDb(IServiceCollection services, IConfiguration config)
         {
-            var connectionString = "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
-            var database = "_Training";
-            var client = new MongoClient(connectionString);
+            var section = config.GetSection("AppSettings:Storage:MongoDB");
+
+            var connectionString = section["ConnectionString"]; // "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
+            var database = section["Database"]; //"_Training";
+
+			var client = new MongoClient(connectionString);
             services.AddSingleton(sp => client.GetDatabase(database));
 
-			//BsonSerializer.RegisterSerializer(new JObjectCustomSerializer());
+			BsonSerializer.RegisterSerializer(new XObjectCustomSerializer());
 
 			services.AddSingleton<ITrainingSummaryRepository, MongoTrainingSummaryRepository>();
 			services.AddSingleton<IUserRepository, MongoUserRepository>();
