@@ -10,11 +10,11 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         public async Task Add(User item) => await Upsert(item);
 	}
 
-	public class MongoTrainingRepository : DbWrappedCollection<Training, int>, ITrainingRepository
+	public class MongoTrainingRepository : DbWrappedCollection<Training, string>, ITrainingRepository
     {
 		private SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
-		public MongoTrainingRepository(IMongoDatabase db) : base(db, u => u.Id, item => new MongoDocumentWrapper<Training>(item, o => o.Id.ToString()))
+		public MongoTrainingRepository(IMongoDatabase db) : base(db, u => u.Id.ToString(), item => new MongoDocumentWrapper<Training>(item, o => o.Id.ToString()))
 		{ }
 
         public Task Add(Training item) => AddGetId(item);
@@ -32,6 +32,8 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
             return item.Id;
         }
 
-        public async Task<IEnumerable<Training>> GetByIds(IEnumerable<int> ids) => await Get(ids);
+        public Task<Training?> Get(int id) => Get(id.ToString());
+
+        public async Task<IEnumerable<Training>> GetByIds(IEnumerable<int> ids) => await Get(ids.Select(o => o.ToString()));
 	}
 }
