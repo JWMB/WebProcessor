@@ -130,8 +130,18 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 				return null;
 			}
 			var json = context.Reader.ReadString();
-			var value = System.Text.Json.JsonSerializer.Deserialize<Newtonsoft.Json.Linq.JObject>(json);
-			return value;
+			//if (json.StartsWith("["))
+			try
+			{
+				var parsed = Newtonsoft.Json.Linq.JToken.Parse(json);
+				//var value = System.Text.Json.JsonSerializer.Deserialize<Newtonsoft.Json.Linq.JObject>(json);
+				return parsed;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"XObjectCustomSerializer {ex}");
+				return null;
+			}
 		}
 
 		public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object? value)

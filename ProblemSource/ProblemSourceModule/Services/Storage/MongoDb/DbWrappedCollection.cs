@@ -14,7 +14,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 
 		public DbTrainingAssociatedWrappedCollection(IMongoDatabase db, Func<TDocument, TId> getId, Func<TDocument, MongoTrainingAssociatedDocumentWrapper<TDocument>> createWrapped)
 		{
-			collection = new DbCollectionWithId<MongoTrainingAssociatedDocumentWrapper<TDocument>, TId>(db, nameof(MongoTrainingAssociatedDocumentWrapper<TDocument>.RowKey), wrapper => getId(wrapper.Document));
+			collection = new DbCollectionWithId<MongoTrainingAssociatedDocumentWrapper<TDocument>, TId>(db, "", wrapper => getId(wrapper.Document));
 			this.getId = getId;
 			this.createWrapped = createWrapped;
 		}
@@ -53,9 +53,9 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         protected DbCollectionWithId<MongoDocumentWrapper<TDocument>, TId> collection;
         private readonly Func<TDocument, MongoDocumentWrapper<TDocument>> createWrapped;
 
-        public DbWrappedCollection(IMongoDatabase db, Func<TDocument, TId> getId, Func<TDocument, MongoDocumentWrapper<TDocument>> createWrapped)
+        public DbWrappedCollection(IMongoDatabase db, Func<TDocument, TId> getId, string idField, Func<TDocument, MongoDocumentWrapper<TDocument>> createWrapped)
 		{
-			collection = new DbCollectionWithId<MongoDocumentWrapper<TDocument>, TId>(db, nameof(MongoDocumentWrapper<TDocument>.RowKey), wrapper => getId(wrapper.Document));
+			collection = new DbCollectionWithId<MongoDocumentWrapper<TDocument>, TId>(db, idField, wrapper => getId(wrapper.Document));
             this.createWrapped = createWrapped;
         }
 

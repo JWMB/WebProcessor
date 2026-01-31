@@ -10,15 +10,15 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		}
 
 		[System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
-		public MongoDocumentWrapper(TDocument doc, Func<TDocument, string>? getId = null) : this()
-        {
+		public MongoDocumentWrapper(TDocument doc) : this() //Func<TDocument, string>? getId = null
+		{
             Document = doc;
-			if (getId != null)
-				RowKey = getId(doc);
+			//if (getId != null)
+			//	RowKey = getId(doc);
         }
 
 		//[BsonS]
-		public string RowKey { get; set; } = string.Empty;
+		//public string RowKey { get; set; } = string.Empty;
 
 		public required TDocument Document { get; set; }
 	}

@@ -9,8 +9,8 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         public MongoTrainingAssociatedDocumentWrapper() { }
 
 		[System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
-		public MongoTrainingAssociatedDocumentWrapper(TDocument doc, int trainingId, Func<TDocument, string>? getId = null) : base(doc, getId)
-        {
+		public MongoTrainingAssociatedDocumentWrapper(TDocument doc, int trainingId, Func<TDocument, string>? getId = null) : base(doc) //getId
+		{
 			TrainingId = trainingId;
 		}
 		public int TrainingId { get; set; }

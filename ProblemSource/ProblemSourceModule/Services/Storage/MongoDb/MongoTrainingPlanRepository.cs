@@ -5,16 +5,16 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 {
     public class MongoUserRepository : DbWrappedCollection<User, string>, IUserRepository
     {
-        public MongoUserRepository(IMongoDatabase db) : base(db, u => u.Email, item => new MongoDocumentWrapper<User>(item, o => o.Email)) //nameof(User.Email), u => u.Document.Email
+        public MongoUserRepository(IMongoDatabase db) : base(db, u => u.Email, "Document.Email", item => new MongoDocumentWrapper<User>(item)) //, o => o.Email nameof(User.Email), u => u.Document.Email
 		{ }
         public async Task Add(User item) => await Upsert(item);
 	}
 
-	public class MongoTrainingRepository : DbWrappedCollection<Training, string>, ITrainingRepository
+	public class MongoTrainingRepository : DbWrappedCollection<Training, int>, ITrainingRepository
     {
 		private SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
-		public MongoTrainingRepository(IMongoDatabase db) : base(db, u => u.Id.ToString(), item => new MongoDocumentWrapper<Training>(item, o => o.Id.ToString()))
+		public MongoTrainingRepository(IMongoDatabase db) : base(db, u => u.Id, "Document._id", item => new MongoDocumentWrapper<Training>(item)) //  o => o.Id.ToString()
 		{ }
 
         public Task Add(Training item) => AddGetId(item);
@@ -32,8 +32,8 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
             return item.Id;
         }
 
-        public Task<Training?> Get(int id) => Get(id.ToString());
+        //public Task<Training?> Get(int id) => Get(id); //.ToString()
 
-        public async Task<IEnumerable<Training>> GetByIds(IEnumerable<int> ids) => await Get(ids.Select(o => o.ToString()));
+		public async Task<IEnumerable<Training>> GetByIds(IEnumerable<int> ids) => await Get(ids); //.Select(o => o.ToString()));
 	}
 }
