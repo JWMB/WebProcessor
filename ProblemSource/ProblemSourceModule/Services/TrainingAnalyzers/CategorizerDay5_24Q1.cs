@@ -6,7 +6,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
     public class CategorizerDay5_24Q1 : CategorizerDay5_23Q1
     {
-        public CategorizerDay5_24Q1(IPredictNumberlineLevelService modelService, ILogger<CategorizerDay5_23Q1> log)
+        public CategorizerDay5_24Q1(IPredictNumberlineLevelService? modelService, ILogger<CategorizerDay5_23Q1> log)
             : base(modelService, log)
         { }
 

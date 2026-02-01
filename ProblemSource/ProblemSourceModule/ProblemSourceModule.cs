@@ -6,7 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
-using MongoDB.Driver.Core.Misc;
 using PluginModuleBase;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
@@ -19,7 +18,6 @@ using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.Storage.MongoDb;
 using ProblemSourceModule.Services.TrainingAnalyzers;
-using System.Linq;
 
 namespace ProblemSource
 {
@@ -42,26 +40,29 @@ namespace ProblemSource
                 .Where(o => !o.IsInterface)
                 .ToArray();
 
-            //var pathToMLModel = "Resources/JuliaMLModel_Reg.zip";
-            services.AddSingleton<IPredictNumberlineLevelService>(sp =>
-                new MLPredictNumberlineLevelService(new RemoteMLPredictor(sp.GetRequiredService<IConfiguration>().GetOrThrow<string>("MLPredictionEndpoint"), sp.GetRequiredService<IHttpClientFactory>()))
-                //new MLPredictNumberlineLevelService(new LocalMLPredictor(
-                //    sp.GetRequiredService<IWebHostEnvironment>().ContentRootFileProvider.GetFileInfo(pathToMLModel)?.PhysicalPath ?? ""
-                //))
-                );
-            services.AddSingleton<IEnumerable<ITrainingAnalyzer>>(sp => analyzers.Select(o => (ITrainingAnalyzer)sp.GetOrCreateInstance(o)));
+            var pathToMLModel = "Resources/JuliaMLModel_Reg.zip"; // TODO: config
+            if (File.Exists(pathToMLModel))
+            {
+				services.AddSingleton<IPredictNumberlineLevelService>(sp =>
+	                //new MLPredictNumberlineLevelService(new RemoteMLPredictor(sp.GetRequiredService<IConfiguration>().GetOrThrow<string>("MLPredictionEndpoint"), sp.GetRequiredService<IHttpClientFactory>()))
+	                new MLPredictNumberlineLevelService(new LocalMLPredictor(
+		                sp.GetRequiredService<IWebHostEnvironment>().ContentRootFileProvider.GetFileInfo(pathToMLModel)?.PhysicalPath ?? ""
+	                ))
+	                );
+            }
+			services.AddSingleton(sp => analyzers.Select(o => (ITrainingAnalyzer)sp.GetOrCreateInstance(o)));
 
             services.AddSingleton<TrainingAnalyzerCollection>();
             //services.AddSingleton<TrainingAnalyzerCollection>(sp => new TrainingAnalyzerCollection(new[] { }, sp.GetRequiredService<>));
 
-            if (services.Any(o => o.ServiceType == typeof(IEventDispatcher)) == false)
-                services.AddSingleton<IEventDispatcher, NullEventDispatcher>(); // AzureQueueEventDispatcher>();
-
             services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
+
             //            services.AddSingleton<IEventDispatcher>(sp =>
             ////    new QueueEventDispatcher(sp.GetRequiredService<IConfiguration>().GetOrThrow<string>("AppSettings:AzureQueue:ConnectionString"), sp.GetRequiredService<ILogger<QueueEventDispatcher>>()));
+            if (services.Any(o => o.ServiceType == typeof(IEventDispatcher)) == false)
+                services.AddSingleton<IEventDispatcher, NullEventDispatcher>(); // TODO: shouldn't be needed (nullable in ProblemSourceProcessingMiddleware)
 
-            services.AddMemoryCache();
+			services.AddMemoryCache();
 
             services.AddSingleton<ITrainingTemplateRepository, StaticTrainingTemplateRepository>();
 
@@ -69,9 +70,7 @@ namespace ProblemSource
 			config ??= services.Select(o => o.ImplementationInstance).OfType<IConfigurationRoot>().Single();
 			{
 				if (config != null)
-                {
 					storageIsMongo = config["AppSettings:Storage:Type"] == "MongoDB";
-                }
             }
             if (storageIsMongo)
 				ConfigureForMongoDb(services, config!);

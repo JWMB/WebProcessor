@@ -22,7 +22,7 @@ namespace ProblemSource
         private readonly ITrainingPlanRepository trainingPlanRepository;
         private readonly IClientSessionManager sessionManager;
         private readonly IDataSink dataSink;
-        private readonly IEventDispatcher eventDispatcher;
+        private readonly IEventDispatcher? eventDispatcher;
         private readonly IAggregationService aggregationService;
         private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory;
         private readonly UsernameHashing usernameHashing;
@@ -34,7 +34,7 @@ namespace ProblemSource
         //public bool SupportsMiddlewarePattern => throw new NotImplementedException();
 
         public ProblemSourceProcessingMiddleware(ITrainingPlanRepository trainingPlanRepository,
-            IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher eventDispatcher, IAggregationService aggregationService,
+            IClientSessionManager sessionManager, IDataSink dataSink, IEventDispatcher? eventDispatcher, IAggregationService aggregationService,
             IUserGeneratedDataRepositoryProviderFactory userGeneratedRepositoriesFactory, UsernameHashing usernameHashing, MnemoJapanese mnemoJapanese,
             ITrainingRepository trainingRepository, TrainingAnalyzerCollection trainingAnalyzers,
             ILogger<ProblemSourceProcessingMiddleware> log)
@@ -217,6 +217,9 @@ namespace ProblemSource
 
         private async Task DispatchIncoming(Training training, SyncInput root)
         {
+            if (eventDispatcher == null)
+                return;
+
             try
             {
                 // E.g. for real-time teacher view

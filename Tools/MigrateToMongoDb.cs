@@ -86,7 +86,7 @@ namespace Tools
 			//var mdbTrainings = new DbWrappedCollection<Training, int>(db, d => d.Id, d => new MongoDocumentWrapper<Training>(d));
 			var mdbTrainings = new MongoTrainingRepository(db);
 			Console.WriteLine("Reading trainings...");
-			var allMongoTrainings = (await mdbTrainings.GetCollection().Find(o => true).Project(o => o.RowKey).ToListAsync()).Select(int.Parse).ToList();
+			var allMongoTrainings = await mdbTrainings.GetCollection().Find(o => true).Project(o => o.Document.Id).ToListAsync();
 
 			var trainings = (await trainingRepository.GetAll())
 				.Where(o => o.Id > 32431)
