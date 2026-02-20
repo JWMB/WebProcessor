@@ -21,7 +21,6 @@
     <PackageReference Include="System.Text.Encodings.Web" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\OldDbAdapter\OldDbAdapter.csproj" />
     <ProjectReference Include="..\ProblemSourceModule\ProblemSourceModule.csproj" />
   </ItemGroup>
   <PropertyGroup>

@@ -8,7 +8,16 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 # Copy the project files into the container
-COPY ["./**", "./"]
+# COPY ["./**", "./"]
+COPY ["./ProblemSource/TrainingApi/TrainingApi.csproj", "./ProblemSource/TrainingApi/"]
+# COPY ["./ProblemSource/TrainingApi/**", "./ProblemSource/TrainingApi/"]
+# COPY ["./ProblemSource/ProblemSourceModule/**", "./ProblemSource/ProblemSourceModule/"]
+# COPY ["./Common/**", "./Common/"]
+# COPY ["./Common.Web/**", "./Common.Web/"]
+# COPY ["./MLTools/**", "./MLTools/"]
+# COPY ["./PluginModuleBase/**", "./PluginModuleBase/"]
+# COPY ["./ML.Helpers/**", "./ML.Helpers/"]
+COPY ["./Directory.Packages.props", "./"]
 RUN ls
 RUN dotnet restore "./ProblemSource/TrainingApi/TrainingApi.csproj"
 COPY . .
@@ -17,7 +26,7 @@ RUN dotnet build "./ProblemSource/TrainingApi/TrainingApi.csproj" -c Release -o 
 
 # Build the application
 FROM build AS publish
-RUN dotnet publish "TrainingApi.csproj" -c Release -o /app/publish
+RUN dotnet publish "./ProblemSource/TrainingApi/TrainingApi.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app

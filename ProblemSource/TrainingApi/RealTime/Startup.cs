@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using ProblemSource.Services;
+﻿using ProblemSource.Services;
 
 namespace TrainingApi.RealTime
 {

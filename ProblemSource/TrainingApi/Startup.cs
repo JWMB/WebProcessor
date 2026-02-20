@@ -22,7 +22,7 @@ namespace TrainingApi
     public class Startup
     {
         private IPluginModule[] plugins = Array.Empty<IPluginModule>();
-        private OldDbAdapter.Startup? oldDbStartup = null;
+        //private OldDbAdapter.Startup? oldDbStartup = null;
         private RealTime.Startup? realTimeStartup;
 
         public void ConfigureServices(IServiceCollection services, ConfigurationManager configurationManager, IWebHostEnvironment env)
@@ -57,8 +57,9 @@ namespace TrainingApi
             var oldDbEnabled = configurationManager.GetValue<bool>("OldDbEnabled");
             if (oldDbEnabled && System.Diagnostics.Debugger.IsAttached)
             {
-                oldDbStartup = new OldDbAdapter.Startup();
-                oldDbStartup.ConfigureServices(services);
+                throw new NotImplementedException();
+                //oldDbStartup = new OldDbAdapter.Startup();
+                //oldDbStartup.ConfigureServices(services);
             }
 
             services.AddControllers();
@@ -206,8 +207,8 @@ namespace TrainingApi
 
             ServiceConfiguration.ConfigureApplicationInsights(app, config, env.IsDevelopment());
 
-            if (oldDbStartup != null)
-                oldDbStartup.Configure(app);
+            //if (oldDbStartup != null)
+            //    oldDbStartup.Configure(app);
         }
 
         private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
