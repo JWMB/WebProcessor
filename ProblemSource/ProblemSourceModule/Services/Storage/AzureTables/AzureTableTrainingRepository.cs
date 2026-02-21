@@ -24,10 +24,7 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
 
         private static int latestMax = 0; // TODO: ugly performance hack while waiting to port to SQL
         private object _lock = new object();
-
-        public Task Add(Training item) => AddGetId(item);
-
-		public Task<int> AddGetId(Training item)
+        public Task<int> Add(Training item)
         {
             // Warning: multi-instance concurrency 
             lock (_lock)
@@ -41,10 +38,9 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
         }
 
         public async Task Update(Training item) => await repo.Update(item);
-		//public async Task<int> Upsert(Training item) => int.Parse(await repo.Upsert(item));
-		public async Task Upsert(Training item) => await repo.Upsert(item);
+        public async Task<int> Upsert(Training item) => int.Parse(await repo.Upsert(item));
 
-		public async Task Remove(Training item) => await repo.Remove(item);
+        public async Task Remove(Training item) => await repo.Remove(item);
 
         public async Task<IEnumerable<Training>> GetAll() => await repo.GetAll();
 
@@ -54,5 +50,11 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
             // Note: skips entries that were not found
             return values.Values.OfType<Training>();
         }
-    }
+
+		Task IRepository<Training, int>.Add(Training item) => Add(item);
+
+		Task IRepository<Training, int>.Upsert(Training item) => Upsert(item);
+
+		public Task<int> AddGetId(Training item) => throw new NotImplementedException();
+	}
 }
