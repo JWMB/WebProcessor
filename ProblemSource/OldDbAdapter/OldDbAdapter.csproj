@@ -7,7 +7,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
-    <PackageReference Include="System.Text.Encodings.Web" />
+    <!--<PackageReference Include="System.Text.Encodings.Web" />-->
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Organization\Organization.csproj" />
