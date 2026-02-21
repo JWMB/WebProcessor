@@ -47,7 +47,7 @@
     <PackageVersion Include="Microsoft.ML" Version="5.0.0" />
     <PackageVersion Include="Microsoft.ML.AutoML" Version="0.23.0" />
     <PackageVersion Include="Microsoft.ML.FastTree" Version="5.0.0" />
-    <PackageVersion Include="Microsoft.ML.LightGbm" Version="4.0.0" />
+    <PackageVersion Include="Microsoft.ML.LightGbm" Version="5.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageVersion Include="Mongo2Go" Version="4.1.0" />
     <PackageVersion Include="MongoDB.Driver" Version="3.6.0" />
