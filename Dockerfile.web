@@ -1,0 +1,26 @@
+FROM node:24-alpine
+
+# WORKDIR ProblemSource/AdminApp
+WORKDIR /app
+
+# nothing copied? COPY ProblemSource/AdminApp/* /
+# works, but too much copied?
+COPY ProblemSource/AdminApp/** / 
+# COPY ./ProblemSource/AdminApp/** ./
+# COPY ./ProblemSource/AdminApp/package.json ./
+# COPY ./ProblemSource/AdminApp/src/** ./src/
+# COPY package*.json ./
+
+# RUN find -maxdepth 2 -ls
+# no output..
+RUN ls -ltR 
+
+RUN npm install
+
+COPY . .
+
+RUN npm run build
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host"]

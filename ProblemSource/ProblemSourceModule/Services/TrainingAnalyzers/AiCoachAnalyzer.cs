@@ -372,7 +372,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 							AnswerCount = p.answers.Count
 						};
 					})).Where(o => o != null).ToList(); //))).ToList();
-					return tmp.OrderBy(o => o.Day).ThenBy(o => o.Time).ToList();
+					return tmp.OfType<XX>().OrderBy(o => o.Day).ThenBy(o => o.Time).ToList();
 				});
 
 			var statsByGame = tmp.ToDictionary(
