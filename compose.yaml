@@ -1,0 +1,21 @@
+services:
+  api:
+    image: "localhost/trainingapi"
+    # image: "localhost/complimentgeneratorapi"
+    ports:
+      - "9090:80"
+    depends_on:
+      - mongodb
+  mongodb:
+    image: "docker.io/mongodb/mongodb-community-server"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=user
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+    volumes:
+      - db-data:/etc/data
+      # - type: bind
+      #   source: ./data
+      #   target: /data/db
+
+volumes:
+  db-data:
