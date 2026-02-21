@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using OldDb.Models;
+//using OldDb.Models;
 
 namespace TrainingApi
 {
