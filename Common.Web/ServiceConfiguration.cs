@@ -36,7 +36,8 @@ namespace Common.Web
             if (aiConn == "SECRET" || aiConn == string.Empty)
             {
                 if (isDevelopment == false)
-                    throw new ArgumentException("InstrumentationKey not set");
+                    Console.WriteLine($"Warning: InstrumentationKey not set ({aiConn})");
+                    //throw new ArgumentException("InstrumentationKey not set");
             }
             else
             {

@@ -137,20 +137,28 @@ namespace TrainingApi
                 realTimeStartup?.Configure(webApp, "/realtime");
             }
 
-            // TODO: separate into a method
-            // static files with fallback to index.html (entry point for admin interface)
-            var cacheMaxAge = TimeSpan.FromMinutes(10);
-            var fileProvider = new FallbackFileProvider("index.html", new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "StaticFiles", "Admin")), "/admin");
-            app.UseStaticFiles(new StaticFileOptions
+            try
             {
-                ServeUnknownFileTypes = true,
-                FileProvider = fileProvider,
-                RequestPath = fileProvider.RootPath,
-                OnPrepareResponse = ctx =>
+                // TODO: separate into a method
+                // static files with fallback to index.html (entry point for admin interface)
+                var cacheMaxAge = TimeSpan.FromMinutes(10);
+                var fileProvider = new FallbackFileProvider("index.html", new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "StaticFiles", "Admin")), "/admin");
+                app.UseStaticFiles(new StaticFileOptions
                 {
-                    ctx.Context.Response.Headers.Append("Cache-Control", $"public, max-age={(int)cacheMaxAge.TotalSeconds}");
-                }
-            });
+                    ServeUnknownFileTypes = true,
+                    FileProvider = fileProvider,
+                    RequestPath = fileProvider.RootPath,
+                    OnPrepareResponse = ctx =>
+                    {
+                        ctx.Context.Response.Headers.Append("Cache-Control", $"public, max-age={(int)cacheMaxAge.TotalSeconds}");
+                    }
+                });
+            }
+            catch (DirectoryNotFoundException dEx)
+            {
+                Console.WriteLine(dEx.Message);
+            }
+
 
             app.UseAuthentication();
 
