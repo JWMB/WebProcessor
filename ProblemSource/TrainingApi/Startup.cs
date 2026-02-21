@@ -156,7 +156,7 @@ namespace TrainingApi
             }
             catch (DirectoryNotFoundException dEx)
             {
-                Console.WriteLine(dEx.Message);
+                Console.WriteLine($"Static files folder not found: {dEx.Message}");
             }
 
 
@@ -166,8 +166,8 @@ namespace TrainingApi
             {
                 app.Use(async (context, next) =>
                 {
-                    if (System.Diagnostics.Debugger.IsAttached && context.User?.Claims.Any() == false)
-                    {
+                    if (context.User?.Claims.Any() == false) // System.Diagnostics.Debugger.IsAttached
+					{
                         // For the lazy developer - swagger and test client are automatically authenticated
                         var referer = context.Request.GetTypedHeaders().Referer;
                         // when from swagger and localhost
