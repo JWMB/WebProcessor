@@ -5,14 +5,18 @@ services:
     ports:
       - "9090:80"
     depends_on:
-      - mongodb
+      - mongo
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
-  mongodb:
+      ASPNETCORE_ENVIRONMENT: Docker.Development
+      AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/?maxPoolSize=500&waitQueueSize=2500
+      # AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/?directConnection=true&serverSelectionTimeoutMS=2000
+      # AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/app_development
+      # mongodb://:27017
+  mongo:
     image: "docker.io/mongodb/mongodb-community-server"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=user
-      - MONGO_INITDB_ROOT_PASSWORD=pass
+    # environment:
+    #   - MONGO_INITDB_ROOT_USERNAME=user
+    #   - MONGO_INITDB_ROOT_PASSWORD=pass
     volumes:
       - db-data:/etc/data
       # - type: bind

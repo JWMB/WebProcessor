@@ -2,7 +2,6 @@
 using Common.Web.Services;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
@@ -108,7 +107,7 @@ namespace TrainingApi
             ServiceConfiguration.ConfigurePlugins(app, plugins);
 
             // Configure the HTTP request pipeline.
-            if (env.IsDevelopment())
+            if (env.HasDevelopmentEnvironment())
             {
                 //app.UseSwagger();
                 //app.UseSwaggerUI();
@@ -129,7 +128,11 @@ namespace TrainingApi
                 Secure = CookieSecurePolicy.Always
             });
 
-            app.UseHttpsRedirection();
+            Console.WriteLine($"EnvironmentName={env.EnvironmentName}");
+			Console.WriteLine($"HasDevelopmentEnvironment={env.HasDevelopmentEnvironment()}");
+
+			if (!env.HasEnvironmentPart("Docker"))
+                app.UseHttpsRedirection();
 
             if (app is WebApplication webApp)
             {
@@ -162,7 +165,7 @@ namespace TrainingApi
 
             app.UseAuthentication();
 
-            if (env.IsDevelopment())
+            if (env.HasDevelopmentEnvironment())
             {
                 app.Use(async (context, next) =>
                 {
@@ -172,7 +175,10 @@ namespace TrainingApi
                         var referer = context.Request.GetTypedHeaders().Referer;
                         // when from swagger and localhost
                         var autologin = referer?.AbsolutePath.Contains("/swagger/") == true
-                            || referer?.AbsoluteUri.StartsWith("http://localhost:") == true;
+                            || referer?.AbsoluteUri.StartsWith("http://localhost:") == true
+                            || referer == null;
+
+                        Console.WriteLine($"referer={referer}, autologin={autologin}");
 
                         if (!autologin)
                         {

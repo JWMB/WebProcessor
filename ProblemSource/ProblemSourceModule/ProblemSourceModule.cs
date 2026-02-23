@@ -104,6 +104,8 @@ namespace ProblemSource
             var connectionString = section["ConnectionString"]; // "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
             var database = section["Database"]; //"_Training";
 
+            Console.WriteLine($"connectionString={connectionString} database={database}");
+
 			var client = new MongoClient(connectionString);
             services.AddSingleton(sp => client.GetDatabase(database));
 
