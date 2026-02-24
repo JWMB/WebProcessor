@@ -72,6 +72,7 @@ namespace ProblemSource
 				if (config != null)
 					storageIsMongo = config["AppSettings:Storage:Type"] == "MongoDB";
             }
+
             if (storageIsMongo)
 				ConfigureForMongoDb(services, config!);
             else

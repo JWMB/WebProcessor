@@ -5,13 +5,17 @@ import path from 'path';
 
 // TODO: import.meta does not contain 'env' (import.meta.env.VITE_HTTPS does not work)
 // TODO: process.env does not contain any variables from .env files (process.env.VITE_HTTPS does not work)
-const useHttps = process.env.COMPUTERNAME !== "CND1387M7P";
+let useHttps = process.env.COMPUTERNAME !== "CND1387M7P";
+if (process.env.HTTPS === "false") useHttps = false;
+const port = process.env.PORT ? parseInt(process.env.PORT) : 5171;
+// const base = true ? "./" : undefined;
+
 const config: UserConfig = { //
 	plugins: [
 		sveltekit(),
 	].concat(useHttps ? [new Promise(res => res([basicSsl()]))] : []),
 	server: {
-		port: 5171,
+		port: port,
 		https: useHttps,
 		// proxy: {
 		// 	'/api': {
@@ -22,6 +26,7 @@ const config: UserConfig = { //
 		// 	  }
 		// }
 	},
+	// base: base,
 	resolve: { alias: { src: path.resolve('./src') } }
 };
 
