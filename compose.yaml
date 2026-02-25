@@ -6,7 +6,8 @@ services:
     depends_on:
       - api
     environment:
-      PUBLIC_LOCAL_SERVER_PATH: https://localhost:80
+      PUBLIC_LOCAL_SERVER_PATH: http://api:9090/ 
+      # https://localhost:80
       VITE_HTTPS: false
   api:
     image: "localhost/trainingapi"

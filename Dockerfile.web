@@ -1,5 +1,8 @@
 FROM node:24-alpine
 
+# podman build -t adminapp . -f Dockerfile.web
+# podman start adminapp -p 5171:5171 --name adminapp-1
+
 # WORKDIR ProblemSource/AdminApp
 WORKDIR /app
 
@@ -17,19 +20,25 @@ COPY ProblemSource/AdminApp/** /
 RUN ls -ltR 
 
 RUN npm install
-# RUN npm install -g http-server
+RUN npm install -g http-server
 # apk add curl
 
 COPY . .
 
-RUN npm run build
-
 EXPOSE 5171
+ENV PORT=5171
+# ENV PUBLIC_LOCAL_SERVER_PATH=https://kistudysync.azurewebsites.net
+
+# EXPOSE 80
+# ENV PORT=80
+
+RUN npm run build
 
 # https://stackoverflow.com/questions/61106423/how-to-put-a-svelte-app-in-a-docker-container
 # CMD [ "http-server",  "ProblemSource/AdminApp/build", "--proxy", "http://localhost:5171?"]
+CMD [ "http-server",  "ProblemSource/AdminApp/build" ]
 
-CMD ["npm", "run", "start"]
+# CMD ["npm", "run", "start"]
 # CMD ["npm", "run", "dev", "--", "--host"]
 
 # podman build -t adminapp . -f Dockerfile.web

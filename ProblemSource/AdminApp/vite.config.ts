@@ -7,6 +7,7 @@ import path from 'path';
 // TODO: process.env does not contain any variables from .env files (process.env.VITE_HTTPS does not work)
 let useHttps = process.env.COMPUTERNAME !== "CND1387M7P";
 if (process.env.HTTPS === "false") useHttps = false;
+// console.log("useHttps", useHttps, process.env);
 const port = process.env.PORT ? parseInt(process.env.PORT) : 5171;
 // const base = true ? "./" : undefined;
 
