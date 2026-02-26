@@ -24,6 +24,9 @@ services:
       - mongo
     environment:
       ASPNETCORE_ENVIRONMENT: Docker.Development
+      AppSettings:Storage:Users:0:Email: admin
+      AppSettings:Storage:Users:0:HashedPassword: admin
+      AppSettings:Storage:Users:0:Role: Admin
       AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/?maxPoolSize=500&waitQueueSize=2500
       # AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/?directConnection=true&serverSelectionTimeoutMS=2000
       # AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/app_development

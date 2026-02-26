@@ -100,15 +100,18 @@ namespace ProblemSource
 
         public void ConfigureForMongoDb(IServiceCollection services, IConfiguration config)
         {
-            var section = config.GetSection("AppSettings:Storage:MongoDB");
+            var dbConfig = services.Select(o => o.ImplementationInstance).OfType<MongoTools.MongoConfig>().FirstOrDefault();
+            if (dbConfig == null)
+            {
+				var section = config.GetSection("AppSettings:Storage:MongoDB");
+				dbConfig = new MongoTools.MongoConfig(section["ConnectionString"]!, section["Database"]!);
+                // "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
+			}
 
-            var connectionString = section["ConnectionString"]; // "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
-            var database = section["Database"]; //"_Training";
+			Console.WriteLine($"connectionString={dbConfig.ConnectionString} database={dbConfig.Database}");
 
-            Console.WriteLine($"connectionString={connectionString} database={database}");
-
-			var client = new MongoClient(connectionString);
-            services.AddSingleton(sp => client.GetDatabase(database));
+			var client = new MongoClient(dbConfig.ConnectionString);
+            services.AddSingleton(sp => client.GetDatabase(dbConfig.Database));
 
             // DocumentBase MongoDocumentWrapper
 
@@ -176,6 +179,32 @@ namespace ProblemSource
                 var queueEventDispatcher = serviceProvider.GetService<IEventDispatcher>() as AzureQueueEventDispatcher;
                 queueEventDispatcher?.Init().Wait();
             }
-        }
+
+			var storageConfig = serviceProvider.GetService<StorageConfig>();
+            if (storageConfig?.Users?.Any() == true)
+            {
+				var userRepo = serviceProvider.GetService<IUserRepository>();
+                if (userRepo != null)
+                {
+                    var users = userRepo.GetAll().Result;
+                    if (!users.Any())
+                    {
+                        foreach (var item in storageConfig.Users)
+                        {
+                            item.PasswordForHashing = item.HashedPassword;
+							userRepo.Upsert(item).Wait();
+						}
+					}
+				}
+			}
+		}
     }
+
+	public class StorageConfig
+	{
+		public string Type { get; set; } = "";
+		public List<User> Users { get; set; } = [];
+		public MongoTools.MongoConfig MongoDB { get; set; } = new("", "");
+	}
+
 }

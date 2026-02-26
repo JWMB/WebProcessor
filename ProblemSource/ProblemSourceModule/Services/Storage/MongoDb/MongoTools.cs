@@ -23,5 +23,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 			}
 			return type.Name;
         }
+
+        public record MongoConfig(string ConnectionString, string Database);
 	}
 }
