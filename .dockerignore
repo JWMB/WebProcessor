@@ -332,3 +332,6 @@
 
 # performance testing sandbox
 **/sandbox
+
+# Vite
+**/build/
