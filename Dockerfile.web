@@ -10,6 +10,8 @@ WORKDIR /app
 # works, but too much copied?
 COPY ProblemSource/AdminApp/** /
 
+# RUN rm -rf ProblemSource/AdminApp/build/_app/
+
 # COPY ./ProblemSource/AdminApp/** ./
 # COPY ./ProblemSource/AdminApp/package.json ./
 # COPY ./ProblemSource/AdminApp/src/** ./src/
@@ -35,8 +37,8 @@ ENV PORT=5171
 RUN npm run build
 
 # https://stackoverflow.com/questions/61106423/how-to-put-a-svelte-app-in-a-docker-container
-# CMD [ "http-server",  "ProblemSource/AdminApp/build", "--proxy", "http://localhost:5171?"]
-CMD [ "http-server",  "ProblemSource/AdminApp/build" ]
+CMD [ "http-server",  "ProblemSource/AdminApp/build", "--proxy", "http://localhost:5171?"]
+# CMD [ "http-server",  "ProblemSource/AdminApp/build" ]
 
 # CMD ["npm", "run", "start"]
 # CMD ["npm", "run", "dev", "--", "--host"]
