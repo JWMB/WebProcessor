@@ -23,5 +23,6 @@ export class Startup {
 }
 
 export function resolveLocalServerBaseUrl(location: Location) {
+    console.log("PUBLIC_LOCAL_SERVER_PATH", PUBLIC_LOCAL_SERVER_PATH);
     return PUBLIC_LOCAL_SERVER_PATH || location.origin;
 }

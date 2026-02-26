@@ -28,7 +28,8 @@ const config: UserConfig = { //
 		// }
 	},
 	// base: base,
-	resolve: { alias: { src: path.resolve('./src') } }
+	resolve: { alias: { src: path.resolve('./src') } },
+	// build: { rollupOptions: { cache: false} }
 };
 
 export default config;

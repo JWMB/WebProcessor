@@ -4,7 +4,7 @@ import type { LoginCredentials } from './apiClient';
 import { ApiFacade } from './apiFacade';
 import type { CurrentUserInfo } from './currentUserInfo';
 import { Assistant } from './services/assistant';
-import { resolveLocalServerBaseUrl, Startup } from './startup';
+import { resolveLocalServerBaseUrl } from './startup';
 import { SeverityLevel, type NotificationItem } from './types';
 import type { TrainingUpdateMessage } from './types.js';
 import { Realtime } from './services/realtime';
@@ -62,7 +62,7 @@ export const realtimeTrainingListener = (() => {
 
             signal.trigger(null);
             try {
-				await realtime.connect(Startup.resolveLocalServerBaseUrl(window.location));
+				await realtime.connect(resolveLocalServerBaseUrl(window.location));
 			} catch (err) {
 				console.error('error connecting', err);
 			}
