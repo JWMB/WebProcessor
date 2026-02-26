@@ -1,6 +1,7 @@
 import { goto } from "$app/navigation";
 import { base } from '$app/paths';
 import { PUBLIC_LOCAL_SERVER_PATH } from '$env/static/public'
+import { env as envDyn } from '$env/dynamic/public'
 import { ErrorHandling } from "./errorHandling";
 
 export class Startup {
@@ -24,5 +25,6 @@ export class Startup {
 
 export function resolveLocalServerBaseUrl(location: Location) {
     console.log("PUBLIC_LOCAL_SERVER_PATH", PUBLIC_LOCAL_SERVER_PATH);
-    return PUBLIC_LOCAL_SERVER_PATH || location.origin;
+    console.log("dyn", envDyn, "meta", import.meta.env);
+    return envDyn.PUBLIC_LOCAL_SERVER_PATH || PUBLIC_LOCAL_SERVER_PATH || location.origin;
 }
