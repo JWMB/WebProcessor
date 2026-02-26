@@ -7,9 +7,14 @@ services:
     depends_on:
       - api
     environment:
-      PUBLIC_LOCAL_SERVER_PATH: http://api:9090/ 
+      # none of these work :( - hard-coded in source for now...
+      PUBLIC_LOCAL_SERVER_PATH: http://api:9090
       # https://localhost:80
       VITE_HTTPS: false
+      PUBLIC_HTTPS: true
+      PUBLIC_VITE_TEST1: abc
+      VITE_TEST1: abce
+      VITE_PUBLIC_TEST1: cde
   api:
     image: "localhost/trainingapi"
     # image: "localhost/complimentgeneratorapi"
@@ -26,8 +31,8 @@ services:
   mongo:
     image: "docker.io/mongodb/mongodb-community-server"
     # environment:
-    #   - MONGO_INITDB_ROOT_USERNAME=user
-    #   - MONGO_INITDB_ROOT_PASSWORD=pass
+    #   - MONGODB_INITDB_ROOT_USERNAME_FILE=user
+    #   - MONGODB_INITDB_ROOT_PASSWORD_FILE=pass
     volumes:
       - db-data:/etc/data
       # - type: bind
