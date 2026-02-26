@@ -8,9 +8,10 @@ WORKDIR /app
 
 # nothing copied? COPY ProblemSource/AdminApp/* /
 # works, but too much copied?
-COPY ProblemSource/AdminApp/** /
+# COPY ProblemSource/AdminApp/** /
+# RUN rm -rf ./ProblemSource/AdminApp/build/_app/
 
-# RUN rm -rf ProblemSource/AdminApp/build/_app/
+COPY ProblemSource/AdminApp/package.json .
 
 # COPY ./ProblemSource/AdminApp/** ./
 # COPY ./ProblemSource/AdminApp/package.json ./
@@ -19,13 +20,23 @@ COPY ProblemSource/AdminApp/** /
 
 # RUN find -maxdepth 2 -ls
 # no output..
+RUN echo "First copy result" 
 RUN ls -ltR 
 
 RUN npm install
 RUN npm install -g http-server
 # apk add curl
 
-COPY . .
+# RUN rm -rf ./ProblemSource/AdminApp/build/_app/
+# COPY . .
+# COPY ProblemSource/AdminApp/ .
+# COPY ProblemSource/AdminApp/ ProblemSource/AdminApp/
+# RUN rm -rf ./ProblemSource/AdminApp/build/_app/
+
+COPY ProblemSource/AdminApp/ .
+
+RUN echo "Second copy result" 
+RUN ls -ltR 
 
 EXPOSE 5171
 ENV PORT=5171
@@ -36,8 +47,11 @@ ENV PORT=5171
 
 RUN npm run build
 
+
 # https://stackoverflow.com/questions/61106423/how-to-put-a-svelte-app-in-a-docker-container
-CMD [ "http-server",  "ProblemSource/AdminApp/build", "--proxy", "http://localhost:5171?"]
+CMD [ "http-server",  "build", "--proxy", "http://localhost:5171?"]
+# CMD [ "http-server",  "ProblemSource/AdminApp/build", "--proxy", "http://localhost:5171?"]
+# CMD [ "http-server",  "ProblemSource/AdminApp/build", "--proxy", "http://localhost:5171/index.html?"]
 # CMD [ "http-server",  "ProblemSource/AdminApp/build" ]
 
 # CMD ["npm", "run", "start"]

@@ -334,4 +334,4 @@
 **/sandbox
 
 # Vite
-**/build/
+# **/build/ huh, also ignored when building inside dockerfile, thought it was only during COPY... 
