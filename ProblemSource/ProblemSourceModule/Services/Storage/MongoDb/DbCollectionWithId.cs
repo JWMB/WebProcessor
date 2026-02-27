@@ -66,6 +66,19 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 			return filter;
 		}
 
+		public static BsonValue? GetValueByPath(BsonDocument document, string path)
+		{
+			var split = path.Split(".");
+			foreach (var item in split[..^1])
+			{
+				var val = document[item];
+				if (val is not BsonDocument b)
+					return null;
+				document = b;
+			}
+			return document[split.Last()];
+		}
+
 		// Func<TDocument, FilterDefinition<TDocument>> createFilter, 
 		public async Task<(IEnumerable<TDocument> Added, IEnumerable<TDocument> Updated)> Upsert(IEnumerable<TDocument> items, FilterDefinition<TDocument>? globalFilter = null)
         {
@@ -73,7 +86,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 
 			var projection = Builders<TDocument>.Projection.Include(idField); //Include("Id").
 			var tmpX = (await collection.Find(GetFilter(items, globalFilter)).Project(projection).ToListAsync())
-				.Select(o => new { Id = o["_id"].AsObjectId, SubId = o[idField]?.ToString() })
+				.Select(o => new { Id = o["_id"].AsObjectId, SubId = GetValueByPath(o, idField)?.ToString() })
 				//.Select(o => BsonSerializer.Deserialize<X>(o))
 				.Where(o => o.SubId != null).ToList();
 			if (tmpX == null)
