@@ -1,21 +1,15 @@
-﻿using Common;
-using Common.Web.Services;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using PluginModuleBase;
-using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Models;
-using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
-using ProblemSourceModule.Services.Storage.AzureTables;
 using ProblemSourceModule.Services.Storage.MongoDb;
 using ProblemSourceModule.Services.TrainingAnalyzers;
 
@@ -57,11 +51,6 @@ namespace ProblemSource
 
             services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
 
-            //            services.AddSingleton<IEventDispatcher>(sp =>
-            ////    new QueueEventDispatcher(sp.GetRequiredService<IConfiguration>().GetOrThrow<string>("AppSettings:AzureQueue:ConnectionString"), sp.GetRequiredService<ILogger<QueueEventDispatcher>>()));
-            if (services.Any(o => o.ServiceType == typeof(IEventDispatcher)) == false)
-                services.AddSingleton<IEventDispatcher, NullEventDispatcher>(); // TODO: shouldn't be needed (nullable in ProblemSourceProcessingMiddleware)
-
 			services.AddMemoryCache();
 
             services.AddSingleton<ITrainingTemplateRepository, StaticTrainingTemplateRepository>();
@@ -74,85 +63,16 @@ namespace ProblemSource
             }
 
             if (storageIsMongo)
-				ConfigureForMongoDb(services, config!);
+				new StartupMongoDb().Configure(services, config!);
             else
-				ConfigureForAzureTables(services);
+				new StartupAzureStorage().Configure(services);
+
+			if (services.Any(o => o.ServiceType == typeof(IEventDispatcher)) == false)
+				services.AddSingleton<IEventDispatcher, NullEventDispatcher>(); // TODO: shouldn't be needed (nullable in ProblemSourceProcessingMiddleware)
 
 			ConfigureUsernameHashing(services);
         }
 
-        public void ConfigureForAzureTables(IServiceCollection services, bool useCaching = true)
-        {
-            services.AddSingleton<IUserRepository, AzureTableUserRepository>();
-            services.AddSingleton<ITypedTableClientFactory, TypedTableClientFactory>();
-            services.UpsertSingleton<ITableClientFactory>(sp => sp.GetRequiredService<ITypedTableClientFactory>());
-
-			services.AddSingleton<ITrainingSummaryRepository, MongoTrainingSummaryRepository>();
-
-
-			if (useCaching)
-                services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, CachingAzureTableUserGeneratedDataRepositoriesProviderFactory>();
-            else
-                services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, AzureTableUserGeneratedDataRepositoriesProviderFactory>();
-
-            services.AddSingleton<ITrainingRepository, AzureTableTrainingRepository>();
-        }
-
-        public void ConfigureForMongoDb(IServiceCollection services, IConfiguration config)
-        {
-            var dbConfig = services.Select(o => o.ImplementationInstance).OfType<MongoTools.MongoConfig>().FirstOrDefault();
-            if (dbConfig == null)
-            {
-				var section = config.GetSection("AppSettings:Storage:MongoDB");
-				dbConfig = new MongoTools.MongoConfig(section["ConnectionString"]!, section["Database"]!);
-                // "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
-			}
-
-			Console.WriteLine($"connectionString={dbConfig.ConnectionString} database={dbConfig.Database}");
-
-			var client = new MongoClient(dbConfig.ConnectionString);
-            services.AddSingleton(sp => client.GetDatabase(dbConfig.Database));
-
-            // DocumentBase MongoDocumentWrapper
-
-            //BsonClassMap.RegisterClassMap<SubscriberRequest<MessageType1Request>>(cm => { });
-            var wrappedTypes = new[] { typeof(User), typeof(Training) }
-                .Select(o => typeof(MongoDocumentWrapper<>).MakeGenericType(o))
-                .Concat(new[] { typeof(TrainingSummary), typeof(TrainingDayAccount), typeof(Phase), typeof(PhaseStatistics) }
-                .Select(o => typeof(MongoTrainingAssociatedDocumentWrapper<>).MakeGenericType(o)));
-			// +typeof(TDocument)   { Name = "MongoTrainingAssociatedDocumentWrapper`1" FullName = "ProblemSourceModule.Services.Storage.MongoDb.MongoTrainingAssociatedDocumentWrapper`1[[ProblemSourceModule.Models.Aggregates.TrainingSummary, ProblemSourceModule, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"}
-
-			foreach (var wrappedType in wrappedTypes)
-            {
-				var cm = new BsonClassMap(wrappedType);
-                cm.AutoMap();
-				cm.SetIgnoreExtraElements(true);
-                BsonClassMap.RegisterClassMap(cm);
-			}
-
-			BsonClassMap.RegisterClassMap<object>(cm =>
-            {
-                cm.SetIgnoreExtraElements(true);
-            });
-
-            BsonClassMap.RegisterClassMap<DocumentBase>(cm =>
-            {
-                cm.AutoMap();
-				cm.SetIgnoreExtraElements(true);
-				//cm.MapIdProperty(c => c.Id)
-				//	.SetIdGenerator(MongoDB.Bson.Serialization.IdGenerators.StringObjectIdGenerator.Instance)
-				//	.SetSerializer(new MongoDB.Bson.Serialization.Serializers.StringSerializer(MongoDB.Bson.BsonType.ObjectId));
-			});
-
-            BsonSerializer.RegisterSerializer(new XObjectCustomSerializer());
-
-			services.AddSingleton<ITrainingSummaryRepository, MongoTrainingSummaryRepository>();
-			services.AddSingleton<IUserRepository, MongoUserRepository>();
-
-            services.AddSingleton<IUserGeneratedDataRepositoryProviderFactory, MongoUserGeneratedDataRepositoryProviderFactory>();
-
-			services.AddSingleton<ITrainingRepository, MongoTrainingRepository>();
-		}
 
 		public void ConfigureUsernameHashing(IServiceCollection services)
         {
@@ -206,5 +126,4 @@ namespace ProblemSource
 		public List<User> Users { get; set; } = [];
 		public MongoTools.MongoConfig MongoDB { get; set; } = new("", "");
 	}
-
 }

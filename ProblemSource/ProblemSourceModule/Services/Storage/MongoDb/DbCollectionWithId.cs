@@ -34,8 +34,9 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		public async Task<TDocument?> Get(TId id) => await (await collection.FindAsync(GetIdFilter(id))).FirstOrDefaultAsync();
 		public async Task<List<TDocument>> Get(IEnumerable<TId> ids) //=> await (await collection.FindAsync(GetIdFilter(ids))).ToListAsync();
 		{
-			var filter = GetIdFilter(ids);
-			return await (await collection.FindAsync(filter)).ToListAsync();
+			var filter = GetIdFilter(ids.ToList());
+			var find = await collection.FindAsync(filter);
+			return await find.ToListAsync();
 		}
 		public async Task<IEnumerable<TDocument>> GetAll() => await collection.Find(o => true).ToListAsync();
 

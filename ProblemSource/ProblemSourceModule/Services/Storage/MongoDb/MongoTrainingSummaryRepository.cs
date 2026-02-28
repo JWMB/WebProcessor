@@ -7,7 +7,8 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
     {
 		DbWrappedCollection<TDocument, TId> Collection { get; }
 	}
-    public class MongoTrainingSummaryRepository : /* DbWrappedCollection<TrainingSummary, int>,*/ ITrainingSummaryRepository, IMongoRepoWithCollection<TrainingSummary, int>
+
+	public class MongoTrainingSummaryRepository : /* DbWrappedCollection<TrainingSummary, int>,*/ ITrainingSummaryRepository, IMongoRepoWithCollection<TrainingSummary, int>
 	{
         private DbWrappedCollection<TrainingSummary, int> collection;
 
@@ -19,5 +20,8 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		}
 
         public async Task<List<TrainingSummary>> GetAll() => (await collection.GetAll()).ToList();
-    }
+
+		public Task<List<TrainingSummary>> GetByIds(IEnumerable<int> trainingIds)
+			=> collection.Get(trainingIds);
+	}
 }
