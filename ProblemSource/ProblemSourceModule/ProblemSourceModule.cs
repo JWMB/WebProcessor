@@ -34,15 +34,24 @@ namespace ProblemSource
                 .Where(o => !o.IsInterface)
                 .ToArray();
 
-            var pathToMLModel = "Resources/JuliaMLModel_Reg.zip"; // TODO: config
-            if (File.Exists(pathToMLModel))
+            var pathToMLModel = @"Resources\JuliaMLModel_Reg.zip"; // TODO: config
+            if (pathToMLModel != null)
             {
-				services.AddSingleton<IPredictNumberlineLevelService>(sp =>
-	                //new MLPredictNumberlineLevelService(new RemoteMLPredictor(sp.GetRequiredService<IConfiguration>().GetOrThrow<string>("MLPredictionEndpoint"), sp.GetRequiredService<IHttpClientFactory>()))
-	                new MLPredictNumberlineLevelService(new LocalMLPredictor(
-		                sp.GetRequiredService<IWebHostEnvironment>().ContentRootFileProvider.GetFileInfo(pathToMLModel)?.PhysicalPath ?? ""
-	                ))
-	                );
+				var paths = new[] { pathToMLModel }.ToList();
+				var di = new FileInfo(GetType().Assembly.Location).Directory;
+                if (di != null)
+                    paths.Add(Path.Join(di.FullName, pathToMLModel));
+                pathToMLModel = paths.FirstOrDefault(o => File.Exists(o));
+				if (pathToMLModel != null)
+                {
+                    services.AddSingleton<IPredictNumberlineLevelService>(sp =>
+                        //new MLPredictNumberlineLevelService(new RemoteMLPredictor(sp.GetRequiredService<IConfiguration>().GetOrThrow<string>("MLPredictionEndpoint"), sp.GetRequiredService<IHttpClientFactory>()))
+                        new MLPredictNumberlineLevelService(new LocalMLPredictor(
+							pathToMLModel
+							//sp.GetRequiredService<IWebHostEnvironment>().ContentRootFileProvider.GetFileInfo(pathToMLModel)?.PhysicalPath ?? ""
+                        ))
+                        );
+                }
             }
 			services.AddSingleton(sp => analyzers.Select(o => (ITrainingAnalyzer)sp.GetOrCreateInstance(o)));
 

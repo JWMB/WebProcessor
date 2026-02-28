@@ -1,8 +1,5 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using ProblemSourceModule.Services.TrainingAnalyzers;
 
 namespace TrainingApi.Controllers
 {
@@ -10,11 +7,13 @@ namespace TrainingApi.Controllers
     [Route("api/[controller]")]
     public class TestingController : ControllerBase
     {
-        private readonly ILogger<UsersController> log;
+		private readonly IPredictNumberlineLevelService predictor;
+		private readonly ILogger<UsersController> log;
 
-        public TestingController(IConfiguration configuration, ILogger<UsersController> logger)
+        public TestingController(IConfiguration configuration, IPredictNumberlineLevelService predictor, ILogger<UsersController> logger)
         {
-            log = logger;
+			this.predictor = predictor;
+			log = logger;
         }
 
         [HttpPost]
@@ -30,5 +29,20 @@ namespace TrainingApi.Controllers
         {
             log.Log(level, $"Here is a {level}");
         }
+
+        [HttpGet("predict")]
+        public async Task<IActionResult> CallPredictor()
+        {
+            var features = new ProblemSource.Models.Aggregates.MLFeaturesJulia
+            {
+                ByExercise = new Dictionary<string, ProblemSource.Models.Aggregates.MLFeaturesJulia.FeaturesForExercise>
+                {
+					["numberline"] = new() { FractionCorrect = 1 },
+					["wm_grid"] = new() { FractionCorrect = 1 },
+				}
+            };
+			var result = await predictor.Predict(features);
+            return Ok(result);
+		}
     }
 }
