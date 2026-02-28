@@ -1,0 +1,46 @@
+services:
+  app:
+    image: "localhost/adminapp"
+    ports:
+    #  - "9091:8080"
+      - "9091:5171"
+    depends_on:
+      - api
+    environment:
+      # none of these work :( - hard-coded in source for now...
+      PUBLIC_LOCAL_SERVER_PATH: http://api:9090
+      # https://localhost:80
+      VITE_HTTPS: false
+      PUBLIC_HTTPS: true
+      PUBLIC_VITE_TEST1: abc
+      VITE_TEST1: abce
+      VITE_PUBLIC_TEST1: cde
+  api:
+    image: "localhost/trainingapi"
+    # image: "localhost/complimentgeneratorapi"
+    ports:
+      - "9090:80"
+    depends_on:
+      - mongo
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker.Development
+      AppSettings:Storage:Users:0:Email: admin
+      AppSettings:Storage:Users:0:HashedPassword: admin
+      AppSettings:Storage:Users:0:Role: Admin
+      AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/?maxPoolSize=500&waitQueueSize=2500
+      # AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/?directConnection=true&serverSelectionTimeoutMS=2000
+      # AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/app_development
+      # mongodb://:27017
+  mongo:
+    image: "docker.io/mongodb/mongodb-community-server"
+    # environment:
+    #   - MONGODB_INITDB_ROOT_USERNAME_FILE=user
+    #   - MONGODB_INITDB_ROOT_PASSWORD_FILE=pass
+    volumes:
+      - db-data:/etc/data
+      # - type: bind
+      #   source: ./data
+      #   target: /data/db
+
+volumes:
+  db-data:

@@ -10,7 +10,7 @@ namespace Common.Web
 {
     public static class ServiceConfiguration
     {
-        public static void ConfigureProcessingPipelineServices(IServiceCollection services, IEnumerable<IPluginModule> pluginModules)
+        public static void ConfigureProcessingPipelineServices(IServiceCollection services, IConfiguration config, IEnumerable<IPluginModule> pluginModules)
         {
             services.AddSingleton<ITableClientFactory, TableClientFactory>(); //(sp => new TableClientFactory("vektor")
             services.AddSingleton<IDataSink, AzureTableLogSink>();
@@ -18,7 +18,7 @@ namespace Common.Web
             services.AddSingleton<SinkProcessingMiddleware>();
 
             foreach (var plugin in pluginModules)
-                plugin.ConfigureServices(services);
+                plugin.ConfigureServices(services, config);
         }
 
         public static void ConfigurePlugins(IApplicationBuilder app, IEnumerable<IPluginModule> pluginModules)
@@ -36,7 +36,8 @@ namespace Common.Web
             if (aiConn == "SECRET" || aiConn == string.Empty)
             {
                 if (isDevelopment == false)
-                    throw new ArgumentException("InstrumentationKey not set");
+                    Console.WriteLine($"Warning: InstrumentationKey not set ({aiConn})");
+                    //throw new ArgumentException("InstrumentationKey not set");
             }
             else
             {

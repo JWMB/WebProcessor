@@ -70,7 +70,10 @@
 		groups = Object.entries(groupsData).map((o) => ({ group: o[0], summaries: o[1] }));
 	}
 
+	let lastClick = 0;
 	async function onSelectGroup(groupId: string) {
+		if (Date.now() - lastClick < 50) return;
+		lastClick = Date.now();
 		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId);
 		// RealtimelineTools.testData(detailedTrainingsData.map(o => o.id)).forEach(o => rtlTools.append(o));;
 		getRealtimeData();
@@ -159,7 +162,7 @@
 			tabs={groups.map((g) => {
 				return { id: g.group };
 			})}
-			on:selected={(e) => onSelectGroup(e.detail)}
+			on:selected={(e) => { console.log(e); onSelectGroup(e.detail); }}
 			>
 
 			<button on:click={onCreateGroup}>

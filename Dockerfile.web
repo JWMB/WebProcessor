@@ -1,11 +1,18 @@
 FROM node:24-alpine
 
+# podman build -t adminapp . -f Dockerfile.web
+# podman start adminapp -p 5171:5171 --name adminapp-1
+
 # WORKDIR ProblemSource/AdminApp
 WORKDIR /app
 
 # nothing copied? COPY ProblemSource/AdminApp/* /
 # works, but too much copied?
-COPY ProblemSource/AdminApp/** / 
+# COPY ProblemSource/AdminApp/** /
+# RUN rm -rf ./ProblemSource/AdminApp/build/_app/
+
+COPY ProblemSource/AdminApp/package.json .
+
 # COPY ./ProblemSource/AdminApp/** ./
 # COPY ./ProblemSource/AdminApp/package.json ./
 # COPY ./ProblemSource/AdminApp/src/** ./src/
@@ -13,14 +20,41 @@ COPY ProblemSource/AdminApp/** /
 
 # RUN find -maxdepth 2 -ls
 # no output..
+RUN echo "First copy result" 
 RUN ls -ltR 
 
 RUN npm install
+RUN npm install -g http-server
+# apk add curl
 
-COPY . .
+# RUN rm -rf ./ProblemSource/AdminApp/build/_app/
+# COPY . .
+# COPY ProblemSource/AdminApp/ .
+# COPY ProblemSource/AdminApp/ ProblemSource/AdminApp/
+# RUN rm -rf ./ProblemSource/AdminApp/build/_app/
+
+COPY ProblemSource/AdminApp/ .
+
+RUN echo "Second copy result" 
+RUN ls -ltR 
+
+EXPOSE 5171
+ENV PORT=5171
+# ENV PUBLIC_LOCAL_SERVER_PATH=https://kistudysync.azurewebsites.net
+
+# EXPOSE 80
+# ENV PORT=80
 
 RUN npm run build
 
-EXPOSE 5173
 
-CMD ["npm", "run", "dev", "--", "--host"]
+# https://stackoverflow.com/questions/61106423/how-to-put-a-svelte-app-in-a-docker-container
+CMD [ "http-server",  "build", "--proxy", "http://localhost:5171?"]
+# CMD [ "http-server",  "ProblemSource/AdminApp/build", "--proxy", "http://localhost:5171?"]
+# CMD [ "http-server",  "ProblemSource/AdminApp/build", "--proxy", "http://localhost:5171/index.html?"]
+# CMD [ "http-server",  "ProblemSource/AdminApp/build" ]
+
+# CMD ["npm", "run", "start"]
+# CMD ["npm", "run", "dev", "--", "--host"]
+
+# podman build -t adminapp . -f Dockerfile.web

@@ -1,7 +1,6 @@
 ﻿using Azure.Data.Tables;
 using AzureTableGenerics;
 using ProblemSource.Services.Storage.AzureTables;
-using ProblemSource.Services.Storage.AzureTables.TableEntities;
 using ProblemSourceModule.Models;
 
 namespace ProblemSourceModule.Services.Storage.AzureTables
@@ -51,5 +50,11 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
             // Note: skips entries that were not found
             return values.Values.OfType<Training>();
         }
-    }
+
+		Task IRepository<Training, int>.Add(Training item) => Add(item);
+
+		Task IRepository<Training, int>.Upsert(Training item) => Upsert(item);
+
+		public Task<int> AddGetId(Training item) => throw new NotImplementedException();
+	}
 }

@@ -4,6 +4,7 @@ using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
 using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Models.Aggregates;
+using ProblemSourceModule.Services.Storage;
 
 namespace ProblemSource.Services
 {
@@ -18,12 +19,15 @@ namespace ProblemSource.Services
     public class StatisticsProvider : IStatisticsProvider
     {
         private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory;
-        private readonly ITypedTableClientFactory typedTableClientFactory;
+        private readonly ITrainingSummaryRepository trainingSummaryRepository;
 
-        public StatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory, ITypedTableClientFactory typedTableClientFactory)
+        //private readonly ITypedTableClientFactory typedTableClientFactory;
+
+        public StatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory, ITrainingSummaryRepository trainingSummaryRepository) //ITypedTableClientFactory typedTableClientFactory)
         {
             this.userGeneratedDataRepositoryProviderFactory = userGeneratedDataRepositoryProviderFactory;
-            this.typedTableClientFactory = typedTableClientFactory;
+            this.trainingSummaryRepository = trainingSummaryRepository;
+            //this.typedTableClientFactory = typedTableClientFactory;
         }
 
         private IUserGeneratedDataRepositoryProvider GetDataProvider(int trainingId) =>
@@ -35,28 +39,19 @@ namespace ProblemSource.Services
         public async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int trainingId) =>
             (await GetDataProvider(trainingId).TrainingDays.GetAll()).OrderBy(o => o.TrainingDay).ToList();
 
-        public async Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds)
-        {
-            var result = new List<TrainingSummary?>();
-            foreach (var chunk in IEnumerableExtensions.Chunk(trainingIds, 10))
-            {
-                var tasks = chunk.Select(o => GetDataProvider(o).TrainingSummaries.GetAll());
-                var resolved = await Task.WhenAll(tasks);
-                result.AddRange(resolved.SelectMany(o => o));
-            }
-            return result;
-        }
+        public async Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds) =>
+			await trainingSummaryRepository.GetByIds(trainingIds);
 
-        public async Task<List<TrainingSummary>> GetAllTrainingSummaries()
-        {
-            var q = typedTableClientFactory.TrainingSummaries.QueryAsync<TableEntity>("");
-            var converter = new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none"));
-            var result = new List<TrainingSummary>();
-            await foreach (var item in q)
-            {
-                result.Add(converter.ToPoco(item));
-            }
-            return result;
-        }
+        public Task<List<TrainingSummary>> GetAllTrainingSummaries() =>
+            trainingSummaryRepository.GetAll();
+            //var q = typedTableClientFactory.TrainingSummaries.QueryAsync<TableEntity>("");
+            //var converter = new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none"));
+            //var result = new List<TrainingSummary>();
+            //await foreach (var item in q)
+            //{
+            //    result.Add(converter.ToPoco(item));
+            //}
+            //return result;
+        //}
     }
 }

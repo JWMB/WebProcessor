@@ -2,7 +2,6 @@
 using Common.Web.Services;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
@@ -86,8 +85,8 @@ namespace TrainingApi
 
             services.AddLogging(builder =>
             {
-                builder.AddApplicationInsights();
-            });
+                builder.AddApplicationInsights(); // AddAzureWebAppDiagnostics
+			});
 
             services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
             {
@@ -108,7 +107,7 @@ namespace TrainingApi
             ServiceConfiguration.ConfigurePlugins(app, plugins);
 
             // Configure the HTTP request pipeline.
-            if (env.IsDevelopment())
+            if (env.HasDevelopmentEnvironment())
             {
                 //app.UseSwagger();
                 //app.UseSwaggerUI();
@@ -129,7 +128,11 @@ namespace TrainingApi
                 Secure = CookieSecurePolicy.Always
             });
 
-            app.UseHttpsRedirection();
+            Console.WriteLine($"EnvironmentName={env.EnvironmentName}");
+			Console.WriteLine($"HasDevelopmentEnvironment={env.HasDevelopmentEnvironment()}");
+
+			if (!env.HasEnvironmentPart("Docker"))
+                app.UseHttpsRedirection();
 
             if (app is WebApplication webApp)
             {
@@ -137,34 +140,45 @@ namespace TrainingApi
                 realTimeStartup?.Configure(webApp, "/realtime");
             }
 
-            // TODO: separate into a method
-            // static files with fallback to index.html (entry point for admin interface)
-            var cacheMaxAge = TimeSpan.FromMinutes(10);
-            var fileProvider = new FallbackFileProvider("index.html", new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "StaticFiles", "Admin")), "/admin");
-            app.UseStaticFiles(new StaticFileOptions
+            try
             {
-                ServeUnknownFileTypes = true,
-                FileProvider = fileProvider,
-                RequestPath = fileProvider.RootPath,
-                OnPrepareResponse = ctx =>
+                // TODO: separate into a method
+                // static files with fallback to index.html (entry point for admin interface)
+                var cacheMaxAge = TimeSpan.FromMinutes(10);
+                var fileProvider = new FallbackFileProvider("index.html", new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "StaticFiles", "Admin")), "/admin");
+                app.UseStaticFiles(new StaticFileOptions
                 {
-                    ctx.Context.Response.Headers.Append("Cache-Control", $"public, max-age={(int)cacheMaxAge.TotalSeconds}");
-                }
-            });
+                    ServeUnknownFileTypes = true,
+                    FileProvider = fileProvider,
+                    RequestPath = fileProvider.RootPath,
+                    OnPrepareResponse = ctx =>
+                    {
+                        ctx.Context.Response.Headers.Append("Cache-Control", $"public, max-age={(int)cacheMaxAge.TotalSeconds}");
+                    }
+                });
+            }
+            catch (DirectoryNotFoundException dEx)
+            {
+                Console.WriteLine($"Static files folder not found: {dEx.Message}");
+            }
+
 
             app.UseAuthentication();
 
-            if (env.IsDevelopment())
+            if (env.HasDevelopmentEnvironment())
             {
                 app.Use(async (context, next) =>
                 {
-                    if (System.Diagnostics.Debugger.IsAttached && context.User?.Claims.Any() == false)
-                    {
+                    if (context.User?.Claims.Any() == false) // System.Diagnostics.Debugger.IsAttached
+					{
                         // For the lazy developer - swagger and test client are automatically authenticated
                         var referer = context.Request.GetTypedHeaders().Referer;
                         // when from swagger and localhost
                         var autologin = referer?.AbsolutePath.Contains("/swagger/") == true
-                            || referer?.AbsoluteUri.StartsWith("http://localhost:") == true;
+                            || referer?.AbsoluteUri.StartsWith("http://localhost:") == true
+                            || referer == null;
+
+                        Console.WriteLine($"referer={referer}, autologin={autologin}");
 
                         if (!autologin)
                         {
@@ -218,7 +232,7 @@ namespace TrainingApi
 
             var plugins = new IPluginModule[] { new ProblemSource.ProblemSourceModule() };
             services.AddSingleton<ITableClientFactory, TableClientFactory>();
-            ServiceConfiguration.ConfigureProcessingPipelineServices(services, plugins);
+            ServiceConfiguration.ConfigureProcessingPipelineServices(services, config, plugins);
             return plugins;
         }
 

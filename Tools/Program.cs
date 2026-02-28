@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using ProblemSource;
 using ProblemSource.Services;
 using ProblemSource.Services.Storage;
@@ -19,8 +20,6 @@ using Tools;
 
 var config = CreateConfig();
 
-//var azureTableSection = config.GetRequiredSection("AppSettings:AzureTable");
-//var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(azureTableSection);
 var serviceProvider = InititalizeServices(config);
 
 Console.WriteLine("Run tooling?");
@@ -43,6 +42,24 @@ var cancellationToken = cts.Token;
 
 var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
 
+IMongoDatabase? mongoDb;
+{
+	var connectionString = "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
+	var database = "_Training";
+	var client = new MongoClient(connectionString);
+    mongoDb = client.GetDatabase(database);
+
+    MongoDB.Bson.Serialization.BsonSerializer.RegisterSerializer(new ProblemSourceModule.Services.Storage.MongoDb.XObjectCustomSerializer());
+    //MongoDB.Bson.Serialization.BsonSerializer.RegisterSerializer(new ProblemSourceModule.Services.Storage.MongoDb.JObjectCustomSerializer());
+
+    var migrator = new MigrateToMongoDb(serviceProvider.GetRequiredService<ITypedTableClientFactory>(),
+        serviceProvider.GetRequiredService<ITrainingRepository>(),
+		serviceProvider.GetRequiredService<IUserRepository>(),
+		mongoDb);
+    await migrator.Migrate();
+}
+
+//await TrainingMod.ModifyTimeSpent(42434, serviceProvider.GetRequiredService<ITypedTableClientFactory>());
 //await new FixAzureTableQuotedDateTime(serviceProvider.GetRequiredService<AzureTableConfig>().ConnectionString)
 //    .Fix(new Dictionary<string, List<(string, Type)>> {
 //        { 
@@ -173,6 +190,7 @@ if (false)
 
 //var emails = BatchMail.ReadEmailFile(Path.Combine(path, "TeacherEmailsWithRejections.txt"));
 var emails = @"
+jonas.beckeman+123@gmail.com
 ".Split('\n').SelectMany(o => o.Split(';')).Select(o => o.Trim().ToLower()).Where(o => o.Any());
 var creator = serviceProvider.CreateInstance<BatchCreateUsers>();
 
@@ -239,10 +257,11 @@ IServiceProvider InititalizeServices(IConfigurationRoot config)
     services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
 
     var module = new ProblemSource.ProblemSourceModule();
-    module.ConfigureServices(services);
+    module.ConfigureServices(services, config);
     var serviceProvider = services.BuildServiceProvider();
-    module.Configure(new App(serviceProvider));
-    return serviceProvider;
+    module.Configure(new App(serviceProvider), initAzureStorage: true);
+
+	return serviceProvider;
 }
 
 class App : IApplicationBuilder

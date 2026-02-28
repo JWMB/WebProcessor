@@ -73,9 +73,13 @@ namespace ProblemSourceModule.Models
             var result = new Dictionary<string, List<(int, Training, TrainingSummary?)>>();
 
             foreach (var kv in this)
-                result.Add(kv.Key, kv.Value.Select(id => (id, trainings.Single(o => o.Id == id), summaries.SingleOrDefault(o => o?.Id == id))).ToList());
+            {
+                var trainingsInGroup = kv.Value.Select(id => trainings.SingleOrDefault(o => o.Id == id)).OfType<Training>();
+                // TODO: note missing trainings
+				result.Add(kv.Key, trainingsInGroup.Select(training => (training.Id, training, summaries.SingleOrDefault(o => o?.Id == training.Id))).ToList());
+			}
 
-            return result;
+			return result;
         }
 
         public async Task<Dictionary<string, List<Training>>> RemoveUnusedFromGroups(int numTrainings, string exceptGroup, ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
