@@ -42,21 +42,24 @@ var cancellationToken = cts.Token;
 
 var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
 
-IMongoDatabase? mongoDb;
+if (false)
 {
-	var connectionString = "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
-	var database = "_Training";
-	var client = new MongoClient(connectionString);
-    mongoDb = client.GetDatabase(database);
+    IMongoDatabase? mongoDb;
+    {
+        var connectionString = "mongodb://localhost:27017/?maxPoolSize=500&waitQueueSize=2500";
+        var database = "_Training";
+        var client = new MongoClient(connectionString);
+        mongoDb = client.GetDatabase(database);
 
-    MongoDB.Bson.Serialization.BsonSerializer.RegisterSerializer(new ProblemSourceModule.Services.Storage.MongoDb.XObjectCustomSerializer());
-    //MongoDB.Bson.Serialization.BsonSerializer.RegisterSerializer(new ProblemSourceModule.Services.Storage.MongoDb.JObjectCustomSerializer());
+        MongoDB.Bson.Serialization.BsonSerializer.RegisterSerializer(new ProblemSourceModule.Services.Storage.MongoDb.XObjectCustomSerializer());
+        //MongoDB.Bson.Serialization.BsonSerializer.RegisterSerializer(new ProblemSourceModule.Services.Storage.MongoDb.JObjectCustomSerializer());
 
-    var migrator = new MigrateToMongoDb(serviceProvider.GetRequiredService<ITypedTableClientFactory>(),
-        serviceProvider.GetRequiredService<ITrainingRepository>(),
-		serviceProvider.GetRequiredService<IUserRepository>(),
-		mongoDb);
-    await migrator.Migrate();
+        var migrator = new MigrateToMongoDb(serviceProvider.GetRequiredService<ITypedTableClientFactory>(),
+            serviceProvider.GetRequiredService<ITrainingRepository>(),
+            serviceProvider.GetRequiredService<IUserRepository>(),
+            mongoDb);
+        await migrator.Migrate();
+    }
 }
 
 //await TrainingMod.ModifyTimeSpent(42434, serviceProvider.GetRequiredService<ITypedTableClientFactory>());
