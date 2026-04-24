@@ -43,6 +43,8 @@ var cancellationToken = cts.Token;
 
 var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
 
+await serviceProvider.GetRequiredService<TeacherOverview>().X();
+
 //await new FixAzureTableQuotedDateTime(serviceProvider.GetRequiredService<AzureTableConfig>().ConnectionString)
 //    .Fix(new Dictionary<string, List<(string, Type)>> {
 //        { 
@@ -227,8 +229,8 @@ IServiceProvider InititalizeServices(IConfigurationRoot config)
     services.AddSingleton<AzureQueueConfig>();
     services.AddTransient(sp => TypedConfiguration.Bind<AzureTableConfig>(section));
     services.AddScoped<IStatisticsProvider, StatisticsProvider>();
-
-    services.AddSingleton<CreateUserWithTrainings>();
+	services.AddSingleton<TeacherOverview>();
+	services.AddSingleton<CreateUserWithTrainings>();
 
     var loggerFactory = LoggerFactory.Create(builder =>
     {
