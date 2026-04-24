@@ -84,6 +84,8 @@ namespace ProblemSource
                     }
 
                     var isValidationOnly = root.SessionToken == "validate";
+                    if ((root.Uuid.StartsWith("test") || root.Uuid.StartsWith("auto_")) && System.Diagnostics.Debugger.IsAttached)
+                    { }
                     if (!usernameHashing.TryGetTrainingIdFromUsername(root.Uuid, isValidationOnly, out var trainingId2)) // TODO: co-opting SessionToken for now
                     {
                         result = new SyncResult { error = $"Username not found ({root.Uuid})" };

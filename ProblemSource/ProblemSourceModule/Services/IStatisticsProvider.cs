@@ -44,14 +44,5 @@ namespace ProblemSource.Services
 
         public Task<List<TrainingSummary>> GetAllTrainingSummaries() =>
             trainingSummaryRepository.GetAll();
-            //var q = typedTableClientFactory.TrainingSummaries.QueryAsync<TableEntity>("");
-            //var converter = new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none"));
-            //var result = new List<TrainingSummary>();
-            //await foreach (var item in q)
-            //{
-            //    result.Add(converter.ToPoco(item));
-            //}
-            //return result;
-        //}
     }
 }
