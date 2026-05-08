@@ -9,13 +9,13 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 	public class AiCoachAnalyzer : ITrainingAnalyzer
 	{
 		public async Task<string> CreatePrompt(Training training, IUserGeneratedDataRepositoryProvider provider,
-			IEnumerable<(Training Training, IUserGeneratedDataRepositoryProvider Provider)> referenceTrainingProviders)
+			IEnumerable<(Training Training, IUserGeneratedDataRepositoryProvider Provider)> referenceTrainingProviders, int? cutoffDay = null)
 		{
 			// TODO: data from... where?
 			var generalPlan = """
 				* 5 sessions per week, except holiday weeks
-				* Thursday sessions will be in a noisy setting
 				""".Trim();
+			// 	* Thursday sessions will be in a noisy setting
 
 			var audience = $"a parent of the trainee (who is {training.AgeBracket} years old)"; // $"the trainee, {training.AgeBracket} years old";
 
@@ -39,6 +39,12 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 			var stdDevProvider = normProviders.FirstOrDefault(o => o.Training.Username.EndsWith("_stddev")).Provider;
 
 			var allDays = (await provider.TrainingDays.GetAll()).OrderBy(o => o.TrainingDay).ToList();
+			var today = DateTime.Today;
+			if (cutoffDay.HasValue)
+			{
+				allDays = allDays.Where(o => o.TrainingDay <= cutoffDay.Value).ToList();
+				today = allDays.MaxBy(o => o.TrainingDay)?.StartTime.Date ?? DateTime.Today;
+			}
 			{
 				// TODO: temp
 				var tmt = allDays.TakeLast(5).FirstOrDefault()?.StartTime;
@@ -99,11 +105,19 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
 			var latestDay = allDays.Max(o => o.TrainingDay);
 			var stats = (await provider.PhaseStatistics.GetAll()).OrderBy(o => o.training_day).ToList();
+			if (cutoffDay.HasValue)
+			{
+				stats = stats.Where(o => o.training_day <= cutoffDay.Value).ToList();
+			}
 
 			var excludeExercises = new[] { "mathtest", "numbercomparison" };
 
 			var normDays = normProvider == null ? [] : (await normProvider.TrainingDays.GetAll()).ToList();
 			var normStats = normProvider == null ? [] : (await normProvider.PhaseStatistics.GetAll()).ToList();
+
+			if (cutoffDay.HasValue)
+			{
+			}
 
 			var timePerSession = allDays.Select(o => {
 				var n = normDays.SingleOrDefault(p => p.TrainingDay == o.TrainingDay);
@@ -183,7 +197,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
 			// TODO: Global evaluation vs last N sessions
 			var prompt = $"""
-				Today is {DateTime.Today:yyyy-MM-dd}. You are acting as a training coach, giving advice to a user of a cognitive training app on how to optimize their training.
+				Today is {today:yyyy-MM-dd}. You are acting as a training coach, giving advice to a user of a cognitive training app on how to optimize their training.
 				The user is {training.AgeBracket} years old.
 
 				Given the data below (for training id {training.Id}), try to assess of how the training is progressing.
@@ -219,6 +233,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 				For each session:
 				* how long was it ({"DurationMinutes"}) versus how long it should be ({"ExpectedMinutes"})
 				* how much time was spent actively solving problems ({"ActivePercentage"}) - the norm (if available) for the age group is "{"ActivePercentageAgeNorm"}"
+				Note that very long DurationMinutes can mean that the user went and did something else for a while, or forgot to end the training session.
 				{ToMarkdownTable(timePerSession)}
 
 				{(plannedSessions.Any() ? $"""

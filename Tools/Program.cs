@@ -43,7 +43,7 @@ var cancellationToken = cts.Token;
 
 var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
 
-await serviceProvider.GetRequiredService<TeacherOverview>().X();
+//await serviceProvider.GetRequiredService<TeacherOverview>().X();
 
 //await new FixAzureTableQuotedDateTime(serviceProvider.GetRequiredService<AzureTableConfig>().ConnectionString)
 //    .Fix(new Dictionary<string, List<(string, Type)>> {
@@ -99,6 +99,41 @@ await serviceProvider.GetRequiredService<TeacherOverview>().X();
 //    await copier.CopyPhases(srcProviderFactory.Create(srcId), dstId, p => p.training_day <= 4, deleteInDst: p => true);
 //}
 
+if (false)
+{
+	var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();
+	var allTrainings = await trainingRepository.GetAll();
+	var normedTrainings = allTrainings.Where(o => o.Username.StartsWith("norm_"));
+
+	var normedProviders = normedTrainings
+		//.Where(o => o.AgeBracket == "6-7") //5-6 8-9
+		.Select(o => (o, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(o.Id)));
+
+	var ugdrpf = serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>();
+	var analyzer = new AiCoachAnalyzer();
+    var idAndDayCutoffs = new Dictionary<int, List<int?>> {
+        //[30562] = [15],
+        //[29124] = [10, 18, 40]
+        [40150] = [null],
+    };
+    foreach (var (id, cutoffs) in idAndDayCutoffs)
+    {
+        var training = allTrainings.FirstOrDefault(o => o.Id == id);
+        if (training == null)
+            continue;
+        foreach (var dayCutoff in cutoffs)
+        {
+			try
+			{
+				var prompt = await analyzer.CreatePrompt(training, ugdrpf.Create(training.Id), normedProviders, dayCutoff);
+                var file = Path.Join(path, $"prompt_{id}_day{(dayCutoff.HasValue ? dayCutoff.Value.ToString() : "s")}.txt");
+				File.WriteAllText(file, prompt);
+			}
+			catch (Exception ex)
+			{ }
+		}
+	}
+}
 if (false)
 {
 	var azConfig = config.GetSection("LlmServices:Azure")!;
