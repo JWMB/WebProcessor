@@ -330,7 +330,8 @@ namespace ProblemSourceModule.Tests
 
             var bracketProviders = new[] { (training, repoProvider.Object) };
 
-			var prompt = await sut.CreatePrompt(training, repoProvider.Object, bracketProviders);
+			var replacements = await sut.CreateReplacements(training, repoProvider.Object, bracketProviders);
+			var prompt = await sut.CreatePrompt(replacements);
 
 			List<PhaseStatistics> CreatePhaseStatistics(IEnumerable<string> exercises, decimal level, int toTrainingDay)
 			{
