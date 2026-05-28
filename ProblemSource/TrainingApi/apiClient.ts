@@ -665,7 +665,7 @@ export class TrainingsClient {
         return Promise.resolve<TrainingSummaryWithDaysDto[]>(null as any);
     }
 
-    getAiAnalysis(trainingId: number | undefined, templateSource: string | undefined): Promise<ValueTupleOfStringAndString> {
+    getAiAnalysis(trainingId: number | undefined, templateSource: string | undefined): Promise<AnalysisDto> {
         let url_ = this.baseUrl + "/api/Trainings/analysis?";
         if (trainingId === null)
             throw new globalThis.Error("The parameter 'trainingId' cannot be null.");
@@ -689,13 +689,13 @@ export class TrainingsClient {
         });
     }
 
-    protected processGetAiAnalysis(response: Response): Promise<ValueTupleOfStringAndString> {
+    protected processGetAiAnalysis(response: Response): Promise<AnalysisDto> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ValueTupleOfStringAndString;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AnalysisDto;
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -703,7 +703,7 @@ export class TrainingsClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ValueTupleOfStringAndString>(null as any);
+        return Promise.resolve<AnalysisDto>(null as any);
     }
 }
 
@@ -1471,7 +1471,9 @@ export interface TrainingSummaryWithDaysDto extends TrainingSummaryDto {
     days: TrainingDayAccount[];
 }
 
-export interface ValueTupleOfStringAndString {
+export interface AnalysisDto {
+    prompt: string;
+    completion: string;
 }
 
 export interface GetUserDto {

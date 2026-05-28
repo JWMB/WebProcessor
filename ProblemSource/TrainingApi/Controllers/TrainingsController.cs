@@ -326,7 +326,7 @@ namespace TrainingApi.Controllers
 
         [HttpGet]
         [Route("analysis")]
-        public async Task<(string Prompt, string Completion)> GetAiAnalysis(int trainingId, string templateSource)
+        public async Task<AnalysisDto> GetAiAnalysis(int trainingId, string templateSource)
         {
 			var currentUser = userProvider.UserOrThrow;
             if (!currentUser.Trainings.GetAllIds().Contains(trainingId))
@@ -347,8 +347,10 @@ namespace TrainingApi.Controllers
                 completion = $"{ex.GetType().Name}: {ex.Message}";
             }
 
-			return (prompt, completion);
+			return new(prompt, completion);
         }
+
+        public record AnalysisDto(string Prompt, string Completion);
 
         private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null, User? user = null)
         {

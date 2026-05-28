@@ -553,7 +553,7 @@
             "x-nullable": false,
             "description": "",
             "schema": {
-              "$ref": "#/definitions/ValueTupleOfStringAndString"
+              "$ref": "#/definitions/AnalysisDto"
             }
           }
         }
@@ -1536,8 +1536,20 @@
         }
       ]
     },
-    "ValueTupleOfStringAndString": {
-      "type": "object"
+    "AnalysisDto": {
+      "type": "object",
+      "required": [
+        "prompt",
+        "completion"
+      ],
+      "properties": {
+        "prompt": {
+          "type": "string"
+        },
+        "completion": {
+          "type": "string"
+        }
+      }
     },
     "GetUserDto": {
       "type": "object",

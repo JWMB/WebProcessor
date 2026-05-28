@@ -19,6 +19,15 @@
 
 	// const showRealtimeButton = false; // For now, don't show it at all...
 	const showRealtimeButton = $userStore?.role == "Admin";
+	const showAIButton = $userStore?.role == "Admin";
+	let aiDialogForId: number | null = null;
+	const promptSettings = {
+		template: "https://github.com/JWMB/WebProcessor",
+		model: "qwen3.1",
+		prompt: "(Generated prompt goes here)",
+		completion: "(Generated completion goes here)"
+	};
+
 	const rtlTools = new RealtimelineTools(2 * 60 * 1000);
 
 	let realtimeConnected: boolean | null = rtlTools.isConnected;
@@ -142,6 +151,17 @@
 			}
 		});
 	}
+
+	async function generatePrompt(id: number, templateSource: string) {
+		if (apiFacade == null) {
+			console.error('apiFacade null');
+			return;
+		}
+		const analysis = await apiFacade.trainings.getAiAnalysis(id, templateSource);
+		console.log("asd", analysis);
+		promptSettings.completion = analysis.completion;
+		promptSettings.prompt = analysis.prompt;
+	}
 </script>
 
 <div class="teacher-view">
@@ -238,6 +258,9 @@
 					</td>
 					{/each}
 					<td>
+						{#if showAIButton}
+						<input type="button" value="AI" on:click={() => aiDialogForId = t.id}/>
+						{/if}
 						{#if getRealtimeDataForId(t.id).length}
 						<Realtimeline history={getRealtimeDataForId(t.id)} getPositioning={RealtimelineTools.createPositioningFunction(5 * 60 * 1000)} ></Realtimeline>
 						{/if}
@@ -249,9 +272,57 @@
 			{/each}
 		</table>
 	{/if}
+	{#if aiDialogForId}
+	<div class="modal">
+		<div class="contents">
+			<h2>{aiDialogForId}</h2>
+			<label for="template">Template</label>
+			<input name="template" type="text" bind:value={promptSettings.template}/>
+
+			------
+			<input type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template) }} value="Generate prompt ⬇️"/>
+			<textarea rows="8" cols="100">{promptSettings.template}</textarea>
+
+			------
+
+			<input type="button" on:click={() => { aiDialogForId = null; }} value="Send to LLM ⬇️"/>
+			<label for="model">Model</label>
+			<input name="model" type="text"/>
+			<textarea rows="8" cols="100">{promptSettings.completion}</textarea>
+			------
+
+			<input type="button" on:click={() => { aiDialogForId = null; }} value="Close"/>
+		</div>
+	</div>
+	{/if}
 </div>
 
 <style>
+	.modal {
+		z-index: 10;
+		position: fixed;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		left: 0;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		/* allow click-through to backdrop */
+		pointer-events: none;
+	}
+	.contents {
+		min-width: 240px;
+		border-radius: 6px;
+		padding: 16px;
+		background: white;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		pointer-events: auto;
+	}
+
+
 	.teacher-view {
 		padding: 20px;
 	}

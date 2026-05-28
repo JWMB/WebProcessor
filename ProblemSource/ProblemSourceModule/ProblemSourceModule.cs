@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Common.LLM;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,8 +56,11 @@ namespace ProblemSource
             }
 			services.AddSingleton(sp => analyzers.Select(o => (ITrainingAnalyzer)sp.GetOrCreateInstance(o)));
             services.AddSingleton<AiCoachAnalyzer>();
+            services.AddSingleton(sp => new LlmModelSpecification());
+			services.AddSingleton(sp => new LlmServiceSpecification());
+			services.AddSingleton<ILlmService, AzureOpenAIRESTService>();
 
-            services.AddSingleton<TrainingAnalyzerCollection>();
+			services.AddSingleton<TrainingAnalyzerCollection>();
             //services.AddSingleton<TrainingAnalyzerCollection>(sp => new TrainingAnalyzerCollection(new[] { }, sp.GetRequiredService<>));
 
             services.AddSingleton<IClientSessionManager, InMemorySessionManager>();
