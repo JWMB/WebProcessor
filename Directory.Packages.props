@@ -10,16 +10,16 @@
     <PackageVersion Include="AutoBogus.FakeItEasy" Version="2.13.1" />
     <PackageVersion Include="AutoFixture" Version="4.18.1" />
     <PackageVersion Include="AutoFixture.AutoMoq" Version="4.18.1" />
-	<PackageVersion Include="Azure.Core" Version="1.51.1" />
+    <PackageVersion Include="Azure.Core" Version="1.51.1" />
     <PackageVersion Include="Azure.Data.Tables" Version="12.11.0" />
     <PackageVersion Include="Azure.Storage.Queues" Version="12.25.0" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="ClosedXML" Version="0.105.0" />
-    <PackageVersion Include="coverlet.collector" Version="8.0.0" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <PackageVersion Include="CsvHelper" Version="33.1.0" />
     <PackageVersion Include="DeepCloner" Version="0.10.4" />
     <PackageVersion Include="EphemeralMongo7" Version="2.0.0" />
-    <PackageVersion Include="Google.Apis.Gmail.v1" Version="1.68.0.3427" />
+    <PackageVersion Include="Google.Apis.Gmail.v1" Version="1.74.0.4148" />
     <PackageVersion Include="JWMB.AzureTableGenerics" Version="0.0.6-preview.10" />
     <PackageVersion Include="Microsoft.ApplicationInsights" Version="2.23.0" />
     <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
@@ -33,13 +33,13 @@
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.0" />
     <PackageVersion Include="Microsoft.Azure.WebJobs" Version="3.0.41" />
     <PackageVersion Include="Microsoft.Azure.WebJobs.Logging.ApplicationInsights" Version="3.0.41" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
     <PackageVersion Include="Microsoft.Data.Analysis" Version="0.23.0" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.1.4" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.3" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.3" />
@@ -60,7 +60,7 @@
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.0.0" />
     <PackageVersion Include="System.Data.SqlClient" Version="4.9.1" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
     <PackageVersion Include="System.Text.Encodings.Web" Version="10.0.3" />
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
