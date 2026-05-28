@@ -1,5 +1,5 @@
 {
-  "x-generator": "NSwag v13.19.0.0 (NJsonSchema v10.9.0.0 (Newtonsoft.Json v13.0.0.0))",
+  "x-generator": "NSwag v14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))",
   "swagger": "2.0",
   "info": {
     "title": "My Title",
@@ -142,6 +142,23 @@
         "responses": {
           "200": {
             "description": ""
+          }
+        }
+      }
+    },
+    "/api/Testing/predict": {
+      "get": {
+        "tags": [
+          "Testing"
+        ],
+        "operationId": "Testing_CallPredictor",
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
           }
         }
       }
@@ -353,6 +370,15 @@
           "application/json",
           "text/json"
         ],
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "returnOnlyDefaultTemplate",
+            "in": "query",
+            "default": true,
+            "x-nullable": false
+          }
+        ],
         "responses": {
           "200": {
             "x-nullable": false,
@@ -496,6 +522,43 @@
         }
       }
     },
+    "/api/Trainings/analysis": {
+      "get": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_GetAiAnalysis",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "trainingId",
+            "in": "query",
+            "format": "int32",
+            "x-nullable": false
+          },
+          {
+            "type": "string",
+            "name": "templateSource",
+            "in": "query",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/ValueTupleOfStringAndString"
+            }
+          }
+        }
+      }
+    },
     "/api/Users": {
       "get": {
         "tags": [
@@ -601,6 +664,63 @@
             "name": "id",
             "in": "path",
             "required": true,
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GetUserDto"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/trainingUsername/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_GetTrainingUsername",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "format": "int32",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/getOrCreate": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_GetOrCreateFromApp",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "username",
+            "in": "query",
             "x-nullable": false
           }
         ],
@@ -1097,6 +1217,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "redirectToClient": {
+          "type": "string"
         }
       }
     },
@@ -1412,6 +1535,9 @@
           }
         }
       ]
+    },
+    "ValueTupleOfStringAndString": {
+      "type": "object"
     },
     "GetUserDto": {
       "type": "object",

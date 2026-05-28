@@ -1,3 +1,4 @@
+using Common.LLM;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProblemSource.Models;
@@ -8,6 +9,7 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
+using ProblemSourceModule.Services.TrainingAnalyzers;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
 
@@ -21,7 +23,9 @@ namespace TrainingApi.Controllers
         private readonly ITrainingPlanRepository trainingPlanRepository;
         private readonly ITrainingRepository trainingRepository;
         private readonly ITrainingTemplateRepository trainingTemplateRepository;
-        private readonly IStatisticsProvider statisticsProvider;
+		private readonly AiCoachAnalyzer aiAnalyzer;
+		private readonly ILlmService llmService;
+		private readonly IStatisticsProvider statisticsProvider;
         private readonly IUserRepository userRepository;
         private readonly ICurrentUserProvider userProvider;
         private readonly ITrainingUsernameService trainingUsernameService;
@@ -33,8 +37,8 @@ namespace TrainingApi.Controllers
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
             IUserRepository userRepository, ICurrentUserProvider userProvider, ITrainingUsernameService trainingUsernameService, 
             IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
-            ITrainingTemplateRepository trainingTemplateRepository,
-            ILogger<AggregatesController> logger)
+            ITrainingTemplateRepository trainingTemplateRepository, AiCoachAnalyzer aiAnalyzer, ILlmService llmService,
+			ILogger<AggregatesController> logger)
         {
             this.trainingPlanRepository = trainingPlanRepository;
             this.trainingRepository = trainingRepository;
@@ -45,7 +49,9 @@ namespace TrainingApi.Controllers
             this.aggregationService = aggregationService;
             this.dataRepoFactory = dataRepoFactory;
             this.trainingTemplateRepository = trainingTemplateRepository;
-            log = logger;
+			this.aiAnalyzer = aiAnalyzer;
+			this.llmService = llmService;
+			log = logger;
         }
 
         [HttpPost]
@@ -316,6 +322,32 @@ namespace TrainingApi.Controllers
             return trainings.Select(training => 
                 TrainingSummaryWithDaysDto.Create(training, summaries.FirstOrDefault(o => o?.Id == training.Id), daysById.GetValueOrDefault(training.Id, new List<TrainingDayAccount>()))
             ).ToList();
+        }
+
+        [HttpGet]
+        [Route("analysis")]
+        public async Task<(string Prompt, string Completion)> GetAiAnalysis(int trainingId, string templateSource)
+        {
+			var currentUser = userProvider.UserOrThrow;
+            if (!currentUser.Trainings.GetAllIds().Contains(trainingId))
+                throw new UnauthorizedAccessException();
+
+			var training = await trainingRepository.Get(trainingId);
+            var replacements = await aiAnalyzer.CreateReplacements(trainingId);
+            var template = await aiAnalyzer.GetResource(new Uri(templateSource));
+            var prompt = await aiAnalyzer.CreatePrompt(template, replacements);
+            var completion = "N/A";
+            try
+            {
+				var result = await llmService.Invoke(prompt);
+                completion = result?.Completion ?? "<No completion>";
+            }
+            catch (Exception ex)
+            {
+                completion = $"{ex.GetType().Name}: {ex.Message}";
+            }
+
+			return (prompt, completion);
         }
 
         private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null, User? user = null)

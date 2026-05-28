@@ -4,11 +4,23 @@ using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Services.Storage;
 
 namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
 	public class AiCoachAnalyzer : ITrainingAnalyzer
 	{
+		private readonly IUserGeneratedDataRepositoryProviderFactory userDataProviderFactory;
+		private readonly ITrainingRepository trainingRepository;
+		private readonly IHttpClientFactory httpClientFactory;
+
+		public AiCoachAnalyzer(IUserGeneratedDataRepositoryProviderFactory userDataProviderFactory, ITrainingRepository trainingRepository, IHttpClientFactory httpClientFactory)
+		{
+			this.userDataProviderFactory = userDataProviderFactory;
+			this.trainingRepository = trainingRepository;
+			this.httpClientFactory = httpClientFactory;
+		}
+
 		public static List<T> ReadAnonymous<T>(T instance, string data, bool hasHeader = true, string delimiter = "\t")
 		{
 			using var reader = new StringReader(data);
@@ -30,6 +42,22 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 				MissingFieldFound = args => { }
 			});
 			return csvReader.GetRecords<T>().ToList();
+		}
+
+		public async Task<string> GetResource(Uri template)
+		{
+			var client = httpClientFactory.CreateClient();
+			var result = await client.GetAsync(template);
+			result.EnsureSuccessStatusCode();
+			return await result.Content.ReadAsStringAsync();
+		}
+
+		public async Task<string> CreatePrompt(string template, Dictionary<string, object> replacements)
+		{
+			var rendered = new Replacer().Execute(template, replacements, null, [
+				("MarkdownTable", (object items) => ToMarkdownTable(items)),
+				]);
+			return rendered;
 		}
 
 		public async Task<string> CreatePrompt(Dictionary<string, object> replacements)
@@ -113,7 +141,22 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 			return obj.ToString() ?? "";
 		}
 
+		public async Task<Dictionary<string, object>> CreateReplacements(int trainingId)
+		{
+			var training = await trainingRepository.Get(trainingId);
+			if (training == null)
+				throw new ArgumentException();
 
+			var normedProviders = new List<(Training, IUserGeneratedDataRepositoryProvider)>();
+			var norms = new[] { $"norm_{training.AgeBracket}", $"norm_{training.AgeBracket}_stddev" };
+			foreach (var n in norms)
+			{
+				var t = await trainingRepository.GetByUsername(n);
+				if (t != null)
+					normedProviders.Add((t, userDataProviderFactory.Create(t.Id)));
+			}
+			return await CreateReplacements(training, userDataProviderFactory.Create(trainingId), normedProviders);
+		}
 
 		public async Task<Dictionary<string, object>> CreateReplacements(Training training, IUserGeneratedDataRepositoryProvider provider,
 			IEnumerable<(Training Training, IUserGeneratedDataRepositoryProvider Provider)> referenceTrainingProviders, int? cutoffDay = null)

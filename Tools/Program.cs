@@ -117,6 +117,9 @@ if (false)
 //    await copier.CopyPhases(srcProviderFactory.Create(srcId), dstId, p => p.training_day <= 4, deleteInDst: p => true);
 //}
 
+var analyzer = new AiCoachAnalyzer(serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>(),
+    serviceProvider.GetRequiredService<ITrainingRepository>(), serviceProvider.GetRequiredService<IHttpClientFactory>());
+
 if (false)
 {
 	var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();
@@ -128,7 +131,6 @@ if (false)
 		.Select(o => (o, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(o.Id)));
 
 	var ugdrpf = serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>();
-	var analyzer = new AiCoachAnalyzer();
     var idAndDayCutoffs = new Dictionary<int, List<int?>> {
         //[30562] = [15],
         //[29124] = [10, 18, 40]
@@ -169,7 +171,6 @@ if (true)
 	var tmp = AiCoachAnalyzer.GetTrialAnalysis(await ugdr.Phases.GetAll());
 
 	var tool = new TrainingStatsTools(serviceProvider);
-    var analyzer = new AiCoachAnalyzer();
     //await analyzer.CreatePrompt(new Dictionary<string, object>());
 
 	var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();

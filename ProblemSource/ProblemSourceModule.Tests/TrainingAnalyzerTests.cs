@@ -15,6 +15,8 @@ using Newtonsoft.Json;
 using ProblemSource.Models;
 using ML.Helpers;
 using ProblemSource.Tests;
+using FakeItEasy;
+using ProblemSourceModule.Services.Storage;
 
 namespace ProblemSourceModule.Tests
 {
@@ -301,7 +303,7 @@ namespace ProblemSourceModule.Tests
         [Fact]
         public async Task AiCoachAnalyzer_Test()
         {
-            var sut = new AiCoachAnalyzer();
+            var sut = new AiCoachAnalyzer(A.Fake<IUserGeneratedDataRepositoryProviderFactory>(), A.Fake<ITrainingRepository>(), A.Fake<IHttpClientFactory>());
             var training = new Training { Settings = new TrainingSettings { timeLimits = [33] }, AgeBracket = "4-5" };
 			var repoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
 

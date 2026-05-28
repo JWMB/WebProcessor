@@ -54,6 +54,7 @@ namespace ProblemSource
                 }
             }
 			services.AddSingleton(sp => analyzers.Select(o => (ITrainingAnalyzer)sp.GetOrCreateInstance(o)));
+            services.AddSingleton<AiCoachAnalyzer>();
 
             services.AddSingleton<TrainingAnalyzerCollection>();
             //services.AddSingleton<TrainingAnalyzerCollection>(sp => new TrainingAnalyzerCollection(new[] { }, sp.GetRequiredService<>));
