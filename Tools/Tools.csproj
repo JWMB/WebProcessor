@@ -17,6 +17,7 @@
   <ItemGroup>
     <PackageReference Include="Azure.Data.Tables" />
     <PackageReference Include="DeepCloner" />
+    <PackageReference Include="Microsoft.Bcl.Memory" />
     <PackageReference Include="Microsoft.Data.Analysis" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
     <PackageReference Include="Microsoft.ML" />
