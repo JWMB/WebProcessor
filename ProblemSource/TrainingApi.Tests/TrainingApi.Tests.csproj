@@ -26,12 +26,12 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Xunit.SkippableFact" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" VersionOverride="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" VersionOverride="10.0.8" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="10.0.8" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" VersionOverride="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" VersionOverride="10.0.8" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="10.0.8" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" VersionOverride="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" VersionOverride="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="10.0.8" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OldDb\OldDb.csproj" />
