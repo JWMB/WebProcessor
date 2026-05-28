@@ -35,5 +35,10 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         //public Task<Training?> Get(int id) => Get(id); //.ToString()
 
 		public async Task<IEnumerable<Training>> GetByIds(IEnumerable<int> ids) => await Get(ids); //.Select(o => o.ToString()));
+
+		public Task<Training?> GetByUsername(string n)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

@@ -56,7 +56,6 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
 		Task IRepository<Training, int>.Upsert(Training item) => Upsert(item);
 
 		public Task<int> AddGetId(Training item) => throw new NotImplementedException();
-	}
 
         public async Task<Training?> GetByUsername(string name)
         {
