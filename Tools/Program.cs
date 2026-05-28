@@ -125,8 +125,9 @@ if (false)
         {
 			try
 			{
-				var prompt = await analyzer.CreatePrompt(training, ugdrpf.Create(training.Id), normedProviders, dayCutoff);
-                var file = Path.Join(path, $"prompt_{id}_day{(dayCutoff.HasValue ? dayCutoff.Value.ToString() : "s")}.txt");
+				var replacements = await analyzer.CreateReplacements(training, ugdrpf.Create(training.Id), normedProviders, dayCutoff);
+                var prompt = await analyzer.CreatePrompt(replacements);
+				var file = Path.Join(path, $"prompt_{id}_day{(dayCutoff.HasValue ? dayCutoff.Value.ToString() : "s")}.txt");
 				File.WriteAllText(file, prompt);
 			}
 			catch (Exception ex)
@@ -134,7 +135,7 @@ if (false)
 		}
 	}
 }
-if (false)
+if (true)
 {
 	var azConfig = config.GetSection("LlmServices:Azure")!;
 	var llm = new AzureOpenAIRESTService(
@@ -151,32 +152,45 @@ if (false)
 
 	var tool = new TrainingStatsTools(serviceProvider);
     var analyzer = new AiCoachAnalyzer();
-    var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();
-    //var allTrainings = new List<Training> { (await trainingRepository.Get(trainingId))! }; //  allTrainings.Single(o => o.Username == "suzi sajobi");
-    var allTrainings = await trainingRepository.GetAll();
-    if (ageBracket != null)
-        allTrainings = allTrainings.Where(o => o.AgeBracket == ageBracket).ToList();
-    var byAgeBracket = allTrainings.GroupBy(o => o.AgeBracket).ToDictionary(o => o.Key, o => o.ToList());
+    //await analyzer.CreatePrompt(new Dictionary<string, object>());
 
-    if (false)
+	var trainingRepository = serviceProvider.GetRequiredService<ITrainingRepository>();
+	//var allTrainings = new List<Training> { (await trainingRepository.Get(trainingId))! }; //  allTrainings.Single(o => o.Username == "suzi sajobi");
+
+	if (false)
     {
-        var normCreator = new TrainingNormCreator(serviceProvider.GetRequiredService<IStatisticsProvider>(), serviceProvider.GetRequiredService<ITypedTableClientFactory>());
+		var allTrainings = await trainingRepository.GetAll();
+		if (ageBracket != null)
+			allTrainings = allTrainings.Where(o => o.AgeBracket == ageBracket).ToList();
+		var byAgeBracket = allTrainings.GroupBy(o => o.AgeBracket).ToDictionary(o => o.Key, o => o.ToList());
+		var normCreator = new TrainingNormCreator(serviceProvider.GetRequiredService<IStatisticsProvider>(), serviceProvider.GetRequiredService<ITypedTableClientFactory>());
         foreach (var (bracket, trainings) in byAgeBracket.OrderBy(o => o.Key))
             await normCreator.Create(trainings.Where(o => o.Username.StartsWith("norm_") == false), new Training { AgeBracket = bracket, Username = $"norm_{bracket}" });
     }
 
     if (true)
     {
-        var normedTrainings = allTrainings.Where(o => o.Username.StartsWith("norm_"));
+		var training = (await trainingRepository.Get(trainingId))!;
 
-        var normedProviders = normedTrainings
-            .Where(o => o.AgeBracket == "6-7") //5-6 8-9
-			.Select(o => (o, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(o.Id)));
+        var normedProviders = new List<(Training, IUserGeneratedDataRepositoryProvider)>();
 
-        var training = (await trainingRepository.Get(trainingId))!; //allTrainings.Single(o => o.Username == "suzi sajobi");
-        var prompt = await analyzer.CreatePrompt(training, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(training.Id), normedProviders);
+        var ugdrpf = serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>();
+		var norms = new[] { $"norm_{training.AgeBracket}", $"norm_{training.AgeBracket}_stddev" };
+        foreach (var n in norms)
+        {
+			var t = await trainingRepository.GetByUsername(n);
+            if (t != null)
+                normedProviders.Add((t, ugdrpf.Create(t.Id)));
+		}
+		//var normedTrainings = allTrainings.Where(o => o.Username.StartsWith("norm_"));
+		//var normedProviders = normedTrainings
+  //          .Where(o => o.AgeBracket == "6-7") //5-6 8-9
+		//	.Select(o => (o, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(o.Id)));
 
-        var result = await llm.Invoke(prompt);
+        var replacements = await analyzer.CreateReplacements(training, serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>().Create(training.Id), normedProviders);
+		var prompt = await analyzer.CreatePrompt(replacements);
+
+		var result = await llm.Invoke(prompt);
 	}
 }
 

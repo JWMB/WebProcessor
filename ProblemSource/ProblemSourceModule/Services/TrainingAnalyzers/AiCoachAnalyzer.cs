@@ -1,4 +1,5 @@
 ﻿using Common;
+using CsvHelper;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
@@ -8,7 +9,113 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
 	public class AiCoachAnalyzer : ITrainingAnalyzer
 	{
-		public async Task<string> CreatePrompt(Training training, IUserGeneratedDataRepositoryProvider provider,
+		public static List<T> ReadAnonymous<T>(T instance, string data, bool hasHeader = true, string delimiter = "\t")
+		{
+			using var reader = new StringReader(data);
+			using var csvReader = new CsvReader(reader, new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
+			{
+				HasHeaderRecord = hasHeader,
+				Delimiter = delimiter,
+				MissingFieldFound = args => { }
+			});
+			return csvReader.GetRecords(instance).ToList();
+		}
+		public static List<T> Read<T>(string data, bool hasHeader = true, string delimiter = "\t")
+		{
+			using var reader = new StringReader(data);
+			using var csvReader = new CsvReader(reader, new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
+			{
+				HasHeaderRecord = hasHeader,
+				Delimiter = delimiter,
+				MissingFieldFound = args => { }
+			});
+			return csvReader.GetRecords<T>().ToList();
+		}
+
+		public async Task<string> CreatePrompt(Dictionary<string, object> replacements)
+		{
+			var path = Path.Join(Directory.GetCurrentDirectory(), "Resources", "AICoach");
+			
+			var template = File.ReadAllText(Path.Join(path, "TeacherStudent.txt"));
+			var exercises = File.ReadAllText(Path.Join(path, "Exercises.txt"));
+			replacements["exerciseDescriptions"] = ReadAnonymous(new { id = "", type = "", description = "" }, exercises);
+			var rendered = new Replacer().Execute(template, replacements, null, [
+					("MarkdownTable", (object items) => ToMarkdownTable(items)),
+				]);
+			return rendered;
+		}
+
+		public static string ListToMarkdownTable(List<List<string>> table)
+			=> string.Join("\n", new[] { "-------", string.Join("\n", table.Select(o => string.Join("\t", o))), "--------" });
+
+		public static string ToMarkdownTable(object items)
+		{
+			if (items is System.Collections.IEnumerable objs)
+			{
+				var e = objs.GetEnumerator();
+
+				object? first = null;
+				while (e.MoveNext())
+				{
+					if (e.Current == null)
+						continue;
+					first = e.Current;
+					break;
+				}
+
+				if (first == null)
+					return "";
+
+				if (first is System.Collections.IDictionary idi)
+				{
+				}
+				else if (first is System.Collections.IList ili)
+				{
+					var item1 = ili[0];
+					if (item1 != null)
+					{
+						var list = new List<List<string>>();
+						e = objs.GetEnumerator();
+						while (e.MoveNext())
+						{
+							if (e.Current == null)
+								continue;
+							var t = e.Current as IEnumerable<object>;
+							if (t != null)
+								list.Add(t.Select(o => $"{o}").ToList());
+						}
+						return ListToMarkdownTable(list);
+					}
+				}
+				else
+				{
+					var props = first.GetType().GetProperties().Where(o => o.CanRead).ToList();
+					var table = new List<List<string>>();
+					table.Add(props.Select(o => o.Name).ToList());
+					foreach (var obj in objs)
+					{
+						if (obj == null)
+							table.Add(new List<string>());
+						table.Add(obj == null ? new() : props.Select(o => ToString(o.GetValue(obj))).ToList());
+					}
+					return ListToMarkdownTable(table);
+				}
+			}
+			return "...";
+		}
+
+		private static string ToString(object? obj)
+		{
+			if (obj == null) return "";
+			if (obj is decimal d) return d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+			if (obj is float f) return f.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+			if (obj is double db) return db.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+			return obj.ToString() ?? "";
+		}
+
+
+
+		public async Task<Dictionary<string, object>> CreateReplacements(Training training, IUserGeneratedDataRepositoryProvider provider,
 			IEnumerable<(Training Training, IUserGeneratedDataRepositoryProvider Provider)> referenceTrainingProviders, int? cutoffDay = null)
 		{
 			// TODO: data from... where?
@@ -175,149 +282,25 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 				return new[] { o.Day.ToString() }.Concat(xx).ToList();
 			})).ToList();
 
-			var exerciseDescriptions = new Dictionary<string, string> {
-				["wm_grid"] = "Working memory - a 4x4 grid where the user needs to recall visuospatial sequences",
-				["wm_numbers"] = "Working memory - the user is presented with a digit sequence, then needs to input that sequence but reversed",
-				["wm_crush"] = "Working memory - fruits are highlighted in a sequence, recalling it correctly pops the fruits",
-				["wm_3dgrid"] = "Working memory - buttons in a pseudo-3d cube are highlighted, user needs to recall the sequence",
-				["wm_circle"] = "Working memory - buttons that are rotating in a circle are highlighted, user needs to recall the sequence",
-				["wm_moving"] = "Working memory - buttons that moving around in different directions are highlighted, user needs to recall the sequence",
-
-				["tangram"] = "Nonverbal reasoning - solve tangram puzzles",
-				["boolean"] = "Nonverbal reasoning - perform boolean operations on overlapping shapes",
-				["rotation"] = "Nonverbal reasoning - figure out which shape can be rotated to match the target shape",
-				["nvr_so"] = "Nonverbal reasoning - a child-friendly variant of Ravens progressive matrices; figure out missing items in a sequential order",
-				["nvr_rp"] = "Nonverbal reasoning - a child-friendly variant of Ravens progressive matrices; figure out missing items in repeated patterns",
-
-				["numberline"] = "Math - user solves different problems presented on a number line",
-				["npals"] = "Math - 10-pals and other variants (5-pals on lower levels, 15-pals later on etc)",
-				["addsub"] = "Math - simple addition/subtraction under time pressure",
+			var obj = new // Dictionary<string, object>
+			{
+				today = $"{today}:yyyy-MM-dd",
+				training,
+				plannedSessions,
+				userIsFreeToChooseExercises,
+				generalPlan,
+				timePerSession,
+				baseLineIsFirstNMinutes,
+				baselineByExerciseTable,
+				maxLevelWithNormTable,
+				earlierCoachingSessions,
+				audience
 			};
-			exerciseDescriptions = exerciseDescriptions.Where(o => baselineByExercise.Any(p => p.Exercise == o.Key)).ToDictionary(o => o.Key, o => o.Value);
 
-			// TODO: Global evaluation vs last N sessions
-			var prompt = $"""
-				Today is {today:yyyy-MM-dd}. You are acting as a training coach, giving advice to a user of a cognitive training app on how to optimize their training.
-				The user is {training.AgeBracket} years old.
-
-				Given the data below (for training id {training.Id}), try to assess of how the training is progressing.
-				Try to address the following points:
-				{(plannedSessions.Any() ? $"""
-				* Is the user doing their expected sessions? Give praise if meeting or exceeding the goals, otherwise ask what made them miss them.
-				""" : """
-				* Is the user doing the recommended 5 sessions per week?
-				""")}
-				* During sessions, is the user slacking off or working diligently?
-				* Are exercise levels progressing as expected?
-					* Is the user having more problems with some types of exercises (e.g. Working Memory)?
-				* Is the performance different for some days of the week, or times of day? If so, note how, and ask the user what might be different about them.
-
-				Here are some tips that can be helpful for the user, depending on your evaluation of the points above:
-				* If losing focus, take a short break and do 10 push-ups
-				* If performance is worse e.g. early mornings or late nights, maybe try other times of day.
-					* Maybe some days they're in a different environment (e.g. a busy school setting) - could they find a different location?
-
-				Notes:
-				* ActivePercentage metric: important that it's not too low - this would indicate many or long pauses. Note that maximum possible percentage can vary across exercises and client app versions
-				* Exercise progress metrics: important that the user continues to get better. On some exercises (e.g. Working memory), the progress is expected to plateau after some time. Refer to the progression of norm data.
-				{(userIsFreeToChooseExercises ? "" : "* The order of exercises is decided by an algorithm, so the user cannot choose themselves.")}
-
-				{(generalPlan?.Any() == true
-				? $"""
-				Here are the general goals that were set before starting the training:
-				{generalPlan}
-
-				"""
-				: "")}
-				## Time per session
-				For each session:
-				* how long was it ({"DurationMinutes"}) versus how long it should be ({"ExpectedMinutes"})
-				* how much time was spent actively solving problems ({"ActivePercentage"}) - the norm (if available) for the age group is "{"ActivePercentageAgeNorm"}"
-				Note that very long DurationMinutes can mean that the user went and did something else for a while, or forgot to end the training session.
-				{ToMarkdownTable(timePerSession)}
-
-				{(plannedSessions.Any() ? $"""
-					## Planned session dates
-					This is a plan for when sessions should have been completed.
-					{ToMarkdownTable(plannedSessions.Select(o => o.Date.ToString("yyyy-MM-dd")))}
-					""" : "")}
-				## Exercise baselines
-				This is the max level reached after actively using an exercise at least {baseLineIsFirstNMinutes} minutes, compared with average users of different age spans.
-				(This user is in the age span {training.AgeBracket})
-				{ListToMarkdownTable(baselineByExerciseTable)}
-
-				## Exercise progress
-				Here is the user's progression on exercises, compared with the age norm (if available).
-				Note that on a given day, the user might not encounter the same exercises as the norm. Focus on the progression and unexpected dips in performance.
-				{ListToMarkdownTable(maxLevelWithNormTable)}
-
-				## Exercise descriptions
-				For improving your understanding of the data and your evaluation, here are descriptions of the exercises:
-				{ToMarkdownTable(exerciseDescriptions.Select(o => new { Id = o.Key, Description = o.Value }))}
-				
-				{(earlierCoachingSessions.Any() ? $"""
-					## Previous notes
-					Here are notes from earlier coaching sessions:
-					{ToMarkdownTable(earlierCoachingSessions)}
-					""" : ""
-				)}
-
-				This text will be read by {audience}, so adjust your language and the complexity of the text accordingly.
-				""".Trim();
-
-			return prompt;
-
-			string ListToMarkdownTable(List<List<string>> table) 
-				=> string.Join("\n", new[] { "-------", string.Join("\n", table.Select(o => string.Join("\t", o))), "--------" });
-			string ToMarkdownTable(IEnumerable<object> objs)
-			{
-				if (!objs.Any())
-					return "";
-				var first = objs.Where(o => o != null).FirstOrDefault();
-				if (first == null)
-					return "";
-
-				if (first is System.Collections.IDictionary idi)
-				{
-				}
-				else if (first is System.Collections.IList ili)
-				{
-					var item1 = ili[0];
-					if (item1 != null)
-					{
-						if (item1 is System.Collections.IList ili2)
-						{
-							foreach ( var item2 in ili2)
-							{
-							}
-						}
-					}
-				}
-				else
-				{
-					var props = first.GetType().GetProperties().Where(o => o.CanRead).ToList();
-					var table = new List<List<string>>();
-					table.Add(props.Select(o => o.Name).ToList());
-					foreach (var obj in objs)
-					{
-						if (obj == null)
-							table.Add(new List<string>());
-						table.Add(obj == null ? new() : props.Select(o => ToString(o.GetValue(obj))).ToList());
-					}
-					return ListToMarkdownTable(table);
-				}
-				return "";
-			}
-
-			string ToString(object? obj)
-			{
-				if (obj == null) return "";
-				if (obj is decimal d) return d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
-				if (obj is float f) return f.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
-				if (obj is double db) return db.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
-				return obj.ToString() ?? "";
-			}
-
+			return obj.GetType().GetProperties()
+				.Select(o => KeyValuePair.Create(o.Name, o.GetValue(obj)))
+				.Where(o => o.Value != null)
+				.ToDictionary(o => o.Key, o => o.Value!);
 
 			decimal? GetMax(List<PhaseStatistics> stats, string exerciseId, int trainingDay)
 			{

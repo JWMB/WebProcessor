@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -10,11 +10,19 @@
     <None Remove="Resources\2023 HT template Preview.json" />
     <None Remove="Resources\2023 HT template.json" />
     <None Remove="Resources\2023 VT template JonasTest.json" />
+    <None Remove="Resources\AICoach\Exercises.txt" />
+    <None Remove="Resources\AICoach\TeacherStudent.txt" />
     <None Remove="Resources\DebugPlan.json" />
     <None Remove="Resources\JuliaMLModel_Reg.zip" />
     <None Remove="Resources\testplan.json" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Resources\AICoach\Exercises.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\AICoach\TeacherStudent.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\JuliaMLModel_Reg.zip">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -62,12 +70,14 @@
   <ItemGroup>
     <PackageReference Include="Azure.Data.Tables" />
     <PackageReference Include="Azure.Storage.Queues" />
+    <PackageReference Include="CsvHelper" />
     <PackageReference Include="JWMB.AzureTableGenerics" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="9.0.0" />
+    <PackageReference Include="Scriban" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="System.Text.Encodings.Web" />
   </ItemGroup>

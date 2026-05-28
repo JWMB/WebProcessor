@@ -51,5 +51,13 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
             // Note: skips entries that were not found
             return values.Values.OfType<Training>();
         }
+
+        public async Task<Training?> GetByUsername(string name)
+        {
+            var q = tableClient.Query<TableEntity>($"PartitionKey eq 'none' and Username eq '{name}'", 1);
+            foreach (var item in q)
+                return converter.ToPoco(item);
+            return null;
+        }
     }
 }
