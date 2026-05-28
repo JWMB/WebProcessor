@@ -15,5 +15,7 @@ namespace ProblemSourceModule.Services.Storage
             await Update(training);
             return training.Id;
         }
-    }
+
+		Task<Training?> GetByUsername(string n);
+	}
 }

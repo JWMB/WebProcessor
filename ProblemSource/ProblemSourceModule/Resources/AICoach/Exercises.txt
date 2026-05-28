@@ -1,0 +1,4 @@
+id	type	description
+wm_grid	Working memory	a 4x4 grid where the user needs to recall visuospatial sequences
+wm_numbers	Working memory	the user is presented with a digit sequence, then needs to input that sequence but reversed
+wm_crush	Working memory	fruits are highlighted in a sequence, recalling it correctly pops the fruits

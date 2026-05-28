@@ -57,4 +57,13 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
 
 		public Task<int> AddGetId(Training item) => throw new NotImplementedException();
 	}
+
+        public async Task<Training?> GetByUsername(string name)
+        {
+            var q = tableClient.Query<TableEntity>($"PartitionKey eq 'none' and Username eq '{name}'", 1);
+            foreach (var item in q)
+                return converter.ToPoco(item);
+            return null;
+        }
+    }
 }
