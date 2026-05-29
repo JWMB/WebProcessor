@@ -56,9 +56,27 @@ namespace ProblemSource
             }
 			services.AddSingleton(sp => analyzers.Select(o => (ITrainingAnalyzer)sp.GetOrCreateInstance(o)));
             services.AddSingleton<AiCoachAnalyzer>();
-            services.AddSingleton(sp => new LlmModelSpecification());
-			services.AddSingleton(sp => new LlmServiceSpecification());
-			services.AddSingleton<ILlmService, AzureOpenAIRESTService>();
+            services.AddSingleton<ILlmServiceFactory, LlmServiceFactory>();
+
+            services.AddSingleton<Func<HttpClient>>(sp => () => sp.GetRequiredService<IHttpClientFactory>().CreateClient());
+
+            foreach (var m in config.GetSection("AppSettings:LlmModels").GetChildren())
+            {
+                var poco = new LlmModelSpecification();
+                m.Bind(poco);
+                services.AddSingleton(poco);
+			}
+			foreach (var m in config.GetSection("AppSettings:LlmServices").GetChildren())
+			{
+				var poco = new LlmServiceSpecification { ApiKey = "", Name = "", ResourceUri = ""};
+				m.Bind(poco);
+				services.AddSingleton(poco);
+			}
+
+			//services.AddSingleton<LlmModelSpecification>(sp => sp.GetRequiredService<List<LlmModelSpecification>>().Single(o => o.Name == "gpt-5-mini"));
+			//services.AddSingleton<LlmServiceSpecification>(sp => sp.GetRequiredService<List<LlmServiceSpecification>>().Single(o => o.Name == "Azure"));
+			//services.AddSingleton<ILlmService, AzureOpenAIRESTService>();
+			services.AddSingleton(sp => sp.GetRequiredService<ILlmServiceFactory>().GetOrThrow("gpt-5-mini", "Azure"));
 
 			services.AddSingleton<TrainingAnalyzerCollection>();
             //services.AddSingleton<TrainingAnalyzerCollection>(sp => new TrainingAnalyzerCollection(new[] { }, sp.GetRequiredService<>));

@@ -276,7 +276,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 					Date = o.StartTime.ToString("yyyy-MM-dd HH:mm"),
 					Weekday = o.StartTime.ToString("dddd"),
 					DurationMinutes = Math.Round((o.EndTimeStamp - o.StartTime).TotalMinutes),
-					ExpectedMinutes = training.Settings.timeLimits[0],
+					ExpectedMinutes = training.Settings.timeLimits.FirstOrDefault(33M),
 					ActivePercentage = ActivePercentage(o),
 					ActivePercentageAgeNorm = n == null ? "" : ActivePercentage(n),
 					//AccuracyComparedToNorm = 1.1M
