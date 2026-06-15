@@ -9,7 +9,11 @@ const mdsvexOptions = {
 	extensions: ['.md']
 }
 
-const basePath = true ? undefined : "/admin";
+const basePath = process.env.NODE_ENV == "production" ? "/admin" : undefined;
+//const basePath = false ? undefined : "/admin";
+console.log("svelte process.env", process.env); //  env: { NODE_ENV: 'production' }
+// console.log("svelte meta", import.meta);
+
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {

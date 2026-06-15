@@ -7,10 +7,10 @@ namespace TrainingApi.Controllers
     [Route("api/[controller]")]
     public class TestingController : ControllerBase
     {
-		private readonly IPredictNumberlineLevelService predictor;
+		private readonly IPredictNumberlineLevelService? predictor;
 		private readonly ILogger<UsersController> log;
 
-        public TestingController(IConfiguration configuration, IPredictNumberlineLevelService predictor, ILogger<UsersController> logger)
+        public TestingController(IConfiguration configuration, IPredictNumberlineLevelService? predictor, ILogger<UsersController> logger)
         {
 			this.predictor = predictor;
 			log = logger;
@@ -25,14 +25,25 @@ namespace TrainingApi.Controllers
 
         [HttpPost]
         [Route("log")]
-        public void Log([FromQuery] LogLevel level = LogLevel.Error)
+        public IActionResult Log([FromQuery] LogLevel level = LogLevel.Error)
         {
             log.Log(level, $"Here is a {level}");
+            return Ok("logged!");
         }
 
-        [HttpGet("predict")]
+		[HttpGet]
+		[Route("")]
+		public IActionResult Index([FromQuery] LogLevel level = LogLevel.Error)
+		{
+            return Ok("gotcha");
+		}
+
+		[HttpGet("predict")]
         public async Task<IActionResult> CallPredictor()
         {
+            if (predictor == null)
+                throw new InvalidOperationException($"{nameof(predictor)}");
+
             var features = new ProblemSource.Models.Aggregates.MLFeaturesJulia
             {
                 ByExercise = new Dictionary<string, ProblemSource.Models.Aggregates.MLFeaturesJulia.FeaturesForExercise>
