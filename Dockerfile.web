@@ -23,22 +23,25 @@ ENV NODE_ENV=docker
 
 RUN npm run build
 
-COPY ProblemSource/AdminApp/mime.types /usr/src/app/build/
+# COPY ProblemSource/AdminApp/mime.types /usr/src/app/build/
+COPY ProblemSource/AdminApp/nginx-site.conf /usr/src/app/build/
 
 
 # Stage 2
-FROM node:24-alpine
+FROM nginx:latest
+COPY --from=build /usr/src/app/build /usr/share/nginx/html
+COPY --from=build /usr/src/app/build/nginx-site.conf /etc/nginx/conf.d/
 
-COPY --from=build /usr/src/app/build /usr/share/html
-
-RUN npm install -g http-server
+#FROM node:24-alpine
+#COPY --from=build /usr/src/app/build /usr/share/html
+#RUN npm install -g http-server
 
 EXPOSE 5171
 ENV PORT=5171
 
+# CMD http-server /usr/share/html --proxy http://localhost:5171/index.html? --mimetypes /usr/share/html/mime.types
 # https://stackoverflow.com/questions/61106423/how-to-put-a-svelte-app-in-a-docker-container
 # CMD [ "http-server",  "build", "--proxy", "http://localhost:5171?"]
-CMD http-server /usr/share/html --proxy http://localhost:5171/index.html? --mimetypes /usr/share/html/mime.types
 # --mimetypes mime.types
 
 # cd ~/source/repos/JWMB/WebProcessor
