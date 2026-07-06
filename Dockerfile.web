@@ -29,7 +29,8 @@ COPY ProblemSource/AdminApp/nginx-site.conf /usr/src/app/build/
 
 # Stage 2
 FROM nginx:latest
-COPY --from=build /usr/src/app/build /usr/share/nginx/html
+# COPY --from=build /usr/src/app/build /usr/share/nginx/html
+COPY --from=build /usr/src/app/build /usr/share/nginx/html/admin
 COPY --from=build /usr/src/app/build/nginx-site.conf /etc/nginx/conf.d/
 
 #FROM node:24-alpine
