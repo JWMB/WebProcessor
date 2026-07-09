@@ -28,6 +28,7 @@ COPY ProblemSource/AdminApp/nginx-site.conf /usr/src/app/build/
 
 
 # Stage 2
+# Need to > podman pull docker.io/library/nginx:latest
 FROM nginx:latest
 # COPY --from=build /usr/src/app/build /usr/share/nginx/html
 COPY --from=build /usr/src/app/build /usr/share/nginx/html/admin
