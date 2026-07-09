@@ -1,3 +1,4 @@
+version: '2'
 services:
   app:
     image: "localhost/adminapp"
@@ -9,9 +10,10 @@ services:
     environment:
       # none of these work :( - hard-coded in source for now...
       PUBLIC_LOCAL_SERVER_PATH: http://api:9090
+      PUBLIC_LOCAL_SERVER_PATH2: http://api:9090
       # https://localhost:80
-      VITE_HTTPS: false
-      PUBLIC_HTTPS: true
+      #VITE_HTTPS: "false"
+      #PUBLIC_HTTPS: "true"
       PUBLIC_VITE_TEST1: abc
       VITE_TEST1: abce
       VITE_PUBLIC_TEST1: cde

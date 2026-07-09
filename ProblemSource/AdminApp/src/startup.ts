@@ -26,5 +26,13 @@ export class Startup {
 export function resolveLocalServerBaseUrl(location: Location) {
     console.log("PUBLIC_LOCAL_SERVER_PATH", PUBLIC_LOCAL_SERVER_PATH);
     console.log("dyn", envDyn, "meta", import.meta.env);
-    return envDyn.PUBLIC_LOCAL_SERVER_PATH || PUBLIC_LOCAL_SERVER_PATH || location.origin;
+    let result = envDyn.PUBLIC_LOCAL_SERVER_PATH || PUBLIC_LOCAL_SERVER_PATH || location.origin;
+
+    // hm, seems .env.local is used even in docker/podman..?
+    if (import.meta.env.PUBLIC_LOCAL_SERVER_PATH2)
+        result = import.meta.env.PUBLIC_LOCAL_SERVER_PATH2;
+    if (envDyn.PUBLIC_LOCAL_SERVER_PATH2)
+        result = envDyn.PUBLIC_LOCAL_SERVER_PATH2;
+
+    return result;
 }
