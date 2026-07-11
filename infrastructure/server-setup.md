@@ -51,3 +51,12 @@ podman build -t trainingapi . -f Dockerfile
 podman build -t adminapp . -f Dockerfile.web
 podman compose up -d
 ```
+
+
+> sudo nano ProblemSource/TrainingApi/appsettings.Docker-secrets.json
+> tail -f /var/log/nginx/access.log
+> tail -f /var/log/nginx/error.log
+> podman logs -tf source_app_1
+> podman logs -tf source_api_1
+> podman exec -ti source_api_1 /bin/bash
+> podman stats source_api_1 --no-stream --format "table {{.NetInput}} {{.NetOutput}}"
