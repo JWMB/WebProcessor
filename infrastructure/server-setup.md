@@ -60,3 +60,39 @@ podman compose up -d
 > podman logs -tf source_api_1
 > podman exec -ti source_api_1 /bin/bash
 > podman stats source_api_1 --no-stream --format "table {{.NetInput}} {{.NetOutput}}"
+
+https://news.ycombinator.com/item?id=38982805
+
+systemctl --user enable --now podman-admin
+
+sudo nano /etc/systemd/system/podman-admin.service
+# hm, the suggested didn't work... /etc/systemd/user/podman-admin.service instead?
+sudo systemctl daemon-reload
+sudo systemctl enable podman-admin
+sudo systemctl start podman-admin
+#sudo systemd-analyze verify podman-admin.service
+#systemd-analyze --global unit-paths
+#sudo systemd-analyze verify /etc/systemd/user/podman-admin.service
+```
+[Unit]
+Description=podman-compose admin (api, app, mongo)
+After=network.target
+# Description=%i rootless pod (podman-compose)
+
+[Service]
+Type=simple
+# EnvironmentFile=%h/.config/containers/compose/projects/%i.env
+#ExecStartPre=-/usr/bin/podman-compose up --no-start
+#ExecStartPre=/usr/bin/podman pod start pod_%i
+#ExecStart=/usr/bin/podman-compose wait
+#ExecStop=/usr/bin/podman pod stop pod_%i
+ExecStart=/usr/bin/podman-compose -f /home/ubuntu/source/compose.yaml up
+ExecStop=/usr/bin/podman-compose -f /home/ubuntu/source/compose.yaml down
+Restart=always
+RestartSec=60
+User=ubuntu
+
+[Install]
+#WantedBy=default.target
+WantedBy=multi-user.target
+```

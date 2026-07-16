@@ -73,10 +73,11 @@ namespace ProblemSource
 				services.AddSingleton(poco);
 			}
 
-			//services.AddSingleton<LlmModelSpecification>(sp => sp.GetRequiredService<List<LlmModelSpecification>>().Single(o => o.Name == "gpt-5-mini"));
-			//services.AddSingleton<LlmServiceSpecification>(sp => sp.GetRequiredService<List<LlmServiceSpecification>>().Single(o => o.Name == "Azure"));
-			//services.AddSingleton<ILlmService, AzureOpenAIRESTService>();
-			services.AddSingleton(sp => sp.GetRequiredService<ILlmServiceFactory>().GetOrThrow("gpt-5-mini", "Azure"));
+            //services.AddSingleton<LlmModelSpecification>(sp => sp.GetRequiredService<List<LlmModelSpecification>>().Single(o => o.Name == "gpt-5-mini"));
+            //services.AddSingleton<LlmServiceSpecification>(sp => sp.GetRequiredService<List<LlmServiceSpecification>>().Single(o => o.Name == "Azure"));
+            //services.AddSingleton<ILlmService, AzureOpenAIRESTService>();
+            var fallback = new NullLlmService();
+			services.AddSingleton(sp => sp.GetRequiredService<ILlmServiceFactory>().GetOrDefault(fallback, "gpt-5-mini", "Azure"));
 
 			services.AddSingleton<TrainingAnalyzerCollection>();
             //services.AddSingleton<TrainingAnalyzerCollection>(sp => new TrainingAnalyzerCollection(new[] { }, sp.GetRequiredService<>));

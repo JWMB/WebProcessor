@@ -6,6 +6,9 @@ namespace Common.LLM
 	{
 		ILlmService? Get(string? preferredModelName = null, string? preferredService = null);
 
+		public ILlmService GetOrDefault(ILlmService defaultValue, string? preferredModelName = null, string? preferredService = null)
+			=> Get(preferredModelName, preferredService) ?? defaultValue;
+
 		public ILlmService GetOrThrow(string? preferredModelName = null, string? preferredService = null)
 		{
 			var result = Get(preferredModelName, preferredService);
@@ -14,6 +17,7 @@ namespace Common.LLM
 			return result;
 		}
 	}
+
 	public class LlmServiceFactory : ILlmServiceFactory
 	{
 		private readonly List<LlmModelSpecification> models;
@@ -102,6 +106,17 @@ namespace Common.LLM
 		public string? Completion { get; set; } = "";
 		public string Model { get; set; } = "";
 	}
+
+	public class NullLlmService : ILlmService
+	{
+		public LlmModelSpecification ModelSpecification => new LlmModelSpecification();
+
+		public int CountTokens(string text) => 0;
+
+		public Task<LlmResult?> Invoke(string prompt, LlmCallOptions? options = null)
+			=> Task.FromResult((LlmResult?)new LlmResult { Completion = "" });
+	}
+
 
 	public class AzureOpenAIRESTService : ILlmService
 	{
