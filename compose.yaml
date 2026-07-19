@@ -29,8 +29,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Docker
       # ASPNETCORE_URLS: http://localhost:80/
       ASPNETCORE_URLS: http://0.0.0.0:80/
-      AppSettings:Storage:Users:0:Email: admin
-      AppSettings:Storage:Users:0:HashedPassword: admin
+      AppSettings:Storage:Users:0:Email: jbadmin
+      AppSettings:Storage:Users:0:HashedPassword: jbadmin
       AppSettings:Storage:Users:0:Role: Admin
       AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/?maxPoolSize=500&waitQueueSize=2500
       # AppSettings:Storage:MongoDB:ConnectionString: mongodb://mongo:27017/?directConnection=true&serverSelectionTimeoutMS=2000

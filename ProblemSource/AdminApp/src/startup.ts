@@ -33,6 +33,8 @@ export function resolveLocalServerBaseUrl(location: Location) {
         result = import.meta.env.PUBLIC_LOCAL_SERVER_PATH2;
     if (envDyn.PUBLIC_LOCAL_SERVER_PATH2)
         result = envDyn.PUBLIC_LOCAL_SERVER_PATH2;
+    // goddamn, doesn't work either...
+    // hard-coding for now in .env.local
 
     return result;
 }

@@ -86,13 +86,84 @@ Type=simple
 #ExecStartPre=/usr/bin/podman pod start pod_%i
 #ExecStart=/usr/bin/podman-compose wait
 #ExecStop=/usr/bin/podman pod stop pod_%i
-ExecStart=/usr/bin/podman-compose -f /home/ubuntu/source/compose.yaml up
-ExecStop=/usr/bin/podman-compose -f /home/ubuntu/source/compose.yaml down
+#ExecStart=/usr/bin/podman-compose -f /home/ubuntu/source/compose.yaml up
+#ExecStop=/usr/bin/podman-compose -f /home/ubuntu/source/compose.yaml down
+ExecStart=/usr/bin/podman-compose -f /home/admin-site/source/compose.yaml up
+ExecStop=/usr/bin/podman-compose -f /home/admin-site/source/compose.yaml down
 Restart=always
 RestartSec=60
-User=ubuntu
+#User=ubuntu
+User=admin-site
 
 [Install]
 #WantedBy=default.target
 WantedBy=multi-user.target
+```
+
+# worked, but only when ubuntu user was logged in ("active login session")
+# create a different user with lower permissions and try to use that instead
+
+sudo adduser admin-site
+sudo loginctl enable-linger admin-site
+sudo mkdir /home/admin-site/source
+sudo chmod o+x /home/admin-site/
+sudo chown admin-site:ubuntu /home/admin-site/source
+sudo chmod g+rwx /home/admin-site/source
+
+# su admin-site
+# su - admin-site
+# If you need to switch users inside the terminal, always use a login shell flag (-l or -). This forces the system to completely wipe the previous user's environment variables and load the correct ones for your new user.
+
+# No credentials matching localhost/trainingapi found in /home/admin-site/.docker/config.json
+# The "No credentials matching" error means Podman cannot find a valid username and password (or token) in your configuration to authenticate with the registry you are trying to access
+
+# maybe allow access to "ubuntu" user's registry? More elegant, but not sure how.
+# for now, just rebuild images as admin-site user
+# note: when using "USING <shortname>" we first need to pull image (e.g. podman pull docker.io/library/nginx:latest)
+
+
+rsync -Pavuz --exclude '**/bin/*' --exclude '**/obj/*' --exclude 'node_modules/*' --exclude '.svelte-kit/output/*' ./* ubuntu@safespring_sync2:/home/admin-site/source
+
+mongo and api seems to run fine, but app doesn't start. maybe error "exit code: 137" is related? No, that was on shutdown
+logs have "podman start -a source_app_1" and a little later "exid code: 1"
+Tried "podman compose up" in user "admin-site" but got "docker.errors.DockerException: Error while fetching server API version: ('Connection aborted.', FileNotFoundError(2, 'No such file or directory'))" 
+using `podman logs source_app_1` - found error: "http" directive is not allowed here in /etc/nginx/conf.d/nginx-site.conf:13
+only added for log format, not really needed - commented out section (and "dbg" reference)
+But why did it work when running as ubuntu user?
+Rebuild it with `podman build -t adminapp . -f Dockerfile.web` (as user admin-site)
+Oh - make sure we have Azure LLM settings in secrets (and correct owner: sudo chown ubuntu:ubuntu /home/admin-site/source/ProblemSource/TrainingApi/appsettings.Docker-secrets.json)
+Rebuild trainingapi
+Restart service (as ubuntu)
+
+ok, but now mongo data is lost after restart...
+
+Inspect containers:
+su - admin-site
+podman ps --format json
+
+podman volume ls
+podman volume prune
+podman system df -v
+
+podman exec -ti source_mongo_1 /bin/bash
+ls /etc/data 
+...empty?
+exit
+
+podman volume inspect <id>
+data in /home/admin-site/.local/share/containers/storage/volumes/...
+
+The original volume still exists but 0 bytes..?
+https://oneuptime.com/blog/post/2026-03-17-use-compose-volumes-podman/view
+
+sudo mkdir /home/admin-site/.docker
+sudo nano /home/admin-site/.docker/config.json
+```
+{
+  "auths": {
+    "://private-registry.com": {
+      "auth": "BASE64_ENCODED_USER_AND_PASSWORD btoa('username:password')"
+    }
+  }
+}
 ```
