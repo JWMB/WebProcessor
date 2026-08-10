@@ -43,6 +43,14 @@ var cancellationToken = cts.Token;
 
 var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
 
+
+{
+    var uuidsAndIds = await TrainingNormCreator.GetTrainingUsernamesAndIds(serviceProvider.GetRequiredService<ITypedTableClientFactory>());
+    var normIds = uuidsAndIds.Where(o => o.Username.StartsWith("norm_")).Select(o => o.Id).ToList();
+    var xport = new ExportTrainings(serviceProvider.GetRequiredService<ITypedTableClientFactory>());
+    await xport.ExportStats(normIds, new DirectoryInfo(Path.Join(path, "training_export")));
+}
+
 //await serviceProvider.GetRequiredService<TeacherOverview>().X();
 
 //await new FixAzureTableQuotedDateTime(serviceProvider.GetRequiredService<AzureTableConfig>().ConnectionString)
