@@ -88,21 +88,23 @@ namespace TrainingApi
                 //builder.AddApplicationInsights(); // AddAzureWebAppDiagnostics
 			});
 
-            //services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
-            //{
-            //    var builder = telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
-            //    telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder
-            //        .UseAdaptiveSampling(maxTelemetryItemsPerSecond:5, excludedTypes: "Trace;Request;Exception");
-            //});
-            //services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
-            //{
-            //    EnableAdaptiveSampling = false,
-            //});
+			ServiceConfiguration.ConfigureOtel(services, configurationManager);
 
-            //services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
-        }
+			//services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
+			//{
+			//    var builder = telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
+			//    telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder
+			//        .UseAdaptiveSampling(maxTelemetryItemsPerSecond:5, excludedTypes: "Trace;Request;Exception");
+			//});
+			//services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
+			//{
+			//    EnableAdaptiveSampling = false,
+			//});
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+			//services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
+		}
+
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             ServiceConfiguration.ConfigurePlugins(app, plugins);
 
@@ -220,7 +222,6 @@ namespace TrainingApi
             });
 
             //ServiceConfiguration.ConfigureApplicationInsights(app, config, env.IsDevelopment());
-			ServiceConfiguration.ConfigureOtel(app, config);
 
 			//if (oldDbStartup != null)
 			//    oldDbStartup.Configure(app);

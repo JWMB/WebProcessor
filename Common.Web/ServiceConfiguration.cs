@@ -62,23 +62,21 @@ namespace Common.Web
         public static void ConfigureOtel(IServiceCollection services, IConfiguration config)
         {
             //config["Otel:"]
-			var endpoint = "http://localhost:3000";
+			//var endpoint = "http://localhost:3000";
 
 			services.AddOpenTelemetry()
-				.ConfigureResource(builder => builder.AddDetector(sp => sp.GetRequiredService<MyResourceDetector>()))
-				//.ConfigureResource(builder => builder.AddService(serviceName: "MyService"))
-				.WithTracing(builder =>
-                {
+                .ConfigureResource(builder => builder.AddDetector(sp => sp.GetRequiredService<MyResourceDetector>()))
+                //.ConfigureResource(builder => builder.AddService(serviceName: "MyService"))
+                .WithTracing(builder =>
                     builder.AddAspNetCoreInstrumentation()
                         .AddConsoleExporter()
-                        .AddOtlpExporter(opts => { opts.Endpoint = new Uri(endpoint); });
-                }) // 
+                        //.AddOtlpExporter(opts => { opts.Endpoint = new Uri(endpoint); });
+                ) // 
 				.WithMetrics(builder =>
-                {
                     builder.AddAspNetCoreInstrumentation()
                         .AddConsoleExporter()
-					    .AddOtlpExporter(opts => { opts.Endpoint = new Uri(endpoint); });
-				});
+					    //.AddOtlpExporter(opts => { opts.Endpoint = new Uri(endpoint); });
+				);
 		}
 
 		public class MyResourceDetector : IResourceDetector
