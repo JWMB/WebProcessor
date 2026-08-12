@@ -2,9 +2,16 @@
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using PluginModuleBase;
+//using OpenTelemetry.Logs;
+//using OpenTelemetry.Resources;
+//using OpenTelemetry.Trace;
 
 namespace Common.Web
 {
@@ -51,5 +58,45 @@ namespace Common.Web
                 }
             }
         }
-    }
+
+        public static void ConfigureOtel(IServiceCollection services, IConfiguration config)
+        {
+            //config["Otel:"]
+			var endpoint = "http://localhost:3000";
+
+			services.AddOpenTelemetry()
+				.ConfigureResource(builder => builder.AddDetector(sp => sp.GetRequiredService<MyResourceDetector>()))
+				//.ConfigureResource(builder => builder.AddService(serviceName: "MyService"))
+				.WithTracing(builder =>
+                {
+                    builder.AddAspNetCoreInstrumentation()
+                        .AddConsoleExporter()
+                        .AddOtlpExporter(opts => { opts.Endpoint = new Uri(endpoint); });
+                }) // 
+				.WithMetrics(builder =>
+                {
+                    builder.AddAspNetCoreInstrumentation()
+                        .AddConsoleExporter()
+					    .AddOtlpExporter(opts => { opts.Endpoint = new Uri(endpoint); });
+				});
+		}
+
+		public class MyResourceDetector : IResourceDetector
+		{
+			private readonly IWebHostEnvironment webHostEnvironment;
+
+			public MyResourceDetector(IWebHostEnvironment webHostEnvironment)
+			{
+				this.webHostEnvironment = webHostEnvironment;
+			}
+
+			public Resource Detect()
+			{
+				return ResourceBuilder.CreateEmpty()
+					.AddService(serviceName: webHostEnvironment.ApplicationName)
+					.AddAttributes(new Dictionary<string, object> { ["host.environment"] = webHostEnvironment.EnvironmentName })
+					.Build();
+			}
+		}
+	}
 }

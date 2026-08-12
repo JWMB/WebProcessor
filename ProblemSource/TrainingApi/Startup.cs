@@ -85,21 +85,21 @@ namespace TrainingApi
 
             services.AddLogging(builder =>
             {
-                builder.AddApplicationInsights(); // AddAzureWebAppDiagnostics
+                //builder.AddApplicationInsights(); // AddAzureWebAppDiagnostics
 			});
 
-            services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
-            {
-                var builder = telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
-                telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder
-                    .UseAdaptiveSampling(maxTelemetryItemsPerSecond:5, excludedTypes: "Trace;Request;Exception");
-            });
-            services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
-            {
-                EnableAdaptiveSampling = false,
-            });
+            //services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
+            //{
+            //    var builder = telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
+            //    telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder
+            //        .UseAdaptiveSampling(maxTelemetryItemsPerSecond:5, excludedTypes: "Trace;Request;Exception");
+            //});
+            //services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
+            //{
+            //    EnableAdaptiveSampling = false,
+            //});
 
-            services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
+            //services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -219,13 +219,14 @@ namespace TrainingApi
                 MinimumSameSitePolicy = env.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.None : Microsoft.AspNetCore.Http.SameSiteMode.Lax
             });
 
-            ServiceConfiguration.ConfigureApplicationInsights(app, config, env.IsDevelopment());
+            //ServiceConfiguration.ConfigureApplicationInsights(app, config, env.IsDevelopment());
+			ServiceConfiguration.ConfigureOtel(app, config);
 
-            //if (oldDbStartup != null)
-            //    oldDbStartup.Configure(app);
-        }
+			//if (oldDbStartup != null)
+			//    oldDbStartup.Configure(app);
+		}
 
-        private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
+		private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
         {
             //TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, config, "AppSettings");
             ConfigureAuthentication(services, config, env);
