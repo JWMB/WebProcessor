@@ -9,9 +9,6 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using PluginModuleBase;
-//using OpenTelemetry.Logs;
-//using OpenTelemetry.Resources;
-//using OpenTelemetry.Trace;
 
 namespace Common.Web
 {

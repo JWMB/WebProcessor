@@ -88,21 +88,21 @@ namespace TrainingApi
                 //builder.AddApplicationInsights(); // AddAzureWebAppDiagnostics
 			});
 
-			ServiceConfiguration.ConfigureOtel(services, configurationManager);
+            //ServiceConfiguration.ConfigureOtel(services, configurationManager);
 
-			//services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
-			//{
-			//    var builder = telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
-			//    telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder
-			//        .UseAdaptiveSampling(maxTelemetryItemsPerSecond:5, excludedTypes: "Trace;Request;Exception");
-			//});
-			//services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
-			//{
-			//    EnableAdaptiveSampling = false,
-			//});
+            //services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
+            //{
+            //    var builder = telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
+            //    telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder
+            //        .UseAdaptiveSampling(maxTelemetryItemsPerSecond: 5, excludedTypes: "Trace;Request;Exception");
+            //});
+            services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
+            {
+                EnableAdaptiveSampling = false,
+            });
 
-			//services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
-		}
+            //services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
+        }
 
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
@@ -223,9 +223,9 @@ namespace TrainingApi
 
             //ServiceConfiguration.ConfigureApplicationInsights(app, config, env.IsDevelopment());
 
-			//if (oldDbStartup != null)
-			//    oldDbStartup.Configure(app);
-		}
+            //if (oldDbStartup != null)
+            //    oldDbStartup.Configure(app);
+        }
 
 		private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
         {
