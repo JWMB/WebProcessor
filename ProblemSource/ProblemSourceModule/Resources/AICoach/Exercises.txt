@@ -2,3 +2,13 @@ id	type	description
 wm_grid	Working memory	a 4x4 grid where the user needs to recall visuospatial sequences
 wm_numbers	Working memory	the user is presented with a digit sequence, then needs to input that sequence but reversed
 wm_crush	Working memory	fruits are highlighted in a sequence, recalling it correctly pops the fruits
+wm_3dgrid	Working memory	buttons in a pseudo-3d cube are highlighted, user needs to recall the sequence
+wm_circle	Working memory	buttons that are rotating in a circle are highlighted, user needs to recall the sequence
+wm_moving	Working memory	buttons that moving around in different directions are highlighted, user needs to recall the sequenctangram"]  Nonverbal reasoning solve tangram puzzles
+boolean	Nonverbal reasoning	perform boolean operations on overlapping shapes
+rotation	Nonverbal reasoning	figure out which shape can be rotated to match the target shape
+nvr_so	Nonverbal reasoning	a child-friendly variant of Ravens progressive matrices; figure out missing items in a sequential order
+nvr_rp	Nonverbal reasoning	a child-friendly variant of Ravens progressive matrices; figure out missing items in repeated pattern
+numberline	Math	user solves different problems presented on a number line
+npals	Math	10-pals and other variants (5-pals on lower levels, 15-pals later on etc)
+addsub	Math	simple addition/subtraction under time pressure
