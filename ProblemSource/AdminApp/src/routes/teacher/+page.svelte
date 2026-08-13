@@ -226,6 +226,12 @@
 				{#each Array.from(Array(trainingDayDetailsNumDaysBack).keys()) as dayOffset}
 				<th class="training-day-column" title="{DateUtils.toIsoDate(DateUtils.addDays(trainingDayDetails.startDate, dayOffset))}">{DateUtils.getWeekDayName(DateUtils.addDays(trainingDayDetails.startDate, dayOffset))[0]}</th>
 				{/each}
+				<th>
+					Gender
+				</th>
+				<th>
+					Consent
+				</th>
 				<th class="notes-column">
 					{getString('teacher_trainings_column_header_notes')}
 				</th>
@@ -253,6 +259,17 @@
 						<ProgressBar value={gettimeTotalOfTargetPercent(t, dayOffset)} showValueAs="None" max={100} suffix="%" decimals={0} color={getTimeWarningLevel(t, 0.01 * gettimeTotalOfTargetPercent(t, dayOffset)) == 1 ? '#fc9a9a' : '#77eda1'}/>
 					</td>
 					{/each}
+					<td>
+						<select>
+							<option value="">Not set</option>
+							<option value="m">Male</option>
+							<option value="f">Female</option>
+							<option value="o">Other</option>
+						</select>
+					</td>
+					<td>
+						<input type="checkbox" />
+					</td>
 					<td>
 						{#if showAIButton}
 						<input type="button" value="AI" on:click={() => aiDialogForId = t.id}/>
