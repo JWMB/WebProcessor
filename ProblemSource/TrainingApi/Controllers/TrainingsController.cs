@@ -338,7 +338,7 @@ namespace TrainingApi.Controllers
 
         [HttpGet]
         [Route("analysis")]
-        public async Task<AnalysisDto> GetAiAnalysis(int trainingId, string templateSource)
+        public async Task<AnalysisDto> GetAiAnalysis(int trainingId, string templateSource, bool onlyPrompt)
         {
 			var currentUser = userProvider.UserOrThrow;
             if (!currentUser.Trainings.GetAllIds().Contains(trainingId))
@@ -349,18 +349,21 @@ namespace TrainingApi.Controllers
             var template = await aiAnalyzer.GetResource(new Uri(templateSource));
             var prompt = await aiAnalyzer.CreatePrompt(template, replacements);
             var completion = "N/A";
-            try
+            if (onlyPrompt == false)
             {
-				var result = await llmService.Invoke(prompt);
-                completion = result?.Completion ?? "<No completion>";
+                try
+                {
+                    var result = await llmService.Invoke(prompt);
+                    completion = result?.Completion ?? "<No completion>";
+                }
+                catch (Exception ex)
+                {
+                    completion = $"{ex.GetType().Name}: {ex.Message}";
+                }
             }
-            catch (Exception ex)
-            {
-                completion = $"{ex.GetType().Name}: {ex.Message}";
-            }
-
 			return new(prompt, completion);
         }
+
 		public record AnalysisDto(string Prompt, string Completion);
 
 

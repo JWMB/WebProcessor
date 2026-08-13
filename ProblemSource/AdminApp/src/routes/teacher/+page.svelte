@@ -152,12 +152,12 @@
 		});
 	}
 
-	async function generatePrompt(id: number, templateSource: string) {
+	async function generatePrompt(id: number, templateSource: string, onlyPrompt: boolean) {
 		if (apiFacade == null) {
 			console.error('apiFacade null');
 			return;
 		}
-		const analysis = await apiFacade.trainings.getAiAnalysis(id, templateSource);
+		const analysis = await apiFacade.trainings.getAiAnalysis(id, templateSource, onlyPrompt);
 		console.log("asd", analysis);
 		promptSettings.completion = analysis.completion;
 		promptSettings.prompt = analysis.prompt;
@@ -170,10 +170,6 @@
 		<button disabled={realtimeConnected == null} on:click={() => rtlTools.toggleConnect()}>{realtimeConnected  == true ? 'Disconnect' : 'Connect'}</button>
 	{/if}
 	<div style="padding:5px; background-color:#cef; margin: 10px">
-		<p>Vi söker engagerade och IT-kunniga lärare för ett nytt kollaborativt initiativ att ta fram gratis och öppna läromedel.
-		Läs mer på <a href="https://github.com/JWMB/CurricuLLM/blob/main/README.md">github</a>.</p>
-		<p>Skicka ett <a href="mailto:jonas.beckeman@outlook.com?subject=Öppna läromedel">mail</a> om du eller en lärare du känner är intresserad av att hjälpa till! </p>
-		<p>Vi jobbar även på nya versioner av Vektor, med fler typer av övningar. Anmäl intresse för att prova nya versioner <a href="mailto:jonas.beckeman@outlook.com?subject=Vektor v2">här.</a></p>
 	</div>
 	{#if groups && groups.length > 0}
 		(Total: {groups.map(o => o.summaries.length).reduce((p, c) => p + c)} created, {groups.map(o => o.summaries.filter(p => p.trainedDays > 0).length).reduce((p, c) => p + c)} started)
@@ -280,12 +276,12 @@
 			<input name="template" type="text" bind:value={promptSettings.template}/>
 
 			------
-			<input type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template) }} value="Generate prompt ⬇️"/>
+			<input type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template, true) }} value="Generate prompt ⬇️"/>
 			<textarea rows="8" cols="100">{promptSettings.template}</textarea>
 
 			------
 
-			<input type="button" on:click={() => { aiDialogForId = null; }} value="Send to LLM ⬇️"/>
+			<input type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template, false) }} value="Send to LLM ⬇️"/>
 			<label for="model">Model</label>
 			<input name="model" type="text"/>
 			<textarea rows="8" cols="100">{promptSettings.completion}</textarea>
