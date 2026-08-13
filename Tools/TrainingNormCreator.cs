@@ -34,6 +34,23 @@ namespace Tools
 			return null;
 		}
 
+		public static async Task<List<(string Username, int Id)>> GetTrainingUsernamesAndIds(ITypedTableClientFactory tableClientFactory)
+		{
+			var q = tableClientFactory.Trainings.QueryAsync<TableEntity>(r => true);
+			var result = new List<(string, int)>();
+			await foreach (var t in q.AsPages())
+			{
+				foreach (var item in t.Values)
+				{
+					var id = item["Id"];
+					var uuid = item["Username"].ToString();
+					result.Add((uuid, int.Parse(id!.ToString()!)));
+				}
+			}
+			return result;
+		}
+
+
 		private async Task RecreateTraining(Training training)
 		{
 			var targetNormTrainingId = await GetTrainingId(tableClientFactory, training.Username);
