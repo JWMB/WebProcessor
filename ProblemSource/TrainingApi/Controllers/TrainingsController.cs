@@ -164,7 +164,11 @@ namespace TrainingApi.Controllers
                         + $"You already have {createTrainingsInfo.TrainingsQuota.Created}.", StatusCodes.Status400BadRequest);
             }
 
-            var template = await GetTemplate(dto.BaseTemplateId);
+            //var hashForRandomizedPlan = $"{user.Email}{groupName}".GetHashCode();
+            //var templateName = $"2026 HT template {(hashForRandomizedPlan % 2 == 0 ? "Math" : "Verbal")}.json";
+            //var template = (await trainingTemplateRepository.GetAll()).SingleOrDefault(o => o.Username == templateName);
+
+			var template = await GetTemplate(dto.BaseTemplateId);
 
             var trainings = new List<Training>();
 
