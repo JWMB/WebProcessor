@@ -15,6 +15,8 @@ Host safespring_sync2
 ```
 cd ~/source/repos/JWMB/WebProcessor
 rsync -Pavuz --exclude '**/bin/*' --exclude '**/obj/*' --exclude 'node_modules/*' --exclude '.svelte-kit/output/*' ./* ubuntu@safespring_sync2:/home/ubuntu/source
+# WAIT, we moved to user admin_site!!
+# rsync -Pavuz --exclude '**/bin/*' --exclude '**/obj/*' --exclude 'node_modules/*' --exclude '.svelte-kit/output/*' ~/source/repos/JWMB/WebProcessor/* ubuntu@safespring_sync2:/home/admin-site/source
 
 # rsync -Pavuz ~/Desktop/WebProcessor_Files/training_export/* ubuntu@safespring_sync2:/home/ubuntu/exports
 ```

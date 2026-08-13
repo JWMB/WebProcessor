@@ -157,6 +157,7 @@ namespace ProblemSource.Services
 			{
 				var json = await File.ReadAllTextAsync(file.FullName);
 				merged.Append(json);
+				merged.Append("\n,\n");
 			}
 			merged.Append("\n]");
 			var filename = Path.Join(directory.FullName, mergedFileName);

@@ -361,8 +361,10 @@ namespace TrainingApi.Controllers
 
 			return new(prompt, completion);
         }
+		public record AnalysisDto(string Prompt, string Completion);
 
-        [HttpPost("import")]
+
+		[HttpPost("import")]
         public async Task ImportTraining([FromBody] TrainingExport export) //int? targetId = null
 		{
             await importer.Import(export); //targetId
@@ -382,8 +384,6 @@ namespace TrainingApi.Controllers
 
 			await AddTrainingsToUser(user, groupName, exports.Select(o => o.Training!));
 		}
-
-		public record AnalysisDto(string Prompt, string Completion);
 
         private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null, User? user = null)
         {

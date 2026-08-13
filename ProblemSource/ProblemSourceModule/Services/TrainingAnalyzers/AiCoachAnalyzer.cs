@@ -145,7 +145,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 		{
 			var training = await trainingRepository.Get(trainingId);
 			if (training == null)
-				throw new ArgumentException();
+				throw new ArgumentException($"No training with id {trainingId}");
 
 			var normedProviders = new List<(Training, IUserGeneratedDataRepositoryProvider)>();
 			var norms = new[] { $"norm_{training.AgeBracket}", $"norm_{training.AgeBracket}_stddev" };
@@ -155,6 +155,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 				if (t != null)
 					normedProviders.Add((t, userDataProviderFactory.Create(t.Id)));
 			}
+
 			return await CreateReplacements(training, userDataProviderFactory.Create(trainingId), normedProviders);
 		}
 
@@ -186,7 +187,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
 			var normProviders = referenceTrainingProviders.Where(o => o.Training.AgeBracket == training.AgeBracket);
 			var normProvider = normProviders.FirstOrDefault(o => o.Training.Username.EndsWith(o.Training.AgeBracket)).Provider;
-			var stdDevProvider = normProviders.FirstOrDefault(o => o.Training.Username.EndsWith("_stddev")).Provider;
+			var stdDevProvider = normProviders.FirstOrDefault(o => o.Training.Username.EndsWith($"_stddev")).Provider;
 
 			var allDays = (await provider.TrainingDays.GetAll()).OrderBy(o => o.TrainingDay).ToList();
 			var today = DateTime.Today;
@@ -253,7 +254,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 						.ToDictionary(p => p.Key, p => p.Select(q => new { q.FirstCorrect, q.ResponseTime, q.PreviousLevel, q.PreviousCorrect }).ToList()));
 			}
 
-			var latestDay = allDays.Max(o => o.TrainingDay);
+			var latestDay = allDays.Any() ? allDays.Max(o => o.TrainingDay) : 0;
 			var stats = (await provider.PhaseStatistics.GetAll()).OrderBy(o => o.training_day).ToList();
 			if (cutoffDay.HasValue)
 			{
