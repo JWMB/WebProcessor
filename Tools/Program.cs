@@ -47,7 +47,7 @@ var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop
 {
     var uuidsAndIds = await TrainingNormCreator.GetTrainingUsernamesAndIds(serviceProvider.GetRequiredService<ITypedTableClientFactory>());
     var normIds = uuidsAndIds.Where(o => o.Username.StartsWith("norm_")).Select(o => o.Id).ToList();
-    var xport = new ExportTrainings(serviceProvider.GetRequiredService<ITypedTableClientFactory>());
+    var xport = new ExportTrainings(serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>(), serviceProvider.GetRequiredService<ITrainingRepository>());
     await xport.ExportStats(normIds, new DirectoryInfo(Path.Join(path, "training_export")));
 }
 

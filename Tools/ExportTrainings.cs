@@ -21,6 +21,8 @@ namespace Tools
 
 		public async Task ExportStats(IEnumerable<int> trainingIds, DirectoryInfo directory)
 		{
+			if (!directory.Exists)
+				directory.Create();
 			foreach (var id in trainingIds)
 				await ExportTrainingStats(id, directory);
 		}
@@ -41,18 +43,26 @@ namespace Tools
 		{
 			var ugdr = dataRepositoryProviderFactory.Create(trainingId); // (new AzureTableUserGeneratedDataRepositoriesProviderFactory(tableClientFactory)).Create(trainingId);
 			//var trainingRepo = new ProblemSourceModule.Services.Storage.AzureTables.AzureTableTrainingRepository(tableClientFactory);
-			var exportData = new Export
-			{
-				Training = await trainingRepository.Get(trainingId),
-				TrainingSummary = (await ugdr.TrainingSummaries.GetAll()).Single(),
-				TrainingDayAccount = (await ugdr.TrainingDays.GetAll()).ToList(),
-				PhaseStatistics = (await ugdr.PhaseStatistics.GetAll()).ToList(),
-				//Phases = await ugdr.Phases.GetAll(),
-			};
-			var json = Newtonsoft.Json.JsonConvert.SerializeObject(exportData);
 
-			var filename = $"{trainingId}.json";
-			await File.WriteAllTextAsync(Path.Join(directory.FullName, filename), json);
+			try
+			{
+				var exportData = new Export
+				{
+					Training = await trainingRepository.Get(trainingId),
+					TrainingSummary = (await ugdr.TrainingSummaries.GetAll()).SingleOrDefault(),
+					TrainingDayAccount = (await ugdr.TrainingDays.GetAll()).ToList(),
+					PhaseStatistics = (await ugdr.PhaseStatistics.GetAll()).ToList(),
+					//Phases = await ugdr.Phases.GetAll(),
+				};
+				var json = Newtonsoft.Json.JsonConvert.SerializeObject(exportData, Newtonsoft.Json.Formatting.Indented);
+
+				var filename = $"{trainingId}_{exportData.Training?.Username}.json";
+				await File.WriteAllTextAsync(Path.Join(directory.FullName, filename), json);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}
 		}
 
 		public class Export
