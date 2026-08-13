@@ -1,7 +1,5 @@
 ﻿using Common.Web;
 using Common.Web.Services;
-using Microsoft.ApplicationInsights.AspNetCore.Extensions;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
@@ -33,6 +31,8 @@ namespace TrainingApi
             services.AddTransient<IAccessResolver, AccessResolver>();
 
             services.AddSingleton<CreateUserWithTrainings>();
+            services.AddHttpClient();
+            services.AddHttpContextAccessor();
 
             var apiKeyUsers = new List<ApiKeyUser>();
             configurationManager.GetSection("AppSettings:ApiKeyUsers").Bind(apiKeyUsers);
@@ -85,29 +85,21 @@ namespace TrainingApi
 
             services.AddLogging(builder =>
             {
-                builder.AddApplicationInsights(); // AddAzureWebAppDiagnostics
+                //builder.AddApplicationInsights(); // AddAzureWebAppDiagnostics
 			});
 
-            services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
-            {
-                var builder = telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
-                telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder
-                    .UseAdaptiveSampling(maxTelemetryItemsPerSecond:5, excludedTypes: "Trace;Request;Exception");
-            });
-            services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
-            {
-                EnableAdaptiveSampling = false,
-            });
-
-            services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
+            SetupOpenTelemetry.Add(services, configurationManager);
+            //SetupAppInsights.Add(services, configurationManager);
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             ServiceConfiguration.ConfigurePlugins(app, plugins);
 
-            // Configure the HTTP request pipeline.
-            if (env.HasDevelopmentEnvironment())
+            SetupOpenTelemetry.Configure(app);
+
+			// Configure the HTTP request pipeline.
+			if (env.HasDevelopmentEnvironment())
             {
                 //app.UseSwagger();
                 //app.UseSwaggerUI();
@@ -219,13 +211,13 @@ namespace TrainingApi
                 MinimumSameSitePolicy = env.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.None : Microsoft.AspNetCore.Http.SameSiteMode.Lax
             });
 
-            ServiceConfiguration.ConfigureApplicationInsights(app, config, env.IsDevelopment());
+            //SetupAppInsights.Configure(app, config, env.IsDevelopment());
 
             //if (oldDbStartup != null)
             //    oldDbStartup.Configure(app);
         }
 
-        private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
+		private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
         {
             //TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, config, "AppSettings");
             ConfigureAuthentication(services, config, env);

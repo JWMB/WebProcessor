@@ -1,6 +1,4 @@
 ﻿using Common.Web.Services;
-using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,27 +27,5 @@ namespace Common.Web
             foreach (var plugin in pluginModules)
                 plugin.Configure(app);
         }
-
-        public static void ConfigureApplicationInsights(IApplicationBuilder app, IConfiguration config, bool isDevelopment)
-        {
-            var aiConn = config.GetValue("ApplicationInsights:ConnectionString", "");
-            if (aiConn == "SECRET" || aiConn == string.Empty)
-            {
-                if (isDevelopment == false)
-                    Console.WriteLine($"Warning: InstrumentationKey not set ({aiConn})");
-                    //throw new ArgumentException("InstrumentationKey not set");
-            }
-            else
-            {
-                var telemetryConfig = app.ApplicationServices.GetService<TelemetryConfiguration>();
-                if (telemetryConfig != null)
-                {
-                    telemetryConfig.ConnectionString = aiConn;
-                    var telemetry = new TelemetryClient(telemetryConfig);
-                    telemetry.TrackEvent("Application start");
-                    telemetry.TrackTrace("Trace Application start");
-                }
-            }
-        }
-    }
+	}
 }
