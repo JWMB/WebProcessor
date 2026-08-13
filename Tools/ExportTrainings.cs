@@ -26,18 +26,6 @@ namespace Tools
 			foreach (var id in trainingIds)
 				await ExportTrainingStats(id, directory);
 		}
-		//public async Task ExportStats(IEnumerable<string> trainingUuids, DirectoryInfo directory)
-		//{
-		//	var ids = new List<int>();
-		//	foreach (var uuid in trainingUuids)
-		//	{
-		//		var id = await TrainingNormCreator.GetTrainingId(tableClientFactory, uuid);
-		//		if (id == null)
-		//			throw new Exception($"Not found: {uuid}");
-		//		ids.Add(id.Value);
-		//	}
-		//	await ExportStats(ids, directory);
-		//}
 
 		private async Task ExportTrainingStats(int trainingId, DirectoryInfo directory)
 		{
@@ -74,7 +62,7 @@ namespace Tools
 			public List<Phase>? Phases { get; set; }
 		}
 
-		public async Task Import(string json)
+		public async Task Import(string json, int? targetTrainingId = null, bool forceCreateNewTraining = false)
 		{
 			var export = Newtonsoft.Json.JsonConvert.DeserializeObject<Export>(json);
 			if (export == null)
@@ -83,11 +71,32 @@ namespace Tools
 			if (export == null || export.Training == null)
 				throw new Exception("Empty export");
 
-			var found = await trainingRepository.GetByUsername(export.Training.Username);
-			if (found == null)
+			if (targetTrainingId.HasValue)
 			{
-				await trainingRepository.Add(export.Training);
+				throw new NotImplementedException();
 			}
+			else
+			{
+				var found = forceCreateNewTraining ? null : await trainingRepository.GetByUsername(export.Training.Username);
+				if (found == null)
+				{
+					await trainingRepository.Add(export.Training);
+				}
+				else
+					export.Training.Id = found.Id;
+			}
+
+			if (export.TrainingSummary != null)
+				export.TrainingSummary.Id = export.Training.Id;
+			foreach (var item in export.TrainingDayAccount ?? [])
+			{
+				item.AccountId = export.Training.Id;
+				item.AccountUuid = export.Training.Username;
+			}
+			foreach (var item in export.PhaseStatistics ?? [])
+				item.account_id = export.Training.Id;
+			//foreach (var item in export.Phases ?? [])
+			//	item.id = export.Training.Id;
 
 			var ugdr = dataRepositoryProviderFactory.Create(export.Training.Id);
 
