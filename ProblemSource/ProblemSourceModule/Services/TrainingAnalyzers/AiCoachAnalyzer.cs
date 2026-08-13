@@ -298,7 +298,9 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 						.Concat([new { Who = "This user", Value = usersBaseline }]);
 					return new { Exercise = exerciseId, Values = averages.ToList() };
 				});
-			var baselineByExerciseTable = new[] { new[] { "Exercise" }.Concat(baselineByExercise.First().Values.Select(o => o.Who)).ToList() }
+			var baselineByExerciseTable = baselineByExercise.Any() == false
+				? new List<List<string>>()
+				: new[] { new[] { "Exercise" }.Concat(baselineByExercise.First().Values.Select(o => o.Who)).ToList() }
 				.Concat(baselineByExercise.Select(o =>
 				{
 					return new[] { o.Exercise }.Concat(o.Values.Select(p => ToString(p.Value))).ToList();
