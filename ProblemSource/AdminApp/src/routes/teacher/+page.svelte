@@ -22,7 +22,7 @@
 	const showAIButton = $userStore?.role == "Admin";
 	let aiDialogForId: number | null = null;
 	const promptSettings = {
-		template: "https://github.com/JWMB/WebProcessor",
+		template: "https://raw.githubusercontent.com/JWMB/WebProcessor/refs/heads/main/ProblemSource/ProblemSourceModule/Resources/AICoach/TeacherStudent.txt",
 		model: "qwen3.1",
 		prompt: "(Generated prompt goes here)",
 		completion: "(Generated completion goes here)"
@@ -277,7 +277,7 @@
 
 			------
 			<input type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template, true) }} value="Generate prompt ⬇️"/>
-			<textarea rows="8" cols="100">{promptSettings.template}</textarea>
+			<textarea rows="8" cols="100">{promptSettings.prompt}</textarea>
 
 			------
 

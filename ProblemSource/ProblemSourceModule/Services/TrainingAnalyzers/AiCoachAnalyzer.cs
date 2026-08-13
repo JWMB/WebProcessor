@@ -54,6 +54,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
 		public async Task<string> CreatePrompt(string template, Dictionary<string, object> replacements)
 		{
+			AssertExerciseDescriptions(replacements);
 			var rendered = new Replacer().Execute(template, replacements, null, [
 				("MarkdownTable", (object items) => ToMarkdownTable(items)),
 				]);
@@ -62,15 +63,22 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
 		public async Task<string> CreatePrompt(Dictionary<string, object> replacements)
 		{
-			var path = Path.Join(Directory.GetCurrentDirectory(), "Resources", "AICoach");
-			
-			var template = File.ReadAllText(Path.Join(path, "TeacherStudent.txt"));
-			var exercises = File.ReadAllText(Path.Join(path, "Exercises.txt"));
-			replacements["exerciseDescriptions"] = ReadAnonymous(new { id = "", type = "", description = "" }, exercises);
+			var template = File.ReadAllText(Path.Join(DefaulResourcePath, "TeacherStudent.txt"));
+			AssertExerciseDescriptions(replacements);
 			var rendered = new Replacer().Execute(template, replacements, null, [
 					("MarkdownTable", (object items) => ToMarkdownTable(items)),
 				]);
 			return rendered;
+		}
+
+		private string DefaulResourcePath => Path.Join(Directory.GetCurrentDirectory(), "Resources", "AICoach");
+
+		private void AssertExerciseDescriptions(Dictionary<string, object> replacements)
+		{
+			if (replacements.ContainsKey("exerciseDescriptions"))
+				return;
+			var exercises = File.ReadAllText(Path.Join(DefaulResourcePath, "Exercises.txt"));
+			replacements["exerciseDescriptions"] = ReadAnonymous(new { id = "", type = "", description = "" }, exercises);
 		}
 
 		public static string ListToMarkdownTable(List<List<string>> table)

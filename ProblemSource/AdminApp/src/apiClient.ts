@@ -665,7 +665,7 @@ export class TrainingsClient {
         return Promise.resolve<TrainingSummaryWithDaysDto[]>(null as any);
     }
 
-    getAiAnalysis(trainingId: number | undefined, templateSource: string | undefined): Promise<AnalysisDto> {
+    getAiAnalysis(trainingId: number | undefined, templateSource: string | undefined, onlyPrompt: boolean | undefined): Promise<AnalysisDto> {
         let url_ = this.baseUrl + "/api/Trainings/analysis?";
         if (trainingId === null)
             throw new globalThis.Error("The parameter 'trainingId' cannot be null.");
@@ -675,6 +675,9 @@ export class TrainingsClient {
             throw new globalThis.Error("The parameter 'templateSource' cannot be null.");
         else if (templateSource !== undefined)
             url_ += "templateSource=" + encodeURIComponent("" + templateSource) + "&";
+        if (onlyPrompt)
+            url_ += "onlyPrompt=" + encodeURIComponent("" + onlyPrompt) + "&";
+
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
