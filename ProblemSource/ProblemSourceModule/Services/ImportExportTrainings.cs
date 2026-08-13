@@ -44,9 +44,7 @@ namespace ProblemSource.Services
 
 		public async Task ExportStats(int trainingId, DirectoryInfo directory, bool includeDetails)
 		{
-			var ugdr = dataRepositoryProviderFactory.Create(trainingId); // (new AzureTableUserGeneratedDataRepositoriesProviderFactory(tableClientFactory)).Create(trainingId);
-																		 //var trainingRepo = new ProblemSourceModule.Services.Storage.AzureTables.AzureTableTrainingRepository(tableClientFactory);
-
+			var ugdr = dataRepositoryProviderFactory.Create(trainingId);
 			try
 			{
 				var exportData = new TrainingExport

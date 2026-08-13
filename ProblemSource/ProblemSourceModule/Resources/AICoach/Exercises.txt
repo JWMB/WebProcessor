@@ -4,7 +4,8 @@ wm_numbers	Working memory	the user is presented with a digit sequence, then need
 wm_crush	Working memory	fruits are highlighted in a sequence, recalling it correctly pops the fruits
 wm_3dgrid	Working memory	buttons in a pseudo-3d cube are highlighted, user needs to recall the sequence
 wm_circle	Working memory	buttons that are rotating in a circle are highlighted, user needs to recall the sequence
-wm_moving	Working memory	buttons that moving around in different directions are highlighted, user needs to recall the sequenctangram"]  Nonverbal reasoning solve tangram puzzles
+wm_moving	Working memory	buttons that moving around in different directions are highlighted, user needs to recall the sequence
+tangram	Nonverbal reasoning	solve tangram puzzles
 boolean	Nonverbal reasoning	perform boolean operations on overlapping shapes
 rotation	Nonverbal reasoning	figure out which shape can be rotated to match the target shape
 nvr_so	Nonverbal reasoning	a child-friendly variant of Ravens progressive matrices; figure out missing items in a sequential order

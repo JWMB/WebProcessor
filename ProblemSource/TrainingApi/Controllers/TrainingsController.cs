@@ -375,6 +375,12 @@ namespace TrainingApi.Controllers
 		[HttpPost("importmany/{groupName}")]
 		public async Task ImportTrainings([FromBody] List<TrainingExport> exports, string groupName)
 		{
+			/*
+await fetch("/api/Trainings/importmany/Norms", {
+    "headers": {"Accept": "application/json", "Content-Type": "application/json"},
+    "method": "POST", "mode": "cors", "credentials": "include", "body": JSON.stringify(data)
+});
+             */
 			var user = userProvider.UserOrThrow;
 
             if (exports.Any(o => o.Training == null))
