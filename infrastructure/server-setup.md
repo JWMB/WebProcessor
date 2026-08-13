@@ -15,6 +15,8 @@ Host safespring_sync2
 ```
 cd ~/source/repos/JWMB/WebProcessor
 rsync -Pavuz --exclude '**/bin/*' --exclude '**/obj/*' --exclude 'node_modules/*' --exclude '.svelte-kit/output/*' ./* ubuntu@safespring_sync2:/home/ubuntu/source
+
+# rsync -Pavuz ~/Desktop/WebProcessor_Files/training_export/* ubuntu@safespring_sync2:/home/ubuntu/exports
 ```
 ```
 sudo apt-get update

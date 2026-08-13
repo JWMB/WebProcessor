@@ -4,15 +4,15 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
 
-namespace Tools
+namespace ProblemSource.Services
 {
-	internal class ExportTrainings
+	public class ImportExportTrainings
 	{
 		//private readonly ITypedTableClientFactory tableClientFactory;
 		private readonly IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory;
 		private readonly ITrainingRepository trainingRepository;
 
-		public ExportTrainings(IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory, ITrainingRepository trainingRepository)
+		public ImportExportTrainings(IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory, ITrainingRepository trainingRepository)
 		{
 			//this.tableClientFactory = tableClientFactory;
 			this.dataRepositoryProviderFactory = dataRepositoryProviderFactory;
@@ -67,7 +67,10 @@ namespace Tools
 			var export = Newtonsoft.Json.JsonConvert.DeserializeObject<Export>(json);
 			if (export == null)
 				throw new Exception("Could not parse");
+		}
 
+		public async Task Import(Export export, int? targetTrainingId = null, bool forceCreateNewTraining = false)
+		{
 			if (export == null || export.Training == null)
 				throw new Exception("Empty export");
 

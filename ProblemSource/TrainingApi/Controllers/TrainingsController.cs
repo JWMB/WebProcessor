@@ -25,6 +25,7 @@ namespace TrainingApi.Controllers
         private readonly ITrainingTemplateRepository trainingTemplateRepository;
 		private readonly AiCoachAnalyzer aiAnalyzer;
 		private readonly ILlmService llmService;
+		private readonly ImportExportTrainings importExport;
 		private readonly IStatisticsProvider statisticsProvider;
         private readonly IUserRepository userRepository;
         private readonly ICurrentUserProvider userProvider;
@@ -37,7 +38,7 @@ namespace TrainingApi.Controllers
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
             IUserRepository userRepository, ICurrentUserProvider userProvider, ITrainingUsernameService trainingUsernameService, 
             IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
-            ITrainingTemplateRepository trainingTemplateRepository, AiCoachAnalyzer aiAnalyzer, ILlmService llmService,
+            ITrainingTemplateRepository trainingTemplateRepository, AiCoachAnalyzer aiAnalyzer, ILlmService llmService, ImportExportTrainings importExport,
 			ILogger<AggregatesController> logger)
         {
             this.trainingPlanRepository = trainingPlanRepository;
@@ -51,6 +52,7 @@ namespace TrainingApi.Controllers
             this.trainingTemplateRepository = trainingTemplateRepository;
 			this.aiAnalyzer = aiAnalyzer;
 			this.llmService = llmService;
+			this.importExport = importExport;
 			log = logger;
         }
 
@@ -350,7 +352,21 @@ namespace TrainingApi.Controllers
 			return new(prompt, completion);
         }
 
-        public record AnalysisDto(string Prompt, string Completion);
+        [HttpPost("import")]
+        public async Task ImportTraining([FromBody] ImportExportTrainings.Export export) //int? targetId = null
+		{
+            await importExport.Import(export); //targetId
+		}
+		[HttpPost("importmany")]
+		public async Task ImportTrainings([FromBody] List<ImportExportTrainings.Export> exports)
+		{
+            foreach (var item in exports)
+            {
+				await importExport.Import(item);
+			}
+		}
+
+		public record AnalysisDto(string Prompt, string Completion);
 
         private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null, User? user = null)
         {

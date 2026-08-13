@@ -1,8 +1,5 @@
-﻿using Azure.Data.Tables;
-using AzureTableGenerics;
-using ProblemSource.Models.Aggregates;
+﻿using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
-using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
 
