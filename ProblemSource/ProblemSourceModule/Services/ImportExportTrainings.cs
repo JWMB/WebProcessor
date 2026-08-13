@@ -1,4 +1,5 @@
-﻿using ProblemSource.Models.Aggregates;
+﻿using ProblemSource.Models;
+using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
@@ -19,17 +20,16 @@ namespace ProblemSource.Services
 		public List<TrainingDayAccount>? TrainingDayAccount { get; set; }
 		public List<PhaseStatistics>? PhaseStatistics { get; set; }
 		public List<Phase>? Phases { get; set; }
+		public UserGeneratedState? UserState { get; set; }
 	}
 
 	public class ImportExportTrainings : ITrainingImporter
 	{
-		//private readonly ITypedTableClientFactory tableClientFactory;
 		private readonly IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory;
 		private readonly ITrainingRepository trainingRepository;
 
 		public ImportExportTrainings(IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory, ITrainingRepository trainingRepository)
 		{
-			//this.tableClientFactory = tableClientFactory;
 			this.dataRepositoryProviderFactory = dataRepositoryProviderFactory;
 			this.trainingRepository = trainingRepository;
 		}
@@ -39,13 +39,13 @@ namespace ProblemSource.Services
 			if (!directory.Exists)
 				directory.Create();
 			foreach (var id in trainingIds)
-				await ExportTrainingStats(id, directory);
+				await ExportStats(id, directory, false);
 		}
 
-		private async Task ExportTrainingStats(int trainingId, DirectoryInfo directory)
+		public async Task ExportStats(int trainingId, DirectoryInfo directory, bool includeDetails)
 		{
 			var ugdr = dataRepositoryProviderFactory.Create(trainingId); // (new AzureTableUserGeneratedDataRepositoriesProviderFactory(tableClientFactory)).Create(trainingId);
-			//var trainingRepo = new ProblemSourceModule.Services.Storage.AzureTables.AzureTableTrainingRepository(tableClientFactory);
+																		 //var trainingRepo = new ProblemSourceModule.Services.Storage.AzureTables.AzureTableTrainingRepository(tableClientFactory);
 
 			try
 			{
@@ -55,7 +55,8 @@ namespace ProblemSource.Services
 					TrainingSummary = (await ugdr.TrainingSummaries.GetAll()).SingleOrDefault(),
 					TrainingDayAccount = (await ugdr.TrainingDays.GetAll()).ToList(),
 					PhaseStatistics = (await ugdr.PhaseStatistics.GetAll()).ToList(),
-					//Phases = await ugdr.Phases.GetAll(),
+					Phases = includeDetails ? (await ugdr.Phases.GetAll()).ToList() : null,
+					UserState = includeDetails ? (await ugdr.UserStates.GetAll()).SingleOrDefault() : null,
 				};
 				var json = Newtonsoft.Json.JsonConvert.SerializeObject(exportData, Newtonsoft.Json.Formatting.Indented);
 
@@ -73,6 +74,7 @@ namespace ProblemSource.Services
 			var export = Newtonsoft.Json.JsonConvert.DeserializeObject<TrainingExport>(json);
 			if (export == null)
 				throw new Exception("Could not parse");
+			await Import(export, targetTrainingId, forceCreateNewTraining);
 		}
 
 		public async Task Import(TrainingExport export, int? targetTrainingId = null, bool forceCreateNewTraining = false)
@@ -106,27 +108,27 @@ namespace ProblemSource.Services
 				item.account_id = export.Training.Id;
 			//foreach (var item in export.Phases ?? [])
 			//	item.id = export.Training.Id;
+			//if (export.UserState != null)
+			//	export.UserState.
 
 			var ugdr = dataRepositoryProviderFactory.Create(export.Training.Id);
 
 			await ugdr.RemoveAll();
 
 			if (export.TrainingSummary != null)
-			{
 				await ugdr.TrainingSummaries.Upsert([export.TrainingSummary]);
-			}
+
 			if (export.TrainingDayAccount?.Any() == true)
-			{
 				await ugdr.TrainingDays.Upsert(export.TrainingDayAccount);
-			}
+
 			if (export.PhaseStatistics?.Any() == true)
-			{
 				await ugdr.PhaseStatistics.Upsert(export.PhaseStatistics);
-			}
+
 			if (export.Phases?.Any() == true)
-			{
 				await ugdr.Phases.Upsert(export.Phases);
-			}
+
+			if (export.UserState != null)
+				await ugdr.UserStates.Upsert([export.UserState]);
 		}
 
 		public async Task ImportFromFolder(DirectoryInfo directory)
