@@ -46,6 +46,13 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		public IBatchRepository<UserGeneratedState> UserStates
 			=> new MongoTrainingAssociatedBatchRepository<UserGeneratedState, string>(db, item => "x", trainingId); // Key, 
 
-		public Task RemoveAll() => throw new NotImplementedException();
+		public async Task RemoveAll()
+		{
+			await Phases.RemoveAll();
+			await TrainingDays.RemoveAll();
+			await PhaseStatistics.RemoveAll();
+			await TrainingSummaries.RemoveAll();
+			await UserStates.RemoveAll();
+		}
 	}
 }

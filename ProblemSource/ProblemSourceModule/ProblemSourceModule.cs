@@ -79,7 +79,7 @@ namespace ProblemSource
             var fallback = new NullLlmService();
 			services.AddSingleton(sp => sp.GetRequiredService<ILlmServiceFactory>().GetOrDefault(fallback, "gpt-5-mini", "Azure"));
 
-            services.AddSingleton<ImportExportTrainings>();
+            services.AddSingleton<ITrainingImporter, ImportExportTrainings>();
 
 			services.AddSingleton<TrainingAnalyzerCollection>();
             //services.AddSingleton<TrainingAnalyzerCollection>(sp => new TrainingAnalyzerCollection(new[] { }, sp.GetRequiredService<>));

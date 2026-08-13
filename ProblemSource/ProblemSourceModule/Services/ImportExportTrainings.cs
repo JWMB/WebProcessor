@@ -3,10 +3,25 @@ using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
+using System.Text;
 
 namespace ProblemSource.Services
 {
-	public class ImportExportTrainings
+	public interface ITrainingImporter
+	{
+		Task Import(TrainingExport export, int? targetTrainingId = null, bool forceCreateNewTraining = false);
+	}
+
+	public class TrainingExport
+	{
+		public Training? Training { get; set; }
+		public TrainingSummary? TrainingSummary { get; set; }
+		public List<TrainingDayAccount>? TrainingDayAccount { get; set; }
+		public List<PhaseStatistics>? PhaseStatistics { get; set; }
+		public List<Phase>? Phases { get; set; }
+	}
+
+	public class ImportExportTrainings : ITrainingImporter
 	{
 		//private readonly ITypedTableClientFactory tableClientFactory;
 		private readonly IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory;
@@ -34,7 +49,7 @@ namespace ProblemSource.Services
 
 			try
 			{
-				var exportData = new Export
+				var exportData = new TrainingExport
 				{
 					Training = await trainingRepository.Get(trainingId),
 					TrainingSummary = (await ugdr.TrainingSummaries.GetAll()).SingleOrDefault(),
@@ -53,23 +68,14 @@ namespace ProblemSource.Services
 			}
 		}
 
-		public class Export
-		{
-			public Training? Training { get; set; }
-			public TrainingSummary? TrainingSummary { get; set; }
-			public List<TrainingDayAccount>? TrainingDayAccount { get; set; }
-			public List<PhaseStatistics>? PhaseStatistics { get; set; }
-			public List<Phase>? Phases { get; set; }
-		}
-
 		public async Task Import(string json, int? targetTrainingId = null, bool forceCreateNewTraining = false)
 		{
-			var export = Newtonsoft.Json.JsonConvert.DeserializeObject<Export>(json);
+			var export = Newtonsoft.Json.JsonConvert.DeserializeObject<TrainingExport>(json);
 			if (export == null)
 				throw new Exception("Could not parse");
 		}
 
-		public async Task Import(Export export, int? targetTrainingId = null, bool forceCreateNewTraining = false)
+		public async Task Import(TrainingExport export, int? targetTrainingId = null, bool forceCreateNewTraining = false)
 		{
 			if (export == null || export.Training == null)
 				throw new Exception("Empty export");
@@ -139,6 +145,22 @@ namespace ProblemSource.Services
 					continue;
 				}
 			}
+		}
+
+		public async Task MergeInFolder(DirectoryInfo directory)
+		{
+			var mergedFileName = "merged.json";
+			var files = directory.GetFiles("*.json");
+			var merged = new StringBuilder();
+			merged.Append("[\n");
+			foreach (var file in files.Where(o => o.Name != mergedFileName))
+			{
+				var json = await File.ReadAllTextAsync(file.FullName);
+				merged.Append(json);
+			}
+			merged.Append("\n]");
+			var filename = Path.Join(directory.FullName, mergedFileName);
+			await File.WriteAllTextAsync(filename, merged.ToString());
 		}
 	}
 }

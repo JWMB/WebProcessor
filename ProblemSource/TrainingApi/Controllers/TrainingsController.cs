@@ -25,7 +25,7 @@ namespace TrainingApi.Controllers
         private readonly ITrainingTemplateRepository trainingTemplateRepository;
 		private readonly AiCoachAnalyzer aiAnalyzer;
 		private readonly ILlmService llmService;
-		private readonly ImportExportTrainings importExport;
+		private readonly ITrainingImporter importer;
 		private readonly IStatisticsProvider statisticsProvider;
         private readonly IUserRepository userRepository;
         private readonly ICurrentUserProvider userProvider;
@@ -38,7 +38,7 @@ namespace TrainingApi.Controllers
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
             IUserRepository userRepository, ICurrentUserProvider userProvider, ITrainingUsernameService trainingUsernameService, 
             IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
-            ITrainingTemplateRepository trainingTemplateRepository, AiCoachAnalyzer aiAnalyzer, ILlmService llmService, ImportExportTrainings importExport,
+            ITrainingTemplateRepository trainingTemplateRepository, AiCoachAnalyzer aiAnalyzer, ILlmService llmService, ITrainingImporter importer,
 			ILogger<AggregatesController> logger)
         {
             this.trainingPlanRepository = trainingPlanRepository;
@@ -52,7 +52,7 @@ namespace TrainingApi.Controllers
             this.trainingTemplateRepository = trainingTemplateRepository;
 			this.aiAnalyzer = aiAnalyzer;
 			this.llmService = llmService;
-			this.importExport = importExport;
+			this.importer = importer;
 			log = logger;
         }
 
@@ -194,18 +194,28 @@ namespace TrainingApi.Controllers
             if (numLeftToCreate > 0)
                 trainings.AddRange(await CreateTrainings(numLeftToCreate, dto, template));
 
-            if (!user.Trainings.TryGetValue(groupName, out var list))
-            {
-                list = new List<int>();
-                user.Trainings.Add(groupName, list);
-            }
-            list.AddRange(trainings.Select(o => o.Id));
-            await userRepository.Update(user);
+            await AddTrainingsToUser(user, groupName, trainings);
 
-            return trainings.Select(o => o.Username).ToList();
+			return trainings.Select(o => o.Username).ToList();
         }
 
-        [HttpGet]
+        private async Task AddTrainingsToUser(User user, string groupName, IEnumerable<Training> trainings)
+        {
+			if (!user.Trainings.TryGetValue(groupName, out var list))
+			{
+				list = new List<int>();
+				user.Trainings.Add(groupName, list);
+			}
+            var ids = trainings.Select(o => o.Id).Except(list).ToList();
+            if (ids.Any())
+            {
+				list.AddRange(ids);
+				await userRepository.Update(user);
+			}
+		}
+
+
+		[HttpGet]
         [Route("{id}")]
         public async Task<Training?> GetById(int id)
         {
@@ -353,17 +363,24 @@ namespace TrainingApi.Controllers
         }
 
         [HttpPost("import")]
-        public async Task ImportTraining([FromBody] ImportExportTrainings.Export export) //int? targetId = null
+        public async Task ImportTraining([FromBody] TrainingExport export) //int? targetId = null
 		{
-            await importExport.Import(export); //targetId
+            await importer.Import(export); //targetId
 		}
-		[HttpPost("importmany")]
-		public async Task ImportTrainings([FromBody] List<ImportExportTrainings.Export> exports)
+		[HttpPost("importmany/{groupName}")]
+		public async Task ImportTrainings([FromBody] List<TrainingExport> exports, string groupName)
 		{
-            foreach (var item in exports)
+			var user = userProvider.UserOrThrow;
+
+            if (exports.Any(o => o.Training == null))
+                throw new Exception($"contains null trainings");
+
+			foreach (var item in exports)
             {
-				await importExport.Import(item);
+				await importer.Import(item);
 			}
+
+			await AddTrainingsToUser(user, groupName, exports.Select(o => o.Training!));
 		}
 
 		public record AnalysisDto(string Prompt, string Completion);

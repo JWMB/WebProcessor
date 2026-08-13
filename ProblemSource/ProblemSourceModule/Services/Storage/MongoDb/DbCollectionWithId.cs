@@ -46,7 +46,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		}
 
 		public async Task Update(TDocument item) => await collection.FindOneAndReplaceAsync(GetIdFilter(getId(item)), item);
-		public Task Upsert(TDocument item) => Upsert([item]);
+		//public Task Upsert(TDocument item) => Upsert([item]);
 
 		public async Task<List<TDocument>> ListAsync(FilterDefinition<TDocument> filter, CancellationToken cancellationToken = default)
 		{
@@ -85,9 +85,12 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         {
 			var itemsWithId = items.Select(o => new { Id = getId(o), Item = o }).ToList();
 
-			var projection = Builders<TDocument>.Projection.Include(idField); //Include("Id").
+			var projection = Builders<TDocument>.Projection.Include("_id"); //Include("Id").
+			if (idField.Any() == true)
+				projection = projection.Include(idField);
+
 			var tmpX = (await collection.Find(GetFilter(items, globalFilter)).Project(projection).ToListAsync())
-				.Select(o => new { Id = o["_id"].AsObjectId, SubId = GetValueByPath(o, idField)?.ToString() })
+				.Select(o => new { Id = o["_id"].AsObjectId, SubId = idField.Any() ? GetValueByPath(o, idField)?.ToString() : null })
 				//.Select(o => BsonSerializer.Deserialize<X>(o))
 				.Where(o => o.SubId != null).ToList();
 			if (tmpX == null)

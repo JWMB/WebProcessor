@@ -43,16 +43,17 @@ var cancellationToken = cts.Token;
 var path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "WebProcessor_Files");
 
 
+if (false)
 {
 	var dir = new DirectoryInfo(Path.Join(path, "training_export"));
 	
     var xport = new ImportExportTrainings(serviceProvider.GetRequiredService<IUserGeneratedDataRepositoryProviderFactory>(), serviceProvider.GetRequiredService<ITrainingRepository>());
-	//var uuidsAndIds = await TrainingNormCreator.GetTrainingUsernamesAndIds(serviceProvider.GetRequiredService<ITypedTableClientFactory>());
-	//var normIds = uuidsAndIds.Where(o => o.Username.StartsWith("norm_")).Select(o => o.Id).ToList();
-	//await xport.ExportStats(normIds, dir);
+    //var uuidsAndIds = await TrainingNormCreator.GetTrainingUsernamesAndIds(serviceProvider.GetRequiredService<ITypedTableClientFactory>());
+    //var normIds = uuidsAndIds.Where(o => o.Username.StartsWith("norm_")).Select(o => o.Id).ToList();
+    //await xport.ExportStats(normIds, dir);
 
-	await xport.ImportFromFolder(dir);
-
+    //await xport.MergeInFolder(dir);
+	//await xport.ImportFromFolder(dir);
 }
 
 //await serviceProvider.GetRequiredService<TeacherOverview>().X();
