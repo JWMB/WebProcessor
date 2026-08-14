@@ -260,7 +260,7 @@
 					</td>
 					{/each}
 					<td>
-						<select>
+						<select value={t.gender} on:change={e => console.log("g", t.gender, { gender: e.target.value })}>
 							<option value="">Not set</option>
 							<option value="m">Male</option>
 							<option value="f">Female</option>
@@ -268,7 +268,7 @@
 						</select>
 					</td>
 					<td>
-						<input type="checkbox" />
+						<input type="checkbox" checked={t.consent != null} on:change={e => console.log("a", t.consent, { consent: e.target.value })} />
 					</td>
 					<td>
 						{#if showAIButton}
