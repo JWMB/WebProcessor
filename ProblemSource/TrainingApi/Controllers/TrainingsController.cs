@@ -218,6 +218,41 @@ namespace TrainingApi.Controllers
 			}
 		}
 
+		// TODO: use https://learn.microsoft.com/en-us/aspnet/core/web-api/jsonpatch?view=aspnetcore-10.0 - e.g. JsonPatchDocument<Training> 
+		[HttpPatch]
+        [Route("{id}")]
+        public async Task Patch(int id, [FromBody] PatchTrainingDto dto)
+        {
+			var user = userProvider.UserOrThrow;
+            if (!user.Trainings.GetAllIds().Contains(id))
+                throw new ArgumentOutOfRangeException("Not belonging to user");
+            var training = await trainingRepository.Get(id);
+            if (training == null)
+				throw new ArgumentOutOfRangeException();
+			dto.Apply(training);
+            await trainingRepository.Upsert(training);
+		}
+
+		public class PatchTrainingDto
+        {
+            public string? Gender { get; set; }
+			public string? AgeBracket { get; set; }
+            public DateTime? Consent { get; set; }
+
+            public bool Apply(Training training)
+            {
+                if (Gender != null)
+                    training.Gender = Gender;
+                else if (AgeBracket != null)
+                    training.AgeBracket = AgeBracket;
+                else if (Consent != null)
+                    training.Consent = Consent;
+                else
+                    return false;
+                return true;
+            }
+		}
+
 
 		[HttpGet]
         [Route("{id}")]

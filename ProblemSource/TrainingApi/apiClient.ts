@@ -185,7 +185,7 @@ export class TestingClient {
         return Promise.resolve<void>(null as any);
     }
 
-    log(level: LogLevel | undefined): Promise<void> {
+    log(level: LogLevel | undefined): Promise<FileResponse | null> {
         let url_ = this.baseUrl + "/api/Testing/log?";
         if (level === null)
             throw new globalThis.Error("The parameter 'level' cannot be null.");
@@ -196,6 +196,7 @@ export class TestingClient {
         let options_: RequestInit = {
             method: "POST",
             headers: {
+                "Accept": "application/octet-stream"
             }
         };
 
@@ -204,19 +205,68 @@ export class TestingClient {
         });
     }
 
-    protected processLog(response: Response): Promise<void> {
+    protected processLog(response: Response): Promise<FileResponse | null> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            return;
-            });
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<FileResponse | null>(null as any);
+    }
+
+    index(level: LogLevel | undefined): Promise<FileResponse | null> {
+        let url_ = this.baseUrl + "/api/Testing?";
+        if (level === null)
+            throw new globalThis.Error("The parameter 'level' cannot be null.");
+        else if (level !== undefined)
+            url_ += "level=" + encodeURIComponent("" + level) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processIndex(_response);
+        });
+    }
+
+    protected processIndex(response: Response): Promise<FileResponse | null> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse | null>(null as any);
     }
 
     callPredictor(): Promise<FileResponse | null> {
@@ -454,6 +504,43 @@ export class TrainingsClient {
         return Promise.resolve<string[]>(null as any);
     }
 
+    patch(id: number, dto: PatchTrainingDto): Promise<void> {
+        let url_ = this.baseUrl + "/api/Trainings/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPatch(_response);
+        });
+    }
+
+    protected processPatch(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
     getById(id: number): Promise<Training> {
         let url_ = this.baseUrl + "/api/Trainings/{id}";
         if (id === undefined || id === null)
@@ -665,7 +752,7 @@ export class TrainingsClient {
         return Promise.resolve<TrainingSummaryWithDaysDto[]>(null as any);
     }
 
-    getAiAnalysis(trainingId: number | undefined, templateSource: string | undefined): Promise<AnalysisDto> {
+    getAiAnalysis(trainingId: number | undefined, templateSource: string | undefined, onlyPrompt: boolean | undefined): Promise<AnalysisDto> {
         let url_ = this.baseUrl + "/api/Trainings/analysis?";
         if (trainingId === null)
             throw new globalThis.Error("The parameter 'trainingId' cannot be null.");
@@ -675,6 +762,10 @@ export class TrainingsClient {
             throw new globalThis.Error("The parameter 'templateSource' cannot be null.");
         else if (templateSource !== undefined)
             url_ += "templateSource=" + encodeURIComponent("" + templateSource) + "&";
+        if (onlyPrompt === null)
+            throw new globalThis.Error("The parameter 'onlyPrompt' cannot be null.");
+        else if (onlyPrompt !== undefined)
+            url_ += "onlyPrompt=" + encodeURIComponent("" + onlyPrompt) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -704,6 +795,77 @@ export class TrainingsClient {
             });
         }
         return Promise.resolve<AnalysisDto>(null as any);
+    }
+
+    importTraining(export: TrainingExport): Promise<void> {
+        let url_ = this.baseUrl + "/api/Trainings/import";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(export);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processImportTraining(_response);
+        });
+    }
+
+    protected processImportTraining(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    importTrainings(exports: TrainingExport[], groupName: string): Promise<void> {
+        let url_ = this.baseUrl + "/api/Trainings/importmany/{groupName}";
+        if (groupName === undefined || groupName === null)
+            throw new globalThis.Error("The parameter 'groupName' must be defined.");
+        url_ = url_.replace("{groupName}", encodeURIComponent("" + groupName));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(exports);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processImportTrainings(_response);
+        });
+    }
+
+    protected processImportTrainings(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
     }
 }
 
@@ -1437,12 +1599,20 @@ export interface Quota {
     reusable?: number[] | undefined;
 }
 
+export interface PatchTrainingDto {
+    gender?: string | undefined;
+    ageBracket?: string | undefined;
+    consent?: Date | undefined;
+}
+
 export interface Training {
     id: number;
     username: string;
     trainingPlanName: string;
     settings: TrainingSettings;
     ageBracket: string;
+    gender: string;
+    consent?: Date | undefined;
     created: Date;
 }
 
@@ -1476,6 +1646,122 @@ export interface AnalysisDto {
     completion: string;
 }
 
+export interface TrainingExport {
+    training?: Training | undefined;
+    trainingSummary?: TrainingSummary | undefined;
+    trainingDayAccount?: TrainingDayAccount[] | undefined;
+    phaseStatistics?: PhaseStatistics[] | undefined;
+    phases?: Phase[] | undefined;
+    userState?: UserGeneratedState | undefined;
+}
+
+export interface TrainingSummary {
+    id: number;
+    trainedDays: number;
+    avgResponseMinutes: number;
+    avgRemainingMinutes: number;
+    avgAccuracy: number;
+    firstLogin: Date;
+    lastLogin: Date;
+    avgDaysPerWeek: number;
+}
+
+export interface Phase {
+    id: number;
+    training_day: number;
+    exercise: string;
+    phase_type: string;
+    time: number;
+    sequence: number;
+    problems: Problem[];
+    user_test?: UserTest | undefined;
+}
+
+export interface Problem {
+    id: number;
+    phase_id: number;
+    level: number;
+    time: number;
+    problem_type: string;
+    problem_string: string;
+    answers: Answer[];
+}
+
+export interface Answer {
+    id: number;
+    problem_id: number;
+    time: number;
+    correct: boolean;
+    response_time: number;
+    answer: string;
+    tries: number;
+}
+
+export interface UserTest {
+    score: number;
+    target_score: number;
+    planet_target_score: number;
+    won_race: boolean;
+    completed_planet: boolean;
+    ended?: boolean | undefined;
+}
+
+export interface UserGeneratedState {
+    exercise_stats: ExerciseStats;
+    user_data?: any | undefined;
+    syncInfo?: any | undefined;
+}
+
+export interface ExerciseStats {
+    appVersion: string;
+    appBuildDate: string;
+    device: DeviceInfo;
+    trainingDay: number;
+    lastLogin: number;
+    lastTimeStamp: number;
+    triggerData: { [key: string]: boolean; };
+    gameRuns: GameRunStats[];
+    metaphorData?: any | undefined;
+    trainingPlanSettings: TrainingPlanSettings;
+    gameCustomData: { [key: string]: any; };
+    planetInfos?: any[] | undefined;
+}
+
+export interface DeviceInfo {
+    platform: string;
+    model: string;
+    version: string;
+    uuid: string;
+}
+
+export interface GameRunStats {
+    gameId: string;
+    lastLevel: number;
+    highestLevel: number;
+    won: boolean;
+    customData?: JsonDocument | undefined;
+    trainingTime: number;
+    trainingDay: number;
+    started_at: number;
+    cancelled: boolean;
+}
+
+export interface JsonDocument {
+    isDisposable: boolean;
+    rootElement: RootElement;
+}
+
+export interface TrainingPlanSettings {
+    initialGroupWeights: { [key: string]: number; };
+    changes: TrainingPlanChange[];
+}
+
+export interface TrainingPlanChange {
+    timestamp: number;
+    type: string;
+    change?: any | undefined;
+}
+
 export interface GetUserDto {
     username: string;
     role: string;
@@ -1505,6 +1791,11 @@ export interface MoveTrainingsDto {
     trainingIds: number[];
     fromGroup: string;
     toGroup: string;
+}
+
+export interface RootElement {
+
+    [key: string]: any;
 }
 
 export interface FileResponse {
