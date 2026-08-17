@@ -13,10 +13,20 @@ Host safespring_sync2
 # --dry-run
 
 ```
-cd ~/source/repos/JWMB/WebProcessor
-rsync -Pavuz --exclude '**/bin/*' --exclude '**/obj/*' --exclude 'node_modules/*' --exclude '.svelte-kit/output/*' ./* ubuntu@safespring_sync2:/home/ubuntu/source
-# WAIT, we moved to user admin_site!!
-# rsync -Pavuz --exclude '**/bin/*' --exclude '**/obj/*' --exclude 'node_modules/*' --exclude '.svelte-kit/output/*' ~/source/repos/JWMB/WebProcessor/* ubuntu@safespring_sync2:/home/admin-site/source
+# cd ~/source/repos/JWMB/WebProcessor
+# rsync -Pavuz --exclude '**/bin/*' --exclude '**/obj/*' --exclude 'node_modules/*' --exclude '.svelte-kit/output/*' ./* ubuntu@safespring_sync2:/home/ubuntu/source
+### WAIT, we moved to user admin_site!!
+
+rsync -Pavuz --exclude '**/bin/*' --exclude '**/obj/*' --exclude 'node_modules/*' --exclude '.svelte-kit/output/*' ~/source/repos/JWMB/WebProcessor/* ubuntu@safespring_sync2:/home/admin-site/source
+
+su - admin-site
+cd source
+podman build -t trainingapi . -f Dockerfile
+podman build -t adminapp . -f Dockerfile.web
+
+exit
+sudo systemctl restart podman-admin
+
 
 # rsync -Pavuz ~/Desktop/WebProcessor_Files/training_export/* ubuntu@safespring_sync2:/home/ubuntu/exports
 ```
