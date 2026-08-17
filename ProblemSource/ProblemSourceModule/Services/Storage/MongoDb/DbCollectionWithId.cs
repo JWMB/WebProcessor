@@ -89,23 +89,25 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 			if (idField.Any() == true)
 				projection = projection.Include(idField);
 
-			var tmpX = (await collection.Find(GetFilter(items, globalFilter)).Project(projection).ToListAsync())
+			var withSubIdValue = (await collection.Find(GetFilter(items, globalFilter)).Project(projection).ToListAsync())
 				.Select(o => new { Id = o["_id"].AsObjectId, SubId = idField.Any() ? GetValueByPath(o, idField)?.ToString() : null })
 				//.Select(o => BsonSerializer.Deserialize<X>(o))
 				.Where(o => o.SubId != null).ToList();
-			if (tmpX == null)
-				throw new Exception("A");
+			if (withSubIdValue == null)
+				throw new Exception("No SubIds");
 
-			var toInsert = itemsWithId.Where(o => tmpX.Any(p => p.SubId?.Equals(o.Id) == true) == false).ToList();
-			var toReplace = itemsWithId.Where(o => tmpX.Any(p => p.SubId?.Equals(o.Id) == true) == true).ToList();
+			//var toInsert = itemsWithId.Where(o => withSubIdValue.Any(p => p.SubId?.Equals(o.Id) == true) == false).ToList();
+			//var toReplace = itemsWithId.Where(o => withSubIdValue.Any(p => p.SubId?.Equals(o.Id) == true) == true).ToList();
+			var toInsert = itemsWithId.Where(o => withSubIdValue.Any(p => $"{p.SubId}" == $"{o.Id}") == false).ToList();
+			var toReplace = itemsWithId.Where(o => withSubIdValue.Any(p => $"{p.SubId}" == $"{o.Id}") == true).ToList();
 
 			var models = toInsert.Select(o => (WriteModel<TDocument>)new InsertOneModel<TDocument>(o.Item)).ToList();
 
 			models.AddRange(toReplace.Select(o =>
 			{
-				var found = tmpX.Single(p => p.SubId?.Equals(o.Id) == true);
+				var found = withSubIdValue.Single(p => $"{p.SubId}" == $"{o.Id}"); // p.SubId?.Equals(o.Id) == true);
 				if (found == null)
-					throw new Exception("aaa");
+					throw new Exception("no item to replace");
 				o.Item.Id = found.Id;
 				return new ReplaceOneModel<TDocument>(Builders<TDocument>.Filter.Eq(p => p.Id, found.Id), o.Item); //createFilter(o.Item)
 			}));

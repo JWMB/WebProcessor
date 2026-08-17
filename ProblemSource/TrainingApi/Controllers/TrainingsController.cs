@@ -164,11 +164,21 @@ namespace TrainingApi.Controllers
                         + $"You already have {createTrainingsInfo.TrainingsQuota.Created}.", StatusCodes.Status400BadRequest);
             }
 
-            //var hashForRandomizedPlan = $"{user.Email}{groupName}".GetHashCode();
-            //var templateName = $"2026 HT template {(hashForRandomizedPlan % 2 == 0 ? "Math" : "Verbal")}.json";
-            //var template = (await trainingTemplateRepository.GetAll()).SingleOrDefault(o => o.Username == templateName);
+            var templates = await trainingTemplateRepository.GetAll();
 
-			var template = await GetTemplate(dto.BaseTemplateId);
+			var template = templates.SingleOrDefault(o => o.Username == groupName);
+            if (template == null)
+            {
+                var trainingPlans = new[] {
+                    "2026 HT Test Math",
+                    "2026 HT Test Verbal"
+                };
+                var hashForRandomizedPlan = $"{user.Email}".GetHashCode(); // {groupName}
+				hashForRandomizedPlan = hashForRandomizedPlan < 0 ? -hashForRandomizedPlan : hashForRandomizedPlan;
+				var templateName = trainingPlans[hashForRandomizedPlan % trainingPlans.Length];
+                template = templates.SingleOrDefault(o => o.Username == templateName);
+            }
+            template ??= await GetTemplate(dto.BaseTemplateId);
 
             var trainings = new List<Training>();
 
@@ -183,7 +193,6 @@ namespace TrainingApi.Controllers
                     throw new HttpException("Failed to reuse unused trainings");
                 if (trainingsToReuse.Count > numTrainingsToGetFromOtherGroups)
                     throw new HttpException("Failed to reuse unused trainings");
-                                    //.Take(numTrainingsToGetFromOtherGroups)
 
                 foreach (var training in trainingsToReuse)
                 {
