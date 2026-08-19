@@ -13,7 +13,7 @@ namespace Common.Web
         public static void ConfigureProcessingPipelineServices(IServiceCollection services, IConfiguration config, IEnumerable<IPluginModule> pluginModules)
         {
             services.AddSingleton<ITableClientFactory, TableClientFactory>(); //(sp => new TableClientFactory("vektor")
-            services.AddSingleton<IDataSink, AzureTableLogSink>();
+            services.AddSingleton<IDataSink, NullDataSink>();
             services.AddSingleton<IProcessingMiddlewarePipelineRepository, ProcessingPipelineRepository>();
             services.AddSingleton<SinkProcessingMiddleware>();
 
