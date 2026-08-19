@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
@@ -33,7 +34,7 @@ namespace ProblemSource
 			//BsonClassMap.RegisterClassMap<SubscriberRequest<MessageType1Request>>(cm => { });
 			var wrappedTypes = new[] { typeof(User), typeof(Training), typeof(TrainingSummary) } // hmm, isn't TrainingSummary a MongoTrainingAssociatedDocumentWrapper?
 				.Select(o => typeof(MongoDocumentWrapper<>).MakeGenericType(o))
-				.Concat(new[] { typeof(TrainingSummary), typeof(TrainingDayAccount), typeof(Phase), typeof(PhaseStatistics) }
+				.Concat(new[] { typeof(TrainingSummary), typeof(TrainingDayAccount), typeof(Phase), typeof(PhaseStatistics), typeof(UserGeneratedState) }
 				.Select(o => typeof(MongoTrainingAssociatedDocumentWrapper<>).MakeGenericType(o)));
 			// +typeof(TDocument)   { Name = "MongoTrainingAssociatedDocumentWrapper`1" FullName = "ProblemSourceModule.Services.Storage.MongoDb.MongoTrainingAssociatedDocumentWrapper`1[[ProblemSourceModule.Models.Aggregates.TrainingSummary, ProblemSourceModule, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"}
 
@@ -42,7 +43,12 @@ namespace ProblemSource
 				var cm = new BsonClassMap(wrappedType);
 				cm.AutoMap();
 				cm.SetIgnoreExtraElements(true);
-				BsonClassMap.RegisterClassMap(cm);
+				try
+				{
+					BsonClassMap.RegisterClassMap(cm);
+				}
+				catch (ArgumentException ex) when (ex.Message.Contains("An item with the same key"))
+				{ }
 			}
 
 			BsonClassMap.RegisterClassMap<object>(cm =>
