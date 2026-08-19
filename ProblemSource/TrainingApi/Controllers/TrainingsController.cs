@@ -166,7 +166,7 @@ namespace TrainingApi.Controllers
 
             var templates = await trainingTemplateRepository.GetAll();
 
-			var template = templates.SingleOrDefault(o => o.Username == groupName);
+			var template = templates.SingleOrDefault(o => o.TrainingPlanName.Equals(groupName, StringComparison.OrdinalIgnoreCase));
             if (template == null)
             {
                 var trainingPlans = new[] {
@@ -176,7 +176,7 @@ namespace TrainingApi.Controllers
                 var hashForRandomizedPlan = $"{user.Email}".GetHashCode(); // {groupName}
 				hashForRandomizedPlan = hashForRandomizedPlan < 0 ? -hashForRandomizedPlan : hashForRandomizedPlan;
 				var templateName = trainingPlans[hashForRandomizedPlan % trainingPlans.Length];
-                template = templates.SingleOrDefault(o => o.Username == templateName);
+                template = templates.SingleOrDefault(o => o.TrainingPlanName.Equals(templateName, StringComparison.OrdinalIgnoreCase));
             }
             template ??= await GetTemplate(dto.BaseTemplateId);
 
