@@ -1,5 +1,5 @@
 {
-  "x-generator": "NSwag v13.19.0.0 (NJsonSchema v10.9.0.0 (Newtonsoft.Json v13.0.0.0))",
+  "x-generator": "NSwag v14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))",
   "swagger": "2.0",
   "info": {
     "title": "My Title",
@@ -141,7 +141,66 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
+    "/api/Testing": {
+      "get": {
+        "tags": [
+          "Testing"
+        ],
+        "operationId": "Testing_Index",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "level",
+            "in": "query",
+            "x-schema": {
+              "$ref": "#/definitions/LogLevel"
+            },
+            "default": 4,
+            "x-nullable": false,
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
+    "/api/Testing/predict": {
+      "get": {
+        "tags": [
+          "Testing"
+        ],
+        "operationId": "Testing_CallPredictor",
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
           }
         }
       }
@@ -311,6 +370,41 @@
       }
     },
     "/api/Trainings/{id}": {
+      "patch": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_Patch",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "format": "int32",
+            "x-nullable": false
+          },
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PatchTrainingDto"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
       "get": {
         "tags": [
           "Trainings"
@@ -352,6 +446,15 @@
           "text/plain",
           "application/json",
           "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "returnOnlyDefaultTemplate",
+            "in": "query",
+            "default": true,
+            "x-nullable": false
+          }
         ],
         "responses": {
           "200": {
@@ -496,6 +599,117 @@
         }
       }
     },
+    "/api/Trainings/analysis": {
+      "get": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_GetAiAnalysis",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "trainingId",
+            "in": "query",
+            "format": "int32",
+            "x-nullable": false
+          },
+          {
+            "type": "string",
+            "name": "templateSource",
+            "in": "query",
+            "x-nullable": false
+          },
+          {
+            "type": "boolean",
+            "name": "onlyPrompt",
+            "in": "query",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/AnalysisDto"
+            }
+          }
+        }
+      }
+    },
+    "/api/Trainings/import": {
+      "post": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_ImportTraining",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "name": "export",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TrainingExport"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/Trainings/importmany/{groupName}": {
+      "post": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_ImportTrainings",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "name": "exports",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TrainingExport"
+              }
+            },
+            "x-nullable": false
+          },
+          {
+            "type": "string",
+            "name": "groupName",
+            "in": "path",
+            "required": true,
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/Users": {
       "get": {
         "tags": [
@@ -601,6 +815,63 @@
             "name": "id",
             "in": "path",
             "required": true,
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GetUserDto"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/trainingUsername/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_GetTrainingUsername",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "format": "int32",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/getOrCreate": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_GetOrCreateFromApp",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "username",
+            "in": "query",
             "x-nullable": false
           }
         ],
@@ -1097,6 +1368,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "redirectToClient": {
+          "type": "string"
         }
       }
     },
@@ -1276,6 +1550,21 @@
         }
       }
     },
+    "PatchTrainingDto": {
+      "type": "object",
+      "properties": {
+        "gender": {
+          "type": "string"
+        },
+        "ageBracket": {
+          "type": "string"
+        },
+        "consent": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "Training": {
       "type": "object",
       "required": [
@@ -1284,6 +1573,7 @@
         "trainingPlanName",
         "settings",
         "ageBracket",
+        "gender",
         "created"
       ],
       "properties": {
@@ -1302,6 +1592,13 @@
         },
         "ageBracket": {
           "type": "string"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "consent": {
+          "type": "string",
+          "format": "date-time"
         },
         "created": {
           "type": "string",
@@ -1412,6 +1709,459 @@
           }
         }
       ]
+    },
+    "AnalysisDto": {
+      "type": "object",
+      "required": [
+        "prompt",
+        "completion"
+      ],
+      "properties": {
+        "prompt": {
+          "type": "string"
+        },
+        "completion": {
+          "type": "string"
+        }
+      }
+    },
+    "TrainingExport": {
+      "type": "object",
+      "properties": {
+        "training": {
+          "$ref": "#/definitions/Training"
+        },
+        "trainingSummary": {
+          "$ref": "#/definitions/TrainingSummary"
+        },
+        "trainingDayAccount": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TrainingDayAccount"
+          }
+        },
+        "phaseStatistics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PhaseStatistics"
+          }
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Phase"
+          }
+        },
+        "userState": {
+          "$ref": "#/definitions/UserGeneratedState"
+        }
+      }
+    },
+    "TrainingSummary": {
+      "type": "object",
+      "required": [
+        "id",
+        "trainedDays",
+        "avgResponseMinutes",
+        "avgRemainingMinutes",
+        "avgAccuracy",
+        "firstLogin",
+        "lastLogin",
+        "avgDaysPerWeek"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "trainedDays": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "avgResponseMinutes": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "avgRemainingMinutes": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "avgAccuracy": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "firstLogin": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastLogin": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "avgDaysPerWeek": {
+          "type": "number",
+          "format": "decimal"
+        }
+      }
+    },
+    "Phase": {
+      "type": "object",
+      "required": [
+        "id",
+        "training_day",
+        "exercise",
+        "phase_type",
+        "time",
+        "sequence",
+        "problems"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "training_day": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "exercise": {
+          "type": "string"
+        },
+        "phase_type": {
+          "type": "string"
+        },
+        "time": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "sequence": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "problems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Problem"
+          }
+        },
+        "user_test": {
+          "$ref": "#/definitions/UserTest"
+        }
+      }
+    },
+    "Problem": {
+      "type": "object",
+      "required": [
+        "id",
+        "phase_id",
+        "level",
+        "time",
+        "problem_type",
+        "problem_string",
+        "answers"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "phase_id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "level": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "time": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "problem_type": {
+          "type": "string"
+        },
+        "problem_string": {
+          "type": "string"
+        },
+        "answers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Answer"
+          }
+        }
+      }
+    },
+    "Answer": {
+      "type": "object",
+      "required": [
+        "id",
+        "problem_id",
+        "time",
+        "correct",
+        "response_time",
+        "answer",
+        "tries"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "problem_id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "time": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "response_time": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "answer": {
+          "type": "string"
+        },
+        "tries": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "UserTest": {
+      "type": "object",
+      "required": [
+        "score",
+        "target_score",
+        "planet_target_score",
+        "won_race",
+        "completed_planet"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "target_score": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "planet_target_score": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "won_race": {
+          "type": "boolean"
+        },
+        "completed_planet": {
+          "type": "boolean"
+        },
+        "ended": {
+          "type": "boolean"
+        }
+      }
+    },
+    "UserGeneratedState": {
+      "type": "object",
+      "required": [
+        "exercise_stats"
+      ],
+      "properties": {
+        "exercise_stats": {
+          "$ref": "#/definitions/ExerciseStats"
+        },
+        "user_data": {},
+        "syncInfo": {}
+      }
+    },
+    "ExerciseStats": {
+      "type": "object",
+      "required": [
+        "appVersion",
+        "appBuildDate",
+        "device",
+        "trainingDay",
+        "lastLogin",
+        "lastTimeStamp",
+        "triggerData",
+        "gameRuns",
+        "trainingPlanSettings",
+        "gameCustomData"
+      ],
+      "properties": {
+        "appVersion": {
+          "type": "string"
+        },
+        "appBuildDate": {
+          "type": "string"
+        },
+        "device": {
+          "$ref": "#/definitions/DeviceInfo"
+        },
+        "trainingDay": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lastLogin": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "lastTimeStamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "triggerData": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "gameRuns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GameRunStats"
+          }
+        },
+        "metaphorData": {},
+        "trainingPlanSettings": {
+          "$ref": "#/definitions/TrainingPlanSettings"
+        },
+        "gameCustomData": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "planetInfos": {
+          "type": "array",
+          "items": {}
+        }
+      }
+    },
+    "DeviceInfo": {
+      "type": "object",
+      "required": [
+        "platform",
+        "model",
+        "version",
+        "uuid"
+      ],
+      "properties": {
+        "platform": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string"
+        }
+      }
+    },
+    "GameRunStats": {
+      "type": "object",
+      "required": [
+        "gameId",
+        "lastLevel",
+        "highestLevel",
+        "won",
+        "trainingTime",
+        "trainingDay",
+        "started_at",
+        "cancelled"
+      ],
+      "properties": {
+        "gameId": {
+          "type": "string"
+        },
+        "lastLevel": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "highestLevel": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "won": {
+          "type": "boolean"
+        },
+        "customData": {
+          "$ref": "#/definitions/JsonDocument"
+        },
+        "trainingTime": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "trainingDay": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "started_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "cancelled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonDocument": {
+      "type": "object",
+      "required": [
+        "isDisposable",
+        "rootElement"
+      ],
+      "properties": {
+        "isDisposable": {
+          "type": "boolean"
+        },
+        "rootElement": {
+          "additionalProperties": {}
+        }
+      }
+    },
+    "TrainingPlanSettings": {
+      "type": "object",
+      "required": [
+        "initialGroupWeights",
+        "changes"
+      ],
+      "properties": {
+        "initialGroupWeights": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "decimal"
+          }
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TrainingPlanChange"
+          }
+        }
+      }
+    },
+    "TrainingPlanChange": {
+      "type": "object",
+      "required": [
+        "timestamp",
+        "type"
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "type": {
+          "type": "string"
+        },
+        "change": {}
+      }
     },
     "GetUserDto": {
       "type": "object",

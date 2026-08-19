@@ -4,11 +4,23 @@ using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Services.Storage;
 
 namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
 	public class AiCoachAnalyzer : ITrainingAnalyzer
 	{
+		private readonly IUserGeneratedDataRepositoryProviderFactory userDataProviderFactory;
+		private readonly ITrainingRepository trainingRepository;
+		private readonly IHttpClientFactory httpClientFactory;
+
+		public AiCoachAnalyzer(IUserGeneratedDataRepositoryProviderFactory userDataProviderFactory, ITrainingRepository trainingRepository, IHttpClientFactory httpClientFactory)
+		{
+			this.userDataProviderFactory = userDataProviderFactory;
+			this.trainingRepository = trainingRepository;
+			this.httpClientFactory = httpClientFactory;
+		}
+
 		public static List<T> ReadAnonymous<T>(T instance, string data, bool hasHeader = true, string delimiter = "\t")
 		{
 			using var reader = new StringReader(data);
@@ -32,17 +44,41 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 			return csvReader.GetRecords<T>().ToList();
 		}
 
+		public async Task<string> GetResource(Uri template)
+		{
+			var client = httpClientFactory.CreateClient();
+			var result = await client.GetAsync(template);
+			result.EnsureSuccessStatusCode();
+			return await result.Content.ReadAsStringAsync();
+		}
+
+		public async Task<string> CreatePrompt(string template, Dictionary<string, object> replacements)
+		{
+			AssertExerciseDescriptions(replacements);
+			var rendered = new Replacer().Execute(template, replacements, null, [
+				("MarkdownTable", (object items) => ToMarkdownTable(items)),
+				]);
+			return rendered;
+		}
+
 		public async Task<string> CreatePrompt(Dictionary<string, object> replacements)
 		{
-			var path = Path.Join(Directory.GetCurrentDirectory(), "Resources", "AICoach");
-			
-			var template = File.ReadAllText(Path.Join(path, "TeacherStudent.txt"));
-			var exercises = File.ReadAllText(Path.Join(path, "Exercises.txt"));
-			replacements["exerciseDescriptions"] = ReadAnonymous(new { id = "", type = "", description = "" }, exercises);
+			var template = File.ReadAllText(Path.Join(DefaulResourcePath, "TeacherStudent.txt"));
+			AssertExerciseDescriptions(replacements);
 			var rendered = new Replacer().Execute(template, replacements, null, [
 					("MarkdownTable", (object items) => ToMarkdownTable(items)),
 				]);
 			return rendered;
+		}
+
+		private string DefaulResourcePath => Path.Join(Directory.GetCurrentDirectory(), "Resources", "AICoach");
+
+		private void AssertExerciseDescriptions(Dictionary<string, object> replacements)
+		{
+			if (replacements.ContainsKey("exerciseDescriptions"))
+				return;
+			var exercises = File.ReadAllText(Path.Join(DefaulResourcePath, "Exercises.txt"));
+			replacements["exerciseDescriptions"] = ReadAnonymous(new { id = "", type = "", description = "" }, exercises);
 		}
 
 		public static string ListToMarkdownTable(List<List<string>> table)
@@ -113,7 +149,23 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 			return obj.ToString() ?? "";
 		}
 
+		public async Task<Dictionary<string, object>> CreateReplacements(int trainingId)
+		{
+			var training = await trainingRepository.Get(trainingId);
+			if (training == null)
+				throw new ArgumentException($"No training with id {trainingId}");
 
+			var normedProviders = new List<(Training, IUserGeneratedDataRepositoryProvider)>();
+			var norms = new[] { $"norm_{training.AgeBracket}", $"norm_{training.AgeBracket}_stddev" };
+			foreach (var n in norms)
+			{
+				var t = await trainingRepository.GetByUsername(n);
+				if (t != null)
+					normedProviders.Add((t, userDataProviderFactory.Create(t.Id)));
+			}
+
+			return await CreateReplacements(training, userDataProviderFactory.Create(trainingId), normedProviders);
+		}
 
 		public async Task<Dictionary<string, object>> CreateReplacements(Training training, IUserGeneratedDataRepositoryProvider provider,
 			IEnumerable<(Training Training, IUserGeneratedDataRepositoryProvider Provider)> referenceTrainingProviders, int? cutoffDay = null)
@@ -143,7 +195,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
 			var normProviders = referenceTrainingProviders.Where(o => o.Training.AgeBracket == training.AgeBracket);
 			var normProvider = normProviders.FirstOrDefault(o => o.Training.Username.EndsWith(o.Training.AgeBracket)).Provider;
-			var stdDevProvider = normProviders.FirstOrDefault(o => o.Training.Username.EndsWith("_stddev")).Provider;
+			var stdDevProvider = normProviders.FirstOrDefault(o => o.Training.Username.EndsWith($"_stddev")).Provider;
 
 			var allDays = (await provider.TrainingDays.GetAll()).OrderBy(o => o.TrainingDay).ToList();
 			var today = DateTime.Today;
@@ -210,7 +262,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 						.ToDictionary(p => p.Key, p => p.Select(q => new { q.FirstCorrect, q.ResponseTime, q.PreviousLevel, q.PreviousCorrect }).ToList()));
 			}
 
-			var latestDay = allDays.Max(o => o.TrainingDay);
+			var latestDay = allDays.Any() ? allDays.Max(o => o.TrainingDay) : 0;
 			var stats = (await provider.PhaseStatistics.GetAll()).OrderBy(o => o.training_day).ToList();
 			if (cutoffDay.HasValue)
 			{
@@ -233,7 +285,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 					Date = o.StartTime.ToString("yyyy-MM-dd HH:mm"),
 					Weekday = o.StartTime.ToString("dddd"),
 					DurationMinutes = Math.Round((o.EndTimeStamp - o.StartTime).TotalMinutes),
-					ExpectedMinutes = training.Settings.timeLimits[0],
+					ExpectedMinutes = training.Settings.timeLimits.FirstOrDefault(33M),
 					ActivePercentage = ActivePercentage(o),
 					ActivePercentageAgeNorm = n == null ? "" : ActivePercentage(n),
 					//AccuracyComparedToNorm = 1.1M
@@ -254,7 +306,9 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 						.Concat([new { Who = "This user", Value = usersBaseline }]);
 					return new { Exercise = exerciseId, Values = averages.ToList() };
 				});
-			var baselineByExerciseTable = new[] { new[] { "Exercise" }.Concat(baselineByExercise.First().Values.Select(o => o.Who)).ToList() }
+			var baselineByExerciseTable = baselineByExercise.Any() == false
+				? new List<List<string>>()
+				: new[] { new[] { "Exercise" }.Concat(baselineByExercise.First().Values.Select(o => o.Who)).ToList() }
 				.Concat(baselineByExercise.Select(o =>
 				{
 					return new[] { o.Exercise }.Concat(o.Values.Select(p => ToString(p.Value))).ToList();

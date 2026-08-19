@@ -1,4 +1,5 @@
 # Build the runtime image
+# podman build -t trainingapi . -f Dockerfile
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 # Expose the port the app runs on
@@ -33,7 +34,7 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 ENV ASPNETCORE_HTTP_PORTS=80
 # Define the startup command
-ENTRYPOINT ["dotnet", "TrainingApi.dll"]
+ENTRYPOINT ["dotnet", "TrainingApi.dll", "--environment=Docker"]
 
 # FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 

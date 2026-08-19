@@ -33,7 +33,7 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
         //public async Task<User?> Get(string email) => await repo.Get(ConvertToKey(email));
 
         private object _lock = new object();
-        public Task<string> Add(User item)
+        public Task Add(User item)
         {
             item.Email = User.NormalizeEmail(item.Email);
             // Warning: multi-instance concurrency 
@@ -43,7 +43,8 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
                 // +		InnerException	{"The specified entity already exists.\nRequestId:8570ae8a-d9ce-4523-ad65-3949c1a10b16\nTime:2023-01-05T11:51:05.5942785Z\r\nStatus: 409 (Conflict)\r\nErrorCode: EntityAlreadyExists\r\n\r\nContent:\r\n{\"odata.error\":{\"code\":\"EntityAlreadyExists\",\"message\":{\"lang\":\"sv-SE\",\"value\":\"The specified entity already exists.\\nRequestId:8570ae8a-d9ce-4523-ad65-3949c1a10b16\\nTime:2023-01-05T11:51:05.5942785Z\"}}}\r\n\r\nHeaders:\r\nCache-Control: no-cache\r\nTransfer-Encoding: chunked\r\nServer: Windows-Azure-Table/1.0,Microsoft-HTTPAPI/2.0\r\nx-ms-request-id: 8570ae8a-d9ce-4523-ad65-3949c1a10b16\r\nx-ms-version: REDACTED\r\nX-Content-Type-Options: REDACTED\r\nPreference-Applied: REDACTED\r\nDate: Thu, 05 Jan 2023 11:51:05 GMT\r\nContent-Type: application/json; odata=minimalmetadata; streaming=true; charset=utf-8\r\n"}	System.Exception {Azure.RequestFailedException}
                 try
                 {
-                    return Task.FromResult(repo.Add(item).Result);
+                    repo.Add(item);
+					return Task.CompletedTask;
                 }
                 catch (Exception ex)
                 {
@@ -59,7 +60,7 @@ namespace ProblemSourceModule.Services.Storage.AzureTables
             }
         }
 
-        public async Task<string> Upsert(User item) => await repo.Upsert(item);
+        public async Task Upsert(User item) => await repo.Upsert(item);
 
         public async Task Update(User item) => await repo.Update(item);
         public async Task Remove(User item) => await repo.Remove(item);

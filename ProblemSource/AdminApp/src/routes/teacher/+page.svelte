@@ -19,6 +19,15 @@
 
 	// const showRealtimeButton = false; // For now, don't show it at all...
 	const showRealtimeButton = $userStore?.role == "Admin";
+	const showAIButton = $userStore?.role == "Admin";
+	let aiDialogForId: number | null = null;
+	const promptSettings = {
+		template: "https://raw.githubusercontent.com/JWMB/WebProcessor/refs/heads/main/ProblemSource/ProblemSourceModule/Resources/AICoach/TeacherStudent.txt",
+		model: "qwen3.1",
+		prompt: "(Generated prompt goes here)",
+		completion: "(Generated completion goes here)"
+	};
+
 	const rtlTools = new RealtimelineTools(2 * 60 * 1000);
 
 	let realtimeConnected: boolean | null = rtlTools.isConnected;
@@ -70,7 +79,10 @@
 		groups = Object.entries(groupsData).map((o) => ({ group: o[0], summaries: o[1] }));
 	}
 
+	let lastClick = 0;
 	async function onSelectGroup(groupId: string) {
+		if (Date.now() - lastClick < 50) return;
+		lastClick = Date.now();
 		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId);
 		// RealtimelineTools.testData(detailedTrainingsData.map(o => o.id)).forEach(o => rtlTools.append(o));;
 		getRealtimeData();
@@ -139,6 +151,17 @@
 			}
 		});
 	}
+
+	async function generatePrompt(id: number, templateSource: string, onlyPrompt: boolean) {
+		if (apiFacade == null) {
+			console.error('apiFacade null');
+			return;
+		}
+		const analysis = await apiFacade.trainings.getAiAnalysis(id, templateSource, onlyPrompt);
+		console.log("asd", analysis);
+		promptSettings.completion = analysis.completion;
+		promptSettings.prompt = analysis.prompt;
+	}
 </script>
 
 <div class="teacher-view">
@@ -147,10 +170,6 @@
 		<button disabled={realtimeConnected == null} on:click={() => rtlTools.toggleConnect()}>{realtimeConnected  == true ? 'Disconnect' : 'Connect'}</button>
 	{/if}
 	<div style="padding:5px; background-color:#cef; margin: 10px">
-		<p>Vi söker engagerade och IT-kunniga lärare för ett nytt kollaborativt initiativ att ta fram gratis och öppna läromedel.
-		Läs mer på <a href="https://github.com/JWMB/CurricuLLM/blob/main/README.md">github</a>.</p>
-		<p>Skicka ett <a href="mailto:jonas.beckeman@outlook.com?subject=Öppna läromedel">mail</a> om du eller en lärare du känner är intresserad av att hjälpa till! </p>
-		<p>Vi jobbar även på nya versioner av Vektor, med fler typer av övningar. Anmäl intresse för att prova nya versioner <a href="mailto:jonas.beckeman@outlook.com?subject=Vektor v2">här.</a></p>
 	</div>
 	{#if groups && groups.length > 0}
 		(Total: {groups.map(o => o.summaries.length).reduce((p, c) => p + c)} created, {groups.map(o => o.summaries.filter(p => p.trainedDays > 0).length).reduce((p, c) => p + c)} started)
@@ -159,7 +178,7 @@
 			tabs={groups.map((g) => {
 				return { id: g.group };
 			})}
-			on:selected={(e) => onSelectGroup(e.detail)}
+			on:selected={(e) => { console.log(e); onSelectGroup(e.detail); }}
 			>
 
 			<button on:click={onCreateGroup}>
@@ -207,6 +226,12 @@
 				{#each Array.from(Array(trainingDayDetailsNumDaysBack).keys()) as dayOffset}
 				<th class="training-day-column" title="{DateUtils.toIsoDate(DateUtils.addDays(trainingDayDetails.startDate, dayOffset))}">{DateUtils.getWeekDayName(DateUtils.addDays(trainingDayDetails.startDate, dayOffset))[0]}</th>
 				{/each}
+				<th>
+					Gender
+				</th>
+				<th>
+					Consent
+				</th>
 				<th class="notes-column">
 					{getString('teacher_trainings_column_header_notes')}
 				</th>
@@ -235,6 +260,20 @@
 					</td>
 					{/each}
 					<td>
+						<select value={t.gender} on:change={e => console.log("g", t.gender, { gender: e.target.value })}>
+							<option value="">Not set</option>
+							<option value="m">Male</option>
+							<option value="f">Female</option>
+							<option value="o">Other</option>
+						</select>
+					</td>
+					<td>
+						<input type="checkbox" checked={t.consent != null} on:change={e => console.log("a", t.consent, { consent: e.target.value })} />
+					</td>
+					<td>
+						{#if showAIButton}
+						<input type="button" value="AI" on:click={() => aiDialogForId = t.id}/>
+						{/if}
 						{#if getRealtimeDataForId(t.id).length}
 						<Realtimeline history={getRealtimeDataForId(t.id)} getPositioning={RealtimelineTools.createPositioningFunction(5 * 60 * 1000)} ></Realtimeline>
 						{/if}
@@ -246,9 +285,57 @@
 			{/each}
 		</table>
 	{/if}
+	{#if aiDialogForId}
+	<div class="modal">
+		<div class="contents">
+			<h2>{aiDialogForId}</h2>
+			<label for="template">Template</label>
+			<input name="template" type="text" bind:value={promptSettings.template}/>
+
+			------
+			<input type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template, true) }} value="Generate prompt ⬇️"/>
+			<textarea rows="8" cols="100">{promptSettings.prompt}</textarea>
+
+			------
+
+			<input type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template, false) }} value="Send to LLM ⬇️"/>
+			<label for="model">Model</label>
+			<input name="model" type="text"/>
+			<textarea rows="8" cols="100">{promptSettings.completion}</textarea>
+			------
+
+			<input type="button" on:click={() => { aiDialogForId = null; }} value="Close"/>
+		</div>
+	</div>
+	{/if}
 </div>
 
 <style>
+	.modal {
+		z-index: 10;
+		position: fixed;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		left: 0;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		/* allow click-through to backdrop */
+		pointer-events: none;
+	}
+	.contents {
+		min-width: 240px;
+		border-radius: 6px;
+		padding: 16px;
+		background: white;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		pointer-events: auto;
+	}
+
+
 	.teacher-view {
 		padding: 20px;
 	}

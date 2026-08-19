@@ -9,7 +9,6 @@ using ProblemSourceModule.Models;
 using System.ComponentModel.DataAnnotations;
 using TrainingApi.ErrorHandling;
 using ProblemSourceModule.Services;
-using ProblemSourceModule.Services.Storage.AzureTables;
 
 namespace TrainingApi.Controllers
 {

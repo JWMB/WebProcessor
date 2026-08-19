@@ -7,28 +7,76 @@ using TrainingApi.Services;
 
 namespace TrainingApi.RealTime
 {
+    public interface IQueueMessage
+    {
+		string MessageId { get; }
+        string PopReceipt { get; }
+        BinaryData Body { get; }
+	}
+
+    public interface IQueueClient
+    {
+        Task<IQueueMessage[]> ReceiveMessagesAsync(int? maxMessages = null, TimeSpan? visibilityTimeout = null, CancellationToken cancellationToken = default);
+        Task<bool> DeleteMessageAsync(string messageId, string popReceipt, CancellationToken cancellationToken = default);
+	}
+
+    public class AzureQueueClient : IQueueClient
+    {
+        private QueueClient client;
+
+        public AzureQueueClient(AzureQueueConfig config)
+        {
+			if (string.IsNullOrEmpty(config.ConnectionString))
+				throw new ArgumentException("null or empty", nameof(config.ConnectionString));
+
+			if (string.IsNullOrEmpty(config.QueueName))
+				throw new ArgumentException("null or empty", nameof(config.QueueName));
+
+			client = new QueueClient(config.ConnectionString, config.QueueName); // "UseDevelopmentStorage=true", "problemsource-sync");
+			// TODO: move to some async Init 
+			client.CreateIfNotExists();
+		}
+
+		public async Task<bool> DeleteMessageAsync(string messageId, string popReceipt, CancellationToken cancellationToken = default)
+        {
+            var result = await client.DeleteMessageAsync(messageId, popReceipt, cancellationToken);
+            return result.Status < 400;
+        }
+
+        public async Task<IQueueMessage[]> ReceiveMessagesAsync(int? maxMessages = null, TimeSpan? visibilityTimeout = null, CancellationToken cancellationToken = default)
+        {
+			var result = await client.ReceiveMessagesAsync(maxMessages, visibilityTimeout, cancellationToken);
+            if (result.Value == null)
+                throw new Exception("");
+            return result.Value.Select(o => new WrappedMessage(o)).ToArray();
+        }
+
+        public class WrappedMessage : IQueueMessage
+        {
+            private readonly QueueMessage message;
+
+            public WrappedMessage(QueueMessage message)
+            {
+                this.message = message;
+            }
+            public string MessageId => message.MessageId;
+            public string PopReceipt => message.PopReceipt;
+            public BinaryData Body => message.Body;
+
+		}
+
+    }
+
     public class QueueListener
     {
-        private readonly QueueClient client;
+        private readonly IQueueClient client;
         private readonly CommHubWrapper chatHub;
         private readonly IAccessResolver accessResolver;
         private readonly ILogger<QueueListener> log;
 
-        public QueueListener(CommHubWrapper chatHub, IAccessResolver accessResolver, RealTimeConfig config, ILogger<QueueListener> log)
+        public QueueListener(CommHubWrapper chatHub, IAccessResolver accessResolver, RealTimeConfig config, IQueueClient queueClient, ILogger<QueueListener> log)
         {
-            if (config.AzureQueueConfig == null)
-                throw new NullReferenceException($"{nameof(config.AzureQueueConfig)}");
-
-            if (string.IsNullOrEmpty(config.AzureQueueConfig.ConnectionString))
-                throw new ArgumentException("null or empty", nameof(config.AzureQueueConfig.ConnectionString));
-
-            if (string.IsNullOrEmpty(config.AzureQueueConfig.QueueName))
-                throw new ArgumentException("null or empty", nameof(config.AzureQueueConfig.QueueName));
-
-            client = new QueueClient(config.AzureQueueConfig.ConnectionString, config.AzureQueueConfig.QueueName); // "UseDevelopmentStorage=true", "problemsource-sync");
-
-            // TODO: move to some async Init 
-            client.CreateIfNotExists();
+            client = queueClient;
 
             this.chatHub = chatHub;
             this.accessResolver = accessResolver;
@@ -74,8 +122,8 @@ namespace TrainingApi.RealTime
 
             try
             {
-                var response = await client.ReceiveMessagesAsync(32, cancellationToken: cancellationToken);
-                var msgs = response.Value;
+                var msgs = await client.ReceiveMessagesAsync(32, cancellationToken: cancellationToken);
+                //var msgs = response.Value;
                 foreach (var msg in msgs)
                 {
                     if (cancellationToken.IsCancellationRequested)
@@ -105,7 +153,7 @@ namespace TrainingApi.RealTime
             isWorking = false;
         }
 
-        private async Task ProcessMessage(QueueMessage msg)
+        private async Task ProcessMessage(IQueueMessage msg)
         {
             JObject? jObj = null;
             try

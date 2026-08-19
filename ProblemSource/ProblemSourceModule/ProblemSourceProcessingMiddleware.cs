@@ -12,8 +12,6 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using System.Security.Claims;
-using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
-using static ProblemSource.Services.LogEventsToPhases;
 
 namespace ProblemSource
 {
@@ -86,6 +84,8 @@ namespace ProblemSource
                     }
 
                     var isValidationOnly = root.SessionToken == "validate";
+                    if ((root.Uuid.StartsWith("test") || root.Uuid.StartsWith("auto_")) && System.Diagnostics.Debugger.IsAttached)
+                    { }
                     if (!usernameHashing.TryGetTrainingIdFromUsername(root.Uuid, isValidationOnly, out var trainingId2)) // TODO: co-opting SessionToken for now
                     {
                         result = new SyncResult { error = $"Username not found ({root.Uuid})" };
@@ -246,8 +246,15 @@ namespace ProblemSource
             var result = new SyncResult();
 
             var userRepositories = AssertSession(training, root.SessionToken, result);
-            
-            var currentStoredState = (await userRepositories.UserStates.GetAll()).SingleOrDefault();
+
+			UserGeneratedState? currentStoredState = null;
+			// var currentStoredState = (await userRepositories.UserStates.GetAll()).SingleOrDefault();
+			{
+				// there's only supposed to be 0 or 1! Upsert not working?
+				var allUserStates = await userRepositories.UserStates.GetAll();
+                if (allUserStates.Any())
+                    currentStoredState = allUserStates.MaxBy(o => o.exercise_stats.lastTimeStamp);
+			}
 
             if (root.Events?.Any() == true)
             {

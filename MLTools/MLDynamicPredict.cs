@@ -26,7 +26,7 @@ namespace ML.Dynamic
             var ctx = new MLContext(seed: 0);
             var model = ctx.Model.Load(modelPath, out DataViewSchema schema);
 
-            var type = MLDynamicPredict.CreateType(schema);
+            var type = CreateType(schema);
             var instance = DynamicTypeFactory.CreateInstance(type, values);
 
             var predictor = new MLDynamicPredict(schema, model, colInfo);

@@ -54,6 +54,27 @@ namespace ProblemSourceModule.Services.Storage
                     s.customData = new CustomData { };
                     s.Analyzers = new List<string> { nameof(TrainingAnalyzers.CategorizerDay5_24Q1) };
                 }) },
+				new Training { Id = 7, Username = "template_2026HT_math_test", TrainingPlanName = "2026 HT Test Math", Settings = CreateSettings(s =>
+				{
+					s.timeLimits = new List<decimal> { 33 };
+					s.customData = new CustomData { };
+				}) },
+				new Training { Id = 8, Username = "template_2026HT_verbal_test", TrainingPlanName = "2026 HT Test Verbal", Settings = CreateSettings(s =>
+				{
+					s.timeLimits = new List<decimal> { 33 };
+					s.customData = new CustomData { };
+				}) },
+				new Training { Id = 9, Username = "template_2026HT_math", TrainingPlanName = "2026 HT Math", Settings = CreateSettings(s =>
+				{
+					s.timeLimits = new List<decimal> { 33 };
+					s.customData = new CustomData { };
+				}) },
+				new Training { Id = 19, Username = "template_2026HT_verbal", TrainingPlanName = "2026 HT Verbal", Settings = CreateSettings(s =>
+				{
+					s.timeLimits = new List<decimal> { 33 };
+					s.customData = new CustomData { };
+				}) },
+
                 // Note: make sure the right template is used (TrainingsController)
             };
 

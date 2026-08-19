@@ -1,0 +1,122 @@
+{
+  "__type": "LinearTrainingPlan",
+  "minUnlockedExercises": 20,
+  "maxUnlockedExercises": 20,
+  "tests": [
+    {
+      "title": "Memory",
+      "id": "memory",
+      "phases": [
+        {
+          "type": "AgnosticGame",
+          "problemFactory": {
+            "¤type": "WordPicMemoryFactory"
+          },
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 7
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Rhymes",
+      "id": "rhymes",
+      "phases": [
+        {
+          "type": "AgnosticGame",
+          "problemFactory": {
+            "¤type": "RhymesFactory"
+          },
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 7
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "CollectWords",
+      "id": "collectwords",
+      "phases": [
+        {
+          "type": "AgnosticGame",
+          "problemFactory": {
+            "¤type": "CollectWordsFactory"
+          },
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 7
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "BuildWord",
+      "id": "buildword",
+      "phases": [
+        {
+          "type": "AgnosticGame",
+          "problemFactory": {
+            "¤type": "BuildWordsFactory"
+          },
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 7
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Crossword",
+      "id": "crossword",
+      "phases": [
+        {
+          "type": "AgnosticGame",
+          "problemFactory": {
+            "¤type": "CrosswordFactory"
+          },
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 7
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 3
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

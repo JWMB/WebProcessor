@@ -1,20 +1,35 @@
-﻿using ProblemSource.Models.Aggregates;
+﻿using ProblemSource.Models;
+using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services.Storage;
+using System.Text;
 
-namespace Tools
+namespace ProblemSource.Services
 {
-	internal class ExportTrainings
+	public interface ITrainingImporter
 	{
-		//private readonly ITypedTableClientFactory tableClientFactory;
+		Task Import(TrainingExport export, int? targetTrainingId = null, bool forceCreateNewTraining = false);
+	}
+
+	public class TrainingExport
+	{
+		public Training? Training { get; set; }
+		public TrainingSummary? TrainingSummary { get; set; }
+		public List<TrainingDayAccount>? TrainingDayAccount { get; set; }
+		public List<PhaseStatistics>? PhaseStatistics { get; set; }
+		public List<Phase>? Phases { get; set; }
+		public UserGeneratedState? UserState { get; set; }
+	}
+
+	public class ImportExportTrainings : ITrainingImporter
+	{
 		private readonly IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory;
 		private readonly ITrainingRepository trainingRepository;
 
-		public ExportTrainings(IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory, ITrainingRepository trainingRepository)
+		public ImportExportTrainings(IUserGeneratedDataRepositoryProviderFactory dataRepositoryProviderFactory, ITrainingRepository trainingRepository)
 		{
-			//this.tableClientFactory = tableClientFactory;
 			this.dataRepositoryProviderFactory = dataRepositoryProviderFactory;
 			this.trainingRepository = trainingRepository;
 		}
@@ -24,23 +39,22 @@ namespace Tools
 			if (!directory.Exists)
 				directory.Create();
 			foreach (var id in trainingIds)
-				await ExportTrainingStats(id, directory);
+				await ExportStats(id, directory, false);
 		}
 
-		private async Task ExportTrainingStats(int trainingId, DirectoryInfo directory)
+		public async Task ExportStats(int trainingId, DirectoryInfo directory, bool includeDetails)
 		{
-			var ugdr = dataRepositoryProviderFactory.Create(trainingId); // (new AzureTableUserGeneratedDataRepositoriesProviderFactory(tableClientFactory)).Create(trainingId);
-			//var trainingRepo = new ProblemSourceModule.Services.Storage.AzureTables.AzureTableTrainingRepository(tableClientFactory);
-
+			var ugdr = dataRepositoryProviderFactory.Create(trainingId);
 			try
 			{
-				var exportData = new Export
+				var exportData = new TrainingExport
 				{
 					Training = await trainingRepository.Get(trainingId),
 					TrainingSummary = (await ugdr.TrainingSummaries.GetAll()).SingleOrDefault(),
 					TrainingDayAccount = (await ugdr.TrainingDays.GetAll()).ToList(),
 					PhaseStatistics = (await ugdr.PhaseStatistics.GetAll()).ToList(),
-					//Phases = await ugdr.Phases.GetAll(),
+					Phases = includeDetails ? (await ugdr.Phases.GetAll()).ToList() : null,
+					UserState = includeDetails ? (await ugdr.UserStates.GetAll()).SingleOrDefault() : null,
 				};
 				var json = Newtonsoft.Json.JsonConvert.SerializeObject(exportData, Newtonsoft.Json.Formatting.Indented);
 
@@ -53,21 +67,16 @@ namespace Tools
 			}
 		}
 
-		public class Export
-		{
-			public Training? Training { get; set; }
-			public TrainingSummary? TrainingSummary { get; set; }
-			public List<TrainingDayAccount>? TrainingDayAccount { get; set; }
-			public List<PhaseStatistics>? PhaseStatistics { get; set; }
-			public List<Phase>? Phases { get; set; }
-		}
-
 		public async Task Import(string json, int? targetTrainingId = null, bool forceCreateNewTraining = false)
 		{
-			var export = Newtonsoft.Json.JsonConvert.DeserializeObject<Export>(json);
+			var export = Newtonsoft.Json.JsonConvert.DeserializeObject<TrainingExport>(json);
 			if (export == null)
 				throw new Exception("Could not parse");
+			await Import(export, targetTrainingId, forceCreateNewTraining);
+		}
 
+		public async Task Import(TrainingExport export, int? targetTrainingId = null, bool forceCreateNewTraining = false)
+		{
 			if (export == null || export.Training == null)
 				throw new Exception("Empty export");
 
@@ -97,27 +106,27 @@ namespace Tools
 				item.account_id = export.Training.Id;
 			//foreach (var item in export.Phases ?? [])
 			//	item.id = export.Training.Id;
+			//if (export.UserState != null)
+			//	export.UserState.
 
 			var ugdr = dataRepositoryProviderFactory.Create(export.Training.Id);
 
 			await ugdr.RemoveAll();
 
 			if (export.TrainingSummary != null)
-			{
 				await ugdr.TrainingSummaries.Upsert([export.TrainingSummary]);
-			}
+
 			if (export.TrainingDayAccount?.Any() == true)
-			{
 				await ugdr.TrainingDays.Upsert(export.TrainingDayAccount);
-			}
+
 			if (export.PhaseStatistics?.Any() == true)
-			{
 				await ugdr.PhaseStatistics.Upsert(export.PhaseStatistics);
-			}
+
 			if (export.Phases?.Any() == true)
-			{
 				await ugdr.Phases.Upsert(export.Phases);
-			}
+
+			if (export.UserState != null)
+				await ugdr.UserStates.Upsert([export.UserState]);
 		}
 
 		public async Task ImportFromFolder(DirectoryInfo directory)
@@ -136,6 +145,23 @@ namespace Tools
 					continue;
 				}
 			}
+		}
+
+		public async Task MergeInFolder(DirectoryInfo directory)
+		{
+			var mergedFileName = "merged.json";
+			var files = directory.GetFiles("*.json");
+			var merged = new StringBuilder();
+			merged.Append("[\n");
+			foreach (var file in files.Where(o => o.Name != mergedFileName))
+			{
+				var json = await File.ReadAllTextAsync(file.FullName);
+				merged.Append(json);
+				merged.Append("\n,\n");
+			}
+			merged.Append("\n]");
+			var filename = Path.Join(directory.FullName, mergedFileName);
+			await File.WriteAllTextAsync(filename, merged.ToString());
 		}
 	}
 }

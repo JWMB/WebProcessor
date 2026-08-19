@@ -17,7 +17,7 @@ namespace ProblemSourceModule.Tests.AzureTable
 
             var idThatsIgnored = -999;
             var item = new Training { Id = idThatsIgnored, TrainingPlanName = "avc" };
-            var newId = await repo.Add(item);
+            var newId = await repo.AddGetId(item);
 
             item.Id.ShouldBe(newId);
             newId.ShouldBeGreaterThan(0);
@@ -42,7 +42,7 @@ namespace ProblemSourceModule.Tests.AzureTable
             var addedIds = new List<int>();
 
             foreach (var i in Enumerable.Range(0, numToAdd))
-                addedIds.Add(await repo.Add(new Training { }));
+                addedIds.Add(await repo.AddGetId(new Training { }));
 
             var expectedRetrievedIds = addedIds.Skip(1);
             var idsToGet = expectedRetrievedIds.Concat(new[] { 999 });

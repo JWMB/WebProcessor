@@ -1,4 +1,8 @@
-﻿using ProblemSource.Services.Storage.AzureTables;
+﻿using Common.LLM;
+using ProblemSource;
+using ProblemSource.Services.Storage.AzureTables;
+using ProblemSourceModule.Models;
+using ProblemSourceModule.Services.Storage.MongoDb;
 using TrainingApi.RealTime;
 
 namespace TrainingApi
@@ -8,7 +12,11 @@ namespace TrainingApi
         public AzureTableConfig AzureTable { get; set; } = new();
         public RealTimeConfig RealTime { get; set; } = new();
         public string? SyncUrls { get; set; } = "";
-        //public InMemoryApiKeyRepository.Config ApiKeyConfig { get; set; } = new([]);
-        //public IEnumerable<ApiKeyUser> ApiKeyUsers { get; set; } = new List<ApiKeyUser>();
+
+        public StorageConfig Storage { get; set; } = new();
+        public List<LlmServiceSpecification> LlmServices { get; set; } = new();
+		public List<LlmModelSpecification> LlmModels { get; set; } = new();
+		//public InMemoryApiKeyRepository.Config ApiKeyConfig { get; set; } = new([]);
+		//public IEnumerable<ApiKeyUser> ApiKeyUsers { get; set; } = new List<ApiKeyUser>();
 	}
 }
