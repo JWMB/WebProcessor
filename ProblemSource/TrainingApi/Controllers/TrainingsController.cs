@@ -321,7 +321,8 @@ namespace TrainingApi.Controllers
         private async Task<List<TrainingSummaryDto>> GetSummaryDtos(IEnumerable<Training> trainings, IEnumerable<TrainingSummary>? summaries = null)
         {
             summaries ??= (await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id))).OfType<TrainingSummary>();
-            var summariesAsDict = summaries.ToDictionary(o => o.Id, o => o);
+            // TODO: multiple entries for single day - GroupBy etc shouldn't be necessary
+            var summariesAsDict = summaries.GroupBy(o => o.Id).ToDictionary(o => o.Key, o => o.MaxBy(p => p.TrainedDays));
 
             return summariesAsDict?.Any() != true
                 ? new()
