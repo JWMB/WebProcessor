@@ -246,8 +246,15 @@ namespace ProblemSource
             var result = new SyncResult();
 
             var userRepositories = AssertSession(training, root.SessionToken, result);
-            
-            var currentStoredState = (await userRepositories.UserStates.GetAll()).SingleOrDefault();
+
+			UserGeneratedState? currentStoredState = null;
+			// var currentStoredState = (await userRepositories.UserStates.GetAll()).SingleOrDefault();
+			{
+				// there's only supposed to be 0 or 1! Upsert not working?
+				var allUserStates = await userRepositories.UserStates.GetAll();
+                if (allUserStates.Any())
+                    currentStoredState = allUserStates.MaxBy(o => o.exercise_stats.lastTimeStamp);
+			}
 
             if (root.Events?.Any() == true)
             {
