@@ -247,18 +247,18 @@ namespace TrainingApi.Controllers
             public string? Gender { get; set; }
 			public string? AgeBracket { get; set; }
             public DateTime? Consent { get; set; }
+            public Training.DateInfo? BirthDate { get; set; }
 
-            public bool Apply(Training training)
+            public void Apply(Training training)
             {
                 if (Gender != null)
                     training.Gender = Gender;
-                else if (AgeBracket != null)
+                if (AgeBracket != null)
                     training.AgeBracket = AgeBracket;
-                else if (Consent != null)
+                if (Consent != null)
                     training.Consent = Consent;
-                else
-                    return false;
-                return true;
+                if (BirthDate != null)
+                    training.BirthDate = BirthDate;
             }
 		}
 

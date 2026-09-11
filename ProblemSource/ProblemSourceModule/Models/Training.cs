@@ -11,6 +11,9 @@ namespace ProblemSourceModule.Models
         public string AgeBracket { get; set; } = string.Empty;
         public string Gender { get; set; } = string.Empty;
 		public DateTime? Consent { get; set; }
+        public DateInfo? BirthDate { get; set; }
+
+        public record DateInfo(int year, int? month, int? day);
 
 		public DateTimeOffset Created { get; set; } = DateTimeOffset.FromUnixTimeMilliseconds(0);
 
