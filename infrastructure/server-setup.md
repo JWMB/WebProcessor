@@ -25,6 +25,7 @@ podman build -t trainingapi . -f Dockerfile
 podman build -t adminapp . -f Dockerfile.web
 
 exit
+# sudo systemctl daemon-reload
 sudo systemctl restart podman-admin
 
 
