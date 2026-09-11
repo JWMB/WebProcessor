@@ -483,7 +483,11 @@ await fetch("/api/Trainings/importmany/Norms", {
             public DateTimeOffset? FirstLogin { get; set; }
             public DateTimeOffset? LastLogin { get; set; }
 
-            public static T Create<T>(Training training, TrainingSummary? summary) where T : TrainingSummaryDto, new()
+            public string? Gender { get; set; }
+			public DateTime? Consent { get; set; }
+            public Training.DateInfo? BirthDate { get; set; }
+
+			public static T Create<T>(Training training, TrainingSummary? summary) where T : TrainingSummaryDto, new()
             {
                 return new T
                 {
@@ -498,6 +502,10 @@ await fetch("/api/Trainings/importmany/Norms", {
                     AvgAccuracy = summary?.AvgAccuracy ?? 0,
                     FirstLogin = summary?.FirstLogin,
                     LastLogin = summary?.LastLogin,
+
+                    Gender = training.Gender,
+                    Consent = training.Consent,
+                    BirthDate = training.BirthDate,
                 };
             }
         }

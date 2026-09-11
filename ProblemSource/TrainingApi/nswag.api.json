@@ -1712,6 +1712,16 @@
         "lastLogin": {
           "type": "string",
           "format": "date-time"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "consent": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "birthDate": {
+          "$ref": "#/definitions/DateInfo"
         }
       }
     },

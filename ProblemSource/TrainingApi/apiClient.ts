@@ -1643,6 +1643,9 @@ export interface TrainingSummaryDto {
     avgAccuracy: number;
     firstLogin?: Date | undefined;
     lastLogin?: Date | undefined;
+    gender?: string | undefined;
+    consent?: Date | undefined;
+    birthDate?: DateInfo | undefined;
 }
 
 export interface TrainingSummaryWithDaysDto extends TrainingSummaryDto {
