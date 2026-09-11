@@ -655,7 +655,7 @@
         ],
         "parameters": [
           {
-            "name": "export",
+            "name": "exportDto",
             "in": "body",
             "required": true,
             "schema": {

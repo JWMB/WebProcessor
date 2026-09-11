@@ -797,11 +797,11 @@ export class TrainingsClient {
         return Promise.resolve<AnalysisDto>(null as any);
     }
 
-    importTraining(export: TrainingExport): Promise<void> {
+    importTraining(exportDto: TrainingExport): Promise<void> {
         let url_ = this.baseUrl + "/api/Trainings/import";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(export);
+        const content_ = JSON.stringify(exportDto);
 
         let options_: RequestInit = {
             body: content_,

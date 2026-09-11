@@ -417,9 +417,9 @@ namespace TrainingApi.Controllers
 
 
 		[HttpPost("import")]
-        public async Task ImportTraining([FromBody] TrainingExport export) //int? targetId = null
+        public async Task ImportTraining([FromBody] TrainingExport exportDto) //int? targetId = null
 		{
-            await importer.Import(export); //targetId
+            await importer.Import(exportDto); //targetId
 		}
 		[HttpPost("importmany/{groupName}")]
 		public async Task ImportTrainings([FromBody] List<TrainingExport> exports, string groupName)

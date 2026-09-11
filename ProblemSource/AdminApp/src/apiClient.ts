@@ -797,11 +797,11 @@ export class TrainingsClient {
         return Promise.resolve<AnalysisDto>(null as any);
     }
 
-    importTraining(export_: TrainingExport): Promise<void> {
+    importTraining(exportDto: TrainingExport): Promise<void> {
         let url_ = this.baseUrl + "/api/Trainings/import";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(export_);
+        const content_ = JSON.stringify(exportDto);
 
         let options_: RequestInit = {
             body: content_,
@@ -1603,6 +1603,13 @@ export interface PatchTrainingDto {
     gender?: string | undefined;
     ageBracket?: string | undefined;
     consent?: Date | undefined;
+    birthDate?: DateInfo | undefined;
+}
+
+export interface DateInfo {
+    year: number;
+    month?: number | undefined;
+    day?: number | undefined;
 }
 
 export interface Training {
@@ -1613,6 +1620,7 @@ export interface Training {
     ageBracket: string;
     gender: string;
     consent?: Date | undefined;
+    birthDate?: DateInfo | undefined;
     created: Date;
 }
 
