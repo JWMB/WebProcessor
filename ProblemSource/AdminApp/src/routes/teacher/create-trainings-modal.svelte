@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { ApiFacade } from '../../apiFacade';
 	import { getApi } from '../../globalStore';
-	import { CreateTrainingsInfoDto, TrainingCreateDto, TrainingTemplateDto } from '../../apiClient';
+	import { type CreateTrainingsInfoDto, type TrainingCreateDto,type  TrainingTemplateDto } from '../../apiClient';
 	import { ErrorHandling } from '../../errorHandling';
 
 	export let isOpen: boolean; // provided by Modals

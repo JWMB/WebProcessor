@@ -105,9 +105,9 @@ export const notificationsStore = (() => {
     }
 })();
 
-export const assistanStore = (() => {
-    return new Assistant("teacher");
-})();
+// export const assistanStore = (() => {
+//     return new Assistant("teacher");
+// })();
 
 export const userStore = (() => {
     const loggedInUser = writable<CurrentUserInfo | null>(null);

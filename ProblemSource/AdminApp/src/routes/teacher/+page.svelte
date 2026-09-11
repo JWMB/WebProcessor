@@ -6,17 +6,19 @@
 	import { openModal } from 'svelte-modals';
 	import Switch from 'src/components/switch.svelte';
 	import Realtimeline from 'src/components/realtimeline.svelte';
-	import { PatchTrainingDto, Training, TrainingSummaryWithDaysDto, TrainingSummaryDto } from '../../apiClient';
+	import { type PatchTrainingDto, type Training, type TrainingSummaryWithDaysDto, type TrainingSummaryDto } from '../../apiClient';
 	import { ApiFacade } from '../../apiFacade';
-	import { assistanStore, getApi, userStore } from '../../globalStore';
+	import { getApi, userStore } from '../../globalStore';
 	import { RealtimelineTools } from '../../services/realtimelineTools';
 	import { TrainingDayTools } from '../../services/trainingDayTools';
 	import { getString } from '../../utilities/LanguageService';
 	import { DateUtils } from '../../utilities/DateUtils';
 	import { Avatar } from '../../services/avatar';
+	import DateInput from '../../components/DateInput.svelte';
 
 	const apiFacade = getApi() as ApiFacade;
 
+	const clientUrl = "https://curricullm.org/vektor/";
 	// const showRealtimeButton = false; // For now, don't show it at all...
 	const showRealtimeButton = $userStore?.role == "Admin";
 	const showAIButton = $userStore?.role == "Admin";
@@ -98,6 +100,11 @@
 		return ((training.latestDays || [])[dayOffset] ||{}).timeTotalOfTargetPercent || 0;
 	}
 
+
+	// function xxx():
+	//  { id: number, username: string, trainedDays: number, trainedDaysMax: number, accuracy: number, effectiveTime: number }[] {
+	// }
+
 	function calculateTrainingStats(data: TrainingSummaryWithDaysDto[], numberOfDays = 7) {
 		trainingDayDetails = TrainingDayTools.getLatestNumDaysStats(7, detailedTrainingsData);
 
@@ -121,7 +128,10 @@
 				targetMinutesPerDay: t.targetMinutesPerDay,
 				isDaysTrainedLow: false, // TODO: get value from server
 				latestDays: trainingDayDetails.trainings.find(o => o.id == t.id)?.days,
-				comments: [] as Array<{ type: 'Critical' | 'Warning' | 'Info'; description: string }>
+				comments: [] as Array<{ type: 'Critical' | 'Warning' | 'Info'; description: string }>,
+				gender: t.gender,
+				consent: t.consent,
+				birthDate: t.birthDate,
 			};
 		});
 
@@ -158,15 +168,26 @@
 			return;
 		}
 		const analysis = await apiFacade.trainings.getAiAnalysis(id, templateSource, onlyPrompt);
-		console.log("asd", analysis);
+		// console.log("asd", analysis);
 		promptSettings.completion = analysis.completion;
 		promptSettings.prompt = analysis.prompt;
 	}
 
 	async function updateTraining(id: number, next: Partial<Training>) {
-		const patch = <PatchTrainingDto>{ gender: next.gender, consent: next.consent };
-		await apiFacade.trainings.patch(id, next);
+		const patch = <PatchTrainingDto>{ gender: next.gender, consent: next.consent?.toISOString(), birthDate: next.birthDate };
+		const inMem = trainings.find(t => t.id == id);
+		if (inMem) {
+			Object.keys(next).filter(o => !!o).forEach(k => {
+				(<any>inMem)[k] = (<any>next)[k];
+			});
+		}
+		await apiFacade.trainings.patch(id, patch);
 	}
+
+	function trainingIsEnabled(t: Partial<Training>) {
+		return t.gender && t.birthDate && t.birthDate.year > 0 && t.consent;
+	}
+
 </script>
 
 <div class="teacher-view">
@@ -175,6 +196,7 @@
 		<button disabled={realtimeConnected == null} on:click={() => rtlTools.toggleConnect()}>{realtimeConnected  == true ? 'Disconnect' : 'Connect'}</button>
 	{/if}
 	<div style="padding:5px; background-color:#cef; margin: 10px">
+	The training app is available at <b>{clientUrl}</b> <button on:click={() => navigator.clipboard.writeText(clientUrl)}>Copy link</button> <a href={clientUrl} target="_blank">Open in new window</a>
 	</div>
 	{#if groups && groups.length > 0}
 		(Total: {groups.map(o => o.summaries.length).reduce((p, c) => p + c)} created, {groups.map(o => o.summaries.filter(p => p.trainedDays > 0).length).reduce((p, c) => p + c)} started)
@@ -190,9 +212,9 @@
 				{getString('teacher_create_group_label')}
 			</button>
 			<!-- svelte-ignore a11y-invalid-attribute -->
-			<span class="tooltip">
+			<!-- <span class="tooltip">
 				<a href="#" on:click={() => assistanStore.openWidgetWithFirstSearchHit("limit")}>?</a>
-			</span>
+			</span> -->
 	</Tabs>
 	{/if}
 	{#if trainings && trainings.length > 0}
@@ -216,17 +238,17 @@
 				<th class="days-trained-column">
 					{getString('teacher_trainings_column_header_days_trained')}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_days_trained')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span>
+					<!-- <span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_days_trained')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span> -->
 				</th>
 				<th class="effective-time-column">
 					{getString('teacher_trainings_column_header_effective_time')}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_effective_time')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span>
+					<!-- <span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_effective_time')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span> -->
 				</th>
 				<th class="accuracy-column">
 					{getString('teacher_trainings_column_header_accuracy')}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span>
+					<!-- <span class="tooltip" data-tooltip={getString('teacher_trainings_column_tooltip_accuracy')} on:click={() => assistanStore.openWidgetWithFirstSearchHit("statistics")}>?</span> -->
 				</th>
 				{#each Array.from(Array(trainingDayDetailsNumDaysBack).keys()) as dayOffset}
 				<th class="training-day-column" title="{DateUtils.toIsoDate(DateUtils.addDays(trainingDayDetails.startDate, dayOffset))}">{DateUtils.getWeekDayName(DateUtils.addDays(trainingDayDetails.startDate, dayOffset))[0]}</th>
@@ -237,6 +259,9 @@
 				<th>
 					Consent
 				</th>
+				<th>
+					Born
+				</th>
 				<th class="notes-column">
 					{getString('teacher_trainings_column_header_notes')}
 				</th>
@@ -245,7 +270,11 @@
 				<tr on:click={() => onSelectTraining(t.id)} class="training-row">
 					<td class="user-column">
 						<div style="display: flex">
-							{@html Avatar.create(t.username)}
+							{#if trainingIsEnabled(t)}
+								{@html Avatar.create(t.username)}
+							{:else}
+								<span title="Complete training settings!">⚠️</span>
+							{/if}
 							<span>&nbsp;{t.username}&nbsp;</span>
 							<a rel="noreferrer" href="/admin/teacher/training?id={t.id.toString()}" title="id={t.id.toString()}" target="_blank">^</a>
 						</div>
@@ -265,7 +294,7 @@
 					</td>
 					{/each}
 					<td>
-						<select value={t.gender} on:change={e => console.log("g", t.gender, { gender: e.target.value })}>
+						<select value={t.gender} on:change={e => updateTraining(t.id, { gender: e.currentTarget.value})}>
 							<option value="">Not set</option>
 							<option value="m">Male</option>
 							<option value="f">Female</option>
@@ -273,7 +302,19 @@
 						</select>
 					</td>
 					<td>
-						<input type="checkbox" checked={t.consent != null} on:change={e => console.log("a", t.consent, { consent: e.target.value })} />
+						<input type="checkbox" checked={t.consent != null} on:change={e => updateTraining(t.id, { consent: e.currentTarget.checked ? new Date(Date.now()) : undefined })} />
+					</td>
+					<td>
+						<select value={t.birthDate?.year} on:change={e => updateTraining(t.id, { birthDate: { year: parseInt(e.currentTarget.value) }})}>
+						{#each Array(8).fill(0).map((_, i) => i + 4).map(o => new Date().getFullYear() - o) as year}
+						<option value={year}>{year}</option>
+						{/each}
+						</select>
+						<select value={t.birthDate?.month} on:change={e => updateTraining(t.id, { birthDate: { year: t.birthDate?.year || 0, month: parseInt(e.currentTarget.value) }})}>
+						{#each Array(12).fill(0).map((_, i) => i) as month}
+						<option value={month}>{`${month.toString().padStart(2, '0')} ${new Date(2000, month, 1).toLocaleString('default', { month: 'long' })}`}</option>
+						{/each}
+						</select>
 					</td>
 					<td>
 						{#if showAIButton}
