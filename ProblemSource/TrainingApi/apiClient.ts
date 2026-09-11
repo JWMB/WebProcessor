@@ -1603,6 +1603,13 @@ export interface PatchTrainingDto {
     gender?: string | undefined;
     ageBracket?: string | undefined;
     consent?: Date | undefined;
+    birthDate?: DateInfo | undefined;
+}
+
+export interface DateInfo {
+    year: number;
+    month?: number | undefined;
+    day?: number | undefined;
 }
 
 export interface Training {
@@ -1613,6 +1620,7 @@ export interface Training {
     ageBracket: string;
     gender: string;
     consent?: Date | undefined;
+    birthDate?: DateInfo | undefined;
     created: Date;
 }
 

@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import type { TrainingSummaryWithDaysDto, TrainingSummaryDto } from 'src/apiClient';
 	import Tabs from 'src/components/tabs.svelte';
 	import ProgressBar from './progress-bar.svelte';
 	import CreateTrainingsModal from './create-trainings-modal.svelte';
 	import { openModal } from 'svelte-modals';
 	import Switch from 'src/components/switch.svelte';
-	import { assistanStore, getApi, userStore } from 'src/globalStore';
-	import type { ApiFacade } from 'src/apiFacade';
-	import { getString } from 'src/utilities/LanguageService';
-	import { TrainingDayTools } from 'src/services/trainingDayTools';
-	import { DateUtils } from 'src/utilities/DateUtils';
-	import { Avatar } from 'src/services/avatar';
 	import Realtimeline from 'src/components/realtimeline.svelte';
-	import { RealtimelineTools } from 'src/services/realtimelineTools';
+	import { PatchTrainingDto, Training, TrainingSummaryWithDaysDto, TrainingSummaryDto } from '../../apiClient';
+	import { ApiFacade } from '../../apiFacade';
+	import { assistanStore, getApi, userStore } from '../../globalStore';
+	import { RealtimelineTools } from '../../services/realtimelineTools';
+	import { TrainingDayTools } from '../../services/trainingDayTools';
+	import { getString } from '../../utilities/LanguageService';
+	import { DateUtils } from '../../utilities/DateUtils';
+	import { Avatar } from '../../services/avatar';
 
 	const apiFacade = getApi() as ApiFacade;
 
@@ -161,6 +161,11 @@
 		console.log("asd", analysis);
 		promptSettings.completion = analysis.completion;
 		promptSettings.prompt = analysis.prompt;
+	}
+
+	async function updateTraining(id: number, next: Partial<Training>) {
+		const patch = <PatchTrainingDto>{ gender: next.gender, consent: next.consent };
+		await apiFacade.trainings.patch(id, next);
 	}
 </script>
 
