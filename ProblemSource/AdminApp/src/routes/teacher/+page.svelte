@@ -150,7 +150,7 @@
 	}
 
 	function onSelectTraining(trainingId: number) {
-		console.log('training id', trainingId);
+		// console.log('training id', trainingId);
 		// goto(`${base}/training?id=${trainingId}`);
 	}
 
@@ -175,11 +175,16 @@
 
 	async function updateTraining(id: number, next: Partial<Training>) {
 		const patch = <PatchTrainingDto>{ gender: next.gender, consent: next.consent?.toISOString(), birthDate: next.birthDate };
+		// hmm, special for svelte reactivity
 		const inMem = trainings.find(t => t.id == id);
 		if (inMem) {
 			Object.keys(next).filter(o => !!o).forEach(k => {
 				(<any>inMem)[k] = (<any>next)[k];
 			});
+			const index = trainings.findIndex(t => t.id == id);
+			if (index >= 0) {
+				trainings[index] = inMem;
+			}
 		}
 		await apiFacade.trainings.patch(id, patch);
 	}
