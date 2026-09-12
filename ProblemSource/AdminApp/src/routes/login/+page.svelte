@@ -3,7 +3,7 @@
 	import { showHelpPage } from '../../components/helpWidget.svelte';
 	import { ErrorHandling } from '../../errorHandling';
 	import { userStore } from '../../globalStore';
-	import { initWidgetImplementationScript } from '../../humany-embed';
+	// import { initWidgetImplementationScript } from '../../humany-embed';
 	import { getString } from '../../utilities/LanguageService';
 
 	let email = '';
@@ -31,7 +31,7 @@
 				.then(() => {
 					isSuccess = true;
 					isLoading = false;
-					initWidgetImplementationScript(); // since we don't want to show help widget to non-authorized users
+					//initWidgetImplementationScript(); // since we don't want to show help widget to non-authorized users
 					// TODO: can't find a way to preserve url parameters (e.g. using ?returnUrl= to get back to the attempted page)
 					// window.history.back();
 

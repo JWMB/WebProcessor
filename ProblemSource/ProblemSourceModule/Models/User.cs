@@ -69,13 +69,22 @@ namespace ProblemSourceModule.Models
         {
             var summaries = await statisticsProvider.GetTrainingSummaries(GetAllIds());
             var trainings = await trainingRepo.GetByIds(GetAllIds());
+            var byId = trainings.GroupBy(o => o.Id).ToDictionary(o => o.Key, o => o.ToList());
+
+            // TODO: activate this later
+            //if (byId.Values.Any(o => o.Count > 1))
+            //    throw new Exception($"Multiple trainings with same Id: {string.Join(", ", byId.Values.Where(o => o.Count > 1).Select(o => $"{o.First().Id}:{o.Count}"))}");
 
             var result = new Dictionary<string, List<(int, Training, TrainingSummary?)>>();
 
             foreach (var kv in this)
-                result.Add(kv.Key, kv.Value.Select(id => (id, trainings.Single(o => o.Id == id), summaries.SingleOrDefault(o => o?.Id == id))).ToList());
+            {
+                var trainingsInGroup = kv.Value.Select(id => trainings.FirstOrDefault(o => o.Id == id)).OfType<Training>(); // TODO: SingleOrDefault
+                // TODO: note missing trainings
+				result.Add(kv.Key, trainingsInGroup.Select(training => (training.Id, training, summaries.SingleOrDefault(o => o?.Id == training.Id))).ToList());
+			}
 
-            return result;
+			return result;
         }
 
         public async Task<Dictionary<string, List<Training>>> RemoveUnusedFromGroups(int numTrainings, string exceptGroup, ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)

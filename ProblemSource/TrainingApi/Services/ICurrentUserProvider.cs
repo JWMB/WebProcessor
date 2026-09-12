@@ -1,10 +1,6 @@
-﻿using Azure.Core;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Connections.Features;
-using Microsoft.Extensions.Primitives;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
-using System.Collections.Specialized;
 using System.Security.Claims;
 
 namespace TrainingApi.Services

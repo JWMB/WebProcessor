@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NumSharp.Utilities;
 
 namespace Tools
 {
@@ -57,17 +56,17 @@ namespace Tools
         {
             var lines = File.ReadAllLines(path);
 
-            var header = GetItems(lines.First());
+            var header = GetItems(lines.First()).ToList();
             while (header.Last().Trim() == "")
-                header = header.RemoveAt(header.Length - 1);
+                header.RemoveAt(header.Count - 1);
             //lowercase 1st
-            header = header.Select(o => $"{o.First()}".ToLower() + o.Substring(1)).ToArray();
+            header = header.Select(o => $"{o.First()}".ToLower() + o.Substring(1)).ToList();
 
             var types = header.Select(o => (Type?)null).ToList();
             foreach (var line in lines.Skip(1).Take(100))
             {
                 var items = GetItems(line);
-                for (int i = 0; i < Math.Min(items.Length, header.Length); i++)
+                for (int i = 0; i < Math.Min(items.Length, header.Count); i++)
                 {
                     if (items[i].Length > 0)
                     {
@@ -93,7 +92,7 @@ namespace Tools
             {
                 var obj = new JObject();
                 var items = GetItems(line);
-                for (int i = 0; i < Math.Min(items.Length, header.Length); i++)
+                for (int i = 0; i < Math.Min(items.Length, header.Count); i++)
                 {
                     var item = items[i];
                     var type = types[i];

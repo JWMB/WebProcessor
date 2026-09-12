@@ -1,0 +1,230 @@
+{
+  "__type": "LinearTrainingPlan",
+  "minUnlockedExercises": 20,
+  "maxUnlockedExercises": 20,
+  "allowFreeChoice": true,
+  "tests": [
+    {
+      "title": "Numberline",
+      "id": "numberline",
+      "phases": [
+        {
+          "type": "PhaseArrows",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 7
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "NPals",
+      "id": "npals",
+      "phases": [
+        {
+          "type": "PhaseTenPals",
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 11
+            },
+            "end": {
+              "type": "TIME",
+              "value": 90
+            }
+          },
+          "levels": {
+            "file": "file://Resources/NPals.csv"
+          },
+          "stimuliType": "NPALS"
+        }
+      ]
+    },
+    {
+      "title": "Grid",
+      "id": "WM_grid",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "dynamicValue": {
+                "type": "MEDALS",
+                "values": [ 4, 2, 4 ],
+                "adaptAfterNoOfFails": 2
+              }
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseWorkingMemory",
+          "stimuliType": "WM_GRID",
+          "settings": {
+            "size": {
+              "x": 4,
+              "y": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Twist",
+      "id": "WM_rotate",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "dynamicValue": {
+                "type": "MEDALS",
+                "values": [ 6, 6, 6 ],
+                "adaptAfterNoOfFails": 2
+              }
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseWorkingMemory",
+          "stimuliType": "WM_ROTATE",
+          "settings": {
+            "size": {
+              "x": 4,
+              "y": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Circle",
+      "id": "WM_circle",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "dynamicValue": {
+                "type": "MEDALS",
+                "values": [ 6, 6, 6 ],
+                "adaptAfterNoOfFails": 2
+              }
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseWorkingMemory",
+          "stimuliType": "WM_CIRCLE",
+          "settings": {
+            "size": {
+              "x": 10,
+              "y": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Numbers",
+      "id": "WM_numbers",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "dynamicValue": {
+                "type": "MEDALS",
+                "values": [ 6, 6, 6 ],
+                "adaptAfterNoOfFails": 2
+              }
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseWorkingMemory",
+          "stimuliType": "WM_NUMBERS",
+          "settings": {
+            "size": {
+              "x": 3,
+              "y": 3
+            },
+            "sequenceModifiers": {
+              "post": "Reverse"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Crush",
+      "id": "WM_crush",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "dynamicValue": {
+                "type": "MEDALS",
+                "values": [ 6, 6, 6 ],
+                "adaptAfterNoOfFails": 2
+              }
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseWorkingMemory",
+          "stimuliType": "WM_CRUSH",
+          "settings": {
+            "numItems": -1
+          }
+        }
+      ]
+    },
+    {
+      "title": "Sequential Order",
+      "id": "NVR_SO",
+      "phases": [
+        {
+          "phase": "TEST",
+          "endCriteriaData": {
+            "target": {
+              "type": "CORRECT_TOTAL",
+              "value": 6
+            },
+            "end": {
+              "type": "INCORRECT_TOTAL",
+              "value": 5
+            }
+          },
+          "type": "PhaseNVR",
+          "stimuliType": "NVR_SO",
+          "ProblemFactory": {
+          }
+        }
+      ]
+    }
+  ]
+}

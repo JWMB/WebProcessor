@@ -1,15 +1,7 @@
 ﻿using Common;
 using ProblemSource.Models;
-using ProblemSourceModule.Models;
-using static ProblemSource.Models.DynamicTrainingPlan;
-using System.Numerics;
-using static ProblemSource.Models.ExerciseStats;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Linq;
-using System;
 using ProblemSource.Models.LogItems;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 
 namespace ProblemSourceModule.Models
 {
