@@ -21,7 +21,8 @@
 	const clientUrl = "https://curricullm.org/vektor/";
 	// const showRealtimeButton = false; // For now, don't show it at all...
 	const showRealtimeButton = $userStore?.role == "Admin";
-	const showAIButton = $userStore?.role == "Admin";
+	const showAIButton = true; //$userStore?.role == "Admin";
+	const showAIEditButton = $userStore?.role == "Admin";
 	let aiDialogForId: number | null = null;
 	const promptSettings = {
 		template: "https://raw.githubusercontent.com/JWMB/WebProcessor/refs/heads/main/ProblemSource/ProblemSourceModule/Resources/AICoach/TeacherStudent.txt",
@@ -167,6 +168,7 @@
 			console.error('apiFacade null');
 			return;
 		}
+		promptSettings.completion = "Working...";
 		const analysis = await apiFacade.trainings.getAiAnalysis(id, templateSource, onlyPrompt);
 		// console.log("asd", analysis);
 		promptSettings.completion = analysis.completion;
@@ -323,7 +325,7 @@
 					</td>
 					<td>
 						{#if showAIButton}
-						<input type="button" value="AI" on:click={() => aiDialogForId = t.id}/>
+						<button on:click={() => aiDialogForId = t.id}>🤖</button>
 						{/if}
 						{#if getRealtimeDataForId(t.id).length}
 						<Realtimeline history={getRealtimeDataForId(t.id)} getPositioning={RealtimelineTools.createPositioningFunction(5 * 60 * 1000)} ></Realtimeline>
@@ -337,9 +339,10 @@
 		</table>
 	{/if}
 	{#if aiDialogForId}
-	<div class="modal">
-		<div class="contents">
+	<div role="dialog" class="modal">
+		<div class="contents" style="min-height: 40%; min-width: 70%; border-style: solid;">
 			<h2>{aiDialogForId}</h2>
+			{#if showAIEditButton && false}
 			<label for="template">Template</label>
 			<input name="template" type="text" bind:value={promptSettings.template}/>
 
@@ -354,6 +357,9 @@
 			<input name="model" type="text"/>
 			<textarea rows="8" cols="100">{promptSettings.completion}</textarea>
 			------
+			{/if}
+			<button type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template, false) }}>🤖 Analyze</button>
+			<div>{promptSettings.completion || "(click above to analyze training)"}</div>
 
 			<input type="button" on:click={() => { aiDialogForId = null; }} value="Close"/>
 		</div>

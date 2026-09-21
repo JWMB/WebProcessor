@@ -155,8 +155,9 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 			if (training == null)
 				throw new ArgumentException($"No training with id {trainingId}");
 
+			var activeAgeBracket = GetActiveAgeBracket(training);
 			var normedProviders = new List<(Training, IUserGeneratedDataRepositoryProvider)>();
-			var norms = new[] { $"norm_{training.AgeBracket}", $"norm_{training.AgeBracket}_stddev" };
+			var norms = new[] { $"norm_{activeAgeBracket}", $"norm_{activeAgeBracket}_stddev" };
 			foreach (var n in norms)
 			{
 				var t = await trainingRepository.GetByUsername(n);
@@ -165,6 +166,26 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 			}
 
 			return await CreateReplacements(training, userDataProviderFactory.Create(trainingId), normedProviders);
+		}
+
+		private string GetActiveAgeBracket(Training training)
+		{
+			if (training.BirthDate != null)
+			{
+				var startYearOfCurrentSchoolYear = DateTime.Today.Year - (DateTime.Today.Month >= 8 ? 0 : 1);
+				//var startOfCurrentSchoolYear = DateTime.Today.Month >= 8 : new DateTime(DateTime.Today.Year, )
+				var birthDate = new DateTime(training.BirthDate.year, training.BirthDate.month ?? DateTime.Today.Month, training.BirthDate.day ?? DateTime.Today.Day);
+				var ageAtEndOfCalendarYear = new DateTime(startYearOfCurrentSchoolYear, 12, 31) - birthDate;
+				var ageYearsAtEnd = ageAtEndOfCalendarYear.TotalDays / 365.25;
+				//var diff = (DateTime.Today - birthDate).TotalDays / 365.25;
+				if (ageYearsAtEnd <= 4)
+					return "-4";
+				else if (ageYearsAtEnd >= 11)
+					return "11-";
+				else
+					return $"{((int)ageYearsAtEnd) - 1}-{(int)ageYearsAtEnd}";
+			}
+			return training.AgeBracket;
 		}
 
 		public async Task<Dictionary<string, object>> CreateReplacements(Training training, IUserGeneratedDataRepositoryProvider provider,
@@ -176,7 +197,9 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 				""".Trim();
 			// 	* Thursday sessions will be in a noisy setting
 
-			var audience = $"a parent of the trainee (who is {training.AgeBracket} years old)"; // $"the trainee, {training.AgeBracket} years old";
+			var activeAgeBracket = GetActiveAgeBracket(training);
+
+			var audience = $"a parent of the trainee (who is {activeAgeBracket} years old)";
 
 			var earlierCoachingSessions = new[]
 			{
@@ -193,7 +216,7 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
 			var baseLineIsFirstNMinutes = 5;
 
-			var normProviders = referenceTrainingProviders.Where(o => o.Training.AgeBracket == training.AgeBracket);
+			var normProviders = referenceTrainingProviders.Where(o => o.Training.AgeBracket == activeAgeBracket);
 			var normProvider = normProviders.FirstOrDefault(o => o.Training.Username.EndsWith(o.Training.AgeBracket)).Provider;
 			var stdDevProvider = normProviders.FirstOrDefault(o => o.Training.Username.EndsWith($"_stddev")).Provider;
 
