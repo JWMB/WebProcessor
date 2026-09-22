@@ -15,6 +15,7 @@
 	import { DateUtils } from '../../utilities/DateUtils';
 	import { Avatar } from '../../services/avatar';
 	import DateInput from '../../components/DateInput.svelte';
+	import showdown from 'showdown';
 
 	const apiFacade = getApi() as ApiFacade;
 
@@ -28,7 +29,8 @@
 		template: "https://raw.githubusercontent.com/JWMB/WebProcessor/refs/heads/main/ProblemSource/ProblemSourceModule/Resources/AICoach/TeacherStudent.txt",
 		model: "qwen3.1",
 		prompt: "(Generated prompt goes here)",
-		completion: "(Generated completion goes here)"
+		completion: "(Generated completion goes here)",
+		completionHtml: "(Generated completion goes here)"
 	};
 
 	const rtlTools = new RealtimelineTools(2 * 60 * 1000);
@@ -169,10 +171,23 @@
 			return;
 		}
 		promptSettings.completion = "Working...";
+
 		const analysis = await apiFacade.trainings.getAiAnalysis(id, templateSource, onlyPrompt);
-		// console.log("asd", analysis);
+// 		const test = `
+// # Some data
+// * 1 here
+// * 2 and here
+// 		`.trim();
+// 		const analysis = { completion: test, prompt: "p" };
+
+		promptSettings.completionHtml = analysis.completion;
 		promptSettings.completion = analysis.completion;
 		promptSettings.prompt = analysis.prompt;
+		try {
+			const converter = new showdown.Converter();
+			promptSettings.completionHtml = converter.makeHtml(analysis.completion);
+			console.log("sd", promptSettings.completionHtml);
+		} catch (err) { console.error(err); }
 	}
 
 	async function updateTraining(id: number, next: Partial<Training>) {
@@ -325,7 +340,7 @@
 					</td>
 					<td>
 						{#if showAIButton}
-						<button on:click={() => aiDialogForId = t.id}>🤖</button>
+						<button disabled={t.trainedDays < 3} title={t.trainedDays < 3 ? "Analysis tool available after 3 training days" : ""} on:click={() => aiDialogForId = t.id}>🤖</button>
 						{/if}
 						{#if getRealtimeDataForId(t.id).length}
 						<Realtimeline history={getRealtimeDataForId(t.id)} getPositioning={RealtimelineTools.createPositioningFunction(5 * 60 * 1000)} ></Realtimeline>
@@ -359,7 +374,13 @@
 			------
 			{/if}
 			<button type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template, false) }}>🤖 Analyze</button>
-			<div>{promptSettings.completion || "(click above to analyze training)"}</div>
+			<div>
+				{#if promptSettings.completionHtml}
+				{@html promptSettings.completionHtml}
+				{:else}
+				(click above to analyze training)
+				{/if}
+			</div>
 
 			<input type="button" on:click={() => { aiDialogForId = null; }} value="Close"/>
 		</div>
