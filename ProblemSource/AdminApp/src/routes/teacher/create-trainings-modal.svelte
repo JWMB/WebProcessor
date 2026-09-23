@@ -22,7 +22,7 @@
 
 	const timePerDayValues = [
 		20,
-		33
+		// 33
 	];
 	const ageBrackets = [
 		"",

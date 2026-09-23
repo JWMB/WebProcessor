@@ -114,6 +114,8 @@ namespace ProblemSource
                                     {
                                         redirectToNewClient = training.Settings.RedirectToClient;
                                     }
+                                    var error = GetLoginErrorString(training);
+
                                     //else if (trainingId2 % 10 == 6) // redirect some users to the new client
                                     //{
                                     //    var sessionInfo = sessionManager.GetByUserId(training.Username);
@@ -148,7 +150,16 @@ namespace ProblemSource
             await context.Response.WriteAsJsonAsync(result);
         }
 
-        public async Task<SyncResult> Sync(SyncInput root, ClaimsPrincipal user)
+        private static string? GetLoginErrorString(Training training)
+        {
+            if (training.BirthDate?.year == null || training.Gender == null || training.Consent == null)
+            {
+                return "ConfigurationMissing";
+            }
+            return null;
+    	}
+
+		public async Task<SyncResult> Sync(SyncInput root, ClaimsPrincipal user)
         {
             if (!usernameHashing.TryGetTrainingIdFromUsername(root.Uuid, false, out var trainingId2)) // TODO: co-opting SessionToken for now
             {
@@ -157,7 +168,13 @@ namespace ProblemSource
             else
             {
                 var training = await GetTrainingOrThrow(trainingId2, user); // context.User);
-                var syncResult = await Sync(training, root);
+				var error = GetLoginErrorString(training);
+                if (error != null)
+                {
+					return new SyncResult { error = error };
+				}
+
+				var syncResult = await Sync(training, root);
                 if (syncResult.error != null)
                 {
                     log.LogWarning($"Training id={trainingId2} (user='{root.Uuid}') login: {syncResult.error}");
