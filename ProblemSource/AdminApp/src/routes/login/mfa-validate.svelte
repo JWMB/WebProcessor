@@ -3,6 +3,7 @@
 	import { ApiFacade } from "../../apiFacade";
 	import { getApi } from "../../globalStore";
 	import { LoginUtils } from './LoginUtils';
+	import MfaEnable from './mfa-enable.svelte';
 	// import { MfaVerifyGetDto } from '../../apiClient';
 
     const apiFacade = getApi() as ApiFacade;
@@ -31,29 +32,38 @@
             submit();
     }
 
+    let cnt = 0;
+    let showEnable: boolean;
     function requestReregister() {
-        console.log("AOK");
+        if (cnt++ > 3) { // temp until proper solution
+            showEnable = true;
+        }
     }
 
 </script>
 
 <div>
-	<form on:submit|preventDefault={submit}>
+    {#if showEnable}
+        <MfaEnable email={email} onSuccess={() => onSuccess()}></MfaEnable>
 
-    {LoginUtils.getText("MfaLogin.enterCode", { appName: mfaSettings?.issuer || "Vektor Teacher"})}
-    <div>
-        <input name="Code" id="mfaCode" class="form-control"
-                on:keydown={LoginUtils.checkPrevent} 
-                on:keyup={checkAutoSubmit} autofocus autocomplete="off" />
-    </div>
-    <button type="submit">Submit</button>
-    {#if success === false}
-    <div style="color: red">Incorrect code, try again</div>
+    {:else}
+        <form on:submit|preventDefault={submit}>
+
+        {LoginUtils.getText("MfaLogin.enterCode", { appName: mfaSettings?.issuer || "Vektor Teacher"})}
+        <div>
+            <input name="Code" id="mfaCode" class="form-control"
+                    on:keydown={LoginUtils.checkPrevent} 
+                    on:keyup={checkAutoSubmit} autofocus autocomplete="off" />
+        </div>
+        <button type="submit">Submit</button>
+        {#if success === false}
+        <div style="color: red">Incorrect code, try again</div>
+        {/if}
+        </form>
+
+        <div>
+            <button class="inline-button" on:click={() => requestReregister()}>{LoginUtils.getText("MfaEnable.lostMyApp")}</button>
+        </div>
     {/if}
-    </form>
-
-    <div>
-    	<button class="inline-button" on:click={() => requestReregister()}>{LoginUtils.getText("MfaEnable.lostMyApp")}</button>
-    </div>
 
 </div>

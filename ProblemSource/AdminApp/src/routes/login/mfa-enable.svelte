@@ -11,12 +11,14 @@
     export let onSuccess: () => void;
 
     let registedSuccessfully: boolean | undefined;
-
+    let mfaInfo: any;
+    
     // Create a reference variable to hold the DOM element
     let qrContainer: HTMLDivElement;
 
     onMount(async () => {
         const mfaEnableInfo = await apiFacade.users.getMfaEnable(email);
+        mfaInfo = mfaEnableInfo;
         console.log("mfaEnableInfo", mfaEnableInfo);
 
         const qrCode = new QRCodeStyling({
@@ -83,7 +85,7 @@
     <div id="qrCodeData" data-url="@Model.AuthenticatorUri"></div>
 
     <p>
-        3. {LoginUtils.getText("MfaEnable.receiveVerificationCode")}
+        3. {LoginUtils.getText("MfaEnable.receiveVerificationCode", { numDigits: mfaInfo?.numTotpDigits })}
     </p>
     <form on:submit|preventDefault={submit}>
 
