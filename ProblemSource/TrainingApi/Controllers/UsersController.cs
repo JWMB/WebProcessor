@@ -14,24 +14,28 @@ namespace TrainingApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UsersController : ControllerBase
+    public partial class UsersController : ControllerBase
     {
         private readonly IUserRepository userRepository;
         private readonly IAuthenticateUserService authenticateUserService;
         private readonly ICurrentUserProvider userProvider;
         private readonly CreateUserWithTrainings createUserWithTrainings;
         private readonly ITrainingRepository trainingRepository;
-        private readonly ILogger<UsersController> log;
+		private readonly IMfaService mfaService;
+		private readonly ICookieProtector cookieProtector;
+		private readonly ILogger<UsersController> log;
 
         public UsersController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ICurrentUserProvider userProvider, 
-            CreateUserWithTrainings createUserWithTrainings, ITrainingRepository trainingRepository, ILogger<UsersController> logger)
+            CreateUserWithTrainings createUserWithTrainings, ITrainingRepository trainingRepository, IMfaService mfaService, ICookieProtector cookieProtector, ILogger<UsersController> logger)
         {
             this.userRepository = userRepository;
             this.authenticateUserService = authenticateUserService;
             this.userProvider = userProvider;
             this.createUserWithTrainings = createUserWithTrainings;
             this.trainingRepository = trainingRepository;
-            log = logger;
+			this.mfaService = mfaService;
+			this.cookieProtector = cookieProtector;
+			log = logger;
         }
 
         [Authorize(Policy = RolesRequirement.Admin)]
@@ -160,7 +164,7 @@ namespace TrainingApi.Controllers
                 return Unauthorized(new { Title = $"Login failed - please check your spelling" });
             }
 
-            var principal = WebUserProvider.CreatePrincipal(user);
+            var principal = WebUserProvider.CreatePrincipal(user, requireMfa: user.MfaEnabled == true);
             var authProperties = new AuthenticationProperties
             {
                 //AllowRefresh = <bool>, // Refreshing the authentication session should be allowed.
@@ -176,8 +180,62 @@ namespace TrainingApi.Controllers
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
             
-            return Ok(new LoginResultDto(user.Role));
+            return Ok(new LoginResultDto(user.Role, user.MfaEnabled == true));
         }
+
+		private const int NumTotpDigits = 6;
+
+		public class MfaLoginDto
+		{
+			public required string Email { get; set; }
+			public required string Code { get; set; }
+			public string? ReturnUrl { get; set; }
+		}
+
+		[HttpPost("mfa-enable")]
+		public async Task<bool> PostMfaEnable(MfaLoginDto dto)
+        {
+            var cookie = Request.Cookies[MfaCookie.DefaultName];
+            if (cookie == null)
+                return false;
+            var mfaCookie = cookieProtector.Unprotect<MfaCookie>(cookie);
+
+			//var login = helper.GetLoginFromEmail(request.Email);
+			//if (login == null)
+			//	throw new BadRequestException($"Login not found {request.Email}");
+
+			if (mfaCookie?.Secret?.Any() != true)
+				throw new Exception($"Login not configured for MFA {dto.Email}");
+
+			if (await mfaService.VerifyTwoFactorAuthentication(dto.Email, mfaCookie.Secret, dto.Code, NumTotpDigits))
+            { }
+
+			return true;
+        }
+
+        public record MfaCookie(string Secret)
+        {
+            public const string DefaultName = "card";
+        }
+
+		public record MfaEnableDto(string AuthenticatorUri);
+        [HttpGet("mfa-enable")]
+		public async Task<MfaEnableDto> GetMfaEnable(string email)
+        {
+			(string secretKey, string qrCodeUrl) = await mfaService.GenerateTwoFactorInfo(email);
+
+            var options = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddMinutes(5)
+            };
+            var cookie = new MfaCookie(secretKey);
+			Response.Cookies.Append(MfaCookie.DefaultName, cookieProtector.Protect(cookie), options);
+
+			return new MfaEnableDto(qrCodeUrl);
+		}
 
         [HttpPut]
         [Route("movetrainings")]
@@ -207,7 +265,7 @@ namespace TrainingApi.Controllers
             public string ToGroup { get; set; } = string.Empty;
         }
 
-        public readonly record struct LoginResultDto(string Role);
+        public readonly record struct LoginResultDto(string Role, bool MfaRequired = false);
     }
 
     public class LoginCredentials

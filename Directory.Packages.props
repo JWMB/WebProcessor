@@ -61,6 +61,7 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="NSwag.AspNetCore" Version="14.7.1" />
     <PackageVersion Include="NSwag.MSBuild" Version="14.7.1" />
+    <PackageVersion Include="Otp.NET" Version="1.4.1" />
     <PackageVersion Include="Scriban" Version="7.2.6" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.3.2" />

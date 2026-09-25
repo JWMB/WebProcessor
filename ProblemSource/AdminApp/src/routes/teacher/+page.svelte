@@ -24,7 +24,7 @@
 	const showRealtimeButton = $userStore?.role == "Admin";
 	const showAIButton = true; //$userStore?.role == "Admin";
 	const showAIEditButton = $userStore?.role == "Admin";
-	let aiDialogForId: number | null = null;
+	let aiDialogForTraining: { id: number, username: string, trainedDays: number } | null = null;
 	const promptSettings = {
 		template: "https://raw.githubusercontent.com/JWMB/WebProcessor/refs/heads/main/ProblemSource/ProblemSourceModule/Resources/AICoach/TeacherStudent.txt",
 		model: "qwen3.1",
@@ -218,7 +218,12 @@
 		<button disabled={realtimeConnected == null} on:click={() => rtlTools.toggleConnect()}>{realtimeConnected  == true ? 'Disconnect' : 'Connect'}</button>
 	{/if}
 	<div style="padding:5px; background-color:#cef; margin: 10px">
-	The training app is available at <b>{clientUrl}</b> <button on:click={() => navigator.clipboard.writeText(clientUrl)}>Copy link</button> <a href={clientUrl} target="_blank">Open in new window</a>
+	<div>
+		The training app is available at <b>{clientUrl}</b> <button on:click={() => navigator.clipboard.writeText(clientUrl)}>Copy link</button> <a href={clientUrl} target="_blank">Open in new window</a>
+	</div>
+	<div>
+		For questions and bug reports, email us at <a href="mailto:vektorproject2026@gmail.com">vektorproject2026@gmail.com</a>
+	</div>
 	</div>
 	{#if groups && groups.length > 0}
 		(Total: {groups.map(o => o.summaries.length).reduce((p, c) => p + c)} created, {groups.map(o => o.summaries.filter(p => p.trainedDays > 0).length).reduce((p, c) => p + c)} started)
@@ -295,10 +300,12 @@
 							{#if trainingIsEnabled(t)}
 								{@html Avatar.create(t.username)}
 							{:else}
-								<span title="Complete training settings!">⚠️</span>
+								<span title={`Training settings not filled out! (${t.id})`}>⚠️</span>
 							{/if}
-							<span>&nbsp;{t.username}&nbsp;</span>
+							<span title={`{t.id}`} >&nbsp;{t.username}&nbsp;</span>
+							{#if showAIEditButton}
 							<a rel="noreferrer" href="/admin/teacher/training?id={t.id.toString()}" title="id={t.id.toString()}" target="_blank">^</a>
+							{/if}
 						</div>
 					</td>
 					<td>
@@ -340,7 +347,7 @@
 					</td>
 					<td>
 						{#if showAIButton}
-						<button disabled={t.trainedDays < 3} title={t.trainedDays < 3 ? "Analysis tool available after 3 training days" : ""} on:click={() => aiDialogForId = t.id}>🤖</button>
+						<button on:click={() => aiDialogForTraining = t}>🤖</button>
 						{/if}
 						{#if getRealtimeDataForId(t.id).length}
 						<Realtimeline history={getRealtimeDataForId(t.id)} getPositioning={RealtimelineTools.createPositioningFunction(5 * 60 * 1000)} ></Realtimeline>
@@ -353,27 +360,30 @@
 			{/each}
 		</table>
 	{/if}
-	{#if aiDialogForId}
+	{#if aiDialogForTraining}
 	<div role="dialog" class="modal">
 		<div class="contents" style="min-height: 40%; min-width: 70%; border-style: solid;">
-			<h2>{aiDialogForId}</h2>
+			<h2>{aiDialogForTraining.username}</h2>
 			{#if showAIEditButton && false}
 			<label for="template">Template</label>
 			<input name="template" type="text" bind:value={promptSettings.template}/>
 
 			------
-			<input type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template, true) }} value="Generate prompt ⬇️"/>
+			<input type="button" on:click={() => { generatePrompt(aiDialogForTraining?.id || 0, promptSettings.template, true) }} value="Generate prompt ⬇️"/>
 			<textarea rows="8" cols="100">{promptSettings.prompt}</textarea>
 
 			------
 
-			<input type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template, false) }} value="Send to LLM ⬇️"/>
+			<input type="button" on:click={() => { generatePrompt(aiDialogForTraining?.id || 0, promptSettings.template, false) }} value="Send to LLM ⬇️"/>
 			<label for="model">Model</label>
 			<input name="model" type="text"/>
 			<textarea rows="8" cols="100">{promptSettings.completion}</textarea>
 			------
 			{/if}
-			<button type="button" on:click={() => { generatePrompt(aiDialogForId || 0, promptSettings.template, false) }}>🤖 Analyze</button>
+			{#if aiDialogForTraining.trainedDays < 3}
+			<div>Analysis tool available after 3 training days</div>
+			{:else}
+			<button type="button" on:click={() => { generatePrompt(aiDialogForTraining?.id || 0, promptSettings.template, false) }}>🤖 Analyze</button>
 			<div>
 				{#if promptSettings.completionHtml}
 				{@html promptSettings.completionHtml}
@@ -381,8 +391,9 @@
 				(click above to analyze training)
 				{/if}
 			</div>
+			{/if}
 
-			<input type="button" on:click={() => { aiDialogForId = null; }} value="Close"/>
+			<input type="button" on:click={() => { aiDialogForTraining = null; }} value="Close"/>
 		</div>
 	</div>
 	{/if}

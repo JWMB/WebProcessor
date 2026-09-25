@@ -120,7 +120,7 @@
 						<br/>
 					</label>
 					<label>
-						Number of trainings
+						Number of students
 						<input id="numTrainings" type="number" required bind:value={newGroupData.noOfTrainings} 
 							min="1" max="{Math.min(createInfo?.maxTrainingsInGroup || 1, maxNumNewTrainings)}"
 							on:change={updateNoOfTrainings}

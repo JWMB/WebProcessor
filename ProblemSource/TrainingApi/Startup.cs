@@ -33,8 +33,12 @@ namespace TrainingApi
             services.AddTransient<IAccessResolver, AccessResolver>();
 
             services.AddSingleton<CreateUserWithTrainings>();
+            
+            services.AddSingleton<ILoginMfaHandler, MongoLoginMfaHandler>(); // MongoLoginMfaHandler NullLoginMfaHandler
+			services.AddSingleton<IMfaService, MfaService>();
+            services.AddSingleton<ICookieProtector, CookieProtector>(); // NullCookieProtector
 
-            var apiKeyUsers = new List<ApiKeyUser>();
+			var apiKeyUsers = new List<ApiKeyUser>();
             configurationManager.GetSection("AppSettings:ApiKeyUsers").Bind(apiKeyUsers);
 			services.AddSingleton<IApiKeyRepository>(sp => new InMemoryApiKeyRepository(apiKeyUsers));
 

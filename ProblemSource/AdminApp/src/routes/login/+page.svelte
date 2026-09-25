@@ -5,6 +5,7 @@
 	import { userStore } from '../../globalStore';
 	// import { initWidgetImplementationScript } from '../../humany-embed';
 	import { getString } from '../../utilities/LanguageService';
+	import MfaEnable from './mfa-enable.svelte';
 
 	let email = '';
 	let password = '';
@@ -86,6 +87,13 @@
 	<div>
 		<button class="inline-button" on:click={() => showHelpPage('en/about-the-project')}>About this project</button>
 	</div>
+	<div>
+	<details>
+	<summary>MFA test</summary>
+		<MfaEnable></MfaEnable>
+	</details>
+	</div>
+
 </div>
 
 <style>
