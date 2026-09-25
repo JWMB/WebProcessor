@@ -64,20 +64,58 @@ namespace TrainingApi.Controllers
             return training.Username;
         }
 
-        [Authorize(Policy = RolesRequirement.Admin)]
+		[Authorize(Policy = RolesRequirement.Admin)]
+		[HttpDelete("many")]
+		public async Task DeleteMany(string ids, bool deleteTrainingDataOnly = true)
+        {
+			// await fetch("https://localhost:7174/api/Trainings/many?ids=6181", { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "DELETE", "mode": "cors"});
+			// await fetch("https://curricullm.net/api/Trainings/many?ids=14,12", { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "DELETE", "mode": "cors"});
+			var allUsers = await userRepository.GetAll();
+            var usersToUpdate = new List<User>();
+
+			var trainingIds = ids.Split(",").Select(o => int.TryParse(o, out var v) ? (int?)v : null).OfType<int>().ToList();
+            foreach (var id in trainingIds)
+            {
+                Training? training = null;
+                try
+                {
+					training = await trainingRepository.Get(id);
+				}
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex.Message}");
+                }
+
+                var affectedUsers = allUsers.Where(o => o.Trainings.GetAllIds().Contains(id));
+                foreach (var user in affectedUsers)
+                {
+                    foreach (var group in user.Trainings)
+                        group.Value.Remove(id);
+					usersToUpdate.Add(user);
+                }
+
+                if (training != null)
+                {
+					var fact = dataRepoFactory.Create(id);
+					await fact.RemoveAll();
+				}
+
+				if (deleteTrainingDataOnly == false)
+                    await trainingRepository.RemoveByIdIfExists(id);
+            }
+
+            var tmp = usersToUpdate.DistinctBy(o => o.Email);
+            foreach (var user in tmp)
+    			await userRepository.Upsert(user);
+
+		}
+
+		[Authorize(Policy = RolesRequirement.Admin)]
         [HttpDelete]
         public async Task Delete(int id, bool deleteTrainingDataOnly = true)
         {
-            var training = await trainingRepository.Get(id);
-            if (training == null)
-                return;
-
-            var fact = dataRepoFactory.Create(id);
-            await fact.RemoveAll();
-
-            if (deleteTrainingDataOnly == false)
-                await trainingRepository.RemoveByIdIfExists(id);
-        }
+            await DeleteMany($"{id}", deleteTrainingDataOnly);
+		}
 
         private async Task<Training> GetTemplate(int templateId, IEnumerable<Training>? templates = null)
         {
