@@ -364,12 +364,12 @@ namespace ProblemSource
                 training_settings = training.Settings
             });
 
-            var typedTrainingPlan = JsonConvert.DeserializeObject<TrainingPlan>(JsonConvert.SerializeObject(trainingPlan));
-            var clientRequirements = typedTrainingPlan?.clientRequirements;
-            if (clientRequirements?.Version != null)
-            {
-                SemVerHelper.AssertClientVersion(root.ClientVersion?.Split(',')[^1], clientRequirements.Version.Min, clientRequirements.Version.Max);
-            }
+            //var typedTrainingPlan = JsonConvert.DeserializeObject<TrainingPlan>(JsonConvert.SerializeObject(trainingPlan));
+            //var clientRequirements = typedTrainingPlan?.clientRequirements;
+            //if (clientRequirements?.Version != null)
+            //{
+            //    SemVerHelper.AssertClientVersion(root.ClientVersion?.Split(',')[^1], clientRequirements.Version.Min, clientRequirements.Version.Max);
+            //}
 
             if (currentStoredState != null)
             {
