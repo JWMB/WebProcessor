@@ -62,9 +62,13 @@ systemctl --user enable --now podman.socket
 # podman build -t adminapp2 . -f Dockerfile.web2
 
 cd source
+podman build -t trainingapi . -f Dockerfile; podman build -t adminapp . -f Dockerfile.web
+
 podman build -t trainingapi . -f Dockerfile
 podman build -t adminapp . -f Dockerfile.web
-podman compose up -d
+
+
+# podman compose up -d
 ```
 
 
