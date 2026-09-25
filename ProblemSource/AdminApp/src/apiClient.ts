@@ -426,6 +426,44 @@ export class TrainingsClient {
         return Promise.resolve<Training[]>(null as any);
     }
 
+    deleteMany(ids: string | undefined, deleteTrainingDataOnly: boolean | undefined): Promise<void> {
+        let url_ = this.baseUrl + "/api/Trainings/many?";
+        if (ids === null)
+            throw new globalThis.Error("The parameter 'ids' cannot be null.");
+        else if (ids !== undefined)
+            url_ += "ids=" + encodeURIComponent("" + ids) + "&";
+        if (deleteTrainingDataOnly === null)
+            throw new globalThis.Error("The parameter 'deleteTrainingDataOnly' cannot be null.");
+        else if (deleteTrainingDataOnly !== undefined)
+            url_ += "deleteTrainingDataOnly=" + encodeURIComponent("" + deleteTrainingDataOnly) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteMany(_response);
+        });
+    }
+
+    protected processDeleteMany(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
     getCreateTrainingsInfo(): Promise<CreateTrainingsInfoDto> {
         let url_ = this.baseUrl + "/api/Trainings/CreateTrainingsInfo";
         url_ = url_.replace(/[?&]$/, "");
@@ -1247,6 +1285,150 @@ export class UsersClient {
         return Promise.resolve<LoginResultDto>(null as any);
     }
 
+    postMfaVerify(dto: MfaLoginDto): Promise<boolean> {
+        let url_ = this.baseUrl + "/api/Users/mfa-verify";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPostMfaVerify(_response);
+        });
+    }
+
+    protected processPostMfaVerify(response: Response): Promise<boolean> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as boolean;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<boolean>(null as any);
+    }
+
+    getMfaVerify(): Promise<MfaVerifyGetDto> {
+        let url_ = this.baseUrl + "/api/Users/mfa-verify";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMfaVerify(_response);
+        });
+    }
+
+    protected processGetMfaVerify(response: Response): Promise<MfaVerifyGetDto> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as MfaVerifyGetDto;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MfaVerifyGetDto>(null as any);
+    }
+
+    postMfaEnable(dto: MfaLoginDto): Promise<boolean> {
+        let url_ = this.baseUrl + "/api/Users/mfa-enable";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPostMfaEnable(_response);
+        });
+    }
+
+    protected processPostMfaEnable(response: Response): Promise<boolean> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as boolean;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<boolean>(null as any);
+    }
+
+    getMfaEnable(email: string | undefined): Promise<MfaEnableDto> {
+        let url_ = this.baseUrl + "/api/Users/mfa-enable?";
+        if (email === null)
+            throw new globalThis.Error("The parameter 'email' cannot be null.");
+        else if (email !== undefined)
+            url_ += "email=" + encodeURIComponent("" + email) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMfaEnable(_response);
+        });
+    }
+
+    protected processGetMfaEnable(response: Response): Promise<MfaEnableDto> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as MfaEnableDto;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MfaEnableDto>(null as any);
+    }
+
     moveTrainings(input: MoveTrainingsDto): Promise<void> {
         let url_ = this.baseUrl + "/api/Users/movetrainings";
         url_ = url_.replace(/[?&]$/, "");
@@ -1791,11 +1973,30 @@ export interface PatchUserDto {
 
 export interface LoginResultDto {
     role: string;
+    mfaMustValidate: boolean;
+    mfaMustRegister: boolean;
 }
 
 export interface LoginCredentials {
     username: string;
     password: string;
+}
+
+export interface MfaLoginDto {
+    email: string;
+    code: string;
+    returnUrl?: string | undefined;
+}
+
+export interface MfaVerifyGetDto {
+    numTotpDigits: number;
+    issuer: string;
+}
+
+export interface MfaEnableDto {
+    authenticatorUri: string;
+    numTotpDigits: number;
+    issuer: string;
 }
 
 export interface MoveTrainingsDto {

@@ -20,9 +20,7 @@ Host safespring_sync2
 rsync -Pavuz --exclude '**/bin/*' --exclude '**/obj/*' --exclude '.env.local' --exclude 'node_modules/*' --exclude '.svelte-kit/output/*' ~/source/repos/JWMB/WebProcessor/* ubuntu@safespring_sync2:/home/admin-site/source
 
 su - admin-site
-cd source
-podman build -t trainingapi . -f Dockerfile
-podman build -t adminapp . -f Dockerfile.web
+cd source; podman build -t trainingapi . -f Dockerfile; podman build -t adminapp . -f Dockerfile.web
 
 exit
 # sudo systemctl daemon-reload

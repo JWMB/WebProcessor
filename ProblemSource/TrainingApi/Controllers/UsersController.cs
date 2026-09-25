@@ -164,6 +164,10 @@ namespace TrainingApi.Controllers
                 return Unauthorized(new { Title = $"Login failed - please check your spelling" });
             }
 
+            if (user.Role == "Admin")
+            {
+                user.MfaEnabled = true;
+            }
             var principal = WebUserProvider.CreatePrincipal(user, requireMfa: user.MfaEnabled == true);
             var authProperties = new AuthenticationProperties
             {
@@ -179,8 +183,8 @@ namespace TrainingApi.Controllers
             };
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
-            
-            return Ok(new LoginResultDto(user.Role, user.MfaEnabled == true));
+
+            return Ok(new LoginResultDto(user.Role, MfaMustValidate: user.MfaEnabled == true, MfaMustRegister: user.MfaEnabled == true && user.MfaSecretKey?.Any() != true));
         }
 
 		private const int NumTotpDigits = 6;
@@ -192,9 +196,22 @@ namespace TrainingApi.Controllers
 			public string? ReturnUrl { get; set; }
 		}
 
+        [HttpPost("mfa-verify")]
+        public async Task<bool> PostMfaVerify(MfaLoginDto dto)
+        {
+            return await mfaService.VerifyTwoFactorAuthentication(dto.Email, dto.Code, NumTotpDigits); // request.NumTotpDigits
+        }
+
+        public record MfaVerifyGetDto(int NumTotpDigits, string Issuer);
+        [HttpGet("mfa-verify")]
+        public async Task<MfaVerifyGetDto> GetMfaVerify() => new MfaVerifyGetDto(NumTotpDigits, mfaService.Issuer);
+
+
 		[HttpPost("mfa-enable")]
 		public async Task<bool> PostMfaEnable(MfaLoginDto dto)
         {
+            if (dto.Email?.Any() != true)
+                return false;
             var cookie = Request.Cookies[MfaCookie.DefaultName];
             if (cookie == null)
                 return false;
@@ -207,10 +224,10 @@ namespace TrainingApi.Controllers
 			if (mfaCookie?.Secret?.Any() != true)
 				throw new Exception($"Login not configured for MFA {dto.Email}");
 
-			if (await mfaService.VerifyTwoFactorAuthentication(dto.Email, mfaCookie.Secret, dto.Code, NumTotpDigits))
-            { }
-
-			return true;
+            var result = await mfaService.Enable(dto.Email, mfaCookie.Secret, dto.Code, NumTotpDigits);
+            //if (result)
+            //    await mfaService.Enable(dto.Email, mfaCookie.Secret, dto.Code, NumTotpDigits);
+			return result;
         }
 
         public record MfaCookie(string Secret)
@@ -218,7 +235,7 @@ namespace TrainingApi.Controllers
             public const string DefaultName = "card";
         }
 
-		public record MfaEnableDto(string AuthenticatorUri);
+		public record MfaEnableDto(string AuthenticatorUri, int NumTotpDigits, string Issuer);
         [HttpGet("mfa-enable")]
 		public async Task<MfaEnableDto> GetMfaEnable(string email)
         {
@@ -234,7 +251,7 @@ namespace TrainingApi.Controllers
             var cookie = new MfaCookie(secretKey);
 			Response.Cookies.Append(MfaCookie.DefaultName, cookieProtector.Protect(cookie), options);
 
-			return new MfaEnableDto(qrCodeUrl);
+			return new MfaEnableDto(qrCodeUrl, NumTotpDigits, mfaService.Issuer);
 		}
 
         [HttpPut]
@@ -265,7 +282,7 @@ namespace TrainingApi.Controllers
             public string ToGroup { get; set; } = string.Empty;
         }
 
-        public readonly record struct LoginResultDto(string Role, bool MfaRequired = false);
+        public readonly record struct LoginResultDto(string Role, bool MfaMustValidate = false, bool MfaMustRegister = false);
     }
 
     public class LoginCredentials

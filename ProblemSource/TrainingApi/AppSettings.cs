@@ -13,7 +13,8 @@ namespace TrainingApi
         public RealTimeConfig RealTime { get; set; } = new();
         public string? SyncUrls { get; set; } = "";
 
-        public StorageConfig Storage { get; set; } = new();
+        public Services.MfaService.Config MfaConfig { get; set; } = new("Vektor");
+		public StorageConfig Storage { get; set; } = new();
         public List<LlmServiceSpecification> LlmServices { get; set; } = new();
 		public List<LlmModelSpecification> LlmModels { get; set; } = new();
 		//public InMemoryApiKeyRepository.Config ApiKeyConfig { get; set; } = new([]);

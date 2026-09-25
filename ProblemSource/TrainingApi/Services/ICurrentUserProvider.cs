@@ -35,7 +35,15 @@ namespace TrainingApi.Services
 
         public async Task<User?> GetUserWithImpersonation()
         {
-            var user = await GetUser(userRepository, httpContextAccessor.HttpContext?.User);
+            var principal = httpContextAccessor.HttpContext?.User;
+            var mfaClaim = principal?.Claims.FirstOrDefault(o => o.Type == MfaClaimName);
+            if (mfaClaim?.Value == MfaRequireValidationValue)
+            {
+                // TODO: reject here?
+                // TODO: update this claim to different value once validated
+            }
+
+			var user = await GetUser(userRepository, principal);
             if (user?.Role == Roles.Admin)
             {
                 var impersonated = GetRequestImpersonatedUser(httpContextAccessor.HttpContext?.Request);
@@ -88,6 +96,9 @@ namespace TrainingApi.Services
 
         public static User FakeDevUser => new User { Email = "dev", Role = Roles.Admin };
 
+        private const string MfaClaimName = "mfa";
+        private const string MfaRequireValidationValue = "y";
+
         public static ClaimsPrincipal CreatePrincipal(User user, bool isIntegrationTestUser = false, string? authenticationType = null, bool requireMfa = false)
         {
             // TODO: move
@@ -96,7 +107,7 @@ namespace TrainingApi.Services
                 new Claim(ClaimTypes.Name, user.Email),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.Role),
-				new Claim("mfa", requireMfa ? "y" : "n"),
+				new Claim(MfaClaimName, requireMfa ? MfaRequireValidationValue : "n"),
 			};
             if (isIntegrationTestUser)
                 claims.Add(new Claim(ClaimTypes.Actor, "IntegrationTest"));

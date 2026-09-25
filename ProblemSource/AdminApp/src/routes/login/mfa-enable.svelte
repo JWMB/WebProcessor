@@ -1,29 +1,29 @@
 <script lang="ts">
     import QRCodeStyling from "qr-code-styling";
     import { onMount } from 'svelte';
+	import { ApiFacade } from "../../apiFacade";
+	import { getApi } from "../../globalStore";
+	import { LoginUtils } from "./LoginUtils";
 
-    const NumTotpDigits = 6;
+    const apiFacade = getApi() as ApiFacade;
 
-    const getText = (id: string) => {
-        const strs: any = {
-            "MfaEnable.downloadApp": "Ladda ner eller öppna en app för tvåfaktorsautenticering såsom Microsoft Authenticator:",
-            "MfaEnable.scanCode": "Skanna QR-koden med autenticerings-appen.",
-            "MfaEnable.receiveVerificationCode": `Din autenticeringsapp ger dig en ${NumTotpDigits}-siffrig verifieringskod`,
-            "MfaEnable.enterVerificationCode": "Skriv in verifieringskoden här:"
-        }
-        return strs[id] || "N/A";
-    };
+    export let email: string;
+    export let onSuccess: () => void;
 
+    let registedSuccessfully: boolean | undefined;
 
     // Create a reference variable to hold the DOM element
     let qrContainer: HTMLDivElement;
 
     onMount(async () => {
+        const mfaEnableInfo = await apiFacade.users.getMfaEnable(email);
+        console.log("mfaEnableInfo", mfaEnableInfo);
+
         const qrCode = new QRCodeStyling({
         width: 300,
         height: 300,
         type: "svg", // Can be "canvas" or "svg"
-        data: "https://svelte.dev",
+        data: mfaEnableInfo.authenticatorUri,
         dotsOptions: {
             color: "#000000",
             type: "square"   // Options: rounded, dots, classy, classy-rounded, square, extra-rounded
@@ -42,42 +42,40 @@
         }
     });
 
-    function isCtrlCmd(e: KeyboardEvent) {
-        if (e.keyCode == 17) return true;
-        if (e.ctrlKey || e.metaKey) return true;
-        return false;
-    }
-    function isNav(e: KeyboardEvent) {
-        const keyCode = e.keyCode;
-        if ([8, 46].indexOf(keyCode) >= 0) return true; // backspace, del
-        if ([33, 34, 35, 36, 37, 39, 38, 40].indexOf(keyCode) >= 0) return true; // pgup/pgdn/end/home/left/right/up/down
-        return false;
-    }
-    function isNumeric(e: KeyboardEvent) { return e.keyCode >= 48 && e.keyCode <= 57; }
-
-    function checkPrevent(e: KeyboardEvent) {
-        // console.log(keyCode, e);
-        if (isNav(e) || isNumeric(e) || isCtrlCmd(e)) { }
-        else e.preventDefault();
-    }
     function checkAutoSubmit(e: KeyboardEvent) {
-        if (isNav(e)) return;
-        if (isCtrlCmd(e) && e.keyCode != 86) return; //skip checks when ctrl+? except when ? = "v"
-        const el = e.target as HTMLInputElement;
-        if (el?.value.length == NumTotpDigits) {
-            document.getElementsByTagName("form")[0].submit();
-        }
+        // TODO:, mfaSettings?.numTotpDigits
+        if (LoginUtils.checkAutoSubmit(e))
+            submit();
     }
+
+    function submit() {
+        let code = "";
+        if (!code) {
+            const v = (document.getElementById("mfaCode") as HTMLInputElement)?.value
+            if (!v) {
+                console.error("no value");
+            }
+            code = v;
+        }
+        apiFacade.users.postMfaEnable({ email: email, code: code }) //    returnUrl?: string | undefined
+            .then(success => {
+                registedSuccessfully = success;
+                if (success) {
+                    onSuccess();
+                }
+            });
+    }
+
 </script>
 
 <div>
     <p>
-        1. {getText("MfaEnable.downloadApp")}
+        1. {LoginUtils. getText("MfaEnable.downloadApp")}
             <a href="https://go.microsoft.com/fwlink/?Linkid=825072" target="_blank" rel="noopener">Android</a> / 
             <a href="https://go.microsoft.com/fwlink/?Linkid=825073" target="_blank" rel="noopener">iOS</a>
     </p>
     <p>
-        2. {getText("MfaEnable.scanCode")}
+        2. {LoginUtils.getText("MfaEnable.scanCode")}
     </p>
     <div bind:this={qrContainer}></div>
     <div id="canvas"></div>
@@ -85,16 +83,18 @@
     <div id="qrCodeData" data-url="@Model.AuthenticatorUri"></div>
 
     <p>
-        3. {getText("MfaEnable.receiveVerificationCode")}
+        3. {LoginUtils.getText("MfaEnable.receiveVerificationCode")}
     </p>
-        <div class="form-group">
-            <label class="control-label">4. {getText("MfaEnable.enterVerificationCode")}</label>
-            <input name="Code" class="form-control" on:keydown={e => checkPrevent(e)} on:keyup={e => checkAutoSubmit(e)} autofocus autocomplete="off" />
-            <input name="SecretKey" hidden value="@Model.SecretKey"/>
-            <input name="AuthenticatorUri" hidden value="@Model.AuthenticatorUri" />
-            <input name="Email" hidden value="@Model.Email" />
-            <input name="NumTotpDigits" hidden value="@Model.NumTotpDigits" />
-            <input name="AppName" hidden value="@Model.AppName" />
-            <input name="ReturnUrl" hidden value="@Model.ReturnUrl" />
-        </div>
+    <form on:submit|preventDefault={submit}>
+
+        <label class="control-label">4. {LoginUtils.getText("MfaEnable.enterVerificationCode")}</label>
+        <input name="Code" id="mfaCode" class="form-control"
+            on:keydown={LoginUtils.checkPrevent} 
+            on:keyup={checkAutoSubmit} autofocus autocomplete="off" />
+        {#if registedSuccessfully === false}
+        <div style="color: red">Incorrect code, try again</div>
+        {/if}
+        <button type="submit">Submit</button>
+        <!-- <input type="button" id="submit" value="Submit" on:click={e => submit()}/> -->
+    </form>
 </div>

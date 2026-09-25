@@ -6,6 +6,7 @@
 	// import { initWidgetImplementationScript } from '../../humany-embed';
 	import { getString } from '../../utilities/LanguageService';
 	import MfaEnable from './mfa-enable.svelte';
+	import MfaValidate from './mfa-validate.svelte';
 
 	let email = '';
 	let password = '';
@@ -13,7 +14,15 @@
 	let isLoading = false;
 	let isSuccess = false;
 
+	let showSection: string = "pwd"; //  "pwd" | "mfaEnable" | "mfaValidate" 
+
 	let errors: { email?: string; password?: string; server?: string } = {};
+
+	const proceed = () => {
+		const url = new URL(location.href);
+		const baseUrl = url.pathname.replace('/login', '');
+		window.location.href = url.searchParams.get('returnUrl') != null ? `${baseUrl}${url.searchParams.get('returnUrl')}` : `${baseUrl}/teacher`;
+	};
 
 	const handleSubmit = () => {
 		Object.keys(errors).forEach((k) => ((<any>errors)[k] = null));
@@ -29,16 +38,19 @@
 			isLoading = true;
 			userStore
 				.login({ username: email, password: password })
-				.then(() => {
+				.then(loginResult => {
 					isSuccess = true;
 					isLoading = false;
 					//initWidgetImplementationScript(); // since we don't want to show help widget to non-authorized users
 					// TODO: can't find a way to preserve url parameters (e.g. using ?returnUrl= to get back to the attempted page)
 					// window.history.back();
-
-					const url = new URL(location.href);
-					const baseUrl = url.pathname.replace('/login', '');
-					window.location.href = url.searchParams.get('returnUrl') != null ? `${baseUrl}${url.searchParams.get('returnUrl')}` : `${baseUrl}/teacher`;
+					if (loginResult?.mfaMustRegister == true) {
+						showSection = "mfaEnable";
+					} else if (loginResult?.mfaMustValidate == true) {
+						showSection = "mfaValidate";
+					} else {
+						proceed();
+					}
 					//handleRedirects('/login');
 					//goto('/teacher');
 				})
@@ -51,6 +63,17 @@
 </script>
 
 <div class="page-area">
+	{#if (showSection == "mfaEnable")}
+	<div>
+		<MfaEnable email={email} onSuccess={() => proceed()}></MfaEnable>
+	</div>
+
+	{:else if (showSection == "mfaValidate")}
+	<div>
+		<MfaValidate email={email} onSuccess={() => proceed()}></MfaValidate>
+	</div>
+
+	{:else}
 	<form on:submit|preventDefault={handleSubmit}>
 		{#if isSuccess}
 			<div class="success">
@@ -87,12 +110,13 @@
 	<div>
 		<button class="inline-button" on:click={() => showHelpPage('en/about-the-project')}>About this project</button>
 	</div>
-	<div>
-	<details>
-	<summary>MFA test</summary>
+
+	<!-- <details>
+		<summary>MFA test</summary>
 		<MfaEnable></MfaEnable>
-	</details>
-	</div>
+	</details> -->
+	{/if}
+
 
 </div>
 

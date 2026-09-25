@@ -59,19 +59,26 @@ namespace TrainingApi.Services
 		Task<(string secretKey, string qrCodeUrl)> GenerateTwoFactorInfo(string username);
 		Task<bool> Enable(string email, string secretKey, string code, int numDigits);
 		Task<bool> Disable(string email);
-		Task<bool> VerifyTwoFactorAuthentication(string email, string secretKey, string code, int numDigits);
+		//Task<bool> VerifyTwoFactorAuthentication(string email, string secretKey, string code, int numDigits);
+		Task<bool> VerifyTwoFactorAuthentication(string email, string code, int numDigits);
+		string Issuer { get; }
 	}
 
 	public class MfaService : IMfaService
 	{
-		private readonly string issuer = "CurricuLLM";
+		//private readonly string issuer = "CurricuLLM";
+		public string Issuer => config.Issuer;
+
 		private readonly ILoginMfaHandler loginMfaHandler;
+		private readonly Config config;
 
-		public string Issuer => issuer;
+		public record Config(string Issuer);
 
-		public MfaService(ILoginMfaHandler loginMfaHandler)
+
+		public MfaService(ILoginMfaHandler loginMfaHandler, Config config)
 		{
 			this.loginMfaHandler = loginMfaHandler;
+			this.config = config;
 		}
 
 		private string GenerateRandomString(int length)
@@ -89,7 +96,7 @@ namespace TrainingApi.Services
 		{
 			var secretKey = GenerateRandomString(16);
 			var encodedUsername = Uri.EscapeDataString(username);
-			var qrCodeUrl = $"otpauth://totp/{encodedUsername}?secret={secretKey}&issuer={issuer}";
+			var qrCodeUrl = $"otpauth://totp/{encodedUsername}?secret={secretKey}&issuer={config.Issuer}";
 
 			return (secretKey, qrCodeUrl);
 		}
@@ -124,8 +131,17 @@ namespace TrainingApi.Services
 			return true;
 		}
 
-		public async Task<bool> VerifyTwoFactorAuthentication(string email, string secretKey, string code, int numDigits)
-			=> await GetLogin(email) != null && Verify(secretKey, code, numDigits);
+		//public async Task<bool> VerifyTwoFactorAuthentication(string email, string secretKey, string code, int numDigits)
+		//	=> await GetLogin(email) != null && Verify(secretKey, code, numDigits);
+		public async Task<bool> VerifyTwoFactorAuthentication(string email, string code, int numDigits)
+		{
+			var login = await GetLogin(email);
+			if (login == null)
+				return false;
+			if (login.MfaSecretKey?.Any() != true)
+				return false;
+			return Verify(login.MfaSecretKey, code, numDigits);
+		}
 
 		private bool Verify(string secretKey, string code, int numDigits)
 		{

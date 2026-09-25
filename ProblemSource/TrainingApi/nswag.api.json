@@ -293,6 +293,34 @@
         }
       }
     },
+    "/api/Trainings/many": {
+      "delete": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_DeleteMany",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "ids",
+            "in": "query",
+            "x-nullable": false
+          },
+          {
+            "type": "boolean",
+            "name": "deleteTrainingDataOnly",
+            "in": "query",
+            "default": true,
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/Trainings/CreateTrainingsInfo": {
       "get": {
         "tags": [
@@ -993,6 +1021,130 @@
             "description": "",
             "schema": {
               "$ref": "#/definitions/LoginResultDto"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/mfa-verify": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_PostMfaVerify",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/MfaLoginDto"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_GetMfaVerify",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/MfaVerifyGetDto"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/mfa-enable": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_PostMfaEnable",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/MfaLoginDto"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_GetMfaEnable",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "email",
+            "in": "query",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/MfaEnableDto"
             }
           }
         }
@@ -2267,11 +2419,19 @@
     "LoginResultDto": {
       "type": "object",
       "required": [
-        "role"
+        "role",
+        "mfaMustValidate",
+        "mfaMustRegister"
       ],
       "properties": {
         "role": {
           "type": "string"
+        },
+        "mfaMustValidate": {
+          "type": "boolean"
+        },
+        "mfaMustRegister": {
+          "type": "boolean"
         }
       }
     },
@@ -2291,6 +2451,60 @@
           "type": "string",
           "maxLength": 14,
           "minLength": 5
+        }
+      }
+    },
+    "MfaLoginDto": {
+      "type": "object",
+      "required": [
+        "email",
+        "code"
+      ],
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "returnUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "MfaVerifyGetDto": {
+      "type": "object",
+      "required": [
+        "numTotpDigits",
+        "issuer"
+      ],
+      "properties": {
+        "numTotpDigits": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "issuer": {
+          "type": "string"
+        }
+      }
+    },
+    "MfaEnableDto": {
+      "type": "object",
+      "required": [
+        "authenticatorUri",
+        "numTotpDigits",
+        "issuer"
+      ],
+      "properties": {
+        "authenticatorUri": {
+          "type": "string"
+        },
+        "numTotpDigits": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "issuer": {
+          "type": "string"
         }
       }
     },
