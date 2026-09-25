@@ -14,7 +14,7 @@ namespace TrainingApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public partial class UsersController : ControllerBase
+    public class UsersController : ControllerBase
     {
         private readonly IUserRepository userRepository;
         private readonly IAuthenticateUserService authenticateUserService;
