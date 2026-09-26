@@ -159,6 +159,7 @@ namespace Tools
         {
             var createdUsersInfo = new List<CreateUserResult>();
             var users = await Task.WhenAll(emails.Select(userRepository.Get));
+            var rnd = new Random();
             foreach (var email in emails)
             {
                 var user = await userRepository.Get(email);
@@ -168,7 +169,7 @@ namespace Tools
                 }
                 else
                 {
-                    var password = createUserWithTrainings.CreatePassword();
+                    var password = CreateUserWithTrainings.CreatePassword(rnd);
                     user.PasswordForHashing = password;
                     await userRepository.Update(user);
 
