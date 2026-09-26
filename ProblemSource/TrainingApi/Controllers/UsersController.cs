@@ -9,7 +9,6 @@ using ProblemSourceModule.Models;
 using System.ComponentModel.DataAnnotations;
 using TrainingApi.ErrorHandling;
 using ProblemSourceModule.Services;
-using ProblemSourceModule.Services.Storage.AzureTables;
 
 namespace TrainingApi.Controllers
 {
@@ -22,24 +21,32 @@ namespace TrainingApi.Controllers
         private readonly ICurrentUserProvider userProvider;
         private readonly CreateUserWithTrainings createUserWithTrainings;
         private readonly ITrainingRepository trainingRepository;
-        private readonly ILogger<UsersController> log;
+		private readonly IMfaService mfaService;
+		private readonly ICookieProtector cookieProtector;
+		private readonly ITrainingTemplateRepository trainingTemplateRepository;
+		private readonly ILogger<UsersController> log;
 
         public UsersController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ICurrentUserProvider userProvider, 
-            CreateUserWithTrainings createUserWithTrainings, ITrainingRepository trainingRepository, ILogger<UsersController> logger)
+            CreateUserWithTrainings createUserWithTrainings, ITrainingRepository trainingRepository, IMfaService mfaService, ICookieProtector cookieProtector,
+			ITrainingTemplateRepository trainingTemplateRepository, ILogger<UsersController> logger)
         {
             this.userRepository = userRepository;
             this.authenticateUserService = authenticateUserService;
             this.userProvider = userProvider;
             this.createUserWithTrainings = createUserWithTrainings;
             this.trainingRepository = trainingRepository;
-            log = logger;
+			this.mfaService = mfaService;
+			this.cookieProtector = cookieProtector;
+			this.trainingTemplateRepository = trainingTemplateRepository;
+			log = logger;
         }
 
         [Authorize(Policy = RolesRequirement.Admin)]
         [HttpGet]
         public async Task<IEnumerable<GetUserDto>> GetAll()
         {
-            return (await userRepository.GetAll()).Select(GetUserDto.FromUser);
+			var templates = await trainingTemplateRepository.GetAll();
+			return (await userRepository.GetAll()).Select(o => GetUserDto.FromUser(o, templates));
         }
 
         [Authorize(Policy = RolesRequirement.AdminOrTeacher)]
@@ -60,10 +67,65 @@ namespace TrainingApi.Controllers
             return Ok(GetUserDto.FromUser(user));
         }
 
-        [Authorize(Policy = RolesRequirement.Admin)]
+
+
+		[Authorize(Policy = RolesRequirement.Admin)]
+		[HttpPost("createusers")]
+		public async Task<CreateUsersResponseDto> PostCreateUsers([FromBody] CreateUsersRequestDto dto)
+		{
+            //await fetch("https://localhost:7174/api/Users", {
+            //    "credentials": "include", "mode": "cors",
+            //    "headers": { "Accept": "application/json", "Content-Type": "application/json" },
+            //    "method": "POST",
+            //    "body": '{ "usernames": [""] }'
+            //});
+
+			var emailsAndPassword = new List<CreatedUserInfo>();
+			var rnd = new Random();
+			foreach (var email in dto.Emails)
+			{
+                if (email?.Any() != true)
+                {
+                    Console.WriteLine("Missing email");
+                    continue;
+                }
+				var usr = await userRepository.Get(email);
+				emailsAndPassword.Add(new(email, usr == null ? CreateUserWithTrainings.CreatePassword(rnd) : ""));
+			}
+
+			foreach (var item in emailsAndPassword.Where(o => o.Password.Any()))
+			{
+				var usr = new User { Email = item.Email, Role = "Teacher", PasswordForHashing = item.Password, Trainings = new(), MfaEnabled = true };
+				try
+				{
+					await userRepository.Add(usr);
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"Error creating user: {item.Email} ({item.Password})");
+				}
+			}
+			return new CreateUsersResponseDto(emailsAndPassword);
+		}
+
+		public record CreateUsersRequestDto(List<string> Emails);
+		public record CreateUsersResponseDto(List<CreatedUserInfo> Emails);
+		public record CreatedUserInfo(string Email, string Password);
+
+		[Authorize(Policy = RolesRequirement.Admin)]
         [HttpPost]
-        public async Task Post([FromBody] CreateUserDto dto)
+        public async Task<List<CreatedUserInfo>> Post([FromBody] CreateUserDto dto)
         {
+            //await fetch("https://localhost:7174/api/Users", {
+            //    "credentials": "include", "mode": "cors",
+            //    "headers": { "Accept": "application/json", "Content-Type": "application/json" },
+            //    "method": "POST",
+            //    "body": '{ "usernames": [""] }'
+            //});
+            if (dto.Usernames?.Any() == true)
+            {
+                return (await PostCreateUsers(new CreateUsersRequestDto(dto.Usernames))).Emails;
+			}
             // TODO: use regular model validation
             if (string.IsNullOrEmpty(dto.Username))
                 throw new ArgumentNullException(nameof(dto.Username));
@@ -79,6 +141,8 @@ namespace TrainingApi.Controllers
                 Trainings = new(),
                 PasswordForHashing = dto.Password
             });
+
+            return new List<CreatedUserInfo> { new CreatedUserInfo(dto.Username, dto.Password) };
         }
 
 		[Authorize(Policy = RolesRequirement.Admin, AuthenticationSchemes = $"{ApiKeyAuthenticationSchemeHandler.SchemeName},{CookieAuthenticationDefaults.AuthenticationScheme}")]
@@ -161,7 +225,11 @@ namespace TrainingApi.Controllers
                 return Unauthorized(new { Title = $"Login failed - please check your spelling" });
             }
 
-            var principal = WebUserProvider.CreatePrincipal(user);
+            if (user.Role == "Admin")
+            {
+                user.MfaEnabled = true;
+            }
+            var principal = WebUserProvider.CreatePrincipal(user, requireMfa: user.MfaEnabled == true);
             var authProperties = new AuthenticationProperties
             {
                 //AllowRefresh = <bool>, // Refreshing the authentication session should be allowed.
@@ -176,9 +244,81 @@ namespace TrainingApi.Controllers
             };
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
-            
-            return Ok(new LoginResultDto(user.Role));
+
+            var skipMfa = System.Diagnostics.Debugger.IsAttached;
+
+			return Ok(new LoginResultDto(user.Role, 
+                MfaMustValidate: skipMfa != true && user.MfaEnabled == true,
+                MfaMustRegister: skipMfa != true && (user.MfaEnabled == true && user.MfaSecretKey?.Any() != true)));
         }
+
+		private const int NumTotpDigits = 6;
+
+		public class MfaLoginDto
+		{
+			public required string Email { get; set; }
+			public required string Code { get; set; }
+			public string? ReturnUrl { get; set; }
+		}
+
+        [HttpPost("mfa-verify")]
+        public async Task<bool> PostMfaVerify(MfaLoginDto dto)
+        {
+            return await mfaService.VerifyTwoFactorAuthentication(dto.Email, dto.Code, NumTotpDigits); // request.NumTotpDigits
+        }
+
+        public record MfaVerifyGetDto(int NumTotpDigits, string Issuer);
+        [HttpGet("mfa-verify")]
+        public async Task<MfaVerifyGetDto> GetMfaVerify() => new MfaVerifyGetDto(NumTotpDigits, mfaService.Issuer);
+
+
+        [Authorize]
+		[HttpPost("mfa-enable")]
+		public async Task<bool> PostMfaEnable(MfaLoginDto dto)
+        {
+            if (dto.Email?.Any() != true)
+                return false;
+            var cookie = Request.Cookies[MfaCookie.DefaultName];
+            if (cookie == null)
+                return false;
+            var mfaCookie = cookieProtector.Unprotect<MfaCookie>(cookie);
+
+			//var login = helper.GetLoginFromEmail(request.Email);
+			//if (login == null)
+			//	throw new BadRequestException($"Login not found {request.Email}");
+
+			if (mfaCookie?.Secret?.Any() != true)
+				throw new Exception($"Login not configured for MFA {dto.Email}");
+
+            var result = await mfaService.Enable(dto.Email, mfaCookie.Secret, dto.Code, NumTotpDigits);
+            //if (result)
+            //    await mfaService.Enable(dto.Email, mfaCookie.Secret, dto.Code, NumTotpDigits);
+			return result;
+        }
+
+        public record MfaCookie(string Secret)
+        {
+            public const string DefaultName = "card";
+        }
+
+		public record MfaEnableDto(string AuthenticatorUri, int NumTotpDigits, string Issuer);
+        [HttpGet("mfa-enable")]
+		public async Task<MfaEnableDto> GetMfaEnable(string email)
+        {
+			(string secretKey, string qrCodeUrl) = await mfaService.GenerateTwoFactorInfo(email);
+
+            var options = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddMinutes(5)
+            };
+            var cookie = new MfaCookie(secretKey);
+			Response.Cookies.Append(MfaCookie.DefaultName, cookieProtector.Protect(cookie), options);
+
+			return new MfaEnableDto(qrCodeUrl, NumTotpDigits, mfaService.Issuer);
+		}
 
         [HttpPut]
         [Route("movetrainings")]
@@ -208,7 +348,7 @@ namespace TrainingApi.Controllers
             public string ToGroup { get; set; } = string.Empty;
         }
 
-        public readonly record struct LoginResultDto(string Role);
+	public readonly record struct LoginResultDto(string Role, bool MfaMustValidate = false, bool MfaMustRegister = false);
     }
 
     public class LoginCredentials
@@ -227,16 +367,21 @@ namespace TrainingApi.Controllers
 
         public string Role { get; set; } = "";
         public Dictionary<string, List<int>> Trainings { get; set; } = new();
+        public string? DefaultTrainingPlanName { get; set; }
 
-        public static GetUserDto FromUser(User user)
+        public static GetUserDto FromUser(User user, IEnumerable<Training>? templates = null)
         {
-            return new GetUserDto { Role = user.Role, Username = user.Email, Trainings = user.Trainings };
+            var defaultPlan = TrainingsController.SelectPlan(templates, user.Email);
+            return new GetUserDto { Role = user.Role, Username = user.Email, Trainings = user.Trainings, DefaultTrainingPlanName = defaultPlan?.TrainingPlanName };
         }
     }
 
-    public class CreateUserDto : GetUserDto
+    public class CreateUserDto //: GetUserDto
     {
-        public string Password { get; set; } = "";
+        public List<string>? Usernames { get; set; } // Stupid, something with nginx routing catches Users/createusers and returns 405? AHA no, it was rsync copying old files....
+        public string Username { get; set; } = "";
+		public string Role { get; set; } = "";
+		public string Password { get; set; } = "";
         public void Normalize()
         {
             Password = Password.Trim();

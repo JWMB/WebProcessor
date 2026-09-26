@@ -1,5 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using MongoDB.Bson.Serialization.Attributes;
+using Newtonsoft.Json;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Services.Storage.MongoDb;
 using System.Text.Json;
 
 namespace ProblemSource.Models
@@ -252,7 +254,8 @@ namespace ProblemSource.Models
         public long lastTimeStamp { get; set; } = 0;
         public Dictionary<string, bool> triggerData { get; set; } = new();
         public List<GameRunStats> gameRuns { get; set; } = new List<GameRunStats>();
-        public object? metaphorData { get; set; }
+		[BsonSerializer(typeof(XObjectCustomSerializer))]
+		public object? metaphorData { get; set; }
         public TrainingPlanSettings trainingPlanSettings { get; set; } = new TrainingPlanSettings();
         public Dictionary<string, object> gameCustomData { get; set; } = new Dictionary<string, object>();
 

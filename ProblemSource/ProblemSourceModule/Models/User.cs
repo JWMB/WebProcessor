@@ -10,7 +10,10 @@ namespace ProblemSourceModule.Models
         public string HashedPassword { get; set; } = string.Empty;
         public string Role { get; set; } = "";
 
-        public string PasswordForHashing { set { HashedPassword = HashPassword(NormalizeEmail(Email), value); } }
+		public bool? MfaEnabled { get; set; }
+		public string? MfaSecretKey { get; set; }
+		
+		public string PasswordForHashing { set { HashedPassword = HashPassword(NormalizeEmail(Email), value); } }
 
         public bool VerifyPassword(string password)
         {
@@ -67,15 +70,39 @@ namespace ProblemSourceModule.Models
 
         public async Task<Dictionary<string, List<(int Id, Training Training, TrainingSummary? Summary)>>> GetTrainingsInfo(ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
         {
-            var summaries = await statisticsProvider.GetTrainingSummaries(GetAllIds());
-            var trainings = await trainingRepo.GetByIds(GetAllIds());
+			var result = new Dictionary<string, List<(int, Training, TrainingSummary?)>>();
+			try
+			{
+                var summaries = await statisticsProvider.GetTrainingSummaries(GetAllIds());
+                var trainings = await trainingRepo.GetByIds(GetAllIds());
+                var byId = trainings.GroupBy(o => o.Id).ToDictionary(o => o.Key, o => o.ToList());
 
-            var result = new Dictionary<string, List<(int, Training, TrainingSummary?)>>();
+                // TODO: activate this later
+                //if (byId.Values.Any(o => o.Count > 1))
+                //    throw new Exception($"Multiple trainings with same Id: {string.Join(", ", byId.Values.Where(o => o.Count > 1).Select(o => $"{o.First().Id}:{o.Count}"))}");
 
-            foreach (var kv in this)
-                result.Add(kv.Key, kv.Value.Select(id => (id, trainings.Single(o => o.Id == id), summaries.SingleOrDefault(o => o?.Id == id))).ToList());
 
-            return result;
+                foreach (var kv in this)
+                {
+                    var trainingsInGroup = kv.Value.Select(id => trainings.FirstOrDefault(o => o.Id == id)).OfType<Training>(); // TODO: SingleOrDefault
+                                                                                                                                // TODO: note missing trainings
+
+                    var aa = trainingsInGroup.Select(training => (training.Id, training, summaries.Where(o => o?.Id == training.Id).ToList())).ToList();
+
+                    var withDuplicates = aa.Where(o => o.Item3.Count > 1).ToList();
+                    foreach (var item in withDuplicates)
+                    {
+                        Console.WriteLine($"Training with multiple summaries: {item.Id}: {item.Item3.Count}");
+                    }
+
+                    result.Add(kv.Key, aa.Select(o => (o.Item1, o.Item2, o.Item3.OrderByDescending(p => p.TrainedDays).FirstOrDefault())).ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting training data: {ex.Message} \n{ex.StackTrace}");
+            }
+			return result;
         }
 
         public async Task<Dictionary<string, List<Training>>> RemoveUnusedFromGroups(int numTrainings, string exceptGroup, ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)

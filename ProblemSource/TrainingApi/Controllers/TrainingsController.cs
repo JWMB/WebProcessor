@@ -1,3 +1,4 @@
+using Common.LLM;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProblemSource.Models;
@@ -8,6 +9,7 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
+using ProblemSourceModule.Services.TrainingAnalyzers;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
 
@@ -21,7 +23,10 @@ namespace TrainingApi.Controllers
         private readonly ITrainingPlanRepository trainingPlanRepository;
         private readonly ITrainingRepository trainingRepository;
         private readonly ITrainingTemplateRepository trainingTemplateRepository;
-        private readonly IStatisticsProvider statisticsProvider;
+		private readonly AiCoachAnalyzer aiAnalyzer;
+		private readonly ILlmService llmService;
+		private readonly ITrainingImporter importer;
+		private readonly IStatisticsProvider statisticsProvider;
         private readonly IUserRepository userRepository;
         private readonly ICurrentUserProvider userProvider;
         private readonly ITrainingUsernameService trainingUsernameService;
@@ -33,8 +38,8 @@ namespace TrainingApi.Controllers
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
             IUserRepository userRepository, ICurrentUserProvider userProvider, ITrainingUsernameService trainingUsernameService, 
             IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
-            ITrainingTemplateRepository trainingTemplateRepository,
-            ILogger<AggregatesController> logger)
+            ITrainingTemplateRepository trainingTemplateRepository, AiCoachAnalyzer aiAnalyzer, ILlmService llmService, ITrainingImporter importer,
+			ILogger<AggregatesController> logger)
         {
             this.trainingPlanRepository = trainingPlanRepository;
             this.trainingRepository = trainingRepository;
@@ -45,7 +50,10 @@ namespace TrainingApi.Controllers
             this.aggregationService = aggregationService;
             this.dataRepoFactory = dataRepoFactory;
             this.trainingTemplateRepository = trainingTemplateRepository;
-            log = logger;
+			this.aiAnalyzer = aiAnalyzer;
+			this.llmService = llmService;
+			this.importer = importer;
+			log = logger;
         }
 
         [HttpPost]
@@ -56,20 +64,58 @@ namespace TrainingApi.Controllers
             return training.Username;
         }
 
-        [Authorize(Policy = RolesRequirement.Admin)]
+		[Authorize(Policy = RolesRequirement.Admin)]
+		[HttpDelete("many")]
+		public async Task DeleteMany(string ids, bool deleteTrainingDataOnly = true)
+        {
+			// await fetch("https://localhost:7174/api/Trainings/many?ids=6181", { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "DELETE", "mode": "cors"});
+			// await fetch("https://curricullm.net/api/Trainings/many?ids=14,12", { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "DELETE", "mode": "cors"});
+			var allUsers = await userRepository.GetAll();
+            var usersToUpdate = new List<User>();
+
+			var trainingIds = ids.Split(",").Select(o => int.TryParse(o, out var v) ? (int?)v : null).OfType<int>().ToList();
+            foreach (var id in trainingIds)
+            {
+                Training? training = null;
+                try
+                {
+					training = await trainingRepository.Get(id);
+				}
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex.Message}");
+                }
+
+                var affectedUsers = allUsers.Where(o => o.Trainings.GetAllIds().Contains(id));
+                foreach (var user in affectedUsers)
+                {
+                    foreach (var group in user.Trainings)
+                        group.Value.Remove(id);
+					usersToUpdate.Add(user);
+                }
+
+                if (training != null)
+                {
+					var fact = dataRepoFactory.Create(id);
+					await fact.RemoveAll();
+				}
+
+				if (deleteTrainingDataOnly == false)
+                    await trainingRepository.RemoveByIdIfExists(id);
+            }
+
+            var tmp = usersToUpdate.DistinctBy(o => o.Email);
+            foreach (var user in tmp)
+    			await userRepository.Upsert(user);
+
+		}
+
+		[Authorize(Policy = RolesRequirement.Admin)]
         [HttpDelete]
         public async Task Delete(int id, bool deleteTrainingDataOnly = true)
         {
-            var training = await trainingRepository.Get(id);
-            if (training == null)
-                return;
-
-            var fact = dataRepoFactory.Create(id);
-            await fact.RemoveAll();
-
-            if (deleteTrainingDataOnly == false)
-                await trainingRepository.RemoveByIdIfExists(id);
-        }
+            await DeleteMany($"{id}", deleteTrainingDataOnly);
+		}
 
         private async Task<Training> GetTemplate(int templateId, IEnumerable<Training>? templates = null)
         {
@@ -128,6 +174,28 @@ namespace TrainingApi.Controllers
             };
         }
 
+        public static Training? SelectPlan(IEnumerable<Training>? templates, string userEmail, string? groupName = null)
+        {
+            if (templates?.Any() != true)
+                return null;
+
+			var template = groupName?.Any() == true ? templates.SingleOrDefault(o => o.TrainingPlanName.Equals(groupName, StringComparison.OrdinalIgnoreCase)) : null;
+			if (template == null)
+			{
+				var trainingPlans = new[] {
+					//"2026 HT Test Math",
+					//"2026 HT Test Verbal"
+                    "2026 HT Verbal",
+					"2026 HT Math"
+				};
+				var hashForRandomizedPlan = $"{userEmail}".GetHashCode(); // {groupName}
+				hashForRandomizedPlan = hashForRandomizedPlan < 0 ? -hashForRandomizedPlan : hashForRandomizedPlan;
+				var templateName = trainingPlans[hashForRandomizedPlan % trainingPlans.Length];
+				template = templates.SingleOrDefault(o => o.TrainingPlanName.Equals(templateName, StringComparison.OrdinalIgnoreCase));
+			}
+            return template;
+		}
+
         [HttpPost]
         [Route("createclass")]
         [ProducesErrorResponseType(typeof(HttpException))]
@@ -156,7 +224,10 @@ namespace TrainingApi.Controllers
                         + $"You already have {createTrainingsInfo.TrainingsQuota.Created}.", StatusCodes.Status400BadRequest);
             }
 
-            var template = await GetTemplate(dto.BaseTemplateId);
+            var templates = await trainingTemplateRepository.GetAll();
+            var template = SelectPlan(templates, user.Email, groupName);
+
+			template ??= await GetTemplate(dto.BaseTemplateId);
 
             var trainings = new List<Training>();
 
@@ -171,7 +242,6 @@ namespace TrainingApi.Controllers
                     throw new HttpException("Failed to reuse unused trainings");
                 if (trainingsToReuse.Count > numTrainingsToGetFromOtherGroups)
                     throw new HttpException("Failed to reuse unused trainings");
-                                    //.Take(numTrainingsToGetFromOtherGroups)
 
                 foreach (var training in trainingsToReuse)
                 {
@@ -186,18 +256,63 @@ namespace TrainingApi.Controllers
             if (numLeftToCreate > 0)
                 trainings.AddRange(await CreateTrainings(numLeftToCreate, dto, template));
 
-            if (!user.Trainings.TryGetValue(groupName, out var list))
-            {
-                list = new List<int>();
-                user.Trainings.Add(groupName, list);
-            }
-            list.AddRange(trainings.Select(o => o.Id));
-            await userRepository.Update(user);
+            await AddTrainingsToUser(user, groupName, trainings);
 
-            return trainings.Select(o => o.Username).ToList();
+			return trainings.Select(o => o.Username).ToList();
         }
 
-        [HttpGet]
+        private async Task AddTrainingsToUser(User user, string groupName, IEnumerable<Training> trainings)
+        {
+			if (!user.Trainings.TryGetValue(groupName, out var list))
+			{
+				list = new List<int>();
+				user.Trainings.Add(groupName, list);
+			}
+            var ids = trainings.Select(o => o.Id).Except(list).ToList();
+            if (ids.Any())
+            {
+				list.AddRange(ids);
+				await userRepository.Update(user);
+			}
+		}
+
+		// TODO: use https://learn.microsoft.com/en-us/aspnet/core/web-api/jsonpatch?view=aspnetcore-10.0 - e.g. JsonPatchDocument<Training> 
+		[HttpPatch]
+        [Route("{id}")]
+        public async Task Patch(int id, [FromBody] PatchTrainingDto dto)
+        {
+			var user = userProvider.UserOrThrow;
+            if (!user.Trainings.GetAllIds().Contains(id))
+                throw new ArgumentOutOfRangeException("Not belonging to user");
+            var training = await trainingRepository.Get(id);
+            if (training == null)
+				throw new ArgumentOutOfRangeException();
+			dto.Apply(training);
+            await trainingRepository.Upsert(training);
+		}
+
+		public class PatchTrainingDto
+        {
+            public string? Gender { get; set; }
+			public string? AgeBracket { get; set; }
+            public DateTime? Consent { get; set; }
+            public Training.DateInfo? BirthDate { get; set; }
+
+            public void Apply(Training training)
+            {
+                if (Gender != null)
+                    training.Gender = Gender;
+                if (AgeBracket != null)
+                    training.AgeBracket = AgeBracket;
+                if (Consent != null)
+                    training.Consent = Consent;
+                if (BirthDate != null)
+                    training.BirthDate = BirthDate;
+            }
+		}
+
+
+		[HttpGet]
         [Route("{id}")]
         public async Task<Training?> GetById(int id)
         {
@@ -255,7 +370,8 @@ namespace TrainingApi.Controllers
         private async Task<List<TrainingSummaryDto>> GetSummaryDtos(IEnumerable<Training> trainings, IEnumerable<TrainingSummary>? summaries = null)
         {
             summaries ??= (await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id))).OfType<TrainingSummary>();
-            var summariesAsDict = summaries.ToDictionary(o => o.Id, o => o);
+            // TODO: multiple entries for single day - GroupBy etc shouldn't be necessary
+            var summariesAsDict = summaries.GroupBy(o => o.Id).ToDictionary(o => o.Key, o => o.MaxBy(p => p.TrainedDays));
 
             return summariesAsDict?.Any() != true
                 ? new()
@@ -318,6 +434,64 @@ namespace TrainingApi.Controllers
             ).ToList();
         }
 
+        [HttpGet]
+        [Route("analysis")]
+        public async Task<AnalysisDto> GetAiAnalysis(int trainingId, string templateSource, bool onlyPrompt)
+        {
+			var currentUser = userProvider.UserOrThrow;
+            if (!currentUser.Trainings.GetAllIds().Contains(trainingId))
+                throw new UnauthorizedAccessException();
+
+			var training = await trainingRepository.Get(trainingId);
+            var replacements = await aiAnalyzer.CreateReplacements(trainingId);
+            var template = await aiAnalyzer.GetResource(new Uri(templateSource));
+            var prompt = await aiAnalyzer.CreatePrompt(template, replacements);
+            var completion = "N/A";
+            if (onlyPrompt == false)
+            {
+                try
+                {
+                    var result = await llmService.Invoke(prompt);
+                    completion = result?.Completion ?? "<No completion>";
+                }
+                catch (Exception ex)
+                {
+                    completion = $"{ex.GetType().Name}: {ex.Message}";
+                }
+            }
+			return new(prompt, completion);
+        }
+
+		public record AnalysisDto(string Prompt, string Completion);
+
+
+		[HttpPost("import")]
+        public async Task ImportTraining([FromBody] TrainingExport exportDto) //int? targetId = null
+		{
+            await importer.Import(exportDto); //targetId
+		}
+		[HttpPost("importmany/{groupName}")]
+		public async Task ImportTrainings([FromBody] List<TrainingExport> exports, string groupName)
+		{
+			/*
+await fetch("/api/Trainings/importmany/Norms", {
+    "headers": {"Accept": "application/json", "Content-Type": "application/json"},
+    "method": "POST", "mode": "cors", "credentials": "include", "body": JSON.stringify(data)
+});
+             */
+			var user = userProvider.UserOrThrow;
+
+            if (exports.Any(o => o.Training == null))
+                throw new Exception($"contains null trainings");
+
+			foreach (var item in exports)
+            {
+				await importer.Import(item);
+			}
+
+			await AddTrainingsToUser(user, groupName, exports.Select(o => o.Training!));
+		}
+
         private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null, User? user = null)
         {
             user = user ?? userProvider.UserOrThrow;
@@ -358,7 +532,11 @@ namespace TrainingApi.Controllers
             public DateTimeOffset? FirstLogin { get; set; }
             public DateTimeOffset? LastLogin { get; set; }
 
-            public static T Create<T>(Training training, TrainingSummary? summary) where T : TrainingSummaryDto, new()
+            public string? Gender { get; set; }
+			public DateTime? Consent { get; set; }
+            public Training.DateInfo? BirthDate { get; set; }
+
+			public static T Create<T>(Training training, TrainingSummary? summary) where T : TrainingSummaryDto, new()
             {
                 return new T
                 {
@@ -373,6 +551,10 @@ namespace TrainingApi.Controllers
                     AvgAccuracy = summary?.AvgAccuracy ?? 0,
                     FirstLogin = summary?.FirstLogin,
                     LastLogin = summary?.LastLogin,
+
+                    Gender = training.Gender,
+                    Consent = training.Consent,
+                    BirthDate = training.BirthDate,
                 };
             }
         }

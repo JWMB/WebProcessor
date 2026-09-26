@@ -9,8 +9,13 @@ namespace ProblemSourceModule.Models
         public string TrainingPlanName { get; set; } = string.Empty;
         public TrainingSettings Settings { get; set; } = TrainingSettings.Default;
         public string AgeBracket { get; set; } = string.Empty;
+        public string Gender { get; set; } = string.Empty;
+		public DateTime? Consent { get; set; }
+        public DateInfo? BirthDate { get; set; }
 
-        public DateTimeOffset Created { get; set; } = DateTimeOffset.FromUnixTimeMilliseconds(0);
+        public record DateInfo(int year, int? month, int? day);
+
+		public DateTimeOffset Created { get; set; } = DateTimeOffset.FromUnixTimeMilliseconds(0);
 
         public int GetAgeBracketLower() => int.TryParse(AgeBracket.Split('-').Where(o => o.Any()).FirstOrDefault() ?? "6", out var age) ? age : 6;
     }

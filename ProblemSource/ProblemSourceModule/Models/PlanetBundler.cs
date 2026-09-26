@@ -1,15 +1,7 @@
 ﻿using Common;
 using ProblemSource.Models;
-using ProblemSourceModule.Models;
-using static ProblemSource.Models.DynamicTrainingPlan;
-using System.Numerics;
-using static ProblemSource.Models.ExerciseStats;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Linq;
-using System;
 using ProblemSource.Models.LogItems;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 
 namespace ProblemSourceModule.Models
 {
@@ -34,7 +26,7 @@ namespace ProblemSourceModule.Models
         public GameDefinition? nextGame;
         public List<GameRunStats> gameRuns = new();
         public bool wasJustUnlocked = false;
-            //public indexInPlan: number = -1; //TODO: not really necessary
+        //public indexInPlan: number = -1; //TODO: not really necessary
 
         public PlanetInfo(JObject? init = null, IEnumerable<GameDefinition>? gameDefs = null, List<GameRunStats>? allGameRuns = null)
         {
@@ -77,7 +69,8 @@ namespace ProblemSourceModule.Models
 
         public IPlanetInfo serialize(ExerciseStats stats)
         {
-            return new PlanetInfo {
+            return new PlanetInfo
+            {
                 gameId = gameId,
                 decided_at = decided_at,
                 gameRunsRefs = gameRuns.Select(_ => stats.gameRuns.IndexOf(_)).ToArray(), //{ return { gameId: _.gameId, started: _.started_at } }),
@@ -132,7 +125,7 @@ namespace ProblemSourceModule.Models
                 gameId = ExerciseStats.getSharedId(gameId);
 
             //Get only those planets where all gameRuns' are of gameId
-            return _planetInfos.Where(planet => 
+            return _planetInfos.Where(planet =>
                 planet.gameRuns.FirstOrDefault(gr => (useSharedId ? ExerciseStats.getSharedId(gr.gameId) : gr.gameId) != gameId)
                 == null).ToList();
         }
@@ -180,7 +173,7 @@ namespace ProblemSourceModule.Models
                     //not available as a planet, probably a "hidden" game (test)
                     //TODO: check if this is the case
                     //throw Error("Planet not found: " + value);
-                    
+
                     //Logger.warn("planet not found: " + value);
                 }
             }
@@ -226,7 +219,7 @@ namespace ProblemSourceModule.Models
 
             //if (tp == null)
             //    tp = TrainingPlan.create(null);
-    
+
             _planetInfos = PlanetBundler.deserializePlanets(tp, exerciseStats);
 
             // console.log("planetInfos", PlanetBundler._planetInfos);
@@ -325,18 +318,20 @@ namespace ProblemSourceModule.Models
                 planet.wasJustUnlocked = planet.isUnlocked;
                 //PlanetBundler.getOrCreatePlanet(_.id).unlocked_at = Date.now();
                 planet.numMedals = 0;
-                planet.nextGame = new GameDefinition{ id = pgi.id };
+                planet.nextGame = new GameDefinition { id = pgi.id };
 
-                if (pgi.id.IndexOf("#") < 0) {
+                if (pgi.id.IndexOf("#") < 0)
+                {
                     var numPreviousPlanets = (int)Math.Floor(gameStats.GetValueOrDefault(pgi.id, new()).Where(p => p.won).Count() * 1M / 3);
                     planet.nextGame.id = pgi.id + "#" + (numPreviousPlanets + 1);
                 }
                 //In old system, we didn't write data until actually entering game
                 //TODO: writing data!!
                 //TODO: switch to linear test stats / phase structure, add some part that indicates which phases are with which planet
-                    decidedFuturePlanet(planet);
-                    return planet;
-                };
+                decidedFuturePlanet(planet);
+                return planet;
+            }
+            ;
 
             //available that are not in existing:
             var notInExisting = available.Where(_ =>
@@ -349,7 +344,7 @@ namespace ProblemSourceModule.Models
             foreach (var planet in planets)
             {
                 var nextGameId = (planet.nextGame?.id != null) ? planet.nextGame.id : planet.gameId; //.gameRuns[0].gameId;
-                                                                                                               //In allowFreeChoice, a planet might not have nextGame defined, if so use last gameRun for id.
+                                                                                                     //In allowFreeChoice, a planet might not have nextGame defined, if so use last gameRun for id.
                 var findId = nextGameId; //planet.nextGame.id;
                 var gameDef = definedGames.FirstOrDefault(_ => _.id == findId);
                 if (gameDef == null)

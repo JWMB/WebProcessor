@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { closeModal } from 'svelte-modals';
-	import type { CreateTrainingsInfoDto, TrainingCreateDto, TrainingTemplateDto } from 'src/apiClient';
-	import { getApi } from 'src/globalStore';
-	import type { ApiFacade } from 'src/apiFacade';
 	import { onMount } from 'svelte';
-	import { ErrorHandling } from 'src/errorHandling';
+	import { ApiFacade } from '../../apiFacade';
+	import { getApi } from '../../globalStore';
+	import { type CreateTrainingsInfoDto, type TrainingCreateDto,type  TrainingTemplateDto } from '../../apiClient';
+	import { ErrorHandling } from '../../errorHandling';
 
 	export let isOpen: boolean; // provided by Modals
 	export let onCreateGroup: (id: string) => void;
@@ -22,7 +22,7 @@
 
 	const timePerDayValues = [
 		20,
-		33
+		// 33
 	];
 	const ageBrackets = [
 		"",
@@ -94,7 +94,7 @@
 		numTrainingsLeftInQuota = Math.max(0, createInfo.trainingsQuota.limit - createInfo.trainingsQuota.created);
 		numTrainingsForReuse = createInfo.trainingsQuota.reusable?.length || 0;
 		newGroupData.noOfTrainings = Math.min(maxNumNewTrainings, 10);
-		templates = await apiFacade.trainings.getTemplates();
+		templates = await apiFacade.trainings.getTemplates(undefined);
 	});
 </script>
 
@@ -120,7 +120,7 @@
 						<br/>
 					</label>
 					<label>
-						Number of trainings
+						Number of students
 						<input id="numTrainings" type="number" required bind:value={newGroupData.noOfTrainings} 
 							min="1" max="{Math.min(createInfo?.maxTrainingsInGroup || 1, maxNumNewTrainings)}"
 							on:change={updateNoOfTrainings}

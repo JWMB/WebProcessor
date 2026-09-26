@@ -11,10 +11,7 @@
     {
       "triggerTime": "MAP",
       "criteriaValues": [
-        {
-          "name": "trainingDay",
-          "value": "3"
-        }
+        { "name": "trainingDay", "value": "3" }
       ],
       "actionData": {
         "type": "StartExerciseTriggerAction",

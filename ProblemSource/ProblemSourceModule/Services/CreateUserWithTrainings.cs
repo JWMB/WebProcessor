@@ -23,7 +23,8 @@ namespace ProblemSourceModule.Services
             this.trainingUsernameService = trainingUsernameService;
         }
 
-		public string CreatePassword()
+
+		public static string CreatePassword(Random rnd)
 		{
 			var pwdChars = Enumerable.Range(48, 10)
 				.Concat(Enumerable.Range(65, 25))
@@ -66,7 +67,7 @@ namespace ProblemSourceModule.Services
 
 			settings ??= new TrainingSettings { timeLimits = new List<decimal> { 33 } };
 
-			var password = CreatePassword();
+			var password = CreatePassword(rnd);
 			var user = new User
 			{
 				Email = email,

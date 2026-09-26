@@ -13,10 +13,10 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 {
     public class CategorizerDay5_23Q1 : ITrainingAnalyzer
     {
-        protected readonly IPredictNumberlineLevelService modelService;
+        protected readonly IPredictNumberlineLevelService? modelService;
         protected readonly ILogger<CategorizerDay5_23Q1> log;
 
-        public CategorizerDay5_23Q1(IPredictNumberlineLevelService modelService, ILogger<CategorizerDay5_23Q1> log)
+        public CategorizerDay5_23Q1(IPredictNumberlineLevelService? modelService, ILogger<CategorizerDay5_23Q1> log)
         {
             this.modelService = modelService;
             this.log = log;
@@ -75,6 +75,10 @@ namespace ProblemSourceModule.Services.TrainingAnalyzers
 
         public async Task<PredictedNumberlineLevel> Predict(Training training, IUserGeneratedDataRepositoryProvider provider)
         {
+            if (modelService == null)
+            {
+                return new PredictedNumberlineLevel();
+            }
             var mlFeatures = await CreateFeatures(training, provider);
             var result = await modelService.Predict(mlFeatures);
             if (result.PredictedPerformanceTier == PredictedNumberlineLevel.PerformanceTier.Unknown)
