@@ -174,6 +174,28 @@ namespace TrainingApi.Controllers
             };
         }
 
+        public static Training? SelectPlan(IEnumerable<Training>? templates, string userEmail, string? groupName = null)
+        {
+            if (templates?.Any() != true)
+                return null;
+
+			var template = groupName?.Any() == true ? templates.SingleOrDefault(o => o.TrainingPlanName.Equals(groupName, StringComparison.OrdinalIgnoreCase)) : null;
+			if (template == null)
+			{
+				var trainingPlans = new[] {
+					//"2026 HT Test Math",
+					//"2026 HT Test Verbal"
+                    "2026 HT Verbal",
+					"2026 HT Math"
+				};
+				var hashForRandomizedPlan = $"{userEmail}".GetHashCode(); // {groupName}
+				hashForRandomizedPlan = hashForRandomizedPlan < 0 ? -hashForRandomizedPlan : hashForRandomizedPlan;
+				var templateName = trainingPlans[hashForRandomizedPlan % trainingPlans.Length];
+				template = templates.SingleOrDefault(o => o.TrainingPlanName.Equals(templateName, StringComparison.OrdinalIgnoreCase));
+			}
+            return template;
+		}
+
         [HttpPost]
         [Route("createclass")]
         [ProducesErrorResponseType(typeof(HttpException))]
@@ -203,20 +225,9 @@ namespace TrainingApi.Controllers
             }
 
             var templates = await trainingTemplateRepository.GetAll();
+            var template = SelectPlan(templates, user.Email, groupName);
 
-			var template = templates.SingleOrDefault(o => o.TrainingPlanName.Equals(groupName, StringComparison.OrdinalIgnoreCase));
-            if (template == null)
-            {
-                var trainingPlans = new[] {
-                    "2026 HT Test Math",
-                    "2026 HT Test Verbal"
-                };
-                var hashForRandomizedPlan = $"{user.Email}".GetHashCode(); // {groupName}
-				hashForRandomizedPlan = hashForRandomizedPlan < 0 ? -hashForRandomizedPlan : hashForRandomizedPlan;
-				var templateName = trainingPlans[hashForRandomizedPlan % trainingPlans.Length];
-                template = templates.SingleOrDefault(o => o.TrainingPlanName.Equals(templateName, StringComparison.OrdinalIgnoreCase));
-            }
-            template ??= await GetTemplate(dto.BaseTemplateId);
+			template ??= await GetTemplate(dto.BaseTemplateId);
 
             var trainings = new List<Training>();
 

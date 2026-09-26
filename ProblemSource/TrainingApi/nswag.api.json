@@ -772,6 +772,11 @@
           "text/json",
           "application/*+json"
         ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
         "parameters": [
           {
             "name": "dto",
@@ -785,7 +790,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CreatedUserInfo"
+              }
+            }
           }
         }
       }
@@ -852,6 +864,44 @@
             "description": "",
             "schema": {
               "$ref": "#/definitions/GetUserDto"
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/createusers": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_PostCreateUsers",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateUsersRequestDto"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/CreateUsersResponseDto"
             }
           }
         }
@@ -2374,26 +2424,79 @@
               "format": "int32"
             }
           }
+        },
+        "defaultTrainingPlanName": {
+          "type": "string"
+        }
+      }
+    },
+    "CreateUsersResponseDto": {
+      "type": "object",
+      "required": [
+        "emails"
+      ],
+      "properties": {
+        "emails": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CreatedUserInfo"
+          }
+        }
+      }
+    },
+    "CreatedUserInfo": {
+      "type": "object",
+      "required": [
+        "email",
+        "password"
+      ],
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "CreateUsersRequestDto": {
+      "type": "object",
+      "required": [
+        "emails"
+      ],
+      "properties": {
+        "emails": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
     "CreateUserDto": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/GetUserDto"
-        },
-        {
-          "type": "object",
-          "required": [
-            "password"
-          ],
-          "properties": {
-            "password": {
-              "type": "string"
-            }
+      "type": "object",
+      "required": [
+        "username",
+        "role",
+        "password"
+      ],
+      "properties": {
+        "usernames": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
+        },
+        "username": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
         }
-      ]
+      }
     },
     "PatchUserDto": {
       "type": "object",

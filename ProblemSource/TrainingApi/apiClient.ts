@@ -950,7 +950,7 @@ export class UsersClient {
         return Promise.resolve<GetUserDto[]>(null as any);
     }
 
-    post(dto: CreateUserDto): Promise<void> {
+    post(dto: CreateUserDto): Promise<CreatedUserInfo[]> {
         let url_ = this.baseUrl + "/api/Users";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -961,6 +961,7 @@ export class UsersClient {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             }
         };
 
@@ -969,19 +970,21 @@ export class UsersClient {
         });
     }
 
-    protected processPost(response: Response): Promise<void> {
+    protected processPost(response: Response): Promise<CreatedUserInfo[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreatedUserInfo[];
+            return result200;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<CreatedUserInfo[]>(null as any);
     }
 
     get(id: string | undefined): Promise<GetUserDto> {
@@ -1059,6 +1062,43 @@ export class UsersClient {
             });
         }
         return Promise.resolve<GetUserDto>(null as any);
+    }
+
+    postCreateUsers(dto: CreateUsersRequestDto): Promise<CreateUsersResponseDto> {
+        let url_ = this.baseUrl + "/api/Users/createusers";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPostCreateUsers(_response);
+        });
+    }
+
+    protected processPostCreateUsers(response: Response): Promise<CreateUsersResponseDto> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateUsersResponseDto;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CreateUsersResponseDto>(null as any);
     }
 
     getTrainingUsername(id: number): Promise<FileResponse | null> {
@@ -1959,9 +1999,26 @@ export interface GetUserDto {
     username: string;
     role: string;
     trainings: { [key: string]: number[]; };
+    defaultTrainingPlanName?: string | undefined;
 }
 
-export interface CreateUserDto extends GetUserDto {
+export interface CreateUsersResponseDto {
+    emails: CreatedUserInfo[];
+}
+
+export interface CreatedUserInfo {
+    email: string;
+    password: string;
+}
+
+export interface CreateUsersRequestDto {
+    emails: string[];
+}
+
+export interface CreateUserDto {
+    usernames?: string[] | undefined;
+    username: string;
+    role: string;
     password: string;
 }
 

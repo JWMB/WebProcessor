@@ -23,10 +23,12 @@ namespace TrainingApi.Controllers
         private readonly ITrainingRepository trainingRepository;
 		private readonly IMfaService mfaService;
 		private readonly ICookieProtector cookieProtector;
+		private readonly ITrainingTemplateRepository trainingTemplateRepository;
 		private readonly ILogger<UsersController> log;
 
         public UsersController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ICurrentUserProvider userProvider, 
-            CreateUserWithTrainings createUserWithTrainings, ITrainingRepository trainingRepository, IMfaService mfaService, ICookieProtector cookieProtector, ILogger<UsersController> logger)
+            CreateUserWithTrainings createUserWithTrainings, ITrainingRepository trainingRepository, IMfaService mfaService, ICookieProtector cookieProtector,
+			ITrainingTemplateRepository trainingTemplateRepository, ILogger<UsersController> logger)
         {
             this.userRepository = userRepository;
             this.authenticateUserService = authenticateUserService;
@@ -35,6 +37,7 @@ namespace TrainingApi.Controllers
             this.trainingRepository = trainingRepository;
 			this.mfaService = mfaService;
 			this.cookieProtector = cookieProtector;
+			this.trainingTemplateRepository = trainingTemplateRepository;
 			log = logger;
         }
 
@@ -42,7 +45,8 @@ namespace TrainingApi.Controllers
         [HttpGet]
         public async Task<IEnumerable<GetUserDto>> GetAll()
         {
-            return (await userRepository.GetAll()).Select(GetUserDto.FromUser);
+			var templates = await trainingTemplateRepository.GetAll();
+			return (await userRepository.GetAll()).Select(o => GetUserDto.FromUser(o, templates));
         }
 
         [Authorize(Policy = RolesRequirement.AdminOrTeacher)]
@@ -73,7 +77,7 @@ namespace TrainingApi.Controllers
             //    "credentials": "include", "mode": "cors",
             //    "headers": { "Accept": "application/json", "Content-Type": "application/json" },
             //    "method": "POST",
-            //    "body": '{ "usernames": ["alexandra.englundnilsson@edu.habo.se"] }'
+            //    "body": '{ "usernames": [""] }'
             //});
 
 			var emailsAndPassword = new List<CreatedUserInfo>();
@@ -112,6 +116,12 @@ namespace TrainingApi.Controllers
         [HttpPost]
         public async Task<List<CreatedUserInfo>> Post([FromBody] CreateUserDto dto)
         {
+            //await fetch("https://localhost:7174/api/Users", {
+            //    "credentials": "include", "mode": "cors",
+            //    "headers": { "Accept": "application/json", "Content-Type": "application/json" },
+            //    "method": "POST",
+            //    "body": '{ "usernames": [""] }'
+            //});
             if (dto.Usernames?.Any() == true)
             {
                 return (await PostCreateUsers(new CreateUsersRequestDto(dto.Usernames))).Emails;
@@ -357,10 +367,12 @@ namespace TrainingApi.Controllers
 
         public string Role { get; set; } = "";
         public Dictionary<string, List<int>> Trainings { get; set; } = new();
+        public string? DefaultTrainingPlanName { get; set; }
 
-        public static GetUserDto FromUser(User user)
+        public static GetUserDto FromUser(User user, IEnumerable<Training>? templates = null)
         {
-            return new GetUserDto { Role = user.Role, Username = user.Email, Trainings = user.Trainings };
+            var defaultPlan = TrainingsController.SelectPlan(templates, user.Email);
+            return new GetUserDto { Role = user.Role, Username = user.Email, Trainings = user.Trainings, DefaultTrainingPlanName = defaultPlan?.TrainingPlanName };
         }
     }
 

@@ -35,9 +35,26 @@
 	<input type="button" value="Create" on:click={() => createUser(getElementValue('email'), getElementValue('password'))} />
 </div>
 
+<table style="">
+	<thead>
+	<td>Username</td>
+	<td>Role</td>
+	<td>Default TP</td>
+	<td>Trainings</td>
+	<td></td>
+	</thead>
+	<tbody>
 {#each users as user}
-	<li>{user.username} {user.role} {JSON.stringify(user.trainings)}</li>
-	<input type="button" value="Pwd" on:click={() => changePassword(user.username)} />
+<tr>
+	<td>{user.username}</td>
+	<td>{user.role}</td>
+	<td>{user.defaultTrainingPlanName}</td>
+	<td style="word-wrap: break-word; max-width: 450px;">{JSON.stringify(user.trainings)}</td>
+	<td><input type="button" value="Pwd" on:click={() => changePassword(user.username)} /></td>
+</tr>
 {/each}
+	</tbody>
+</table>
+
 
 <button on:click={async () => await apiFacade.testing.throwException()}>Error</button>
