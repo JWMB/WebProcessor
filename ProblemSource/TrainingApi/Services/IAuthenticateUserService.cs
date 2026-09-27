@@ -1,5 +1,6 @@
 ﻿using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
+using System.Collections.Concurrent;
 
 namespace TrainingApi.Services
 {
@@ -17,6 +18,7 @@ namespace TrainingApi.Services
             this.userRepository = userRepository;
         }
 
+        //private static ConcurrentDictionary<string, >
         public async Task<User?> GetUser(string username, string password)
         {
             username = username.Trim();
@@ -26,9 +28,11 @@ namespace TrainingApi.Services
                 return null;
 
             if (!user.VerifyPassword(password))
-                return null;
+            {
+				return null;
+			}
 
-            return user;
+			return user;
         }
     }
 }
