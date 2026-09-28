@@ -9,10 +9,8 @@
 		{ "id": "WM", "weight": 0, "games": [
 			{ "id": "WM_grid", "weight": 1 },
 			{ "id": "WM_crush", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 6 } },
-			{ "id": "WM_3dgrid", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 9 } },
 			{ "id": "WM_circle", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 13 } },
-			{ "id": "WM_numbers", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 18 } },
-			{ "id": "WM_moving", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 23 } }
+			{ "id": "WM_numbers", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 18 } }
 		]},
 		{ "id": "Reasoning", "weight": 30, "games": [
 			{ "id": "NVR_SO", "weight": 1 },
@@ -29,6 +27,7 @@
 			{ "id": "crossword", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 25 } }
 		]}
 	],
+
 	"definitions": [
 		{ "id": "templateWM", "phases": [
 			{ "type": "PhaseWorkingMemory", "phase": "TEST",
@@ -192,37 +191,36 @@
 		]},
 
 		{ "id": "WM_grid", "title": "Grid", "template": "templateWM", "phases": [
-			{ "type": "WM_GRID", "settings": {
+			{ "stimuliType": "WM_GRID", "settings": {
 				"size": { "x": 4, "y": 4 }
 			}}
 		]},
 		{ "id": "WM_crush", "title": "Crush", "template": "templateWM", "phases": [
-			{ "type": "WM_CRUSH", "settings": {
+			{ "stimuliType": "WM_CRUSH", "settings": {
 				"numItems": -1
 			}}
 		]},
-		{ "id": "WM_3dgrid", "title": "3D", "template": "templateWM", "phases": [
-			{ "type": "WM_3DGRID",  "settings": {
-				"size": { "x": 3, "y": 1, "z": 2 }
-			}}
-		]},
 		{ "id": "WM_circle", "title": "Circle", "template": "templateWM", "phases": [
-			{ "type": "WM_CIRCLE", "settings": {
+			{ "stimuliType": "WM_CIRCLE", "settings": {
 				"size": { "x": 10, "y": 1 }
 			}}
 		]},
 		{ "id": "WM_numbers", "title": "Numbers", "template": "templateWM", "phases": [
-			{ "type": "WM_NUMBERS", "settings": { 
+			{ "stimuliType": "WM_NUMBERS", "settings": { 
 				"size": { "x": 3, "y": 3 },
 				"sequenceModifiers": { "post": "Reverse" }
 			}}
-		]},
-		{ "id": "WM_moving", "title": "Moving", "template": "templateWM", "phases": [
-			{ "type": "WM_MOVING" }
 		]}
 	],
 	"triggers": [
-	    { "triggerTime": "MAP", "criteriaValues": [ { "name": "trainingDay", "value": "3" } ],
+
+		{ "triggerTime": "START_OF_DAY", "criteriaValues": [ { "name": "trainingDay", "value": "0" } ],
+			"actionData": { "type": "MagicCutSceneTriggerAction", "id": "opening_scene",
+				"properties": { "noOfImages": 12, "imageBasePath": "magical/intro/intro", "backgroundSound": "fx/intro_slide_" }
+			}
+		},
+
+	  { "triggerTime": "MAP", "criteriaValues": [ { "name": "trainingDay", "value": "3" } ],
 			"actionData": { "type": "StartExerciseTriggerAction", "id": "day3test1", "properties": { "id": "mathTest01" } }
 		},
 	    { "triggerTime": "MAP", "criteriaValues": [ { "name": "trainingDay", "value": "4" } ],
