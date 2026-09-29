@@ -81,7 +81,7 @@
 			return;
 		}
 		const groupsData = await apiFacade.trainings.getGroups();
-		groups = Object.entries(groupsData).map((o) => ({ group: o[0], summaries: o[1] }));
+		groups = Object.entries(groupsData).map((o) => ({ group: o[0], summaries: o[1] })) || [];
 	}
 
 	let lastClick = 0;
@@ -225,8 +225,8 @@
 		For questions and bug reports, email us at <a href="mailto:vektorproject2026@gmail.com">vektorproject2026@gmail.com</a>
 	</div>
 	</div>
-	{#if groups && groups.length > 0}
-		(Total: {groups.map(o => o.summaries.length).reduce((p, c) => p + c)} created, {groups.map(o => o.summaries.filter(p => p.trainedDays > 0).length).reduce((p, c) => p + c)} started)
+	{#if groups}
+		(Total: {groups.map(o => o.summaries.length).reduce((p, c) => p + c, 0)} created, {groups.map(o => o.summaries.filter(p => p.trainedDays > 0).length).reduce((p, c) => p + c, 0)} started)
 		<Tabs
 			urlParam="group"
 			tabs={groups.map((g) => {
