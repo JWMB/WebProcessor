@@ -132,8 +132,9 @@ namespace TrainingApi.Controllers
             training.Settings = dto.TrainingSettings ?? template.Settings ?? TrainingSettings.Default;
             // TODO: trainingPlanOverrides is incorrectly serialized, so we can't use the one from the DTO
             training.Settings.trainingPlanOverrides = template.Settings?.trainingPlanOverrides;
+            training.Created = DateTimeOffset.UtcNow;
 
-            training.AgeBracket = dto.AgeBracket ?? "";
+			training.AgeBracket = dto.AgeBracket ?? "";
         }
 
         private async Task<List<Training>> CreateTrainings(int count, TrainingCreateDto dto, Training template)

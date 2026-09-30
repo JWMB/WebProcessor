@@ -2026,6 +2026,8 @@ export interface PatchUserDto {
     role?: string | undefined;
     password?: string | undefined;
     trainings?: { [key: string]: number[]; } | undefined;
+    mfaEnabled?: boolean | undefined;
+    mfaSecretKey?: string | undefined;
 }
 
 export interface LoginResultDto {

@@ -193,9 +193,7 @@ namespace TrainingApi.Controllers
             var user = await userRepository.Get(id);
             if (user == null)
                 return NotFound();
-            if (dto.Role != null) user.Role = dto.Role;
-            if (dto.Password != null) user.PasswordForHashing = dto.Password;
-            if (dto.Trainings != null) user.Trainings = new UserTrainingsCollection(dto.Trainings);
+            dto.Apply(user);
 
             await userRepository.Update(user);
             return Ok();
@@ -394,5 +392,16 @@ namespace TrainingApi.Controllers
         public string? Role { get; set; }
         public string? Password { get; set; }
         public Dictionary<string, List<int>>? Trainings { get; set; }
+        public bool? MfaEnabled { get; set; }
+		public string? MfaSecretKey { get; set; }
+
+		public void Apply(User user)
+		{
+			if (Role != null) user.Role = Role;
+			if (Password != null) user.PasswordForHashing = Password;
+			if (Trainings != null) user.Trainings = new UserTrainingsCollection(Trainings);
+            if (MfaEnabled != null) user.MfaEnabled = MfaEnabled;
+			if (MfaSecretKey != null) user.MfaSecretKey = MfaSecretKey.Any() ? MfaSecretKey : null;
+	    }
     }
 }

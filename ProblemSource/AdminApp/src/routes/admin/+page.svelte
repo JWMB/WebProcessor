@@ -19,6 +19,9 @@
 			apiFacade.users.patch(email, <PatchUserDto>{ password: password }).then((r) => console.log('pwd changed', r));
 		}
 	}
+	function resetMFA(email: string) {
+		apiFacade.users.patch(email, <PatchUserDto>{ mfaSecretKey: "" }).then((r) => console.log('reset MFA', r));
+	}
 
 	const getElementValue = (id: string) => (<HTMLInputElement>document.getElementById(id)).value;
 
@@ -50,7 +53,10 @@
 	<td>{user.role}</td>
 	<td>{user.defaultTrainingPlanName}</td>
 	<td style="word-wrap: break-word; max-width: 450px;">{JSON.stringify(user.trainings)}</td>
-	<td><input type="button" value="Pwd" on:click={() => changePassword(user.username)} /></td>
+	<td>
+		<input type="button" value="Pwd" on:click={() => changePassword(user.username)} />
+		<input type="button" title="Reset MFA code" value="MFA" on:click={() => changePassword(user.username)} />
+	</td>
 </tr>
 {/each}
 	</tbody>

@@ -152,7 +152,7 @@ namespace ProblemSource
 
         private static string? GetLoginErrorString(Training training)
         {
-            if (training.BirthDate?.year == null || training.Gender == null || training.Consent == null)
+            if (training.BirthDate?.year == null || training.Gender == null) // nope, don't require training.Consent for training - just an indicator to not include in research
             {
                 return "ConfigurationMissing";
             }

@@ -2516,6 +2516,12 @@
               "format": "int32"
             }
           }
+        },
+        "mfaEnabled": {
+          "type": "boolean"
+        },
+        "mfaSecretKey": {
+          "type": "string"
         }
       }
     },
