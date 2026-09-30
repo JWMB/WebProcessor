@@ -282,6 +282,12 @@ namespace TrainingApi.Controllers
         [Route("{id}")]
         public async Task Patch(int id, [FromBody] PatchTrainingDto dto)
         {
+			/*
+await fetch("https://localhost:7174/api/Trainings/8591", {
+    "method": "PATCH", "credentials": "include", "mode": "cors", "headers": { "content-type": "application/json", },
+    "body": '{"timeLimit": 2, "allowMultipleLogins": true, "trainingPlanName": "2026 HT Verbal" }',
+});
+*/
 			var user = userProvider.UserOrThrow;
             if (!user.Trainings.GetAllIds().Contains(id))
                 throw new ArgumentOutOfRangeException("Not belonging to user");
@@ -299,7 +305,11 @@ namespace TrainingApi.Controllers
             public DateTime? Consent { get; set; }
             public Training.DateInfo? BirthDate { get; set; }
 
-            public void Apply(Training training)
+			public bool? AllowMultipleLogins { get; set; }
+			public decimal? TimeLimit { get; set; }
+            public string? TrainingPlanName { get; set; }
+
+			public void Apply(Training training)
             {
                 if (Gender != null)
                     training.Gender = Gender;
@@ -309,7 +319,20 @@ namespace TrainingApi.Controllers
                     training.Consent = Consent;
                 if (BirthDate != null)
                     training.BirthDate = BirthDate;
-            }
+				if (AllowMultipleLogins != null)
+                {
+                    training.Settings ??= new TrainingSettings();
+                    training.Settings.customData ??= new CustomData();
+					training.Settings.customData.allowMultipleLogins = AllowMultipleLogins;
+				}
+                if (TimeLimit != null)
+                {
+					training.Settings ??= new TrainingSettings();
+					training.Settings.timeLimits = [TimeLimit.Value];
+				}
+                if (TrainingPlanName != null)
+                    training.TrainingPlanName = TrainingPlanName;
+			}
 		}
 
 
