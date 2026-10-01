@@ -259,10 +259,11 @@ namespace ProblemSource.Models
         public TrainingPlanSettings trainingPlanSettings { get; set; } = new TrainingPlanSettings();
         public Dictionary<string, object> gameCustomData { get; set; } = new Dictionary<string, object>();
 
-        public List<object>? planetInfos { get; set; }
+		public List<object>? planetInfos { get; set; }
+        public List<PlanetInfo> PlanetInfosTyped { get; set; } = [];
 
 
-        public class GameStats
+		public class GameStats
         {
             private GameRunStats[] gameRuns;
             public GameStats(IEnumerable<GameRunStats> gameRuns)

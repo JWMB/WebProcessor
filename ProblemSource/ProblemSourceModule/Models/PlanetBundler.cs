@@ -191,7 +191,7 @@ namespace ProblemSourceModule.Models
         private static List<PlanetInfo> deserializePlanets(TrainingPlan tp, ExerciseStats stats)
         {
             //TODO: better transfer mechanism between _planetInfos and GameState.exerciseStats
-            stats.planetInfos ??= new List<object>();
+            stats.planetInfos ??= new();
             var definedGames = tp.getDefinedGames();
             return stats.planetInfos.OfType<JObject>().Select(_ => new PlanetInfo(_, definedGames, stats.gameRuns)).ToList();
         }

@@ -268,9 +268,15 @@ namespace ProblemSource
 			// var currentStoredState = (await userRepositories.UserStates.GetAll()).SingleOrDefault();
 			{
 				// there's only supposed to be 0 or 1! Upsert not working?
+				// TODO: because multiple entries in DB
 				var allUserStates = await userRepositories.UserStates.GetAll();
                 if (allUserStates.Any())
-                    currentStoredState = allUserStates.MaxBy(o => o.exercise_stats.lastTimeStamp);
+                {
+                    currentStoredState = allUserStates
+                        .OrderByDescending(o => o.exercise_stats.lastTimeStamp)
+                        .ThenByDescending(o => o.exercise_stats.gameRuns.Count)
+                        .First();
+				}
 			}
 
             if (root.Events?.Any() == true)
@@ -287,7 +293,15 @@ namespace ProblemSource
                     else
                     {
                         currentStoredState = new UserGeneratedState { exercise_stats = pushedStateItem.exercise_stats, user_data = pushedStateItem.user_data };
-                        await userRepositories.UserStates.Upsert(new[] { currentStoredState });
+                        currentStoredState.exercise_stats.PlanetInfosTyped =
+                            currentStoredState.exercise_stats.planetInfos?.Select(o => {
+								PlanetInfo? result = null;
+                                if (o is JObject jo)
+									result = jo.ToObject<PlanetInfo>();
+                                return result ?? new PlanetInfo();
+                            }).ToList() ?? [];
+
+						await userRepositories.UserStates.Upsert(new[] { currentStoredState });
                     }
                 }
 
@@ -329,7 +343,13 @@ namespace ProblemSource
                 // client wants TrainingPlan, stats for trained exercises, training day number etc
                 result.state = await CreateClientState(root, training, currentStoredState);
 
-                try
+                if (root.Device != null)
+                {
+                    // TODO: where to store this?
+                    log.LogInformation($"Device for '{training.Username}'/{training.Id}: {JsonConvert.SerializeObject(root.Device)}");
+				}
+
+				try
                 {
                     var trainingDays = await userRepositories.TrainingDays.GetAll();
                     if (trainingDays.Any() && currentStoredState != null)
@@ -373,7 +393,11 @@ namespace ProblemSource
 
             if (currentStoredState != null)
             {
-                fullState["exercise_stats"] = JObject.FromObject(currentStoredState.exercise_stats);
+                if (currentStoredState.exercise_stats.PlanetInfosTyped.Any())
+                {
+					currentStoredState.exercise_stats.planetInfos = currentStoredState.exercise_stats.PlanetInfosTyped.Cast<object>().ToList();
+				}
+				fullState["exercise_stats"] = JObject.FromObject(currentStoredState.exercise_stats);
                 fullState["user_data"] = currentStoredState.user_data == null ? null : JObject.FromObject(currentStoredState.user_data);
             }
 
