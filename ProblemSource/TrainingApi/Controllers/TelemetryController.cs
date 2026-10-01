@@ -3,14 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
-using ProblemSource.Models.Aggregates;
-using ProblemSource.Services;
-using System.Security.Authentication;
-using TrainingApi.Services;
 
 namespace TrainingApi.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("api/[controller]")] // /[action]
 	public class TelemetryController : ControllerBase
@@ -24,6 +19,7 @@ namespace TrainingApi.Controllers
 			_logger = logger;
         }
 
+		[Authorize]
 		[HttpGet]
 		public async Task<List<TelemetryItem>> Get(string? id)
 		{

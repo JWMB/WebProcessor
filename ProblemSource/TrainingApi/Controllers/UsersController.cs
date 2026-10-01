@@ -190,7 +190,13 @@ namespace TrainingApi.Controllers
         [Route("id")]
         public async Task<ActionResult> Patch([FromQuery] string id, [FromBody] PatchUserDto dto)
         {
-            var user = await userRepository.Get(id);
+			/*
+await fetch("https://curricullm.net/api/Users/?id=ellagruber1234@gmail.com", {
+    "credentials": "include", "method": "PATCH", "mode": "cors", "headers": { "content-type": "application/json" },
+    "body": '{"mfaEnabled":false}'
+});
+			 */
+			var user = await userRepository.Get(id);
             if (user == null)
                 return NotFound();
             dto.Apply(user);

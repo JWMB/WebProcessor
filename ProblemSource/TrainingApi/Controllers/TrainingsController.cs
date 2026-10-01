@@ -1,6 +1,7 @@
 using Common.LLM;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Driver;
 using ProblemSource.Models;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
@@ -26,6 +27,7 @@ namespace TrainingApi.Controllers
 		private readonly AiCoachAnalyzer aiAnalyzer;
 		private readonly ILlmService llmService;
 		private readonly ITrainingImporter importer;
+		private readonly IMongoDatabase db;
 		private readonly IStatisticsProvider statisticsProvider;
         private readonly IUserRepository userRepository;
         private readonly ICurrentUserProvider userProvider;
@@ -38,7 +40,7 @@ namespace TrainingApi.Controllers
         public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider, 
             IUserRepository userRepository, ICurrentUserProvider userProvider, ITrainingUsernameService trainingUsernameService, 
             IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
-            ITrainingTemplateRepository trainingTemplateRepository, AiCoachAnalyzer aiAnalyzer, ILlmService llmService, ITrainingImporter importer,
+            ITrainingTemplateRepository trainingTemplateRepository, AiCoachAnalyzer aiAnalyzer, ILlmService llmService, ITrainingImporter importer, IMongoDatabase db,
 			ILogger<AggregatesController> logger)
         {
             this.trainingPlanRepository = trainingPlanRepository;
@@ -53,6 +55,7 @@ namespace TrainingApi.Controllers
 			this.aiAnalyzer = aiAnalyzer;
 			this.llmService = llmService;
 			this.importer = importer;
+			this.db = db;
 			log = logger;
         }
 
@@ -398,7 +401,11 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
         {
             summaries ??= (await statisticsProvider.GetTrainingSummaries(trainings.Select(o => o.Id))).OfType<TrainingSummary>();
             // TODO: multiple entries for single day - GroupBy etc shouldn't be necessary
-            var summariesAsDict = summaries.GroupBy(o => o.Id).ToDictionary(o => o.Key, o => o.MaxBy(p => p.TrainedDays));
+            var summariesAsDict = summaries.GroupBy(o => o.Id)
+                .ToDictionary(
+                    o => o.Key, 
+                    o => o.MaxBy(p => p.TrainedDays)
+                    );
 
             return summariesAsDict?.Any() != true
                 ? new()
@@ -456,6 +463,14 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
                 .Where(o => o.First().AccountId > 0)
                 .ToDictionary(o => o.First().AccountId, o => o.ToList());
 
+            daysById = daysById.ToDictionary(o => o.Key, o => { // TODO: because multiple entries in DB
+                return o.Value.GroupBy(o => o.TrainingDay)
+                .Select(bd =>
+                {
+                    return bd.MaxBy(x => x.NumQuestions) ?? bd.MaxBy(x => x.EndTimeStamp) ?? bd.First();
+                }).ToList();
+            });
+
             return trainings.Select(training => 
                 TrainingSummaryWithDaysDto.Create(training, summaries.FirstOrDefault(o => o?.Id == training.Id), daysById.GetValueOrDefault(training.Id, new List<TrainingDayAccount>()))
             ).ToList();
@@ -487,6 +502,89 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
                 }
             }
 			return new(prompt, completion);
+        }
+
+        [HttpGet]
+        [Route("convertid")]
+        public string GetConvertId(string id)
+        {
+            if (int.TryParse(id, out var v))
+                return trainingUsernameService.FromId(v);
+            if (trainingUsernameService is MnemoJapaneseTrainingUsernameService mjt)
+                return $"{mjt.ToId(id)}";
+            return "N/A";
+		}
+
+		[Authorize(Policy = RolesRequirement.Admin)]
+		[HttpGet]
+        [Route("alltrainings")]
+        public async Task<Dictionary<string, Dictionary<string, List<TrainingSummaryDto>>>> GetAllTrainings(bool onlyStarted = true)
+        {
+			/*
+(await fetch("https://curricullm.net/api/Trainings/alltrainings", {
+    "credentials": "include", "method": "GET", "mode": "cors",
+    "headers": { "Accept": "application/json" }
+})).json()
+            */
+			var users = db.GetCollection<ProblemSourceModule.Services.Storage.MongoDb.MongoDocumentWrapper<User>>(nameof(User)).Find(o => true).Project(o => new { o.Document.Email, o.Document.Trainings }).ToList();
+
+            var trainingSummaries = db.GetCollection<ProblemSourceModule.Services.Storage.MongoDb.MongoTrainingAssociatedDocumentWrapper<TrainingSummary>>(nameof(TrainingSummary))
+                .Find(o => true)
+                .Project(o => new { Id = o.TrainingId, o.Document.FirstLogin, o.Document.LastLogin, o.Document.TrainedDays })
+                .ToList()
+                .GroupBy(o => o.Id)
+                .ToDictionary(o =>
+                    o.Key, 
+                    o => {
+                        return o.OrderByDescending(o => o.TrainedDays).ThenByDescending(o => o.LastLogin).First();
+                    });
+            var trainings = db.GetCollection<ProblemSourceModule.Services.Storage.MongoDb.MongoDocumentWrapper<Training>>(nameof(Training)).Find(o => true)
+                .Project(o => new { o.Document.Id, o.Document.Username, o.Document.TrainingPlanName }).ToList();
+
+            var grouped = trainings.GroupBy(o => o.Id);
+            var dups = grouped.Where(o => o.Count() > 1).ToList();
+            if (dups.Any())
+            {
+                log.LogWarning($"dups: {string.Join(", ", dups.Select(o => $"{o.Key}:{o.Count()}"))}");
+            }
+
+			var byId = trainings.GroupBy(o => o.Id).ToDictionary(grp => grp.Key,
+                grp =>
+                {
+					var ts = trainingSummaries.TryGetValue(grp.Key, out var summary) ? summary : null;
+					return new TrainingSummaryDto
+					{
+						Id = grp.Key,
+						Username = grp.First().Username,
+						TrainedDays = ts?.TrainedDays ?? 0,
+						FirstLogin = ts?.FirstLogin ?? null,
+						LastLogin = ts?.LastLogin ?? null,
+					};
+				});
+
+			var result = users.ToDictionary(
+                u => u.Email,
+                u => u.Trainings == null ? new () : u.Trainings.ToDictionary(g => g.Key,
+                        g => g.Value.Select(o => byId.TryGetValue(o, out var ts) ? ts : new TrainingSummaryDto { Id = o } ).ToList()
+                    )
+                );
+
+            if (onlyStarted)
+            {
+				result = result.Select(userGroup => new
+                {
+                    userGroup.Key,
+                    Value = userGroup.Value.Select(classGroup => new
+                    {
+                        classGroup.Key,
+                        Value = classGroup.Value.Where(q => q.FirstLogin != null).ToList()
+                    })
+                    .Where(classGroup => classGroup.Value.Any()).ToDictionary(classGroup => classGroup.Key, classGroup => classGroup.Value)
+                })
+                .Where(userGroup => userGroup.Value.Any()).ToDictionary(o => o.Key, o => o.Value);
+			}
+
+            return result;
         }
 
 		public record AnalysisDto(string Prompt, string Completion);
