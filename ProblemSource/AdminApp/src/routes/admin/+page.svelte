@@ -49,7 +49,7 @@
 	<tbody>
 {#each users as user}
 <tr>
-	<td>{user.username}</td>
+	<td><a href={`teacher?impersonate=${encodeURIComponent(user.username)}`}>{user.username}</a></td>
 	<td>{user.role}</td>
 	<td>{user.defaultTrainingPlanName}</td>
 	<td style="word-wrap: break-word; max-width: 450px;">{JSON.stringify(user.trainings)}</td>
