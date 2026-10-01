@@ -86,15 +86,18 @@ namespace TrainingApi.Controllers
                     Console.WriteLine($"{ex.Message}");
                 }
 
-                var affectedUsers = allUsers.Where(o => o.Trainings.GetAllIds().Contains(id));
-                foreach (var user in affectedUsers)
+                if (deleteTrainingDataOnly == false) // delete fully - remove from teachers
                 {
-                    foreach (var group in user.Trainings)
-                        group.Value.Remove(id);
-					usersToUpdate.Add(user);
-                }
+					var affectedUsers = allUsers.Where(o => o.Trainings.GetAllIds().Contains(id));
+					foreach (var user in affectedUsers)
+					{
+						foreach (var group in user.Trainings)
+							group.Value.Remove(id);
+						usersToUpdate.Add(user);
+					}
+				}
 
-                if (training != null)
+				if (training != null)
                 {
 					var fact = dataRepoFactory.Create(id);
 					await fact.RemoveAll();
@@ -283,7 +286,7 @@ namespace TrainingApi.Controllers
         public async Task Patch(int id, [FromBody] PatchTrainingDto dto)
         {
 			/*
-await fetch("https://localhost:7174/api/Trainings/8591", {
+await fetch("https://curricullm.net/api/Trainings/8591", {
     "method": "PATCH", "credentials": "include", "mode": "cors", "headers": { "content-type": "application/json", },
     "body": '{"timeLimit": 2, "allowMultipleLogins": true, "trainingPlanName": "2026 HT Verbal" }',
 });
