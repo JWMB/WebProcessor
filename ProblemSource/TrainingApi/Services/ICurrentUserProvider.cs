@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using System.Security.Claims;
@@ -36,8 +37,9 @@ namespace TrainingApi.Services
         public async Task<User?> GetUserWithImpersonation()
         {
             var principal = httpContextAccessor.HttpContext?.User;
-            var mfaClaim = principal?.Claims.FirstOrDefault(o => o.Type == MfaClaimName);
-            if (mfaClaim?.Value == MfaRequireValidationValue)
+            var mfaClaim = principal.MfaAuthorized(); //?.Claims.FirstOrDefault(o => o.Type == MfaClaimName);
+
+			if (mfaClaim?.Value == MfaRequireValidationValue)
             {
                 // TODO: reject here?
                 // TODO: update this claim to different value once validated
@@ -96,10 +98,10 @@ namespace TrainingApi.Services
 
         public static User FakeDevUser => new User { Email = "dev", Role = Roles.Admin };
 
-        private const string MfaClaimName = "mfa";
-        private const string MfaRequireValidationValue = "y";
+        //private const string MfaClaimName = "mfa";
+        //private const string MfaRequireValidationValue = "y";
 
-        public static ClaimsPrincipal CreatePrincipal(User user, bool isIntegrationTestUser = false, string? authenticationType = null, bool requireMfa = false)
+        public static ClaimsPrincipal CreatePrincipal(User user, bool isIntegrationTestUser = false, string? authenticationType = null, MfaClaimUtls.MfaStatus mfa = MfaClaimUtls.MfaStatus.None)
         {
             // TODO: move
             var claims = new List<Claim>
@@ -107,12 +109,34 @@ namespace TrainingApi.Services
                 new Claim(ClaimTypes.Name, user.Email),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.Role),
-				new Claim(MfaClaimName, requireMfa ? MfaRequireValidationValue : "n"),
+				MfaClaimUtls.CreateClaim(mfa),
 			};
             if (isIntegrationTestUser)
                 claims.Add(new Claim(ClaimTypes.Actor, "IntegrationTest"));
 
             return new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType ?? CookieAuthenticationDefaults.AuthenticationScheme));
         }
-    }
+
+        public static async Task Signin(User user, HttpContext context, bool? hasValidatedMfa = null)
+        {
+            var mfaStatus = user.MfaEnabled != true ? MfaClaimUtls.MfaStatus.None
+                : (hasValidatedMfa == true ? MfaClaimUtls.MfaStatus.ValidationPassed : MfaClaimUtls.MfaStatus.ValidationRequired);
+
+			var principal = CreatePrincipal(user, mfa: mfaStatus);
+			var authProperties = new AuthenticationProperties
+			{
+				//AllowRefresh = <bool>, // Refreshing the authentication session should be allowed.
+				//ExpiresUtc = DateTimeOffset.UtcNow.AddDays(1), // The time at which the authentication ticket expires. A value set here overrides the ExpireTimeSpan option of CookieAuthenticationOptions set with AddCookie.
+
+				IsPersistent = true,
+				// Whether the authentication session is persisted across multiple requests. When used with cookies, controls
+				// whether the cookie's lifetime is absolute (matching the lifetime of the authentication ticket) or session-based.
+
+				IssuedUtc = DateTimeOffset.UtcNow, // The time at which the authentication ticket was issued.
+												   //RedirectUri = <string> // The full path or absolute URI to be used as an http redirect response value.
+			};
+			await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
+
+		}
+	}
 }

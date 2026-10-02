@@ -73,12 +73,13 @@ namespace TrainingApi.Controllers
 		[HttpPost("createusers")]
 		public async Task<CreateUsersResponseDto> PostCreateUsers([FromBody] CreateUsersRequestDto dto)
 		{
-            //await fetch("https://localhost:7174/api/Users", {
-            //    "credentials": "include", "mode": "cors",
-            //    "headers": { "Accept": "application/json", "Content-Type": "application/json" },
-            //    "method": "POST",
-            //    "body": '{ "usernames": [""] }'
-            //});
+			/*
+await fetch("https://curricullm.net/api/Users", {
+    "credentials": "include", "mode": "cors", "headers": { "Accept": "application/json", "Content-Type": "application/json" }, "method": "POST",
+    "body": '{ "usernames": [""] }'
+});
+            */
+
 
 			var emailsAndPassword = new List<CreatedUserInfo>();
 			var rnd = new Random();
@@ -145,6 +146,7 @@ namespace TrainingApi.Controllers
             return new List<CreatedUserInfo> { new CreatedUserInfo(dto.Username, dto.Password) };
         }
 
+
 		[Authorize(Policy = RolesRequirement.Admin, AuthenticationSchemes = $"{ApiKeyAuthenticationSchemeHandler.SchemeName},{CookieAuthenticationDefaults.AuthenticationScheme}")]
 		[HttpGet("trainingUsername/{id}")]
 		public async Task<IActionResult> GetTrainingUsername(int id)
@@ -187,18 +189,25 @@ namespace TrainingApi.Controllers
 
 		[Authorize(Policy = RolesRequirement.Admin)]
         [HttpPatch]
-        [Route("id")]
+        //[Route("id")]
         public async Task<ActionResult> Patch([FromQuery] string id, [FromBody] PatchUserDto dto)
         {
 			/*
-await fetch("https://curricullm.net/api/Users/?id=ellagruber1234@gmail.com", {
+await fetch("https://curricullm.net/api/Users/?id=jbadmin", {
     "credentials": "include", "method": "PATCH", "mode": "cors", "headers": { "content-type": "application/json" },
-    "body": '{"mfaEnabled":false}'
+    "body": '{"role":"SuperAdmin"}'
 });
 			 */
+			if (!User.AtLeastRole(Roles.Admin))
+				return new ForbidResult();
+
 			var user = await userRepository.Get(id);
             if (user == null)
                 return NotFound();
+
+            if (dto.Role != null && User.AtLeastRole(Roles.SuperAdmin) == false)
+                return Forbid();
+
             dto.Apply(user);
 
             await userRepository.Update(user);
@@ -229,25 +238,25 @@ await fetch("https://curricullm.net/api/Users/?id=ellagruber1234@gmail.com", {
                 return Unauthorized(new { Title = $"Login failed - please check your spelling" });
             }
 
-            if (user.Role == "Admin")
-            {
+            if (user.Role == Roles.Admin)
                 user.MfaEnabled = true;
-            }
-            var principal = WebUserProvider.CreatePrincipal(user, requireMfa: user.MfaEnabled == true);
-            var authProperties = new AuthenticationProperties
-            {
-                //AllowRefresh = <bool>, // Refreshing the authentication session should be allowed.
-                //ExpiresUtc = DateTimeOffset.UtcNow.AddDays(1), // The time at which the authentication ticket expires. A value set here overrides the ExpireTimeSpan option of CookieAuthenticationOptions set with AddCookie.
 
-                IsPersistent = true,
-                // Whether the authentication session is persisted across multiple requests. When used with cookies, controls
-                // whether the cookie's lifetime is absolute (matching the lifetime of the authentication ticket) or session-based.
+            await WebUserProvider.Signin(user, HttpContext, false);
+			//var principal = WebUserProvider.CreatePrincipal(user, requireMfa: user.MfaEnabled == true);
+   //         var authProperties = new AuthenticationProperties
+   //         {
+   //             //AllowRefresh = <bool>, // Refreshing the authentication session should be allowed.
+   //             //ExpiresUtc = DateTimeOffset.UtcNow.AddDays(1), // The time at which the authentication ticket expires. A value set here overrides the ExpireTimeSpan option of CookieAuthenticationOptions set with AddCookie.
 
-                IssuedUtc = DateTimeOffset.UtcNow, // The time at which the authentication ticket was issued.
-                //RedirectUri = <string> // The full path or absolute URI to be used as an http redirect response value.
-            };
+   //             IsPersistent = true,
+   //             // Whether the authentication session is persisted across multiple requests. When used with cookies, controls
+   //             // whether the cookie's lifetime is absolute (matching the lifetime of the authentication ticket) or session-based.
 
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
+   //             IssuedUtc = DateTimeOffset.UtcNow, // The time at which the authentication ticket was issued.
+   //             //RedirectUri = <string> // The full path or absolute URI to be used as an http redirect response value.
+   //         };
+
+   //         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
 
             var skipMfa = System.Diagnostics.Debugger.IsAttached;
 
@@ -266,10 +275,13 @@ await fetch("https://curricullm.net/api/Users/?id=ellagruber1234@gmail.com", {
 		}
 
         [HttpPost("mfa-verify")]
+        [Authorize(Roles = Roles.Teacher)]
         public async Task<bool> PostMfaVerify(MfaLoginDto dto)
         {
-            return await mfaService.VerifyTwoFactorAuthentication(dto.Email, dto.Code, NumTotpDigits); // request.NumTotpDigits
-        }
+            var result = await mfaService.VerifyTwoFactorAuthentication(dto.Email, dto.Code, NumTotpDigits); // request.NumTotpDigits
+			await WebUserProvider.Signin(userProvider.UserOrThrow, HttpContext, true);
+            return result;
+		}
 
         public record MfaVerifyGetDto(int NumTotpDigits, string Issuer);
         [HttpGet("mfa-verify")]
@@ -287,16 +299,13 @@ await fetch("https://curricullm.net/api/Users/?id=ellagruber1234@gmail.com", {
                 return false;
             var mfaCookie = cookieProtector.Unprotect<MfaCookie>(cookie);
 
-			//var login = helper.GetLoginFromEmail(request.Email);
-			//if (login == null)
-			//	throw new BadRequestException($"Login not found {request.Email}");
-
 			if (mfaCookie?.Secret?.Any() != true)
 				throw new Exception($"Login not configured for MFA {dto.Email}");
 
             var result = await mfaService.Enable(dto.Email, mfaCookie.Secret, dto.Code, NumTotpDigits);
-            //if (result)
-            //    await mfaService.Enable(dto.Email, mfaCookie.Secret, dto.Code, NumTotpDigits);
+            if (result)
+				await WebUserProvider.Signin(userProvider.UserOrThrow, HttpContext, true);
+
 			return result;
         }
 
