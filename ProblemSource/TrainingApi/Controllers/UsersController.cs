@@ -375,8 +375,8 @@ await fetch("https://curricullm.net/api/Users/?id=ellagruber1234@gmail.com", {
 
         public static GetUserDto FromUser(User user, IEnumerable<Training>? templates = null)
         {
-            var defaultPlan = TrainingsController.SelectPlan(templates, user.Email);
-            return new GetUserDto { Role = user.Role, Username = user.Email, Trainings = user.Trainings, DefaultTrainingPlanName = defaultPlan?.TrainingPlanName };
+            //var defaultPlan = TrainingsController.SelectPlan(templates, user.Email);
+            return new GetUserDto { Role = user.Role, Username = user.Email, Trainings = user.Trainings, DefaultTrainingPlanName = null };
         }
     }
 
