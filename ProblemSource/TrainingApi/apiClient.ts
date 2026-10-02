@@ -145,6 +145,86 @@ export class RelayClient {
     }
 }
 
+export class TelemetryClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    get(id: string | null | undefined): Promise<TelemetryItem[]> {
+        let url_ = this.baseUrl + "/api/Telemetry?";
+        if (id !== undefined && id !== null)
+            url_ += "id=" + encodeURIComponent("" + id) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGet(_response);
+        });
+    }
+
+    protected processGet(response: Response): Promise<TelemetryItem[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TelemetryItem[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TelemetryItem[]>(null as any);
+    }
+
+    post(error: ExtendedError): Promise<void> {
+        let url_ = this.baseUrl + "/api/Telemetry";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(error);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPost(_response);
+        });
+    }
+
+    protected processPost(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+}
+
 export class TestingClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -835,6 +915,80 @@ export class TrainingsClient {
         return Promise.resolve<AnalysisDto>(null as any);
     }
 
+    getConvertId(id: string | undefined): Promise<string> {
+        let url_ = this.baseUrl + "/api/Trainings/convertid?";
+        if (id === null)
+            throw new globalThis.Error("The parameter 'id' cannot be null.");
+        else if (id !== undefined)
+            url_ += "id=" + encodeURIComponent("" + id) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetConvertId(_response);
+        });
+    }
+
+    protected processGetConvertId(response: Response): Promise<string> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string>(null as any);
+    }
+
+    getAllTrainings(onlyStarted: boolean | undefined): Promise<{ [key: string]: { [key: string]: TrainingSummaryDto[]; }; }> {
+        let url_ = this.baseUrl + "/api/Trainings/alltrainings?";
+        if (onlyStarted === null)
+            throw new globalThis.Error("The parameter 'onlyStarted' cannot be null.");
+        else if (onlyStarted !== undefined)
+            url_ += "onlyStarted=" + encodeURIComponent("" + onlyStarted) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAllTrainings(_response);
+        });
+    }
+
+    protected processGetAllTrainings(response: Response): Promise<{ [key: string]: { [key: string]: TrainingSummaryDto[]; }; }> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as { [key: string]: { [key: string]: TrainingSummaryDto[]; }; };
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<{ [key: string]: { [key: string]: TrainingSummaryDto[]; }; }>(null as any);
+    }
+
     importTraining(exportDto: TrainingExport): Promise<void> {
         let url_ = this.baseUrl + "/api/Trainings/import";
         url_ = url_.replace(/[?&]$/, "");
@@ -985,6 +1139,52 @@ export class UsersClient {
             });
         }
         return Promise.resolve<CreatedUserInfo[]>(null as any);
+    }
+
+    patch(id: string | undefined, dto: PatchUserDto): Promise<FileResponse | null> {
+        let url_ = this.baseUrl + "/api/Users?";
+        if (id === null)
+            throw new globalThis.Error("The parameter 'id' cannot be null.");
+        else if (id !== undefined)
+            url_ += "id=" + encodeURIComponent("" + id) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPatch(_response);
+        });
+    }
+
+    protected processPatch(response: Response): Promise<FileResponse | null> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse | null>(null as any);
     }
 
     get(id: string | undefined): Promise<GetUserDto> {
@@ -1177,52 +1377,6 @@ export class UsersClient {
             });
         }
         return Promise.resolve<GetUserDto>(null as any);
-    }
-
-    patch(id: string | undefined, dto: PatchUserDto): Promise<FileResponse | null> {
-        let url_ = this.baseUrl + "/api/Users/id?";
-        if (id === null)
-            throw new globalThis.Error("The parameter 'id' cannot be null.");
-        else if (id !== undefined)
-            url_ += "id=" + encodeURIComponent("" + id) + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(dto);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/octet-stream"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processPatch(_response);
-        });
-    }
-
-    protected processPatch(response: Response): Promise<FileResponse | null> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
-            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
-            if (fileName) {
-                fileName = decodeURIComponent(fileName);
-            } else {
-                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            }
-            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<FileResponse | null>(null as any);
     }
 
     getLoggedInUser(): Promise<GetUserDto> {
@@ -1725,6 +1879,51 @@ export interface PhaseStatistics {
     completed_planet?: boolean | undefined;
 }
 
+export interface Document {
+    id: ObjectId;
+    name: string;
+    created: Date;
+    modified: Date;
+    isDirty: boolean;
+    isNew: boolean;
+    cls: string;
+}
+
+export interface TelemetryItem extends Document {
+    username?: string | undefined;
+    error?: ExtendedError | undefined;
+}
+
+export interface ExtendedError {
+    username?: string | undefined;
+    clientInfo?: ClientInfo | undefined;
+    localTime?: string | undefined;
+    message?: string | undefined;
+    name?: string | undefined;
+    columnNumber?: number | undefined;
+    lineNumber?: number | undefined;
+    fileName?: string | undefined;
+    stack?: string | undefined;
+    cause?: any | undefined;
+    httpStatus?: number | undefined;
+}
+
+export interface ClientInfo {
+    userAgent?: string | undefined;
+    platform?: string | undefined;
+    language?: string | undefined;
+    screenResolution?: string | undefined;
+    colorDepth?: number | undefined;
+}
+
+/** Represents an ObjectId (see also BsonObjectId). */
+export interface ObjectId {
+    /** Gets the timestamp. */
+    timestamp: number;
+    /** Gets the creation time (derived from the timestamp). */
+    creationTime: Date;
+}
+
 export enum LogLevel {
     Trace = 0,
     Debug = 1,
@@ -1826,6 +2025,9 @@ export interface PatchTrainingDto {
     ageBracket?: string | undefined;
     consent?: Date | undefined;
     birthDate?: DateInfo | undefined;
+    allowMultipleLogins?: boolean | undefined;
+    timeLimit?: number | undefined;
+    trainingPlanName?: string | undefined;
 }
 
 export interface DateInfo {
@@ -1958,6 +2160,7 @@ export interface ExerciseStats {
     trainingPlanSettings: TrainingPlanSettings;
     gameCustomData: { [key: string]: any; };
     planetInfos?: any[] | undefined;
+    planetInfosTyped: PlanetInfo[];
 }
 
 export interface DeviceInfo {
@@ -1993,6 +2196,21 @@ export interface TrainingPlanChange {
     timestamp: number;
     type: string;
     change?: any | undefined;
+}
+
+export interface PlanetInfo {
+    decided_at: number;
+    unlockedTimestamp?: number | undefined;
+    numMedals?: number | undefined;
+    gameRunsRefs: number[];
+    gameId: string;
+    visibleOnMenu: boolean;
+    isUnlocked: boolean;
+    isCompleted: boolean;
+    lastUsed: number;
+    highestLevel: number;
+    numRunsWon: number;
+    numRuns: number;
 }
 
 export interface GetUserDto {

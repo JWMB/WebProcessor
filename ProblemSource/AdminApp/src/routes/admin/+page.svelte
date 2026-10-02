@@ -1,11 +1,12 @@
 <script lang="ts">
 	import type { CreateUserDto, GetUserDto, PatchUserDto } from '../../apiClient';
 	import type { ApiFacade } from '../../apiFacade';
-	import { getApi } from '../../globalStore';
+	import { getApi, userStore } from '../../globalStore';
 	import { onMount } from 'svelte';
 
 	const apiFacade = getApi() as ApiFacade;
 
+	const currentRole = $userStore?.role || "";
 	function createUser(email: string, password: string) {
 		apiFacade.users.post(<CreateUserDto>{ username: email, password: password }).then(() => console.log('user created'));
 	}
@@ -16,9 +17,14 @@
 		if (!password || password.length <= 5) {
 			alert('too short');
 		} else {
-			apiFacade.users.patch(email, <PatchUserDto>{ password: password }).then((r) => console.log('pwd changed', r));
+			patchUser(email, { password: password })
+				.then((r) => console.log('pwd changed', r));
 		}
 	}
+	async function patchUser(email: string, dto: PatchUserDto) {
+		return await apiFacade.users.patch(email, dto);
+	}
+
 	function resetMFA(email: string) {
 		apiFacade.users.patch(email, <PatchUserDto>{ mfaSecretKey: "" }).then((r) => console.log('reset MFA', r));
 	}
@@ -50,7 +56,18 @@
 {#each users as user}
 <tr>
 	<td><a href={`teacher?impersonate=${encodeURIComponent(user.username)}`}>{user.username}</a></td>
-	<td>{user.role}</td>
+	<td>
+	{#if currentRole != "SuperAdmin"}
+		<select value={user.role} on:change={e => patchUser(user.username, { role: e.currentTarget.value})}>
+			<option value="">Not set</option>
+			<option value="Teacher">Teacher</option>
+			<option value="Admin">Admin</option>
+			<option value="SuperAdmin">SuperAdmin</option>
+		</select>
+	{:else}
+		{user.role}
+	{/if}
+	</td>
 	<td>{user.defaultTrainingPlanName}</td>
 	<td style="word-wrap: break-word; max-width: 450px;">{JSON.stringify(user.trainings)}</td>
 	<td>

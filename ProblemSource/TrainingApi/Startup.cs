@@ -26,9 +26,9 @@ namespace TrainingApi
 
         public void ConfigureServices(IServiceCollection services, ConfigurationManager configurationManager, IWebHostEnvironment env)
         {
-            services.AddScoped<IStatisticsProvider, StatisticsProvider>();
+            services.AddScoped<IStatisticsProvider, TempFixDuplicatesStatisticsProvider>(); // StatisticsProvider
 
-            services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
+			services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
             services.AddTransient<ICurrentUserProvider, WebUserProvider>();
             services.AddTransient<IAccessResolver, AccessResolver>();
 

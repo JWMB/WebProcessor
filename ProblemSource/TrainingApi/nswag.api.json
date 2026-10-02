@@ -99,6 +99,66 @@
         }
       }
     },
+    "/api/Telemetry": {
+      "get": {
+        "tags": [
+          "Telemetry"
+        ],
+        "operationId": "Telemetry_Get",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "id",
+            "in": "query",
+            "x-nullable": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TelemetryItem"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Telemetry"
+        ],
+        "operationId": "Telemetry_Post",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "name": "error",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ExtendedError"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/Testing/exception": {
       "post": {
         "tags": [
@@ -670,6 +730,76 @@
         }
       }
     },
+    "/api/Trainings/convertid": {
+      "get": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_GetConvertId",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "id",
+            "in": "query",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/api/Trainings/alltrainings": {
+      "get": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_GetAllTrainings",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "onlyStarted",
+            "in": "query",
+            "default": true,
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/TrainingSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Trainings/import": {
       "post": {
         "tags": [
@@ -797,6 +927,43 @@
               "items": {
                 "$ref": "#/definitions/CreatedUserInfo"
               }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Users_Patch",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "id",
+            "in": "query",
+            "x-nullable": false
+          },
+          {
+            "name": "dto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PatchUserDto"
+            },
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
             }
           }
         }
@@ -959,45 +1126,6 @@
             "description": "",
             "schema": {
               "$ref": "#/definitions/GetUserDto"
-            }
-          }
-        }
-      }
-    },
-    "/api/Users/id": {
-      "patch": {
-        "tags": [
-          "Users"
-        ],
-        "operationId": "Users_Patch",
-        "consumes": [
-          "application/json",
-          "text/json",
-          "application/*+json"
-        ],
-        "parameters": [
-          {
-            "type": "string",
-            "name": "id",
-            "in": "query",
-            "x-nullable": false
-          },
-          {
-            "name": "dto",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/PatchUserDto"
-            },
-            "x-nullable": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "x-nullable": true,
-            "description": "",
-            "schema": {
-              "type": "file"
             }
           }
         }
@@ -1470,6 +1598,141 @@
         }
       }
     },
+    "TelemetryItem": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Document"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "username": {
+              "type": "string"
+            },
+            "error": {
+              "$ref": "#/definitions/ExtendedError"
+            }
+          }
+        }
+      ]
+    },
+    "ExtendedError": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "clientInfo": {
+          "$ref": "#/definitions/ClientInfo"
+        },
+        "localTime": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "columnNumber": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lineNumber": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "stack": {
+          "type": "string"
+        },
+        "cause": {},
+        "httpStatus": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ClientInfo": {
+      "type": "object",
+      "properties": {
+        "userAgent": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "screenResolution": {
+          "type": "string"
+        },
+        "colorDepth": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "Document": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "created",
+        "modified",
+        "isDirty",
+        "isNew",
+        "cls"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/ObjectId"
+        },
+        "name": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "isDirty": {
+          "type": "boolean"
+        },
+        "isNew": {
+          "type": "boolean"
+        },
+        "cls": {
+          "type": "string"
+        }
+      }
+    },
+    "ObjectId": {
+      "type": "object",
+      "description": "Represents an ObjectId (see also BsonObjectId).",
+      "required": [
+        "timestamp",
+        "creationTime"
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "integer",
+          "description": "Gets the timestamp.",
+          "format": "int32"
+        },
+        "creationTime": {
+          "type": "string",
+          "description": "Gets the creation time (derived from the timestamp).",
+          "format": "date-time"
+        }
+      }
+    },
     "LogLevel": {
       "type": "integer",
       "description": "",
@@ -1767,6 +2030,16 @@
         },
         "birthDate": {
           "$ref": "#/definitions/DateInfo"
+        },
+        "allowMultipleLogins": {
+          "type": "boolean"
+        },
+        "timeLimit": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "trainingPlanName": {
+          "type": "string"
         }
       }
     },
@@ -2227,7 +2500,8 @@
         "triggerData",
         "gameRuns",
         "trainingPlanSettings",
-        "gameCustomData"
+        "gameCustomData",
+        "planetInfosTyped"
       ],
       "properties": {
         "appVersion": {
@@ -2274,6 +2548,12 @@
         "planetInfos": {
           "type": "array",
           "items": {}
+        },
+        "planetInfosTyped": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PlanetInfo"
+          }
         }
       }
     },
@@ -2399,6 +2679,70 @@
           "type": "string"
         },
         "change": {}
+      }
+    },
+    "PlanetInfo": {
+      "type": "object",
+      "required": [
+        "decided_at",
+        "gameRunsRefs",
+        "gameId",
+        "visibleOnMenu",
+        "isUnlocked",
+        "isCompleted",
+        "lastUsed",
+        "highestLevel",
+        "numRunsWon",
+        "numRuns"
+      ],
+      "properties": {
+        "decided_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "unlockedTimestamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "numMedals": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "gameRunsRefs": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "gameId": {
+          "type": "string"
+        },
+        "visibleOnMenu": {
+          "type": "boolean"
+        },
+        "isUnlocked": {
+          "type": "boolean"
+        },
+        "isCompleted": {
+          "type": "boolean"
+        },
+        "lastUsed": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "highestLevel": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "numRunsWon": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numRuns": {
+          "type": "integer",
+          "format": "int32"
+        }
       }
     },
     "GetUserDto": {
