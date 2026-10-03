@@ -56,7 +56,9 @@ namespace ProblemSource.Models
         public TrainingSettings training_settings { get; set; } = new();
 
         public ExerciseStats exercise_stats { get; set; } = new();
-        public object? user_data { get; set; }
+
+		[BsonSerializer(typeof(XObjectCustomSerializer))]
+		public object? user_data { get; set; }
 
         public object? syncInfo { get; set; }
     }

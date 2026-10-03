@@ -172,7 +172,13 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 				return;
 			}
 
-			var json = System.Text.Json.JsonSerializer.Serialize(value, serializerOptions);
+			string? json;
+			if (value is Newtonsoft.Json.Linq.JToken jt)
+				json = jt.ToString();
+			else
+			{
+				json = System.Text.Json.JsonSerializer.Serialize(value, serializerOptions);
+			}
 			context.Writer.WriteString(json);
 		}
 	}
