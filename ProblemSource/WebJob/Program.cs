@@ -60,7 +60,7 @@ builder.ConfigureWebJobs(b =>
     //var tableConfig = TypedConfiguration.Bind<AzureTableConfig>(section);
 
     services.AddSingleton<TrainingAnalyzerCollection>();
-    new ProblemSource.ProblemSourceModule().ConfigureForAzureTables(services, useCaching: false);
+    //new ProblemSource.ProblemSourceModule().ConfigureForAzureTables(services, useCaching: false);
 })
 .UseConsoleLifetime();
 

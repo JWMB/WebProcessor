@@ -2,6 +2,69 @@
 
 namespace Common.LLM
 {
+	public interface ILlmServiceFactory
+	{
+		ILlmService? Get(string? preferredModelName = null, string? preferredService = null);
+
+		public ILlmService GetOrDefault(ILlmService defaultValue, string? preferredModelName = null, string? preferredService = null)
+			=> Get(preferredModelName, preferredService) ?? defaultValue;
+
+		public ILlmService GetOrThrow(string? preferredModelName = null, string? preferredService = null)
+		{
+			var result = Get(preferredModelName, preferredService);
+			if (result == null)
+				throw new Exception($"Model='{preferredModelName}' service='{preferredService}' not registered");
+			return result;
+		}
+	}
+
+	public class LlmServiceFactory : ILlmServiceFactory
+	{
+		private readonly List<LlmModelSpecification> models;
+		private readonly List<LlmServiceSpecification> serviceConfigs;
+		private readonly Func<HttpClient> httpClientFactory;
+
+		public LlmServiceFactory(IEnumerable<LlmModelSpecification> models, IEnumerable<LlmServiceSpecification> serviceConfigs, Func<HttpClient> httpClientFactory)
+		{
+			this.models = models.ToList();
+			this.serviceConfigs = serviceConfigs.ToList();
+			this.httpClientFactory = httpClientFactory;
+		}
+
+		public ILlmService? Get(string? preferredModelName = null, string? preferredService = null)
+		{
+			LlmModelSpecification? model = null;
+			LlmServiceSpecification? service = null;
+
+			if (preferredModelName != null)
+				model = models.FirstOrDefault(o => o.Name.Equals(preferredModelName ?? "", StringComparison.OrdinalIgnoreCase));
+			else if (preferredService != null)
+				service = serviceConfigs.First(o => o.Name == preferredService);
+
+			if (model == null && service == null)
+			{
+				model = models.FirstOrDefault();
+				if (model == null)
+					return null;
+			}
+
+			if (model == null)
+				model = models.FirstOrDefault(o => o.AvailableOnServices.Contains(service.Name));
+			else if (service == null)
+				service = serviceConfigs.FirstOrDefault(o => model.AvailableOnServices.Contains(o.Name));
+
+			if (model == null || service == null || model.AvailableOnServices.Contains(service.Name) == false)
+				return null;
+
+			return service.Name switch
+			{
+				"Azure" => new AzureOpenAIRESTService(model, service),
+				//"AzureREST" => new AzureRESTLlmService(model, service, httpClientFactory),
+				//"Berget" => new BergetLlmService(model, service, httpClientFactory),
+				_ => throw new NotImplementedException($"Service {service.Name}")
+			};
+		}
+	}
 	// Temp until common nuget
 	public interface ILlmService
 	{
@@ -11,7 +74,6 @@ namespace Common.LLM
 		LlmModelSpecification ModelSpecification { get; }
 	}
 	public record LlmContentReceivedData(string ContentSinceLast, int TotalLength);
-
 
 	public class LlmModelSpecification
 	{
@@ -44,6 +106,17 @@ namespace Common.LLM
 		public string? Completion { get; set; } = "";
 		public string Model { get; set; } = "";
 	}
+
+	public class NullLlmService : ILlmService
+	{
+		public LlmModelSpecification ModelSpecification => new LlmModelSpecification();
+
+		public int CountTokens(string text) => 0;
+
+		public Task<LlmResult?> Invoke(string prompt, LlmCallOptions? options = null)
+			=> Task.FromResult((LlmResult?)new LlmResult { Completion = "" });
+	}
+
 
 	public class AzureOpenAIRESTService : ILlmService
 	{

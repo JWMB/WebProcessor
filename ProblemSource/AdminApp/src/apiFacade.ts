@@ -10,7 +10,7 @@ export class ApiFacade {
     impersonateUser: string | null = null;
 
     constructor(baseUrl: string) {
-        // console.log("baseUrl", baseUrl);
+        // console.log("api baseUrl", baseUrl);
         const http = {
             fetch: (r: Request, init?: RequestInit) => {
                 init = init || <RequestInit>{};

@@ -22,6 +22,10 @@ namespace ProblemSourceModule.Services
         {
             return usernameHashing.Hash(mnemoJapanese.FromIntWithRandom(id));
         }
-    }
-
+        public int? ToId(string username)
+        {
+            var dehashed = usernameHashing.Dehash(username);
+			return dehashed == null ? null : mnemoJapanese.ToIntWithRandom(dehashed);
+		}
+	}
 }

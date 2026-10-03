@@ -6,7 +6,7 @@
 
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { initWidgetImplementationScript } from 'src/humany-embed';
+	// import { initWidgetImplementationScript } from 'src/humany-embed';
 	import '../app.css';
 	import HelpWidget, { showHelpPage } from '../components/helpWidget.svelte';
 	import NotificationBar from '../components/notificationBar.svelte';
@@ -29,7 +29,7 @@
 	}
 
 	onMount(() => {
-		initWidgetImplementationScript();
+		// initWidgetImplementationScript();
 	});
 </script>
 

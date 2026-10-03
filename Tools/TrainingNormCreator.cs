@@ -63,7 +63,7 @@ namespace Tools
 			else
 			{
 				var trainingRepo = new AzureTableTrainingRepository(tableClientFactory);
-				targetNormTrainingId = await trainingRepo.Add(training);
+				targetNormTrainingId = await trainingRepo.AddGetId(training);
 				training.Id = targetNormTrainingId.Value;
 			}
 		}
