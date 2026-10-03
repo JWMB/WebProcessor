@@ -9,6 +9,7 @@ using ProblemSourceModule.Models;
 using System.ComponentModel.DataAnnotations;
 using TrainingApi.ErrorHandling;
 using ProblemSourceModule.Services;
+using TrainingApi.Authorization;
 
 namespace TrainingApi.Controllers
 {
@@ -17,7 +18,7 @@ namespace TrainingApi.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserRepository userRepository;
-        private readonly IAuthenticateUserService authenticateUserService;
+        private readonly IUserLoginService authenticateUserService;
         private readonly ICurrentUserProvider userProvider;
         private readonly CreateUserWithTrainings createUserWithTrainings;
         private readonly ITrainingRepository trainingRepository;
@@ -26,7 +27,7 @@ namespace TrainingApi.Controllers
 		private readonly ITrainingTemplateRepository trainingTemplateRepository;
 		private readonly ILogger<UsersController> log;
 
-        public UsersController(IUserRepository userRepository, IAuthenticateUserService authenticateUserService, ICurrentUserProvider userProvider, 
+        public UsersController(IUserRepository userRepository, IUserLoginService authenticateUserService, ICurrentUserProvider userProvider, 
             CreateUserWithTrainings createUserWithTrainings, ITrainingRepository trainingRepository, IMfaService mfaService, ICookieProtector cookieProtector,
 			ITrainingTemplateRepository trainingTemplateRepository, ILogger<UsersController> logger)
         {
@@ -41,7 +42,9 @@ namespace TrainingApi.Controllers
 			log = logger;
         }
 
-        [Authorize(Policy = RolesRequirement.Admin)]
+        //[Authorize(Policy = RolesRequirement.Admin)]
+        //[Authorize(Roles = Roles.Admin)]
+        [AtLeastRole(Roless.Admin)]
         [HttpGet]
         public async Task<IEnumerable<GetUserDto>> GetAll()
         {
@@ -49,8 +52,9 @@ namespace TrainingApi.Controllers
 			return (await userRepository.GetAll()).Select(o => GetUserDto.FromUser(o, templates));
         }
 
-        [Authorize(Policy = RolesRequirement.AdminOrTeacher)]
-        [HttpGet]
+		[AtLeastRole(Roless.Teacher)]
+		//[Authorize(Policy = RolesRequirement.AdminOrTeacher)]
+		[HttpGet]
         [Route("GetOne")] // TODO: For some reason, we need an explicit path for unit/integration tests
         [Route("{id}")]
         public async Task<ActionResult<GetUserDto>> Get([FromQuery]string id)
@@ -67,9 +71,8 @@ namespace TrainingApi.Controllers
             return Ok(GetUserDto.FromUser(user));
         }
 
-
-
-		[Authorize(Policy = RolesRequirement.Admin)]
+		[AtLeastRole(Roless.Admin)]
+		//[Authorize(Policy = RolesRequirement.Admin)]
 		[HttpPost("createusers")]
 		public async Task<CreateUsersResponseDto> PostCreateUsers([FromBody] CreateUsersRequestDto dto)
 		{
@@ -113,7 +116,8 @@ await fetch("https://curricullm.net/api/Users", {
 		public record CreateUsersResponseDto(List<CreatedUserInfo> Emails);
 		public record CreatedUserInfo(string Email, string Password);
 
-		[Authorize(Policy = RolesRequirement.Admin)]
+		[AtLeastRole(Roless.Admin)]
+		//[Authorize(Policy = RolesRequirement.Admin)]
         [HttpPost]
         public async Task<List<CreatedUserInfo>> Post([FromBody] CreateUserDto dto)
         {
@@ -147,18 +151,20 @@ await fetch("https://curricullm.net/api/Users", {
         }
 
 
-		[Authorize(Policy = RolesRequirement.Admin, AuthenticationSchemes = $"{ApiKeyAuthenticationSchemeHandler.SchemeName},{CookieAuthenticationDefaults.AuthenticationScheme}")]
+		[AtLeastRole(Roless.Admin)]
+		//[Authorize(Policy = RolesRequirement.Admin, AuthenticationSchemes = $"{ApiKeyAuthenticationSchemeHandler.SchemeName},{CookieAuthenticationDefaults.AuthenticationScheme}")]
 		[HttpGet("trainingUsername/{id}")]
 		public async Task<IActionResult> GetTrainingUsername(int id)
         {
-			var role = User.Identity?.IsAuthenticated == true ? User.FindFirstValue(ClaimTypes.Role) : null;
-			if (role != Roles.Admin)
-				return new ForbidResult();
+			//var role = User.Identity?.IsAuthenticated == true ? User.FindFirstValue(ClaimTypes.Role) : null;
+			//if (role != Roles.Admin)
+			//	return new ForbidResult();
             var training = await trainingRepository.Get(id);
 			return Ok(new { Username = training?.Username ?? "", Id = id });
         }
 
-		[Authorize(Policy = RolesRequirement.Admin, AuthenticationSchemes = $"{ApiKeyAuthenticationSchemeHandler.SchemeName},{CookieAuthenticationDefaults.AuthenticationScheme}")]
+		[AtLeastRole(Roless.Admin)]
+		//[Authorize(Policy = RolesRequirement.Admin, AuthenticationSchemes = $"{ApiKeyAuthenticationSchemeHandler.SchemeName},{CookieAuthenticationDefaults.AuthenticationScheme}")]
 		[HttpPost("getOrCreate")]
         public async Task<ActionResult<GetUserDto>> GetOrCreateFromApp([FromQuery] string username)
         {
@@ -187,7 +193,8 @@ await fetch("https://curricullm.net/api/Users", {
 			return new GetUserDto { Username = user.Email, Trainings = user.Trainings, Role = user.Role };
         }
 
-		[Authorize(Policy = RolesRequirement.Admin)]
+		[AtLeastRole(Roless.Admin)]
+		//[Authorize(Policy = RolesRequirement.Admin)]
         [HttpPatch]
         //[Route("id")]
         public async Task<ActionResult> Patch([FromQuery] string id, [FromBody] PatchUserDto dto)
@@ -198,9 +205,6 @@ await fetch("https://curricullm.net/api/Users/?id=jbadmin", {
     "body": '{"role":"SuperAdmin"}'
 });
 			 */
-			if (!User.AtLeastRole(Roles.Admin))
-				return new ForbidResult();
-
 			var user = await userRepository.Get(id);
             if (user == null)
                 return NotFound();
@@ -258,7 +262,7 @@ await fetch("https://curricullm.net/api/Users/?id=jbadmin", {
 
    //         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
 
-            var skipMfa = System.Diagnostics.Debugger.IsAttached;
+            var skipMfa = false && System.Diagnostics.Debugger.IsAttached;
 
 			return Ok(new LoginResultDto(user.Role, 
                 MfaMustValidate: skipMfa != true && user.MfaEnabled == true,
@@ -275,7 +279,8 @@ await fetch("https://curricullm.net/api/Users/?id=jbadmin", {
 		}
 
         [HttpPost("mfa-verify")]
-        [Authorize(Roles = Roles.Teacher)]
+		[AtLeastRole(Roless.Teacher, SkipMfaCheck: true)]
+        //[Authorize(Roles = Roles.Teacher)]
         public async Task<bool> PostMfaVerify(MfaLoginDto dto)
         {
             var result = await mfaService.VerifyTwoFactorAuthentication(dto.Email, dto.Code, NumTotpDigits); // request.NumTotpDigits
@@ -288,7 +293,8 @@ await fetch("https://curricullm.net/api/Users/?id=jbadmin", {
         public async Task<MfaVerifyGetDto> GetMfaVerify() => new MfaVerifyGetDto(NumTotpDigits, mfaService.Issuer);
 
 
-        [Authorize]
+        //[Authorize]
+		[AtLeastRole(Roless.Teacher, SkipMfaCheck: true)]
 		[HttpPost("mfa-enable")]
 		public async Task<bool> PostMfaEnable(MfaLoginDto dto)
         {

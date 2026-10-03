@@ -71,10 +71,10 @@ namespace TrainingApi.RealTime
     {
         private readonly IQueueClient client;
         private readonly CommHubWrapper chatHub;
-        private readonly IAccessResolver accessResolver;
+        private readonly ITrainingAccessResolver accessResolver;
         private readonly ILogger<QueueListener> log;
 
-        public QueueListener(CommHubWrapper chatHub, IAccessResolver accessResolver, RealTimeConfig config, IQueueClient queueClient, ILogger<QueueListener> log)
+        public QueueListener(CommHubWrapper chatHub, ITrainingAccessResolver accessResolver, RealTimeConfig config, IQueueClient queueClient, ILogger<QueueListener> log)
         {
             client = queueClient;
 

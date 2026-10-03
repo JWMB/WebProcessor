@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using System.Security.Claims;
+using TrainingApi.Authorization;
 
 namespace TrainingApi.Services
 {
@@ -37,13 +38,6 @@ namespace TrainingApi.Services
         public async Task<User?> GetUserWithImpersonation()
         {
             var principal = httpContextAccessor.HttpContext?.User;
-            var mfaClaim = principal.MfaAuthorized(); //?.Claims.FirstOrDefault(o => o.Type == MfaClaimName);
-
-			if (mfaClaim?.Value == MfaRequireValidationValue)
-            {
-                // TODO: reject here?
-                // TODO: update this claim to different value once validated
-            }
 
 			var user = await GetUser(userRepository, principal);
             if (user?.Role == Roles.Admin)

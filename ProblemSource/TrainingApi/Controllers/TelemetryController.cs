@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
+using TrainingApi.Authorization;
 
 namespace TrainingApi.Controllers
 {
@@ -19,7 +20,8 @@ namespace TrainingApi.Controllers
 			_logger = logger;
         }
 
-		[Authorize]
+		[AtLeastRole(Roless.Admin)]
+		//[Authorize(Roles = Roles.Admin)]
 		[HttpGet]
 		public async Task<List<TelemetryItem>> Get(string? id)
 		{

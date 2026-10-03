@@ -11,6 +11,7 @@ using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.TrainingAnalyzers;
+using TrainingApi.Authorization;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
 
@@ -67,7 +68,8 @@ namespace TrainingApi.Controllers
             return training.Username;
         }
 
-        [Authorize(Policy = RolesRequirement.Admin)]
+        [AtLeastRole(Roless.Admin)]
+        //[Authorize(Policy = RolesRequirement.Admin)]
         [HttpDelete("many")]
         public async Task DeleteMany(string ids, bool deleteTrainingDataOnly = true)
         {
@@ -116,8 +118,9 @@ namespace TrainingApi.Controllers
 
         }
 
-        [Authorize(Policy = RolesRequirement.Admin)]
-        [HttpDelete]
+		[AtLeastRole(Roless.Admin)]
+		//[Authorize(Policy = RolesRequirement.Admin)]
+		[HttpDelete]
         public async Task Delete(int id, bool deleteTrainingDataOnly = true)
         {
             await DeleteMany($"{id}", deleteTrainingDataOnly);
@@ -399,8 +402,9 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
         }
 
         [HttpPost]
-        [Authorize(Policy = RolesRequirement.Admin)]
-        [Route("refresh")]
+		[AtLeastRole(Roless.Admin)]
+		//[Authorize(Policy = RolesRequirement.Admin)]
+		[Route("refresh")]
         public async Task<int> RefreshStatistics([FromBody] IEnumerable<int> trainingIds)
         {
             foreach (var id in trainingIds)
@@ -411,8 +415,10 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
             return trainingIds.Any() ? trainingIds.FirstOrDefault() : 0;
         }
 
-        [Authorize(Roles = RolesRequirement.Admin)]
-        [HttpGet]
+        //[Authorize(Roles = RolesRequirement.Admin)]
+        [AtLeastRole(Roless.Admin)]
+		//[Authorize(Roles = RolesRequirement.SuperAdmin)]
+		[HttpGet]
         [Route("allsummaries")]
         public async Task<List<TrainingSummaryDto>> GetAllSummaries()
         {
@@ -499,8 +505,9 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
             return "N/A";
         }
 
-        [Authorize(Policy = RolesRequirement.Admin)]
-        [HttpGet]
+		[AtLeastRole(Roless.Admin)]
+		//[Authorize(Policy = RolesRequirement.Admin)]
+		[HttpGet]
         [Route("alltrainings")]
         public async Task<Dictionary<string, Dictionary<string, List<TrainingSummaryDto>>>> GetAllTrainings(bool onlyStarted = true)
         {
