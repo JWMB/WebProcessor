@@ -609,7 +609,32 @@ await fetch("/api/Trainings/importmany/Norms", {
             await AddTrainingsToUser(user, groupName, exports.Select(o => o.Training!));
         }
 
-        private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null, User? user = null)
+        [HttpPatch("randomize/{groupName}")]
+        public async Task<ActionResult<List<Training>>> RandomizeGroup(string groupName, [FromBody] List<PatchTrainingDto> variants)
+        {
+			// await fetch(`https://curricullm.net/api/Trainings/randomize/${encodeURIComponent("År 1 Carina")}`, { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "PATCH", "mode": "cors", "body": '[{ "trainingPlanName": "2026 HT Math" }, { "trainingPlanName": "2026 HT Verbal" }]' });
+			// await fetch(`https://localhost:7174/api/Trainings/randomize/${encodeURIComponent("Fsk A")}`, { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "PATCH", "mode": "cors", "body": '[{ "trainingPlanName": "2026 HT Math" }, { "trainingPlanName": "2026 HT Verbal" }]' });
+
+			var user = userProvider.UserOrThrow;
+			
+            if (variants?.Any() != true)
+                return BadRequest();
+
+            if (!user.Trainings.TryGetValue(groupName, out var trainingIds))
+                return BadRequest();
+
+            var trainings = await trainingRepository.GetByIds(trainingIds);
+            foreach (var training in trainings)
+            {
+                var variant = variants[(training.Username.GetHashCode() % variants.Count + variants.Count) % variants.Count];
+                variant.Apply(training);
+                await trainingRepository.Update(training);
+			}
+
+            return Ok(trainings);
+		}
+
+		private async Task<Dictionary<string, List<Training>>> GetUserGroups(string? group = null, User? user = null)
         {
             user = user ?? userProvider.UserOrThrow;
             Dictionary<string, List<Training>> groupToIds = new();

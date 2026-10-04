@@ -97,6 +97,9 @@
     <div>
         Age bracket: {training.ageBracket}
     </div>
+    <div>
+        Training plan: {training.trainingPlanName}
+    </div>
 
     {#if !!trainingDays}
     <TrainingDaysChart data={trainingDays} />

@@ -92,9 +92,12 @@
 				}
 			}
 		]},
-		{ "id": "mathTest01", "template": "templateMathAssess", "phases": [ { }, { } ]},
-		{ "id": "mathTest02", "template": "templateMathAssess", "phases": [ { }, { } ]},
-		{ "id": "mathTest03", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest01_add", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest01_sub", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest02_add", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest02_sub", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest03_add", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest03_sub", "template": "templateMathAssess", "phases": [ { }, { } ]},
 
 		{ "id": "numberComparison01", "template": "templateCompareAssess", "phases": [ { }, { } ]},
 		{ "id": "numberComparison02", "template": "templateCompareAssess", "phases": [ { }, { } ]},
@@ -220,8 +223,12 @@
 			}
 		},
 
+
 	  { "triggerTime": "MAP", "criteriaValues": [ { "name": "trainingDay", "value": "3" } ],
-			"actionData": { "type": "StartExerciseTriggerAction", "id": "day3test1", "properties": { "id": "mathTest01" } }
+			"actionData": { "type": "StartExerciseTriggerAction", "id": "day3test1", "properties": { "id": "mathTest01_add" } }
+		},
+	  { "triggerTime": "MAP", "criteriaValues": [ { "name": "trainingDay", "value": "3" } ],
+			"actionData": { "type": "StartExerciseTriggerAction", "id": "day3test2", "properties": { "id": "mathTest01_sub" } }
 		},
 	    { "triggerTime": "MAP", "criteriaValues": [ { "name": "trainingDay", "value": "4" } ],
 			"actionData": { "type": "StartExerciseTriggerAction", "id": "day4test1", "properties": { "id": "numberComparison01" } }
