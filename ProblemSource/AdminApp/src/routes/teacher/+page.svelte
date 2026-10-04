@@ -304,7 +304,7 @@
 							{/if}
 							<span title={`${t.id}`} >&nbsp;{t.username}&nbsp;</span>
 							{#if showAIEditButton}
-							<a rel="noreferrer" href="/admin/teacher/training?id={t.id.toString()}" title="id={t.id.toString()}" target="_blank">^</a>
+							<a rel="noreferrer" href="teacher/training?id={t.id.toString()}" title="id={t.id.toString()}" target="_blank">^</a>
 							{/if}
 						</div>
 					</td>

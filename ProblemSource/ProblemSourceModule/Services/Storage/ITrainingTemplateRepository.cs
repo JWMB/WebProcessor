@@ -74,6 +74,11 @@ namespace ProblemSourceModule.Services.Storage
 					s.timeLimits = new List<decimal> { 33 };
 					s.customData = new CustomData { };
 				}) },
+				new Training { Id = 20, Username = "template_2026HT_dbg", TrainingPlanName = "2026 HT DBG", Settings = CreateSettings(s =>
+				{
+					s.timeLimits = new List<decimal> { 2 };
+					s.customData = new CustomData { };
+				}) },
 
                 // Note: make sure the right template is used (TrainingsController)
             };
