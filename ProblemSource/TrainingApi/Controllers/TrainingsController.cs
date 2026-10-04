@@ -22,7 +22,6 @@ namespace TrainingApi.Controllers
     [Route("api/[controller]")]
     public class TrainingsController : ControllerBase
     {
-        private readonly ITrainingPlanRepository trainingPlanRepository;
         private readonly ITrainingRepository trainingRepository;
         private readonly ITrainingTemplateRepository trainingTemplateRepository;
         private readonly AiCoachAnalyzer aiAnalyzer;
@@ -44,7 +43,7 @@ namespace TrainingApi.Controllers
             ITrainingTemplateRepository trainingTemplateRepository, AiCoachAnalyzer aiAnalyzer, ILlmService llmService, ITrainingImporter importer, IMongoDatabase db,
             ILogger<AggregatesController> logger)
         {
-            this.trainingPlanRepository = trainingPlanRepository;
+            //this.trainingPlanRepository = trainingPlanRepository;
             this.trainingRepository = trainingRepository;
             this.statisticsProvider = statisticsProvider;
             this.userRepository = userRepository;
@@ -609,21 +608,37 @@ await fetch("/api/Trainings/importmany/Norms", {
             await AddTrainingsToUser(user, groupName, exports.Select(o => o.Training!));
         }
 
-        [HttpPatch("randomize/{groupName}")]
-        public async Task<ActionResult<List<Training>>> RandomizeGroup(string groupName, [FromBody] List<PatchTrainingDto> variants)
+        [HttpPatch("randomize")]
+        public async Task<ActionResult<List<Training>>> RandomizeGroup(string groupName, [FromBody] List<PatchTrainingDto> variants, string? userId = null)
         {
-			// await fetch(`https://curricullm.net/api/Trainings/randomize/${encodeURIComponent("År 1 Carina")}`, { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "PATCH", "mode": "cors", "body": '[{ "trainingPlanName": "2026 HT Math" }, { "trainingPlanName": "2026 HT Verbal" }]' });
-			// await fetch(`https://localhost:7174/api/Trainings/randomize/${encodeURIComponent("Fsk A")}`, { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "PATCH", "mode": "cors", "body": '[{ "trainingPlanName": "2026 HT Math" }, { "trainingPlanName": "2026 HT Verbal" }]' });
+            // await fetch(`https://curricullm.net/api/Trainings/randomize/${encodeURIComponent("År 1 Carina")}`, { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "PATCH", "mode": "cors", "body": '[{ "trainingPlanName": "2026 HT Math" }, { "trainingPlanName": "2026 HT Verbal" }]' });
+            // await fetch(`https://localhost:7174/api/Trainings/randomize/${encodeURIComponent("Fsk A")}`, { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "PATCH", "mode": "cors", "body": '[{ "trainingPlanName": "2026 HT Math" }, { "trainingPlanName": "2026 HT Verbal" }]' });
+            // await fetch(`https://localhost:7174/api/Trainings/randomize?userId=${""}&groupName=${encodeURIComponent("Fsk A")}`, { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "PATCH", "mode": "cors", "body": '[{ "trainingPlanName": "2026 HT Math" }, { "trainingPlanName": "2026 HT Verbal" }]' });
 
-			var user = userProvider.UserOrThrow;
-			
-            if (variants?.Any() != true)
-                return BadRequest();
+            var user = userProvider.UserOrThrow;
+            if (userId != user.Email && Enum.Parse<Roless>(user.Role) < Roless.Admin)
+                return Forbid();
 
-            if (!user.Trainings.TryGetValue(groupName, out var trainingIds))
-                return BadRequest();
+			var targetUser = await userRepository.Get(userId ?? user.Email);
+            if (targetUser == null)
+				return BadRequest("User not found");
 
-            var trainings = await trainingRepository.GetByIds(trainingIds);
+			if (variants?.Any() != true)
+                return BadRequest("Variants not provided");
+
+            if (!targetUser.Trainings.TryGetValue(groupName, out var trainingIds))
+                return BadRequest("Group not found");
+
+            var trainingPlanNames = variants.Select(o => o.TrainingPlanName).OfType<string>().Distinct().ToList();
+            if (trainingPlanNames.Any())
+            {
+				var trainingPlans = await trainingTemplateRepository.GetAll();
+                var joined = trainingPlanNames.Join(trainingPlans, n => n, tp => tp.TrainingPlanName, (n, tp) => new { n, tp });
+                if (joined.Count() < trainingPlanNames.Count)
+					return BadRequest("Training plan(s) not found");
+			}
+
+			var trainings = await trainingRepository.GetByIds(trainingIds);
             foreach (var training in trainings)
             {
                 var variant = variants[(training.Username.GetHashCode() % variants.Count + variants.Count) % variants.Count];

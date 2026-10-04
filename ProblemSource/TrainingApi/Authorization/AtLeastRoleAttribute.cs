@@ -34,11 +34,11 @@ namespace TrainingApi.Authorization
 				{
 					if (requirement.SkipMfaCheck || user.MfaAuthorized() == true)
 						context.Succeed(requirement);
+					else
+						context.Fail();
 				}
 			}
 			return Task.CompletedTask;
-
-
 		}
 	}
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { CreateUserDto, GetUserDto, PatchUserDto } from '../../apiClient';
+	import { goto } from '$app/navigation';
+import type { CreateUserDto, GetUserDto, PatchUserDto } from '../../apiClient';
 	import type { ApiFacade } from '../../apiFacade';
 	import { getApi, userStore } from '../../globalStore';
 	import { onMount } from 'svelte';
@@ -55,7 +56,8 @@
 	<tbody>
 {#each users as user}
 <tr>
-	<td><a href={`teacher?impersonate=${encodeURIComponent(user.username)}`}>{user.username}</a></td>
+	<!-- <td><a href={`teacher?impersonate=${encodeURIComponent(user.username)}`}>{user.username}</a></td> -->
+	<td><a on:click={() => { apiFacade.impersonateUser = user.username; goto(`teacher?impersonate=${encodeURIComponent(user.username)}`)}}>{user.username}</a></td>
 	<td>
 	{#if currentRole != "SuperAdmin"}
 		<select value={user.role} on:change={e => patchUser(user.username, { role: e.currentTarget.value})}>

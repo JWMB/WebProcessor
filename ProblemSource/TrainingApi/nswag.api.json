@@ -868,6 +868,62 @@
         }
       }
     },
+    "/api/Trainings/randomize": {
+      "patch": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_RandomizeGroup",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "groupName",
+            "in": "query",
+            "x-nullable": false
+          },
+          {
+            "name": "variants",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PatchTrainingDto"
+              }
+            },
+            "x-nullable": false
+          },
+          {
+            "type": "string",
+            "name": "userId",
+            "in": "query",
+            "x-nullable": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Training"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Users": {
       "get": {
         "tags": [

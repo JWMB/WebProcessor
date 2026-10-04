@@ -1059,6 +1059,49 @@ export class TrainingsClient {
         }
         return Promise.resolve<void>(null as any);
     }
+
+    randomizeGroup(groupName: string | undefined, variants: PatchTrainingDto[], userId: string | null | undefined): Promise<Training[]> {
+        let url_ = this.baseUrl + "/api/Trainings/randomize?";
+        if (groupName === null)
+            throw new globalThis.Error("The parameter 'groupName' cannot be null.");
+        else if (groupName !== undefined)
+            url_ += "groupName=" + encodeURIComponent("" + groupName) + "&";
+        if (userId !== undefined && userId !== null)
+            url_ += "userId=" + encodeURIComponent("" + userId) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(variants);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRandomizeGroup(_response);
+        });
+    }
+
+    protected processRandomizeGroup(response: Response): Promise<Training[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Training[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Training[]>(null as any);
+    }
 }
 
 export class UsersClient {

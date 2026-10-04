@@ -20,10 +20,12 @@
 	const apiFacade = getApi() as ApiFacade;
 
 	const clientUrl = "https://curricullm.org/vektor/";
+	const isAtLeastAdmin = $userStore?.role == "Admin" || $userStore?.role == "SuperAdmin";
+	// console.log("$userStore?.role", $userStore?.role);
 	// const showRealtimeButton = false; // For now, don't show it at all...
-	const showRealtimeButton = $userStore?.role == "Admin";
+	const showRealtimeButton = isAtLeastAdmin;
 	const showAIButton = true; //$userStore?.role == "Admin";
-	const showAIEditButton = $userStore?.role == "Admin";
+	const showAIEditButton = isAtLeastAdmin;
 	let aiDialogForTraining: { id: number, username: string, trainedDays: number } | null = null;
 	const promptSettings = {
 		template: "https://raw.githubusercontent.com/JWMB/WebProcessor/refs/heads/main/ProblemSource/ProblemSourceModule/Resources/AICoach/TeacherStudent.txt",
@@ -84,10 +86,12 @@
 		groups = Object.entries(groupsData).map((o) => ({ group: o[0], summaries: o[1] })) || [];
 	}
 
+	let selectedGroupId: string;
 	let lastClick = 0;
 	async function onSelectGroup(groupId: string) {
 		if (Date.now() - lastClick < 50) return;
 		lastClick = Date.now();
+		selectedGroupId = groupId;
 		detailedTrainingsData = await apiFacade.trainings.getSummaries(groupId);
 		// RealtimelineTools.testData(detailedTrainingsData.map(o => o.id)).forEach(o => rtlTools.append(o));;
 		getRealtimeData();
@@ -210,6 +214,13 @@
 		return t.gender && t.birthDate && t.birthDate.year > 0 && t.consent;
 	}
 
+	function randomizeGroup(groupId: string) {
+		console.log("randomize", groupId);
+		apiFacade.trainings.randomizeGroup(groupId, [{ trainingPlanName: "2026 HT Verbal"}, { trainingPlanName: "2026 HT Math" }], apiFacade.impersonateUser)
+			.then(result => console.log("result", result));
+		// apiFacade.trainings.randomize
+	}
+
 </script>
 
 <div class="teacher-view">
@@ -232,7 +243,7 @@
 			tabs={groups.map((g) => {
 				return { id: g.group };
 			})}
-			on:selected={(e) => { console.log(e); onSelectGroup(e.detail); }}
+			on:selected={(e) => onSelectGroup(e.detail)}
 			>
 
 			<button on:click={onCreateGroup}>
@@ -254,6 +265,9 @@
 					<span class="switch-label" class:activeLabel={!showStatsForLast7days}>{getString('teacher_stats_range_all_days')}</span>
 					<Switch name="range" color="#52cad8" inactiveColor="#52cad8" bind:checked={showStatsForLast7days} />
 					<span class="switch-label" class:activeLabel={showStatsForLast7days}>{getString('teacher_stats_range_last_week')}</span>
+					{#if isAtLeastAdmin}
+					<button on:click={() => randomizeGroup(selectedGroupId)}>Randomize</button>
+					{/if}
 				</div>
 			</div>
 		</div>
