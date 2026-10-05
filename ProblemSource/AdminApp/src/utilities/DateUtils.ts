@@ -80,9 +80,14 @@ export class DateUtils {
         const day = hour * 24;
         // const hours = intervalMs / 1000 / 60 / 60; 
         const days = intervalMs / day;
-        if (days <= 1) {
-            return { msRounded: day, name: "Today" };
-        }
+        if (hour <= 1)
+            return { msRounded: hour * 1, name: "Last hour" };
+        if (hour <= 2)
+            return { msRounded: hour * 2, name: "Last 2 hours" };
+        if (hour <= 4)
+            return { msRounded: hour * 4, name: "Last 4 hours" };
+        if (days <= 1)
+            return { msRounded: day * 1, name: "Today" };
         if (days <= 2)
             return { msRounded: day * 2, name: "Yesterday" };
         if (days <= 7)

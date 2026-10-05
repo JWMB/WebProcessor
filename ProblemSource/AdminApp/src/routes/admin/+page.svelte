@@ -11,7 +11,9 @@ import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, Telemetr
 	let created: CreatedUserInfo[]; // { email: string, password: string }[]
 	const currentRole = $userStore?.role || "";
 	let errors: TelemetryItem[] = [];
-	let errorsByPeriod: { when: string; items: TelemetryItem[] }[];
+	let errorsByPeriod: { when: string; items: TelemetryItem[] }[] = [];
+	let errorsByUser: { user: string; items: TelemetryItem[] }[] = [];
+	let errorsByType: { type: string; items: TelemetryItem[] }[] = [];
 
 	// function createUser(email: string, password: string) {
 	// 	apiFacade.users.post(<CreateUserDto>{ username: email, password: password }).then(() => console.log('user created'));
@@ -45,7 +47,7 @@ import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, Telemetr
 	let users: GetUserDto[] = [];
 	onMount(async () => {
 		users = await apiFacade.users.getAll();
-		apiFacade.telemetry.get(null).then(result => {
+		apiFacade.telemetry.get(null, new Date(Date.now() - 24 * 60 * 60 * 1000)).then(result => {
 			errors = result;
 			const now  = Date.now();
 			const grouped = Map.groupBy(errors, (item) => {
@@ -54,7 +56,13 @@ import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, Telemetr
             errorsByPeriod = [...grouped]
                 .sort((a, b) => a[0] - b[0])
                 .map(o => ({ when: DateUtils.getTimeDiffCategory(o[0]).name, items: o[1] }));
-			console.log(errorsByPeriod);
+
+			errorsByUser = [...Map.groupBy(errors, (item) => item.username?.trim() || "")]
+				.map(o => ({ user: o[0], items: o[1]})); // .sort((a, b) => a.modified)
+
+			errorsByType = [...Map.groupBy(errors, (item) => item.error?.message || "")]
+				.map(o => ({ type: o[0], items: o[1]})); // .sort((a, b) => a.modified)
+
 		});
 	});
 </script>
@@ -88,6 +96,45 @@ import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, Telemetr
 		</table>
 	</details>
 	{/each}
+
+	<details>
+		<summary>Users: {errorsByUser.length}</summary>
+		{#each errorsByUser as usr}
+		<details>
+			<summary>{usr.user} {usr.items.length}</summary>
+			<table>
+			{#each usr.items as item}
+				<tr>
+					<td>{item.created}</td>
+					<td>{item.username}</td>
+					<td>{item.error?.message}</td>
+					<td>{JSON.stringify(item.error?.clientInfo)}</td>
+				</tr>
+			{/each}
+			</table>
+		</details>
+		{/each}
+	</details>
+
+	<details>
+		<summary>Messages: {errorsByType.length}</summary>
+		{#each errorsByType as itemX}
+		<details>
+			<summary>{itemX.type} {itemX.items.length}</summary>
+			<table>
+			{#each itemX.items as item}
+				<tr>
+					<td>{item.created}</td>
+					<td>{item.username}</td>
+					<td>{item.error?.message}</td>
+					<td>{JSON.stringify(item.error?.clientInfo)}</td>
+				</tr>
+			{/each}
+			</table>
+		</details>
+		{/each}
+	</details>
+	
 </div>
 
 <table style="">

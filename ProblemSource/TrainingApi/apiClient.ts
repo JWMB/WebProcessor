@@ -155,10 +155,12 @@ export class TelemetryClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    get(id: string | null | undefined): Promise<TelemetryItem[]> {
+    get(id: string | null | undefined, since: Date | null | undefined): Promise<TelemetryItem[]> {
         let url_ = this.baseUrl + "/api/Telemetry?";
         if (id !== undefined && id !== null)
             url_ += "id=" + encodeURIComponent("" + id) + "&";
+        if (since !== undefined && since !== null)
+            url_ += "since=" + encodeURIComponent(since ? "" + since.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {

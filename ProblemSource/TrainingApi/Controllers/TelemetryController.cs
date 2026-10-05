@@ -23,10 +23,11 @@ namespace TrainingApi.Controllers
 		[AtLeastRole(Roless.Admin)]
 		//[Authorize(Roles = Roles.Admin)]
 		[HttpGet]
-		public async Task<List<TelemetryItem>> Get(string? id)
+		public async Task<List<TelemetryItem>> Get(string? id, DateTime? since = null)
 		{
 			var collection = db.GetCollection<TelemetryItem>();
-			return await (await collection.FindAsync(o => true)).ToListAsync();
+			since ??= DateTime.UtcNow.AddDays(-7);
+			return await (await collection.FindAsync(o => o.Created > since)).ToListAsync();
 		}
 
 		[HttpPost]

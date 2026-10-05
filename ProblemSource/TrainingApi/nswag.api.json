@@ -116,6 +116,13 @@
             "name": "id",
             "in": "query",
             "x-nullable": true
+          },
+          {
+            "type": "string",
+            "name": "since",
+            "in": "query",
+            "format": "date-time",
+            "x-nullable": true
           }
         ],
         "responses": {
