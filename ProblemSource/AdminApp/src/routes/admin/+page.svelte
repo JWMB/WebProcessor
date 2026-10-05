@@ -1,15 +1,21 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-import type { CreateUserDto, GetUserDto, PatchUserDto } from '../../apiClient';
+import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto } from '../../apiClient';
 	import type { ApiFacade } from '../../apiFacade';
 	import { getApi, userStore } from '../../globalStore';
 	import { onMount } from 'svelte';
 
 	const apiFacade = getApi() as ApiFacade;
 
+	let created: CreatedUserInfo[]; // { email: string, password: string }[]
 	const currentRole = $userStore?.role || "";
 	function createUser(email: string, password: string) {
 		apiFacade.users.post(<CreateUserDto>{ username: email, password: password }).then(() => console.log('user created'));
+	}
+	async function createUsers(emails: string) {
+		const emailArray = emails.split(/(\s|;|,)/).map(o => o.trim()).filter(o => o.length > 3);
+		const result = await apiFacade.users.postCreateUsers({ emails: emailArray });
+		created = result.emails;
 	}
 	function changePassword(email: string, password?: string | null) {
 		if (!password) {
@@ -39,10 +45,16 @@ import type { CreateUserDto, GetUserDto, PatchUserDto } from '../../apiClient';
 </script>
 
 <div>
-	<h2>Create user</h2>
-	Email:<input id="email" type="text" value="" />
-	Password: <input id="password" style="width:40px;" type="text" />
-	<input type="button" value="Create" on:click={() => createUser(getElementValue('email'), getElementValue('password'))} />
+	<h2>Create users</h2>
+	Emails:<textarea id="email" value=""></textarea>
+	<input type="button" value="Create" on:click={() => createUsers(getElementValue('email'))} />
+	{#if created}
+		<ul>
+		{#each created as c}
+		<li>{c.email}: {c.password}</li>
+		{/each}
+		</ul>
+	{/if}
 </div>
 
 <table style="">
