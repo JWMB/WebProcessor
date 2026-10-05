@@ -1,17 +1,21 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto } from '../../apiClient';
+import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, TelemetryItem } from '../../apiClient';
 	import type { ApiFacade } from '../../apiFacade';
 	import { getApi, userStore } from '../../globalStore';
 	import { onMount } from 'svelte';
+	import { DateUtils } from '../../utilities/DateUtils';
 
 	const apiFacade = getApi() as ApiFacade;
 
 	let created: CreatedUserInfo[]; // { email: string, password: string }[]
 	const currentRole = $userStore?.role || "";
-	function createUser(email: string, password: string) {
-		apiFacade.users.post(<CreateUserDto>{ username: email, password: password }).then(() => console.log('user created'));
-	}
+	let errors: TelemetryItem[] = [];
+	let errorsByPeriod: { when: string; items: TelemetryItem[] }[];
+
+	// function createUser(email: string, password: string) {
+	// 	apiFacade.users.post(<CreateUserDto>{ username: email, password: password }).then(() => console.log('user created'));
+	// }
 	async function createUsers(emails: string) {
 		const emailArray = emails.split(/(\s|;|,)/).map(o => o.trim()).filter(o => o.length > 3);
 		const result = await apiFacade.users.postCreateUsers({ emails: emailArray });
@@ -41,6 +45,17 @@ import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto } from '.
 	let users: GetUserDto[] = [];
 	onMount(async () => {
 		users = await apiFacade.users.getAll();
+		apiFacade.telemetry.get(null).then(result => {
+			errors = result;
+			const now  = Date.now();
+			const grouped = Map.groupBy(errors, (item) => {
+                return DateUtils.getTimeDiffCategory(now - new Date(item.created).valueOf()).msRounded;
+            });
+            errorsByPeriod = [...grouped]
+                .sort((a, b) => a[0] - b[0])
+                .map(o => ({ when: DateUtils.getTimeDiffCategory(o[0]).name, items: o[1] }));
+			console.log(errorsByPeriod);
+		});
 	});
 </script>
 
@@ -55,6 +70,24 @@ import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto } from '.
 		{/each}
 		</ul>
 	{/if}
+</div>
+
+<div>
+	{#each errorsByPeriod || [] as period}
+	<details>
+		<summary>{period.when} {period.items.length}</summary>
+		<table>
+		{#each period.items as item}
+			<tr>
+				<td>{item.created}</td>
+				<td>{item.username}</td>
+				<td>{item.error?.message}</td>
+				<td>{JSON.stringify(item.error?.clientInfo)}</td>
+			</tr>
+		{/each}
+		</table>
+	</details>
+	{/each}
 </div>
 
 <table style="">

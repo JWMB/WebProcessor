@@ -18,20 +18,15 @@
 
         const now = Date.now();
         if (summaries?.length) {
+
             const grouped = Map.groupBy(summaries, ({ created }) => {
-            //const grouped = Object.groupBy(summaries, ({ created }) => {
-                const date = new Date(created);
-                const days = (now - date.valueOf()) / 1000 / 60 / 60 / 24;
-                if (days > 30) return "DOlder";
-                if (days > 7) return "CLast week";
-                if (days > 1) return `B${date.getDate()}/${date.getMonth() + 1}`;
-                return `AToday ${date.getHours()}`
+                return DateUtils.getTimeDiffCategory(now - new Date(created).valueOf()).msRounded;
             });
             starts = [...grouped]
-                .sort((a, b) => a[0].localeCompare(b[0]))
-                .map(o => ({ startPeriod: o[0].substring(1), count: o[1].length }));
+                .sort((a, b) => a[0] - b[0])
+                .map(o => ({ startPeriod: DateUtils.getTimeDiffCategory(o[0]).name, count: o[1].length }));
         }
-    } 
+    }
 </script>
 
 <div>Stack left: <input type="checkbox" bind:checked={stackLeft}></div>

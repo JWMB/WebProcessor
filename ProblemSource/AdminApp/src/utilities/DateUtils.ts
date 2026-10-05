@@ -63,4 +63,34 @@ export class DateUtils {
     public static getMsBetween(dateStart: string | Date | number, dateEnd: string | Date | number) {
         return DateUtils.toDate(dateEnd).valueOf() - DateUtils.toDate(dateStart).valueOf();
     }
+
+    // public static getTimeDiffCategoryName(categoryId: number) {
+    //     return {
+    //         0: "Today",
+    //         1: "Yesterday",
+    //         2: "This week",
+    //         3: "This month",
+    //         4: "Last month",
+    //         5: "Old"
+    //     }[categoryId] || "";
+    // }
+
+    public static getTimeDiffCategory(intervalMs: number): { msRounded: number, name: string} {
+        const hour = 1000 * 60 * 60; 
+        const day = hour * 24;
+        // const hours = intervalMs / 1000 / 60 / 60; 
+        const days = intervalMs / day;
+        if (days <= 1) {
+            return { msRounded: day, name: "Today" };
+        }
+        if (days <= 2)
+            return { msRounded: day * 2, name: "Yesterday" };
+        if (days <= 7)
+            return { msRounded: day * 7, name: "This week" };
+        if (days <= 30)
+            return { msRounded: day * 30, name: "This month" };
+        if (days <= 60)
+            return { msRounded: day * 60, name: "Last month" };
+        return { msRounded: day * 365, name: "Old" };
+    }
 }
