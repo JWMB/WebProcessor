@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { getApi } from 'src/globalStore';
-	import type { ApiFacade } from 'src/apiFacade';
-	import { groupBy, groupByToKeyValue, max, min, sum } from "src/arrayUtils";
-	import type { PhaseStatistics, Training, TrainingDayAccount } from "src/apiClient";
-	import { DateUtils } from "src/utilities/DateUtils";
 	import TrainingDaysChart from "src/components/trainingDaysChart.svelte";
+	import { groupBy, groupByToKeyValue, max, min, sum } from "../../../arrayUtils";
+	import { DateUtils } from "../../../utilities/DateUtils";
+	import { PhaseStatistics, Training, TrainingDayAccount } from "../../../apiClient";
+	import { ApiFacade } from "../../../apiFacade";
+	import { getApi } from "../../../globalStore";
 
 	const apiFacade = getApi() as ApiFacade;
 
@@ -62,8 +62,8 @@
         ];
 
         phasesByExercise.forEach(kv => {
-            const statsPerDay = dayArray.map(day => getStats(byDay[day].filter(o => o.exercise == kv.exercise)));
             rows.push([kv.exercise]);
+            const statsPerDay = dayArray.map(day => getStats(byDay[day].filter(o => o.exercise == kv.exercise)));
             Object.keys(statsPerDay[0]).forEach(key => {
                 rows.push([`--${key}`].concat(statsPerDay.map(o => (!(<any>o)[key] ? "" : (<any>o)[key].toString()))));
             });

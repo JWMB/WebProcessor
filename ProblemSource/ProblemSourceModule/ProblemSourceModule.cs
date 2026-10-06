@@ -150,6 +150,25 @@ namespace ProblemSource
 							userRepo.Upsert(item).Wait();
 						}
 					}
+                    else
+                    {
+						foreach (var item in storageConfig.Users)
+                        {
+                            var found = users.Where(o => o.Email == item.Email).ToList();
+                            if (found.Any())
+                            {
+                                if (found.Count > 1)
+                                    Console.WriteLine($"Error: {found.Count} users with Email={item.Email}");
+                                var first = found.First();
+                                // TODO: maybe use to Path DTO instead?
+                                if (first.Role != item.Role)
+                                {
+                                    first.Role = item.Role;
+									userRepo.Upsert(first).Wait();
+								}
+                            }
+                        }
+					}
 				}
 			}
 		}

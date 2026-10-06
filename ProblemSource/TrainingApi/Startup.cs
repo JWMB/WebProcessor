@@ -2,18 +2,12 @@
 using Common.Web.Services;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using PluginModuleBase;
 using ProblemSource.Services;
 using ProblemSourceModule.Services;
 using System.Data;
-using System.Text;
-using TrainingApi.Authorization;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
 
