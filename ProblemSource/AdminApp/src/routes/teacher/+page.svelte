@@ -397,14 +397,18 @@
 			{#if aiDialogForTraining.trainedDays < 3}
 			<div>Analysis tool available after 3 training days</div>
 			{:else}
-			<button type="button" on:click={() => { generatePrompt(aiDialogForTraining?.id || 0, promptSettings.template, false) }}>🤖 Analyze</button>
-			<div>
-				{#if promptSettings.completionHtml}
-				{@html promptSettings.completionHtml}
+				{#if true}
+					<div> We are currently working to improve the performance of this function</div>
 				{:else}
-				(click above to analyze training)
+					<button type="button" on:click={() => { generatePrompt(aiDialogForTraining?.id || 0, promptSettings.template, false) }}>🤖 Analyze</button>
+					<div>
+						{#if promptSettings.completionHtml}
+						{@html promptSettings.completionHtml}
+						{:else}
+						(click above to analyze training)
+						{/if}
+					</div>
 				{/if}
-			</div>
 			{/if}
 
 			<input type="button" on:click={() => { aiDialogForTraining = null; }} value="Close"/>

@@ -1,6 +1,7 @@
-﻿using System.Text.Json.Serialization;
+﻿using Common.LLM;
+using System.Text.Json.Serialization;
 
-namespace Common.LLM
+namespace Common
 {
 	public interface ILlmServiceFactory
 	{
@@ -49,7 +50,12 @@ namespace Common.LLM
 			}
 
 			if (model == null)
-				model = models.FirstOrDefault(o => o.AvailableOnServices.Contains(service.Name));
+			{
+				if (service == null)
+					return null;
+				else
+					model = models.FirstOrDefault(o => o.AvailableOnServices.Contains(service.Name));
+			}
 			else if (service == null)
 				service = serviceConfigs.FirstOrDefault(o => model.AvailableOnServices.Contains(o.Name));
 
@@ -60,11 +66,12 @@ namespace Common.LLM
 			{
 				"Azure" => new AzureOpenAIRESTService(model, service),
 				//"AzureREST" => new AzureRESTLlmService(model, service, httpClientFactory),
-				//"Berget" => new BergetLlmService(model, service, httpClientFactory),
+				"Berget" => new BergetLlmService(model, service, httpClientFactory),
 				_ => throw new NotImplementedException($"Service {service.Name}")
 			};
 		}
 	}
+
 	// Temp until common nuget
 	public interface ILlmService
 	{
