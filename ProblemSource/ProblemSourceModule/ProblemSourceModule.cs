@@ -1,4 +1,4 @@
-﻿using Common.LLM;
+﻿using Common;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -77,9 +77,9 @@ namespace ProblemSource
             //services.AddSingleton<LlmServiceSpecification>(sp => sp.GetRequiredService<List<LlmServiceSpecification>>().Single(o => o.Name == "Azure"));
             //services.AddSingleton<ILlmService, AzureOpenAIRESTService>();
             var fallback = new NullLlmService();
-			services.AddSingleton(sp => sp.GetRequiredService<ILlmServiceFactory>().GetOrDefault(fallback, "gpt-5-mini", "Azure"));
+			services.AddSingleton(sp => sp.GetRequiredService<ILlmServiceFactory>().GetOrDefault(fallback, "Qwen3.8", "Berget")); //gpt-5-mini", "Azure
 
-            services.AddSingleton<ITrainingImporter, ImportExportTrainings>();
+			services.AddSingleton<ITrainingImporter, ImportExportTrainings>();
 
 			services.AddSingleton<TrainingAnalyzerCollection>();
             //services.AddSingleton<TrainingAnalyzerCollection>(sp => new TrainingAnalyzerCollection(new[] { }, sp.GetRequiredService<>));
