@@ -280,9 +280,12 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
 });
 */
             var user = userProvider.UserOrThrow;
-            if (!user.Trainings.GetAllIds().Contains(id))
-                throw new ArgumentOutOfRangeException("Not belonging to user");
-            var training = await trainingRepository.Get(id);
+            if (!user.Role.Contains("Admin"))
+            {
+				if (!user.Trainings.GetAllIds().Contains(id))
+					throw new ArgumentOutOfRangeException("Not belonging to user");
+			}
+			var training = await trainingRepository.Get(id);
             if (training == null)
                 throw new ArgumentOutOfRangeException();
             dto.Apply(training);

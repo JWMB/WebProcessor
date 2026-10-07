@@ -2813,7 +2813,8 @@
       "required": [
         "username",
         "role",
-        "trainings"
+        "trainings",
+        "hasMfaSecretKey"
       ],
       "properties": {
         "username": {
@@ -2834,6 +2835,12 @@
         },
         "defaultTrainingPlanName": {
           "type": "string"
+        },
+        "mfaEnabled": {
+          "type": "boolean"
+        },
+        "hasMfaSecretKey": {
+          "type": "boolean"
         }
       }
     },

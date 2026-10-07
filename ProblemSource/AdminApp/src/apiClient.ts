@@ -2263,6 +2263,8 @@ export interface GetUserDto {
     role: string;
     trainings: { [key: string]: number[]; };
     defaultTrainingPlanName?: string | undefined;
+    mfaEnabled?: boolean | undefined;
+    hasMfaSecretKey: boolean;
 }
 
 export interface CreateUsersResponseDto {

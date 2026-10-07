@@ -40,7 +40,7 @@ namespace TrainingApi.Services
             var principal = httpContextAccessor.HttpContext?.User;
 
 			var user = await GetUser(userRepository, principal);
-            if (user?.Role == Roles.Admin)
+            if (user?.Role == Roles.Admin || user?.Role == Roles.SuperAdmin)
             {
                 var impersonated = GetRequestImpersonatedUser(httpContextAccessor.HttpContext?.Request);
                 if (impersonated != null)

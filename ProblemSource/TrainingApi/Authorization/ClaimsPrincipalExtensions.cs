@@ -9,7 +9,7 @@ namespace TrainingApi.Authorization
 			var claim = principal?.FindFirst(MfaClaimUtls.ClaimName);
 			if (claim == null)
 				return false;
-			return claim.Value == MfaClaimUtls.ValidatedValue;
+			return claim.Value == MfaClaimUtls.ValidatedValue || claim.Value == MfaClaimUtls.NotRequiredValue;
         }
 
 		public static bool AtLeastRole(this ClaimsPrincipal principal, string requiredRoleName)

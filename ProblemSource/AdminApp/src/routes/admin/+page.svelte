@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, TelemetryItem } from '../../apiClient';
+	import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, TelemetryItem } from '../../apiClient';
 	import type { ApiFacade } from '../../apiFacade';
 	import { getApi, userStore } from '../../globalStore';
 	import { onMount } from 'svelte';
@@ -10,6 +10,7 @@ import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, Telemetr
 
 	let created: CreatedUserInfo[]; // { email: string, password: string }[]
 	const currentRole = $userStore?.role || "";
+	console.log("currentRole", currentRole);
 	let errors: TelemetryItem[] = [];
 	let errorsByPeriod: { when: string; items: TelemetryItem[] }[] = [];
 	let errorsByUser: { user: string; items: TelemetryItem[] }[] = [];
@@ -39,7 +40,15 @@ import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, Telemetr
 	}
 
 	function resetMFA(email: string) {
-		apiFacade.users.patch(email, <PatchUserDto>{ mfaSecretKey: "" }).then((r) => console.log('reset MFA', r));
+		if (!confirm("Reset MFA code?"))
+			return;
+		patchUser(email, { mfaSecretKey: "" })
+		//apiFacade.users.patch(email, <PatchUserDto>{ mfaSecretKey: "" })
+			.then((r) => console.log('reset MFA', r));
+	}
+	function setMFAEnabled(email: string, enabled: boolean) {
+		patchUser(email, { mfaEnabled: enabled })
+			.then((r) => console.log('MFA enabled changed', r));
 	}
 
 	const getElementValue = (id: string) => (<HTMLInputElement>document.getElementById(id)).value;
@@ -151,7 +160,7 @@ import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, Telemetr
 	<!-- <td><a href={`teacher?impersonate=${encodeURIComponent(user.username)}`}>{user.username}</a></td> -->
 	<td><a on:click={() => { apiFacade.impersonateUser = user.username; goto(`teacher?impersonate=${encodeURIComponent(user.username)}`)}}>{user.username}</a></td>
 	<td>
-	{#if currentRole != "SuperAdmin"}
+	{#if currentRole == "SuperAdmin"}
 		<select value={user.role} on:change={e => patchUser(user.username, { role: e.currentTarget.value})}>
 			<option value="">Not set</option>
 			<option value="Teacher">Teacher</option>
@@ -166,7 +175,8 @@ import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, Telemetr
 	<td style="word-wrap: break-word; max-width: 450px;">{JSON.stringify(user.trainings)}</td>
 	<td>
 		<input type="button" value="Pwd" on:click={() => changePassword(user.username)} />
-		<input type="button" title="Reset MFA code" value="MFA" on:click={() => changePassword(user.username)} />
+		<input type="button" title="Reset MFA code" disabled={!user.hasMfaSecretKey} value="MFA" on:click={() => resetMFA(user.username)} />
+		<input type="checkbox" title="MFA enabled" bind:checked={user.mfaEnabled} on:click={e => setMFAEnabled(user.username, e.currentTarget.checked)} />
 	</td>
 </tr>
 {/each}

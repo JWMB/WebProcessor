@@ -387,11 +387,21 @@ await fetch("https://curricullm.net/api/Users/?id=jbadmin", {
         public string Role { get; set; } = "";
         public Dictionary<string, List<int>> Trainings { get; set; } = new();
         public string? DefaultTrainingPlanName { get; set; }
+		public bool? MfaEnabled { get; set; }
+		public bool HasMfaSecretKey { get; set; }
 
-        public static GetUserDto FromUser(User user, IEnumerable<Training>? templates = null)
+
+		public static GetUserDto FromUser(User user, IEnumerable<Training>? templates = null)
         {
             //var defaultPlan = TrainingsController.SelectPlan(templates, user.Email);
-            return new GetUserDto { Role = user.Role, Username = user.Email, Trainings = user.Trainings, DefaultTrainingPlanName = null };
+            return new GetUserDto {
+                Role = user.Role,
+                Username = user.Email,
+                Trainings = user.Trainings,
+                DefaultTrainingPlanName = null,
+				MfaEnabled = user.MfaEnabled,
+                HasMfaSecretKey = string.IsNullOrEmpty(user.MfaSecretKey) == false
+			};
         }
     }
 

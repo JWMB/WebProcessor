@@ -8,6 +8,7 @@ namespace TrainingApi.Authorization
 		public const string ClaimName = "mfa";
 		public const string RequireValidationValue = "r";
 		public const string ValidatedValue = "v";
+		public const string NotRequiredValue = "";
 		public enum MfaStatus
 		{
 			None,
@@ -16,7 +17,7 @@ namespace TrainingApi.Authorization
 		}
         public static Claim CreateClaim(MfaStatus status)
         {
-            return new Claim(ClaimName, status switch { MfaStatus.None => "", MfaStatus.ValidationPassed => ValidatedValue, _ => RequireValidationValue, });
+            return new Claim(ClaimName, status switch { MfaStatus.None => NotRequiredValue, MfaStatus.ValidationPassed => ValidatedValue, _ => RequireValidationValue, });
 		}
 	}
 }
