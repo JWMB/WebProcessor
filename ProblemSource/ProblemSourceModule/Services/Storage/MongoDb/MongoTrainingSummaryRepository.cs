@@ -16,7 +16,8 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 
         public MongoTrainingSummaryRepository(IMongoDatabase db) //: base(db, item => 0, item => new MongoDocumentWrapper<TrainingSummary>(item, o => "0"))
         {
-            collection = new DbWrappedCollection<TrainingSummary, int>(db, item => 0, "Document._id", item => new MongoDocumentWrapper<TrainingSummary>(item)); //, o => "0"
+			//collection = new DbWrappedCollection<TrainingSummary, int>(db, item => 0, "Document._id", item => new MongoDocumentWrapper<TrainingSummary>(item)); //, o => "0"
+			collection = new DbWrappedCollection<TrainingSummary, int>(db, new InnerIdConfig<TrainingSummary, int> { Field = "Document._id", Getter = u => 0, Setter = u => { } }, item => new MongoDocumentWrapper<TrainingSummary>(item));
 		}
 
         public async Task<List<TrainingSummary>> GetAll() => (await collection.GetAll()).ToList();

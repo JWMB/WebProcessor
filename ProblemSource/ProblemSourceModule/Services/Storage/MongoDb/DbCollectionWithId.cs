@@ -8,25 +8,31 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
     public class DbCollectionWithId<TDocument, TId> where TDocument : DocumentBase
     {
         protected IMongoCollection<TDocument> collection;
-        private readonly string idField;
-        private readonly Func<TDocument, TId> getId;
+		//private readonly string idField;
+		//private readonly Func<TDocument, TId> getId;
+		private InnerIdConfig<TDocument, TId> innerIdConfig;
 
-        public DbCollectionWithId(IMongoDatabase db, string idField, Func<TDocument, TId> getId)
-        {
+		//     public DbCollectionWithId(IMongoDatabase db, string idField, Func<TDocument, TId> getId)
+		//     {
+		//collection = db.GetCollection<TDocument>(MongoTools.GetCollectionName<TDocument>());
+		//         this.idField = idField;
+		//         this.getId = getId;
+		//     }
+		public DbCollectionWithId(IMongoDatabase db, InnerIdConfig<TDocument, TId> innerIdConfig)
+		{
 			collection = db.GetCollection<TDocument>(MongoTools.GetCollectionName<TDocument>());
-            this.idField = idField;
-            this.getId = getId;
-        }
+			this.innerIdConfig = innerIdConfig;
+		}
 
 		public async Task<TId> InsertGetId(TDocument item)
 		{
 			await collection.InsertOneAsync(item);
-			return getId(item);
-        }
+			return innerIdConfig.Getter(item); //getId(item);
+		}
 
 		public IMongoCollection<TDocument> GetCollection() => collection;
-		public FilterDefinition<TDocument> GetIdFilter(TId id) => GetIdFilter(id, idField); // Builders<TDocument>.Filter.Eq(idField, id);
-		public FilterDefinition<TDocument> GetIdFilter(IEnumerable<TId> ids) => GetIdFilter(ids, idField); // Builders<TDocument>.Filter.AnyIn(idField, ids);
+		public FilterDefinition<TDocument> GetIdFilter(TId id) => GetIdFilter(id, innerIdConfig.Field); // idField); // Builders<TDocument>.Filter.Eq(idField, id);
+		public FilterDefinition<TDocument> GetIdFilter(IEnumerable<TId> ids) => GetIdFilter(ids, innerIdConfig.Field); // idField); // Builders<TDocument>.Filter.AnyIn(idField, ids);
 
 		public static FilterDefinition<TDocument> GetIdFilter(TId id, string idField) => Builders<TDocument>.Filter.Eq(idField, id);
 		public static FilterDefinition<TDocument> GetIdFilter(IEnumerable<TId> ids, string idField) => Builders<TDocument>.Filter.AnyIn(idField, ids);
@@ -42,10 +48,10 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 
 		public async Task Remove(TDocument item)
 		{
-			var found = await collection.FindOneAndDeleteAsync(GetIdFilter(getId(item)));
+			var found = await collection.FindOneAndDeleteAsync(GetIdFilter(innerIdConfig.Getter(item))); // getId(item)));
 		}
 
-		public async Task Update(TDocument item) => await collection.FindOneAndReplaceAsync(GetIdFilter(getId(item)), item);
+		public async Task Update(TDocument item) => await collection.FindOneAndReplaceAsync(GetIdFilter(innerIdConfig.Getter(item)), item);
 		//public Task Upsert(TDocument item) => Upsert([item]);
 
 		public async Task<List<TDocument>> ListAsync(FilterDefinition<TDocument> filter, CancellationToken cancellationToken = default)
@@ -61,7 +67,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 
 		private FilterDefinition<TDocument> GetFilter(IEnumerable<TDocument> items, FilterDefinition<TDocument>? globalFilter = null)
 		{
-			var filter = Builders<TDocument>.Filter.In(idField, items.Select(getId));
+			var filter = Builders<TDocument>.Filter.In(innerIdConfig.Field, items.Select(innerIdConfig.Getter));
 			if (globalFilter != null)
 				filter = Builders<TDocument>.Filter.And(globalFilter, filter);
 			return filter;
@@ -83,14 +89,19 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		// Func<TDocument, FilterDefinition<TDocument>> createFilter, 
 		public async Task<(IEnumerable<TDocument> Added, IEnumerable<TDocument> Updated)> Upsert(IEnumerable<TDocument> items, FilterDefinition<TDocument>? globalFilter = null)
         {
-			var itemsWithId = items.Select(o => new { Id = getId(o), Item = o }).ToList();
+			var itemsWithId = items.Select(o => new { Id = innerIdConfig.Getter(o), Item = o }).ToList();
 
-			var projection = Builders<TDocument>.Projection.Include("_id"); //Include("Id").
-			if (idField.Any() == true)
-				projection = projection.Include(idField);
+			foreach (var item in items)
+				innerIdConfig.Setter(item);
+
+			var projection = Builders<TDocument>.Projection.Include("_id");
+			if (innerIdConfig.Field.Any() == true)
+				projection = projection.Include(innerIdConfig.Field);
+
+			var taa = await collection.Find(GetFilter(items, globalFilter)).Project(projection).ToListAsync();
 
 			var withSubIdValue = (await collection.Find(GetFilter(items, globalFilter)).Project(projection).ToListAsync())
-				.Select(o => new { Id = o["_id"].AsObjectId, SubId = idField.Any() ? GetValueByPath(o, idField)?.ToString() : null })
+				.Select(o => new { Id = o["_id"].AsObjectId, SubId = innerIdConfig.Field.Any() ? GetValueByPath(o, innerIdConfig.Field)?.ToString() : null })
 				//.Select(o => BsonSerializer.Deserialize<X>(o))
 				.Where(o => o.SubId != null).ToList();
 			if (withSubIdValue == null)

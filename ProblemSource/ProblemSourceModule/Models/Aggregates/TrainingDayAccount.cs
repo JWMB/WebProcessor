@@ -19,7 +19,11 @@ namespace ProblemSource.Models.Aggregates
         public int ResponseMinutes { get; set; }
         public int RemainingMinutes { get; set; }
 
-        public override string ToString()
+		public string CompoundId { get; set; } = "";
+		public static string UniqueIdWithinUser(TrainingDayAccount p) => $"{p.TrainingDay}";
+		public static void SetUniqueIdWithinUser(TrainingDayAccount p) => p.CompoundId = UniqueIdWithinUser(p);
+
+		public override string ToString()
         {
             // '{AccountUuid}' 
             return $"{TrainingDay} {StartTime} rTime:{ResponseMinutes} #corr:{NumCorrectAnswers} #q:{NumQuestions} #racewon:{NumRacesWon}";

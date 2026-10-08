@@ -6,7 +6,8 @@ namespace ProblemSource.Models.Aggregates
     public class Phase
     {
         //public string uuid { get; set; }
-        public int id { get; set; }
+        
+		public int id { get; set; }
         public int training_day { get; set; }
         public string exercise { get; set; } = string.Empty;
         public string phase_type { get; set; } = string.Empty;
@@ -15,7 +16,11 @@ namespace ProblemSource.Models.Aggregates
         public List<Problem> problems { get; set; } = new(); 
         public UserTest? user_test { get; set; }
 
-        public override bool Equals(object? obj)
+		public string CompoundId { get; set; } = "";
+		public static string UniqueIdWithinUser(Phase p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{Math.Abs(p.time)}";
+		public static void SetUniqueIdWithinUser(Phase p) => p.CompoundId = UniqueIdWithinUser(p);
+
+		public override bool Equals(object? obj)
         {
             if (obj == null || obj is Phase typed == false)
                 return false;
@@ -50,9 +55,7 @@ namespace ProblemSource.Models.Aggregates
 
         public static string GetExerciseCommonName(string exercise) => Regex.Replace(exercise, @"#\d+", ""); // TODO: #intro as well?
 
-        public static string UniqueIdWithinUser(Phase p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{Math.Abs(p.time)}";
-
-        public static Phase CreateForTest(int suffix)
+		public static Phase CreateForTest(int suffix)
         {
             return new Phase
             {

@@ -1536,7 +1536,8 @@
         "numCorrectAnswers",
         "numQuestions",
         "responseMinutes",
-        "remainingMinutes"
+        "remainingMinutes",
+        "compoundId"
       ],
       "properties": {
         "accountId": {
@@ -1585,6 +1586,9 @@
         "remainingMinutes": {
           "type": "integer",
           "format": "int32"
+        },
+        "compoundId": {
+          "type": "string"
         }
       }
     },
@@ -1621,6 +1625,9 @@
         "account_id": {
           "type": "integer",
           "format": "int32"
+        },
+        "compoundId": {
+          "type": "string"
         },
         "training_day": {
           "type": "integer",
@@ -2410,7 +2417,8 @@
         "phase_type",
         "time",
         "sequence",
-        "problems"
+        "problems",
+        "compoundId"
       ],
       "properties": {
         "id": {
@@ -2443,6 +2451,9 @@
         },
         "user_test": {
           "$ref": "#/definitions/UserTest"
+        },
+        "compoundId": {
+          "type": "string"
         }
       }
     },

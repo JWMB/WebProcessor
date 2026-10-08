@@ -12,10 +12,26 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		private readonly Func<TDocument, TId> getId;
 		private readonly Func<TDocument, MongoTrainingAssociatedDocumentWrapper<TDocument>> createWrapped;
 
-		public DbTrainingAssociatedWrappedCollection(IMongoDatabase db, Func<TDocument, TId> getId, Func<TDocument, MongoTrainingAssociatedDocumentWrapper<TDocument>> createWrapped)
+		//public DbTrainingAssociatedWrappedCollection(IMongoDatabase db, Func<TDocument, TId> getId, Func<TDocument, MongoTrainingAssociatedDocumentWrapper<TDocument>> createWrapped, string compoundIdField)
+		//{
+		//	collection = new DbCollectionWithId<MongoTrainingAssociatedDocumentWrapper<TDocument>, TId>(db, compoundIdField, wrapper => getId(wrapper.Document));
+		//	this.getId = getId;
+		//	this.createWrapped = createWrapped;
+		//}
+		public DbTrainingAssociatedWrappedCollection(IMongoDatabase db, InnerIdConfig<TDocument, TId> innerIdConfig, Func<TDocument, MongoTrainingAssociatedDocumentWrapper<TDocument>> createWrapped)
 		{
-			collection = new DbCollectionWithId<MongoTrainingAssociatedDocumentWrapper<TDocument>, TId>(db, "", wrapper => getId(wrapper.Document));
-			this.getId = getId;
+			//collection = new DbCollectionWithId<MongoTrainingAssociatedDocumentWrapper<TDocument>, TId>(db, innerIdConfig.Field, wrapper => innerIdConfig.Getter(wrapper.Document));
+
+			var wrappedId = new InnerIdConfig<MongoTrainingAssociatedDocumentWrapper<TDocument>, TId>
+			{
+				Field = innerIdConfig.Field,
+				Getter = o => innerIdConfig.Getter(o.Document),
+				Setter = o => innerIdConfig.Setter(o.Document)
+			};
+
+
+			collection = new DbCollectionWithId<MongoTrainingAssociatedDocumentWrapper<TDocument>, TId>(db, wrappedId);
+			this.getId = innerIdConfig.Getter;
 			this.createWrapped = createWrapped;
 		}
 
@@ -25,7 +41,8 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 
 		public Task Remove(TDocument item) => collection.Remove(CreateWrapped(item));
 
-		public async Task<(IEnumerable<TDocument> Added, IEnumerable<TDocument> Updated)> Upsert(IEnumerable<TDocument> items, FilterDefinition<MongoTrainingAssociatedDocumentWrapper<TDocument>>? globalFilter = null) //, Func<MongoDocumentWrapper<TDocument>, FilterDefinition<MongoDocumentWrapper<TDocument>>> createFilter)
+		public async Task<(IEnumerable<TDocument> Added, IEnumerable<TDocument> Updated)> Upsert(IEnumerable<TDocument> items,
+			FilterDefinition<MongoTrainingAssociatedDocumentWrapper<TDocument>>? globalFilter = null) //, Func<MongoDocumentWrapper<TDocument>, FilterDefinition<MongoDocumentWrapper<TDocument>>> createFilter)
 		{
 			var result = await collection.Upsert(items.Select(CreateWrapped), globalFilter); //createFilter
 			return (result.Added.Select(o => o.Document), result.Updated.Select(o => o.Document));
@@ -53,11 +70,22 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
         protected DbCollectionWithId<MongoDocumentWrapper<TDocument>, TId> collection;
         private readonly Func<TDocument, MongoDocumentWrapper<TDocument>> createWrapped;
 
-        public DbWrappedCollection(IMongoDatabase db, Func<TDocument, TId> getId, string idField, Func<TDocument, MongoDocumentWrapper<TDocument>> createWrapped)
+		//      public DbWrappedCollection(IMongoDatabase db, Func<TDocument, TId> getId, string idField, Func<TDocument, MongoDocumentWrapper<TDocument>> createWrapped)
+		//{
+		//	collection = new DbCollectionWithId<MongoDocumentWrapper<TDocument>, TId>(db, idField, wrapper => getId(wrapper.Document));
+		//          this.createWrapped = createWrapped;
+		//      }
+		public DbWrappedCollection(IMongoDatabase db, InnerIdConfig<TDocument, TId> innerIdConfig, Func<TDocument, MongoDocumentWrapper<TDocument>> createWrapped)
 		{
-			collection = new DbCollectionWithId<MongoDocumentWrapper<TDocument>, TId>(db, idField, wrapper => getId(wrapper.Document));
-            this.createWrapped = createWrapped;
-        }
+			var wrappedId = new InnerIdConfig<MongoDocumentWrapper<TDocument>, TId>
+			{
+				Field = innerIdConfig.Field,
+				Getter = o => innerIdConfig.Getter(o.Document),
+				Setter = o => innerIdConfig.Setter(o.Document)
+			};
+			collection = new DbCollectionWithId<MongoDocumentWrapper<TDocument>, TId>(db, wrappedId); //, wrapper => getId(wrapper.Document));
+			this.createWrapped = createWrapped;
+		}
 
 		public IMongoCollection<MongoDocumentWrapper<TDocument>> GetCollection() => collection.GetCollection();
 

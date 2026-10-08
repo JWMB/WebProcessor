@@ -16,20 +16,33 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 		public int TrainingId { get; set; }
 	}
 
+	public class InnerIdConfig<TDocument, TId>
+	{
+		public required Func<TDocument, TId> Getter { get; set; }
+		public required Action<TDocument> Setter { get; set; }
+		public required string Field { get; set; }
+	}
+
 	public class MongoTrainingAssociatedBatchRepository<TDocument, TId> : IBatchRepository<TDocument>
 	{
-		//private readonly Func<TDocument, TId> getId;
 		private readonly int trainingId;
 		private readonly DbTrainingAssociatedWrappedCollection<TDocument, TId> collection;
-		//private readonly DbWrappedCollection<TDocument, TId> collection;
 
 		public IMongoCollection<MongoTrainingAssociatedDocumentWrapper<TDocument>> GetCollection() => collection.GetCollection();
 
-		public MongoTrainingAssociatedBatchRepository(IMongoDatabase db, Func<TDocument, TId> getId, int trainingId)
+		//public MongoTrainingAssociatedBatchRepository(IMongoDatabase db, Func<TDocument, TId> getId, int trainingId, string compoundIdField)
+		//{
+		//	collection = new DbTrainingAssociatedWrappedCollection<TDocument, TId>(
+		//		db, getId, item => new MongoTrainingAssociatedDocumentWrapper<TDocument>(item, trainingId, o => getId(o)?.ToString() ?? ""), compoundIdField);
+  //          this.trainingId = trainingId;
+		//}
+		public MongoTrainingAssociatedBatchRepository(IMongoDatabase db, int trainingId, InnerIdConfig<TDocument, TId> innerIdConfig)
 		{
-			collection = new DbTrainingAssociatedWrappedCollection<TDocument, TId>(db, getId, item => new MongoTrainingAssociatedDocumentWrapper<TDocument>(item, trainingId, o => getId(o)?.ToString() ?? ""));
-            //this.getId = getId;
-            this.trainingId = trainingId;
+			//collection = new DbTrainingAssociatedWrappedCollection<TDocument, TId>(
+			//	db, innerIdConfig.Getter, item => new MongoTrainingAssociatedDocumentWrapper<TDocument>(item, trainingId, o => innerIdConfig.Getter(o)?.ToString() ?? ""), innerIdConfig.Field);
+			collection = new DbTrainingAssociatedWrappedCollection<TDocument, TId>(
+				db, innerIdConfig, item => new MongoTrainingAssociatedDocumentWrapper<TDocument>(item, trainingId, o => innerIdConfig.Getter(o)?.ToString() ?? ""));
+			this.trainingId = trainingId;
 		}
 
 		private FilterDefinition<MongoTrainingAssociatedDocumentWrapper<TDocument>> GetTrainingIdFilter()

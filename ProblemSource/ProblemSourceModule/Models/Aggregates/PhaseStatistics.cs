@@ -10,6 +10,8 @@ namespace ProblemSource.Models.Aggregates
         public int phase_id { get; set; }
         public int account_id { get; set; }
 
+        public string? CompoundId { get; set; }
+
         public int training_day { get; set; }
         public string exercise { get; set; } = string.Empty;
         public string phase_type { get; set; } = string.Empty;
@@ -43,8 +45,13 @@ namespace ProblemSource.Models.Aggregates
 
         //Score,Target score,Planet target score
         public static string UniqueIdWithinUser(PhaseStatistics p) => $"{p.training_day}_{p.exercise.Replace("#", "")}_{Math.Abs(p.timestamp.ToUnixTimestamp())}";
+        public static void SetUniqueIdWithinUser(PhaseStatistics p)
+        {
+            p.CompoundId = UniqueIdWithinUser(p);
+        }
 
-        public static List<PhaseStatistics> Create(int accountId, IEnumerable<Phase> phases)
+
+		public static List<PhaseStatistics> Create(int accountId, IEnumerable<Phase> phases)
         {
             return phases.Select(phase =>
             {

@@ -1933,12 +1933,14 @@ export interface TrainingDayAccount {
     numQuestions: number;
     responseMinutes: number;
     remainingMinutes: number;
+    compoundId: string;
 }
 
 export interface PhaseStatistics {
     id: number;
     phase_id: number;
     account_id: number;
+    compoundId?: string | undefined;
     training_day: number;
     exercise: string;
     phase_type: string;
@@ -2188,6 +2190,7 @@ export interface Phase {
     sequence: number;
     problems: Problem[];
     user_test?: UserTest | undefined;
+    compoundId: string;
 }
 
 export interface Problem {
