@@ -36,12 +36,13 @@ namespace TrainingApi.Controllers
         private readonly IUserGeneratedDataRepositoryProviderFactory dataRepoFactory;
 
         private readonly ILogger<AggregatesController> log;
+		private readonly IMongoDatabase? database; // c'mon, stupid mix of abstract interfaces and direct calls!?!
 
-        public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider,
+		public TrainingsController(ITrainingPlanRepository trainingPlanRepository, ITrainingRepository trainingRepository, IStatisticsProvider statisticsProvider,
             IUserRepository userRepository, ICurrentUserProvider userProvider, ITrainingUsernameService trainingUsernameService,
             IAggregationService aggregationService, IUserGeneratedDataRepositoryProviderFactory dataRepoFactory,
             ITrainingTemplateRepository trainingTemplateRepository, AiCoachAnalyzer aiAnalyzer, ILlmService llmService, ITrainingImporter importer, IMongoDatabase db,
-            ILogger<AggregatesController> logger)
+            ILogger<AggregatesController> logger, IMongoDatabase? database)
         {
             //this.trainingPlanRepository = trainingPlanRepository;
             this.trainingRepository = trainingRepository;
@@ -57,7 +58,8 @@ namespace TrainingApi.Controllers
             this.importer = importer;
             this.db = db;
             log = logger;
-        }
+			this.database = database;
+		}
 
         [HttpPost]
         public async Task<string> Post(TrainingCreateDto dto)
@@ -417,8 +419,65 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
             return trainingIds.Any() ? trainingIds.FirstOrDefault() : 0;
         }
 
-        //[Authorize(Roles = RolesRequirement.Admin)]
-        [AtLeastRole(Roless.Admin)]
+		[HttpGet("allphasesstats")]
+		[AtLeastRole(Roless.Admin)]
+		public async Task<List<object>> GetSomePhaseStats()
+		{
+            //IMongoDatabase db = client.GetDatabase("");
+            if (database == null)
+                return [];
+            var collection = database.GetCollection<ProblemSourceModule.Services.Storage.MongoDb.MongoTrainingAssociatedDocumentWrapper<PhaseStatistics>>("PhaseStatistics");
+            var items = await (await collection.FindAsync(o => true)).ToListAsync();
+
+            var grouped = items.GroupBy(o => o.TrainingId).ToDictionary(
+                tr => tr.Key,
+                tr => tr.GroupBy(g => g.Document.training_day).ToDictionary(
+                    td => td.Key,
+                    td => td.GroupBy(ph => $"{ph.Document.exercise}_{ph.Document.timestamp}").Select(
+                         ph => ph.OrderByDescending(o => o.Document.end_timestamp).ThenByDescending(o => o.Document.num_questions).First())
+                        .GroupBy(o => o.Document.exercise)
+                            .Select(lst => new PhaseStatistics {
+                                account_id = tr.Key,
+                                training_day = td.Key,
+                                exercise = lst.Key,
+
+                                level_min = lst.Min(o => o.Document.level_min),
+                                level_max = lst.Max(o => o.Document.level_max),
+                                num_questions = lst.Sum(o => o.Document.num_questions),
+                                num_correct_answers = lst.Sum(o => o.Document.num_correct_answers),
+                                response_time_total = lst.Sum(o => o.Document.response_time_total),
+                                timestamp = lst.Min(o => o.Document.timestamp),
+                                end_timestamp = lst.Min(o => o.Document.timestamp).AddMinutes(lst.Select(o => (o.Document.end_timestamp - o.Document.timestamp).TotalMinutes).Sum())
+							})
+                            )
+                );
+
+            var flat = grouped.Values.SelectMany(o => o.Values.SelectMany(p => p));
+            var byDayAndExercise = flat.GroupBy(o => o.training_day).ToDictionary(
+                    td => td.Key,
+                    td => td.GroupBy(o => o.exercise).ToDictionary(
+                        ex => ex.Key,
+                        lst => new //PhaseStatistics
+                        {
+                            account_id = lst.Count(),
+                            training_day = td.Key,
+							exercise = lst.Key,
+
+							level_min = lst.Min(o => o.level_min),
+                            level_max = lst.Max(o => o.level_max),
+                            num_questions = lst.Sum(o => (long)o.num_questions),
+                            num_correct_answers = lst.Sum(o => (long)o.num_correct_answers),
+                            response_time_total = lst.Sum(o => (long)o.response_time_total),
+                        })
+                    );
+
+            var flat2 = byDayAndExercise.SelectMany(o => o.Value.Select(p => p.Value))
+                .OrderBy(o => o.training_day).ThenBy(o => o.exercise).ToList();
+            return flat2.Cast<object>().ToList();
+		}
+
+		//[Authorize(Roles = RolesRequirement.Admin)]
+		[AtLeastRole(Roless.Admin)]
 		//[Authorize(Roles = RolesRequirement.SuperAdmin)]
 		[HttpGet]
         [Route("allsummaries")]
