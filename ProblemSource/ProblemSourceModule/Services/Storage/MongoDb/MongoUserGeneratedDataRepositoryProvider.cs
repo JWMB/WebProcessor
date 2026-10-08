@@ -38,7 +38,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 				{
 					Getter = Phase.UniqueIdWithinUser,
 					Setter = Phase.SetUniqueIdWithinUser,
-					Field = nameof(Phase.CompoundId)
+					Field = $"Document.{nameof(Phase.CompoundId)}"
 				});
 
 		public IBatchRepository<TrainingDayAccount> TrainingDays
@@ -48,7 +48,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 				{
 					Getter = tda => tda.TrainingDay,
 					Setter = TrainingDayAccount.SetUniqueIdWithinUser,
-					Field = nameof(TrainingDayAccount.CompoundId)
+					Field = $"Document.{nameof(TrainingDayAccount.CompoundId)}"
 				});
 
 		public IBatchRepository<PhaseStatistics> PhaseStatistics
@@ -59,7 +59,7 @@ namespace ProblemSourceModule.Services.Storage.MongoDb
 				{
 					Getter = ProblemSource.Models.Aggregates.PhaseStatistics.UniqueIdWithinUser,
 					Setter = ProblemSource.Models.Aggregates.PhaseStatistics.SetUniqueIdWithinUser,
-					Field = nameof(ProblemSource.Models.Aggregates.PhaseStatistics.CompoundId)
+					Field = $"Document.{nameof(ProblemSource.Models.Aggregates.PhaseStatistics.CompoundId)}"
 				});
 
 		public IBatchRepository<TrainingSummary> TrainingSummaries
