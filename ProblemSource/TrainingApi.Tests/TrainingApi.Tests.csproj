@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -14,7 +14,7 @@
     <PackageReference Include="Shouldly" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="System.Net.Http" />
-    <PackageReference Include="System.Text.Encodings.Web" />
+    <!--<PackageReference Include="System.Text.Encodings.Web" />-->
     <PackageReference Include="System.Text.RegularExpressions" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
@@ -26,12 +26,12 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Xunit.SkippableFact" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" VersionOverride="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" VersionOverride="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" VersionOverride="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" VersionOverride="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" VersionOverride="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" VersionOverride="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" VersionOverride="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" VersionOverride="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="10.0.8" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OldDb\OldDb.csproj" />

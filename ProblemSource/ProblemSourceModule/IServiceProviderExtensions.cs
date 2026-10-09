@@ -27,7 +27,7 @@ namespace ProblemSource
             var constructor = constructors.First();
             var parameterInfo = constructor.GetParameters();
 
-            var parameters = parameterInfo.Select(o => instance.GetRequiredService(o.ParameterType)).ToArray();
+            var parameters = parameterInfo.Select(o => instance.GetService(o.ParameterType)).ToArray();
 
             return constructor.Invoke(parameters);
         }

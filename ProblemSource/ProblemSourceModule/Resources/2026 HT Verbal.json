@@ -1,0 +1,239 @@
+{
+	"__type": "New",
+	"groups": [
+		{ "id": "Math", "weight": 50, "games": [
+			{ "id": "numberline", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 6 } },
+			{ "id": "npals", "weight": 1, "lock": { "__type": "ExerciseLevelHighestCriteria", "exerciseId": "npals", "level": 44 } },
+			{ "id": "addsub", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 40 } }
+		]},
+		{ "id": "WM", "weight": 0, "games": [
+			{ "id": "WM_grid", "weight": 1 },
+			{ "id": "WM_crush", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 6 } },
+			{ "id": "WM_circle", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 13 } },
+			{ "id": "WM_numbers", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 18 } }
+		]},
+		{ "id": "Reasoning", "weight": 0, "games": [
+			{ "id": "NVR_SO", "weight": 1 },
+			{ "id": "NVR_RP", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 3 } }
+		]},
+		{ "id": "Rotation", "weight": 0, "games": [
+			{ "id": "rotation", "weight": 1 }
+		]},
+		{ "id": "Verbal", "weight": 50, "games": [
+			{ "id": "collectWords", "weight": 1 },
+			{ "id": "rhymes", "weight": 1 },
+			{ "id": "buildWord", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 5 } },
+			{ "id": "memory", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 10 } },
+			{ "id": "crossword", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 25 } }
+		]}
+	],
+
+	"definitions": [
+		{ "id": "templateWM", "phases": [
+			{ "type": "PhaseWorkingMemory", "phase": "TEST",
+					"endCriteriaData": {
+						"target": {
+							"type": "CORRECT_TOTAL", "dynamicValue": { "type": "MEDALS", "values": [ 6, 6, 6 ], "adaptAfterNoOfFails": 2 }
+						},
+						"end": { "type": "INCORRECT_TOTAL", "value": 5
+						}
+					}
+			}
+		]},
+		{ "id": "templateAssess", "phases": [
+			{ "type": "AgnosticGame",
+				"stimuliType": "QnA",
+				"progVisualizer": "assessment",
+				"problemFactory": {
+					"¤type": "PredefinedStimuliFactory",
+					"problemFile": "N/A",
+					"filter": "AutoIdAndRun",
+					"repeatPredefinedProblems": true
+				}
+			}
+		]},
+		{ "id": "templateMathAssess", "template": "templateAssess", "phases": [
+			{ "phase": "GUIDE",
+			"problemFactory": { "problemFile": "file://Resources/MathTestAddSub.csv" },
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 4 } }
+			},
+			{ "phase": "TEST",
+			"problemFactory": { "problemFile": "file://Resources/MathTestAddSub.csv" },
+				"endCriteriaData": {
+					"target": { "type": "QUESTIONS_TOTAL", "value": 15 },
+					"end": { "type": "INCORRECT_TOTAL", "value": 7 }
+				}
+			}
+		]},
+		{ "id": "templateCompareAssess", "template": "templateAssess", "phases": [
+			{ "phase": "GUIDE",
+			"problemFactory": { "problemFile": "file://Resources/MathTestComparison.csv" },
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 4 } }
+			},
+			{ "phase": "TEST",
+			"problemFactory": { "problemFile": "file://Resources/MathTestComparison.csv" },
+				"endCriteriaData": {
+					"target": { "type": "CORRECT_TOTAL", "value": 46 },
+					"fail": { "type": "INCORRECT_IN_ROW", "value": 4 },
+            		"end": { "type": "TIME", "value": 180 }
+				}
+			}
+		]},
+		{ "id": "templateGroupitizeAssess", "template": "templateAssess", "phases": [
+			{ "phase": "GUIDE",
+			"problemFactory": { "¤type": "ProblemFactoryGroupitizing" },
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 2 } }
+			},
+			{ "phase": "TEST",
+			"problemFactory": { "¤type": "ProblemFactoryGroupitizing" },
+				"endCriteriaData": {
+					"target": { "type": "CORRECT_TOTAL", "value": 15 },
+					"end": { "type": "INCORRECT_TOTAL", "value": 7 }
+				}
+			}
+		]},
+		{ "id": "mathTest01_add", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest01_sub", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest02_add", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest02_sub", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest03_add", "template": "templateMathAssess", "phases": [ { }, { } ]},
+		{ "id": "mathTest03_sub", "template": "templateMathAssess", "phases": [ { }, { } ]},
+
+		{ "id": "numberComparison01", "template": "templateCompareAssess", "phases": [ { }, { } ]},
+		{ "id": "numberComparison02", "template": "templateCompareAssess", "phases": [ { }, { } ]},
+		{ "id": "numberComparison03", "template": "templateCompareAssess", "phases": [ { }, { } ]},
+
+		{ "id": "groupitize01", "template": "templateGroupitizeAssess", "phases": [ { }, { } ]},
+		{ "id": "groupitize02", "template": "templateGroupitizeAssess", "phases": [ { }, { } ]},
+		{ "id": "groupitize03", "template": "templateGroupitizeAssess", "phases": [ { }, { } ]},
+
+		{ "id": "numberline", "title": "Numberline", "phases": [
+				{ "type": "PhaseArrows",
+					"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 7 }, "end": { "type": "INCORRECT_TOTAL", "value": 3 } }
+				}
+			]
+		},
+		{ "id": "npals", "title": "NPals", "phases": [
+				{ "type": "PhaseTenPals",
+					"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 11 }, "end": { "type": "TIME", "value": 90 } },
+					"levels": { "file": "file://Resources/NPals.csv" },
+					"stimuliType": "NPALS"
+				}
+			]},
+		{ "id": "addsub", "title": "AddSub", "phases": [
+				{ "type": "PhaseTenPals",
+					"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 11 }, "end": { "type": "TIME", "value": 90 } },
+					"levels": { "file": "file://Resources/NPals.csv" },
+					"stimuliType": "NPALS"
+				}
+			]},
+
+
+		{ "id": "crossword", "title": "Crossword", "phases":[
+			{ "type": "AgnosticGame", "problemFactory": { "¤type": "CrosswordFactory" },
+				"levelManager": { "classLvlDayChange": "LevelNoChange" },
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 1 }, "end": { "type": "INCORRECT_TOTAL", "value": 1 } }
+			}
+		]},
+		{ "id": "collectWords", "title": "CollectWords", "phases":[
+			{ "type": "AgnosticGame",
+				"problemFactory": {
+					"¤type": "CollectWordsFactory",
+					"url": "https://codeberg.org/ella_grub/Vektor_Project/src/branch/main/CollectWords.tsv"
+				},
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 7 }, "end": { "type": "INCORRECT_TOTAL", "value": 3 } }
+			}
+		]},
+		{ "id": "buildWord", "title": "BuildWord", "phases":[
+			{ "type": "AgnosticGame",
+				"problemFactory": {
+					"¤type": "BuildWordsFactory",
+					"url": "https://codeberg.org/ella_grub/Vektor_Project/src/branch/main/BuildWords.tsv"
+				},
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 7 }, "end": { "type": "INCORRECT_TOTAL", "value": 3 } }
+			}
+		]},
+		{ "id": "rhymes", "title": "Rhymes", "phases":[
+			{ "type": "AgnosticGame",
+				"problemFactory": {
+					"¤type": "RhymesFactory",
+					"url": "https://codeberg.org/ella_grub/Vektor_Project/src/branch/main/Rhymes.tsv"
+				},
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 7 }, "end": { "type": "INCORRECT_TOTAL", "value": 3 } }
+			}
+		]},
+		{ "id": "memory", "title": "Memory", "phases":[
+			{ "type": "AgnosticGame",
+				"problemFactory": {
+					"¤type": "WordPicMemoryFactory",
+					"url": "https://codeberg.org/ella_grub/Vektor_Project/src/branch/main/Memory.tsv"
+				},
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 7 }, "end": { "type": "INCORRECT_TOTAL", "value": 3 } }
+			}
+		]},
+
+		{ "id": "NVR_SO", "title": "Sequential Order", "phases": [
+			{ "type": "PhaseNVR",
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 6 }, "end": { "type": "INCORRECT_TOTAL", "value": 5 } },
+				"stimuliType": "NVR_SO"
+			}
+		]},
+		{ "id": "NVR_RP", "title": "Repeated Patterns", "phases": [
+			{ "type": "PhaseNVR",
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 6 }, "end": { "type": "INCORRECT_TOTAL", "value": 5 } },
+				"stimuliType": "NVR_RP",
+				"problemFactory": { "levelsFile": "LevelsRP.tsv" }
+			}
+		]},
+		{ "id": "rotation", "title": "Rotation", "phases": [
+			{ "type": "GameRotation",
+				"endCriteriaData": { "target": { "type": "CORRECT_TOTAL", "value": 6 }, "end": { "type": "INCORRECT_TOTAL", "value": 5 } },
+				"stimuliType": "ROTATE",
+				"problemFactory": { "¤type": "RotationStimuliFactory" }
+			}
+		]},
+
+		{ "id": "WM_grid", "title": "Grid", "template": "templateWM", "phases": [
+			{ "stimuliType": "WM_GRID", "settings": {
+				"size": { "x": 4, "y": 4 }
+			}}
+		]},
+		{ "id": "WM_crush", "title": "Crush", "template": "templateWM", "phases": [
+			{ "stimuliType": "WM_CRUSH", "settings": {
+				"numItems": -1
+			}}
+		]},
+		{ "id": "WM_circle", "title": "Circle", "template": "templateWM", "phases": [
+			{ "stimuliType": "WM_CIRCLE", "settings": {
+				"size": { "x": 10, "y": 1 }
+			}}
+		]},
+		{ "id": "WM_numbers", "title": "Numbers", "template": "templateWM", "phases": [
+			{ "stimuliType": "WM_NUMBERS", "settings": { 
+				"size": { "x": 3, "y": 3 },
+				"sequenceModifiers": { "post": "Reverse" }
+			}}
+		]}
+	],
+	"triggers": [
+
+		{ "triggerTime": "START_OF_DAY", "criteriaValues": [ { "name": "trainingDay", "value": "0" } ],
+			"actionData": { "type": "MagicCutSceneTriggerAction", "id": "opening_scene",
+				"properties": { "noOfImages": 12, "imageBasePath": "magical/intro/intro", "backgroundSound": "fx/intro_slide_" }
+			}
+		},
+
+	  { "triggerTime": "MAP", "criteriaValues": [ { "name": "trainingDay", "value": "3" } ],
+			"actionData": { "type": "StartExerciseTriggerAction", "id": "day3test1", "properties": { "id": "mathTest01_add" } }
+		},
+	  { "triggerTime": "MAP", "criteriaValues": [ { "name": "trainingDay", "value": "3" } ],
+			"actionData": { "type": "StartExerciseTriggerAction", "id": "day3test2", "properties": { "id": "mathTest01_sub" } }
+		},
+	    { "triggerTime": "MAP", "criteriaValues": [ { "name": "trainingDay", "value": "4" } ],
+			"actionData": { "type": "StartExerciseTriggerAction", "id": "day4test1", "properties": { "id": "numberComparison01" } }
+		},
+	    { "triggerTime": "MAP", "criteriaValues": [ { "name": "trainingDay", "value": "4" } ],
+			"actionData": { "type": "StartExerciseTriggerAction", "id": "day4test2", "properties": { "id": "mathTest01" } }
+		}
+	]
+}

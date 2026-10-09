@@ -66,7 +66,7 @@ export class ErrorHandling {
                 if (e.reason instanceof Error) {
                     message = e.reason.message;
                     if (e.reason instanceof ApiException) {
-                        if (e.reason.status === 401) {
+                        if (e.reason.status === 401) { // Note: we incorrectly return 403 from HandleRequirementAsync when MFA not fulfilled
                             goto(`${base}/login`);
                             return;
                         } else if (e.reason.status === 404) {

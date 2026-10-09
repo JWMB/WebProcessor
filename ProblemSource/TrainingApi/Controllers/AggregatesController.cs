@@ -41,7 +41,7 @@ namespace TrainingApi.Controllers
         private void AssertAccess(int trainingId)
         {
             var user = userProvider.UserOrThrow;
-            if (user.Role != Roles.Admin)
+            if (user.Role != Roles.Admin && user.Role != Roles.SuperAdmin)
             {
                 if (!userProvider.UserOrThrow.Trainings.Any(kv => kv.Value.Contains(trainingId)))
                     throw new AuthenticationException($"Access denied for training {trainingId}"); // TODO: AuthorizationException
