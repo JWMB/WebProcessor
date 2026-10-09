@@ -870,6 +870,43 @@ export class TrainingsClient {
         return Promise.resolve<TrainingSummaryDto[]>(null as any);
     }
 
+    getTrialData(trainingIds: string | null | undefined, maxRows: number | null | undefined): Promise<TrialDataExportRow[]> {
+        let url_ = this.baseUrl + "/api/Trainings/trialdata?";
+        if (trainingIds !== undefined && trainingIds !== null)
+            url_ += "trainingIds=" + encodeURIComponent("" + trainingIds) + "&";
+        if (maxRows !== undefined && maxRows !== null)
+            url_ += "maxRows=" + encodeURIComponent("" + maxRows) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetTrialData(_response);
+        });
+    }
+
+    protected processGetTrialData(response: Response): Promise<TrialDataExportRow[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TrialDataExportRow[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TrialDataExportRow[]>(null as any);
+    }
+
     getSummaries(group: string | null | undefined): Promise<TrainingSummaryWithDaysDto[]> {
         let url_ = this.baseUrl + "/api/Trainings/summaries?";
         if (group !== undefined && group !== null)
@@ -2148,6 +2185,20 @@ export interface TrainingSummaryDto {
     gender?: string | undefined;
     consent?: Date | undefined;
     birthDate?: DateInfo | undefined;
+}
+
+export interface TrialDataExportRow {
+    account_id: number;
+    training_day: number;
+    exercise: string;
+    correct: boolean;
+    problem_time: number;
+    problem_string: string;
+    level: number;
+    training_plan_name: string;
+    targetTime: number;
+    response_time: number;
+    tries: number;
 }
 
 export interface TrainingSummaryWithDaysDto extends TrainingSummaryDto {

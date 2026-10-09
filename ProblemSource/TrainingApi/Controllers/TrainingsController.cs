@@ -488,7 +488,106 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
             return await GetSummaryDtos(trainings, summaries);
         }
 
-        [HttpGet]
+        [HttpGet("trialdata")]
+        public async Task<List<TrialDataExportRow>> GetTrialData(string? trainingIds = null, int? maxRows = null)
+        {
+            if (database == null)
+                return [];
+
+			var user = userProvider.UserOrThrow;
+
+			List<int>? idList = null;
+            if (trainingIds?.Any() == true)
+            {
+                idList = trainingIds.Split(",").Select(o => o.Trim()).Where(o => o.Any()).Select(int.Parse).Distinct().ToList();
+
+                var intersect = user.Trainings.GetAllIds().Intersect(idList);
+                if (intersect.Count() < idList.Count)
+                    throw new ArgumentException("Trainings now owned!");
+                idList = intersect.ToList();
+			}
+            else
+            {
+				if (user.Role == Roles.Admin || user.Role == Roles.SuperAdmin)
+                { }
+                else
+                {
+                    idList = user.Trainings.GetAllIds().ToList();
+				}
+            }
+
+			var collection = database.GetCollection<ProblemSourceModule.Services.Storage.MongoDb.MongoTrainingAssociatedDocumentWrapper<Phase>>("Phase");
+
+            var all = idList == null ? await collection.FindAsync(o => true) : await collection.FindAsync(o => idList.Contains(o.TrainingId));
+
+            var cnt = 0;
+            var byTrainingDayAndPhase = new Dictionary<int, Dictionary<int, Dictionary<string, Phase>>>();
+            while (await all.MoveNextAsync())
+            {
+                if (maxRows.HasValue && cnt > maxRows.Value)
+                    break;
+                
+                var rows = all.Current.ToList();
+                foreach (var row in rows)
+                {
+                    if (!byTrainingDayAndPhase.TryGetValue(row.TrainingId, out var byDay))
+                    {
+                        byDay = new();
+                        byTrainingDayAndPhase[row.TrainingId] = byDay;
+					}
+                    if (!byDay.TryGetValue(row.Document.training_day, out var byPhase))
+                    {
+                        byPhase = new();
+                        byDay[row.Document.training_day] = byPhase;
+					}
+                    var phaseId = Phase.UniqueIdWithinUser(row.Document);
+
+					if (maxRows.HasValue && cnt++ > maxRows.Value)
+						break;
+
+					if (!byPhase.TryGetValue(phaseId, out var existing))
+                        byPhase[phaseId] = row.Document;
+                    else if (row.Document.problems.Count >= existing.problems.Count && row.Document.problems.LastOrDefault()?.answers.Count > existing.problems.LastOrDefault()?.answers.Count)
+                        byPhase[phaseId] = row.Document;
+                    else
+                        Console.WriteLine($"lesser {row.TrainingId} {phaseId}");
+                }
+            }
+
+            var exportRows = byTrainingDayAndPhase.SelectMany(training =>
+                training.Value.SelectMany(day =>
+                    day.Value.SelectMany(phase =>
+                        phase.Value.problems.Select(pb =>
+                            new TrialDataExportRow(training.Key, day.Key, phase.Value.exercise, pb.answers.LastOrDefault()?.correct == true,
+                            phase.Value.time, pb.problem_string, pb.level, "tp", 0L, ((int?)pb.answers.LastOrDefault()?.time) ?? 0, pb.answers.Count)))))
+                .ToList();
+
+            var str = TablularDataHelpers.WriteToString(exportRows);
+
+			return exportRows;
+		}
+
+		public record TrialDataExportRow(
+            int account_id,
+            int training_day,
+            string exercise,
+            bool correct,
+            long problem_time,
+            string problem_string,
+            decimal level,
+            string training_plan_name,
+            long targetTime,
+            int response_time,
+            int tries
+            // bool is_intro
+            // numberline_mod
+            // weight_mod
+            // age_lower
+            // predicted_level
+            // predicted_tier
+            );
+
+		[HttpGet]
         [Route("summaries")]
         public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery] string? group = null)
         {
