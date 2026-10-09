@@ -690,11 +690,6 @@
           "Trainings"
         ],
         "operationId": "Trainings_GetTrialData",
-        "produces": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
         "parameters": [
           {
             "type": "string",
@@ -712,13 +707,10 @@
         ],
         "responses": {
           "200": {
-            "x-nullable": false,
+            "x-nullable": true,
             "description": "",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/TrialDataExportRow"
-              }
+              "type": "file"
             }
           }
         }
@@ -2323,64 +2315,6 @@
         },
         "birthDate": {
           "$ref": "#/definitions/DateInfo"
-        }
-      }
-    },
-    "TrialDataExportRow": {
-      "type": "object",
-      "required": [
-        "account_id",
-        "training_day",
-        "exercise",
-        "correct",
-        "problem_time",
-        "problem_string",
-        "level",
-        "training_plan_name",
-        "targetTime",
-        "response_time",
-        "tries"
-      ],
-      "properties": {
-        "account_id": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "training_day": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "exercise": {
-          "type": "string"
-        },
-        "correct": {
-          "type": "boolean"
-        },
-        "problem_time": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "problem_string": {
-          "type": "string"
-        },
-        "level": {
-          "type": "number",
-          "format": "decimal"
-        },
-        "training_plan_name": {
-          "type": "string"
-        },
-        "targetTime": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "response_time": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "tries": {
-          "type": "integer",
-          "format": "int32"
         }
       }
     },

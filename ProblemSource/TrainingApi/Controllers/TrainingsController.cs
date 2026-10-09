@@ -489,32 +489,30 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
         }
 
         [HttpGet("trialdata")]
-        public async Task<List<TrialDataExportRow>> GetTrialData(string? trainingIds = null, int? maxRows = null)
+		//[Produces("text/csv")]
+		public async Task<IActionResult> GetTrialData(string? trainingIds = null, int? maxRows = null)
         {
             if (database == null)
-                return [];
+                return File([], "text/csv");
 
 			var user = userProvider.UserOrThrow;
 
+            var globalPermission = user.Role == Roles.Admin || user.Role == Roles.SuperAdmin;
 			List<int>? idList = null;
             if (trainingIds?.Any() == true)
             {
                 idList = trainingIds.Split(",").Select(o => o.Trim()).Where(o => o.Any()).Select(int.Parse).Distinct().ToList();
 
-                var intersect = user.Trainings.GetAllIds().Intersect(idList);
-                if (intersect.Count() < idList.Count)
-                    throw new ArgumentException("Trainings now owned!");
-                idList = intersect.ToList();
-			}
-            else
-            {
-				if (user.Role == Roles.Admin || user.Role == Roles.SuperAdmin)
-                { }
-                else
+                if (!globalPermission)
                 {
-                    idList = user.Trainings.GetAllIds().ToList();
+					var intersect = user.Trainings.GetAllIds().Intersect(idList);
+					if (intersect.Count() < idList.Count)
+						throw new ArgumentException("Trainings now owned!");
+					idList = intersect.ToList();
 				}
-            }
+			}
+            else if (!globalPermission)
+                idList = user.Trainings.GetAllIds().ToList();
 
 			var collection = database.GetCollection<ProblemSourceModule.Services.Storage.MongoDb.MongoTrainingAssociatedDocumentWrapper<Phase>>("Phase");
 
@@ -559,12 +557,13 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
                     day.Value.SelectMany(phase =>
                         phase.Value.problems.Select(pb =>
                             new TrialDataExportRow(training.Key, day.Key, phase.Value.exercise, pb.answers.LastOrDefault()?.correct == true,
-                            phase.Value.time, pb.problem_string, pb.level, "tp", 0L, ((int?)pb.answers.LastOrDefault()?.time) ?? 0, pb.answers.Count)))))
+                            phase.Value.time, pb.problem_string, Math.Round(pb.level, 3), "tp", 0L, ((int?)pb.answers.LastOrDefault()?.time) ?? 0, pb.answers.Count)))))
                 .ToList();
 
             var str = TablularDataHelpers.WriteToString(exportRows);
 
-			return exportRows;
+			//Response.AddHeader("Content-Disposition", "inline; filename=test.pdf");
+			return File(System.Text.Encoding.UTF8.GetBytes(str), "text/csv");
 		}
 
 		public record TrialDataExportRow(

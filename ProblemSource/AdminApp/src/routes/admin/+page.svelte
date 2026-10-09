@@ -51,6 +51,16 @@
 			.then((r) => console.log('MFA enabled changed', r));
 	}
 
+	async function exportTrainingData(user?: GetUserDto) {
+		const trainingIds = user == null ? null : Object.keys(user.trainings).map(o => user.trainings[o]).flat();
+		const url = apiFacade.getUrl("/api/Trainings/trialdata", { trainingIds: trainingIds?.join(",") });
+		console.log("url", url);
+		// 	https://localhost:7174/api/Trainings/trialdata?trainingIds=420,421
+		window.open(url, "_blank");
+		// const result = await apiFacade.trainings.getTrialData(trainingIds?.join(","), null);
+		// console.log("Result", result);
+	}
+
 	const getElementValue = (id: string) => (<HTMLInputElement>document.getElementById(id)).value;
 
 	let users: GetUserDto[] = [];
@@ -90,6 +100,7 @@
 </div>
 
 <div>
+	{#if currentRole == "SuperAdmin"}
 	{#each errorsByPeriod || [] as period}
 	<details>
 		<summary>{period.when} {period.items.length}</summary>
@@ -143,7 +154,7 @@
 		</details>
 		{/each}
 	</details>
-	
+	{/if}
 </div>
 
 <table style="">
@@ -177,6 +188,7 @@
 		<input type="button" value="Pwd" on:click={() => changePassword(user.username)} />
 		<input type="button" title="Reset MFA code" disabled={!user.hasMfaSecretKey} value="MFA" on:click={() => resetMFA(user.username)} />
 		<input type="checkbox" title="MFA enabled" bind:checked={user.mfaEnabled} on:click={e => setMFAEnabled(user.username, e.currentTarget.checked)} />
+		<input type="button" title="Export trainings" value="Xprt" on:click={() => exportTrainingData(user)} />
 	</td>
 </tr>
 {/each}

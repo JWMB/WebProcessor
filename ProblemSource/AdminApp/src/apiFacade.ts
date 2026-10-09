@@ -10,7 +10,12 @@ export class ApiFacade {
 
     impersonateUser: string | null = null;
 
-    constructor(baseUrl: string) {
+    getUrl(path: string, urlParams?: { [key: string]: any }) {
+        const parms = urlParams == null ? "" : `?${Object.keys(urlParams).map(k => `${k}=${encodeURIComponent(`${urlParams[k]}`)}`).join("&")}`;
+        return `${this.baseUrl}${path}${parms}`;
+    }
+    
+    constructor(private baseUrl: string) {
         // console.log("api baseUrl", baseUrl);
         const http = {
             fetch: (r: Request, init?: RequestInit) => {

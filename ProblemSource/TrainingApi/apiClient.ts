@@ -870,7 +870,7 @@ export class TrainingsClient {
         return Promise.resolve<TrainingSummaryDto[]>(null as any);
     }
 
-    getTrialData(trainingIds: string | null | undefined, maxRows: number | null | undefined): Promise<TrialDataExportRow[]> {
+    getTrialData(trainingIds: string | null | undefined, maxRows: number | null | undefined): Promise<FileResponse | null> {
         let url_ = this.baseUrl + "/api/Trainings/trialdata?";
         if (trainingIds !== undefined && trainingIds !== null)
             url_ += "trainingIds=" + encodeURIComponent("" + trainingIds) + "&";
@@ -881,7 +881,7 @@ export class TrainingsClient {
         let options_: RequestInit = {
             method: "GET",
             headers: {
-                "Accept": "application/json"
+                "Accept": "application/octet-stream"
             }
         };
 
@@ -890,21 +890,26 @@ export class TrainingsClient {
         });
     }
 
-    protected processGetTrialData(response: Response): Promise<TrialDataExportRow[]> {
+    protected processGetTrialData(response: Response): Promise<FileResponse | null> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TrialDataExportRow[];
-            return result200;
-            });
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<TrialDataExportRow[]>(null as any);
+        return Promise.resolve<FileResponse | null>(null as any);
     }
 
     getSummaries(group: string | null | undefined): Promise<TrainingSummaryWithDaysDto[]> {
@@ -2185,20 +2190,6 @@ export interface TrainingSummaryDto {
     gender?: string | undefined;
     consent?: Date | undefined;
     birthDate?: DateInfo | undefined;
-}
-
-export interface TrialDataExportRow {
-    account_id: number;
-    training_day: number;
-    exercise: string;
-    correct: boolean;
-    problem_time: number;
-    problem_string: string;
-    level: number;
-    training_plan_name: string;
-    targetTime: number;
-    response_time: number;
-    tries: number;
 }
 
 export interface TrainingSummaryWithDaysDto extends TrainingSummaryDto {
