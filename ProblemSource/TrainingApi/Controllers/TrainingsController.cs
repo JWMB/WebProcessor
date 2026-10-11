@@ -11,7 +11,9 @@ using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.TrainingAnalyzers;
+using System.IO.Compression;
 using TrainingApi.Authorization;
+using TrainingApi.Background;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
 
@@ -495,96 +497,16 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
             if (database == null)
                 return File([], "text/csv");
 
-			var user = userProvider.UserOrThrow;
-
-            var globalPermission = user.Role == Roles.Admin || user.Role == Roles.SuperAdmin;
 			List<int>? idList = null;
-            if (trainingIds?.Any() == true)
-            {
-                idList = trainingIds.Split(",").Select(o => o.Trim()).Where(o => o.Any()).Select(int.Parse).Distinct().ToList();
+			if (trainingIds?.Any() == true)
+				idList = trainingIds.Split(",").Select(o => o.Trim()).Where(o => o.Any()).Select(int.Parse).Distinct().ToList();
 
-                if (!globalPermission)
-                {
-					var intersect = user.Trainings.GetAllIds().Intersect(idList);
-					if (intersect.Count() < idList.Count)
-						throw new ArgumentException("Trainings now owned!");
-					idList = intersect.ToList();
-				}
-			}
-            else if (!globalPermission)
-                idList = user.Trainings.GetAllIds().ToList();
-
-			var collection = database.GetCollection<ProblemSourceModule.Services.Storage.MongoDb.MongoTrainingAssociatedDocumentWrapper<Phase>>("Phase");
-
-            var all = idList == null ? await collection.FindAsync(o => true) : await collection.FindAsync(o => idList.Contains(o.TrainingId));
-
-            var cnt = 0;
-            var byTrainingDayAndPhase = new Dictionary<int, Dictionary<int, Dictionary<string, Phase>>>();
-            while (await all.MoveNextAsync())
-            {
-                if (maxRows.HasValue && cnt > maxRows.Value)
-                    break;
-                
-                var rows = all.Current.ToList();
-                foreach (var row in rows)
-                {
-                    if (!byTrainingDayAndPhase.TryGetValue(row.TrainingId, out var byDay))
-                    {
-                        byDay = new();
-                        byTrainingDayAndPhase[row.TrainingId] = byDay;
-					}
-                    if (!byDay.TryGetValue(row.Document.training_day, out var byPhase))
-                    {
-                        byPhase = new();
-                        byDay[row.Document.training_day] = byPhase;
-					}
-                    var phaseId = Phase.UniqueIdWithinUser(row.Document);
-
-					if (maxRows.HasValue && cnt++ > maxRows.Value)
-						break;
-
-					if (!byPhase.TryGetValue(phaseId, out var existing))
-                        byPhase[phaseId] = row.Document;
-                    else if (row.Document.problems.Count >= existing.problems.Count && row.Document.problems.LastOrDefault()?.answers.Count > existing.problems.LastOrDefault()?.answers.Count)
-                        byPhase[phaseId] = row.Document;
-                    else
-                        Console.WriteLine($"lesser {row.TrainingId} {phaseId}");
-                }
-            }
-
-            var exportRows = byTrainingDayAndPhase.SelectMany(training =>
-                training.Value.SelectMany(day =>
-                    day.Value.SelectMany(phase =>
-                        phase.Value.problems.Select(pb =>
-                            new TrialDataExportRow(training.Key, day.Key, phase.Value.exercise, pb.answers.LastOrDefault()?.correct == true,
-                            phase.Value.time, pb.problem_string, Math.Round(pb.level, 3), "tp", 0L, ((int?)pb.answers.LastOrDefault()?.time) ?? 0, pb.answers.Count)))))
-                .ToList();
-
-            var str = TablularDataHelpers.WriteToString(exportRows);
-
-			//Response.AddHeader("Content-Disposition", "inline; filename=test.pdf");
-			return File(System.Text.Encoding.UTF8.GetBytes(str), "text/csv");
+            var rows = await ExportFullTrialsProcessor.GetExportRows(userProvider.UserOrThrow, idList, database, maxRows);
+            var str = TablularDataHelpers.WriteToString(rows);
+            var userForFilename = (idList?.Any() == true ? await ExportFullTrialsProcessor.FindOwningUser(idList, userRepository) : null) ?? userProvider.UserOrThrow;
+			var filename = $"{(userForFilename?.Email ?? "NA").Replace(".", "_")}_{DateTime.UtcNow:yyyy-MM-dd_HH:mm}.zip";
+			return File(System.Text.Encoding.UTF8.GetBytes(str), "text/csv", filename);
 		}
-
-		public record TrialDataExportRow(
-            int account_id,
-            int training_day,
-            string exercise,
-            bool correct,
-            long problem_time,
-            string problem_string,
-            decimal level,
-            string training_plan_name,
-            long targetTime,
-            int response_time,
-            int tries
-            // bool is_intro
-            // numberline_mod
-            // weight_mod
-            // age_lower
-            // predicted_level
-            // predicted_tier
-            );
 
 		[HttpGet]
         [Route("summaries")]

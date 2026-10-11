@@ -8,6 +8,7 @@ using PluginModuleBase;
 using ProblemSource.Services;
 using ProblemSourceModule.Services;
 using System.Data;
+using TrainingApi.Background;
 using TrainingApi.ErrorHandling;
 using TrainingApi.Services;
 
@@ -89,7 +90,19 @@ namespace TrainingApi
             });
 
             services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
-        }
+
+            services.AddHostedService<TimedHostedService>();
+            services.AddSingleton<IBackgroundProcessor, ExportFullTrialsProcessor>();
+            services.AddSingleton<IFileProvider>(sp =>
+            {
+                var dir = new DirectoryInfo(Path.Join(Directory.GetCurrentDirectory(), "GeneratedFiles"));
+                if (!dir.Exists)
+                {
+                    dir.Create(); // new System.Security.AccessControl.DirectorySecurity())
+                }
+                return new PhysicalFileProvider(dir.FullName);
+            });
+		}
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {

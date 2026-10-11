@@ -27,14 +27,16 @@ namespace TrainingApi.Services
 		public static void Write<T>(IEnumerable<T> rows, Stream stream)
 		{
 			using var writer = new StreamWriter(stream);
-			Write(rows, writer);
+			using var csvWriter = new CsvHelper.CsvWriter(writer, DefaultConfig);
+			Write(rows, csvWriter);
 		}
 
-		public static void Write<T>(IEnumerable<T> rows, StreamWriter writer)
-		{
-			var config = new CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture) { NewLine = "\n", Delimiter = "\t" };
-			using var csvWriter = new CsvHelper.CsvWriter(writer, config);
-		}
+		//public static void Write<T>(IEnumerable<T> rows, StreamWriter writer)
+		//{
+		//	using var csvWriter = new CsvHelper.CsvWriter(writer, DefaultConfig);
+		//}
+
+		public static CsvConfiguration DefaultConfig => new CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture) { NewLine = "\n", Delimiter = "\t" };
 
 		public static void Write<T>(IEnumerable<T> rows, CsvHelper.CsvWriter writer)
 		{
