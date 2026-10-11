@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { CreatedUserInfo, CreateUserDto, GetUserDto, PatchUserDto, TelemetryItem } from '../../apiClient';
+	import type { CreatedUserInfo, CreateUserDto, FileEntry, FileResponse, GetUserDto, PatchUserDto, TelemetryItem } from '../../apiClient';
 	import type { ApiFacade } from '../../apiFacade';
 	import { getApi, userStore } from '../../globalStore';
 	import { onMount } from 'svelte';
@@ -61,10 +61,20 @@
 		// console.log("Result", result);
 	}
 
+	async function listGeneratedFiles() {
+		return await apiFacade.files.list("");
+	}
+	async function downloadFile(file: string) {
+		const url = apiFacade.getUrl("/api/Files", { subPath: file });
+		window.open(url, "_blank");
+	}
+
 	const getElementValue = (id: string) => (<HTMLInputElement>document.getElementById(id)).value;
 
 	let users: GetUserDto[] = [];
+	let files: FileEntry[] = []; 
 	onMount(async () => {
+		files = await listGeneratedFiles();
 		users = await apiFacade.users.getAll();
 		apiFacade.telemetry.get(null, new Date(Date.now() - 24 * 60 * 60 * 1000)).then(result => {
 			errors = result;
@@ -100,30 +110,23 @@
 </div>
 
 <div>
-	{#if currentRole == "SuperAdmin"}
-	{#each errorsByPeriod || [] as period}
-	<details>
-		<summary>{period.when} {period.items.length}</summary>
-		<table>
-		{#each period.items as item}
-			<tr>
-				<td>{item.created}</td>
-				<td>{item.username}</td>
-				<td>{item.error?.message}</td>
-				<td>{JSON.stringify(item.error?.clientInfo)}</td>
-			</tr>
-		{/each}
-		</table>
-	</details>
+<details>
+	<summary>Server files</summary>
+	{#each files as file}
+		<div><a href={file.downloadPath} target="_blank">{file.name}</a> ({Math.ceil(file.length / 1024)} kB)</div>
 	{/each}
+</details>
+</div>
 
+<div>
+	{#if currentRole == "SuperAdmin"}
 	<details>
-		<summary>Users: {errorsByUser.length}</summary>
-		{#each errorsByUser as usr}
+		<summary>Errors</summary>
+		{#each errorsByPeriod || [] as period}
 		<details>
-			<summary>{usr.user} {usr.items.length}</summary>
+			<summary>{period.when} {period.items.length}</summary>
 			<table>
-			{#each usr.items as item}
+			{#each period.items as item}
 				<tr>
 					<td>{item.created}</td>
 					<td>{item.username}</td>
@@ -134,25 +137,44 @@
 			</table>
 		</details>
 		{/each}
-	</details>
 
-	<details>
-		<summary>Messages: {errorsByType.length}</summary>
-		{#each errorsByType as itemX}
 		<details>
-			<summary>{itemX.type} {itemX.items.length}</summary>
-			<table>
-			{#each itemX.items as item}
-				<tr>
-					<td>{item.created}</td>
-					<td>{item.username}</td>
-					<td>{item.error?.message}</td>
-					<td>{JSON.stringify(item.error?.clientInfo)}</td>
-				</tr>
+			<summary>Users: {errorsByUser.length}</summary>
+			{#each errorsByUser as usr}
+			<details>
+				<summary>{usr.user} {usr.items.length}</summary>
+				<table>
+				{#each usr.items as item}
+					<tr>
+						<td>{item.created}</td>
+						<td>{item.username}</td>
+						<td>{item.error?.message}</td>
+						<td>{JSON.stringify(item.error?.clientInfo)}</td>
+					</tr>
+				{/each}
+				</table>
+			</details>
 			{/each}
-			</table>
 		</details>
-		{/each}
+
+		<details>
+			<summary>Messages: {errorsByType.length}</summary>
+			{#each errorsByType as itemX}
+			<details>
+				<summary>{itemX.type} {itemX.items.length}</summary>
+				<table>
+				{#each itemX.items as item}
+					<tr>
+						<td>{item.created}</td>
+						<td>{item.username}</td>
+						<td>{item.error?.message}</td>
+						<td>{JSON.stringify(item.error?.clientInfo)}</td>
+					</tr>
+				{/each}
+				</table>
+			</details>
+			{/each}
+		</details>
 	</details>
 	{/if}
 </div>

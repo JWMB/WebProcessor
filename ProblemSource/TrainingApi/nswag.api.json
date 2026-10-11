@@ -74,6 +74,65 @@
         }
       }
     },
+    "/api/Files/list": {
+      "get": {
+        "tags": [
+          "Files"
+        ],
+        "operationId": "Files_List",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "subPath",
+            "in": "query",
+            "default": "",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FileEntry"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Files": {
+      "get": {
+        "tags": [
+          "Files"
+        ],
+        "operationId": "Files_Get",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "subPath",
+            "in": "query",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
     "/api/Relay/GetSyncUrls": {
       "get": {
         "tags": [
@@ -1713,6 +1772,30 @@
         },
         "completed_planet": {
           "type": "boolean"
+        }
+      }
+    },
+    "FileEntry": {
+      "type": "object",
+      "required": [
+        "name",
+        "length",
+        "isDirectory",
+        "downloadPath"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "length": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "isDirectory": {
+          "type": "boolean"
+        },
+        "downloadPath": {
+          "type": "string"
         }
       }
     },

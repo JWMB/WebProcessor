@@ -1,4 +1,4 @@
-import { UsersClient, AggregatesClient, TestingClient, TrainingsClient, TelemetryClient } from "./apiClient";
+import { UsersClient, AggregatesClient, TestingClient, TrainingsClient, TelemetryClient, FilesClient } from "./apiClient";
 import { RequestAdapter } from "./RequestAdapter";
 
 export class ApiFacade {
@@ -7,6 +7,7 @@ export class ApiFacade {
     private trainingsClient: TrainingsClient;
     private testingClient: TestingClient;
     private telemetryClient: TelemetryClient;
+    private filesClient: FilesClient;
 
     impersonateUser: string | null = null;
 
@@ -33,6 +34,7 @@ export class ApiFacade {
         this.trainingsClient = new TrainingsClient(baseUrl, http);
         this.testingClient = new TestingClient(baseUrl, http);
         this.telemetryClient = new TelemetryClient(baseUrl, http);
+        this.filesClient = new FilesClient(baseUrl, http);
     }
 
     get aggregates() { return this.aggregatesClient; }
@@ -40,4 +42,5 @@ export class ApiFacade {
     get trainings() { return this.trainingsClient; }
     get testing() { return this.testingClient; }
     get telemetry() { return this.telemetryClient; }
+    get files() { return this.filesClient; }
 }
