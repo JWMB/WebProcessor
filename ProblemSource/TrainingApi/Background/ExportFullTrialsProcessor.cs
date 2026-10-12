@@ -110,7 +110,7 @@ namespace TrainingApi.Background
 				}
 			}
 
-			var rxOnlyLetters = new Regex(@"^[a-zA-Z]+$");
+			var rxOnlyLetters = new Regex(@"^[a-zA-Z.]+$");
 			var exportRows = byTrainingDayAndPhase.SelectMany(training =>
 				training.Value.SelectMany(day =>
 					day.Value.SelectMany(phase =>

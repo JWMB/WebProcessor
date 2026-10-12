@@ -504,7 +504,7 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
             var rows = await ExportFullTrialsProcessor.GetExportRows(userProvider.UserOrThrow, idList, database, maxRows);
             var str = TablularDataHelpers.WriteToString(rows);
             var userForFilename = (idList?.Any() == true ? await ExportFullTrialsProcessor.FindOwningUser(idList, userRepository) : null) ?? userProvider.UserOrThrow;
-			var filename = $"{(userForFilename?.Email ?? "NA").Replace(".", "_")}_{DateTime.UtcNow:yyyy-MM-dd_HH:mm}.zip";
+			var filename = $"{(userForFilename?.Email ?? "NA").Replace(".", "_")}_{DateTime.UtcNow:yyyy-MM-dd_HH:mm}.tsv";
 			return File(System.Text.Encoding.UTF8.GetBytes(str), "text/csv", filename);
 		}
 
