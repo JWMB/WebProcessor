@@ -2,7 +2,7 @@
 	"__type": "New",
 	"groups": [
 		{ "id": "Math", "weight": 50, "games": [
-			{ "id": "numberline", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 6 } },
+			{ "id": "numberline", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 4 } },
 			{ "id": "npals", "weight": 1, "lock": { "__type": "ExerciseLevelHighestCriteria", "exerciseId": "npals", "level": 44 } },
 			{ "id": "addsub", "weight": 1, "unlock": { "__type": "DayCriteria", "day": 40 } }
 		]},
