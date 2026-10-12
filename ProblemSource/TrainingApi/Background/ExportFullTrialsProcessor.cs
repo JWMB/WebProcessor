@@ -4,6 +4,7 @@ using ProblemSource.Models.Aggregates;
 using ProblemSourceModule.Models;
 using ProblemSourceModule.Services.Storage;
 using System.IO.Compression;
+using System.Text.RegularExpressions;
 using TrainingApi.Services;
 
 namespace TrainingApi.Background
@@ -109,12 +110,13 @@ namespace TrainingApi.Background
 				}
 			}
 
+			var rxOnlyLetters = new Regex(@"^[a-zA-Z]+$");
 			var exportRows = byTrainingDayAndPhase.SelectMany(training =>
 				training.Value.SelectMany(day =>
 					day.Value.SelectMany(phase =>
 						phase.Value.problems.Select(pb =>
 							new TrialDataExportRow(training.Key, day.Key, phase.Value.exercise, pb.answers.LastOrDefault()?.correct == true,
-							phase.Value.time, pb.problem_string, Math.Round(pb.level, 3), "tp", 0L, pb.answers.LastOrDefault()?.response_time ?? 0, pb.answers.Count)))))
+							phase.Value.time, rxOnlyLetters.IsMatch(pb.problem_string) ? "" : pb.problem_string, Math.Round(pb.level, 3), "tp", 0L, pb.answers.LastOrDefault()?.response_time ?? 0, pb.answers.Count)))))
 				.ToList();
 
 			return exportRows;
