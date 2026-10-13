@@ -989,6 +989,51 @@
         }
       }
     },
+    "/api/Trainings/clone": {
+      "post": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_PostClone",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "trainingIds",
+            "in": "query",
+            "x-nullable": false
+          },
+          {
+            "type": "string",
+            "name": "targetUserId",
+            "in": "query",
+            "x-nullable": true
+          },
+          {
+            "type": "string",
+            "name": "targetGroup",
+            "in": "query",
+            "x-nullable": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Trainings/randomize": {
       "patch": {
         "tags": [

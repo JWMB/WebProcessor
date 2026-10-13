@@ -68,7 +68,20 @@ namespace ProblemSourceModule.Models
             return Values.SelectMany(o => o).Distinct().ToList();
         }
 
-        public async Task<Dictionary<string, List<(int Id, Training Training, TrainingSummary? Summary)>>> GetTrainingsInfo(ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
+		public void AddToGroup(IEnumerable<int> ids, string group)
+        {
+			if (!TryGetValue(group, out var lst))
+			{
+				lst = new List<int>();
+				Add(group, lst);
+			}
+			lst.AddRange(ids);
+		}
+
+        public void AddToGroup(int id, string group) => AddToGroup([id], group);
+
+
+		public async Task<Dictionary<string, List<(int Id, Training Training, TrainingSummary? Summary)>>> GetTrainingsInfo(ITrainingRepository trainingRepo, IStatisticsProvider statisticsProvider)
         {
 			var result = new Dictionary<string, List<(int, Training, TrainingSummary?)>>();
 			try

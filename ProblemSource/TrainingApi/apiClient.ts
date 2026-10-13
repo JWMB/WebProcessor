@@ -1227,6 +1227,47 @@ export class TrainingsClient {
         return Promise.resolve<void>(null as any);
     }
 
+    postClone(trainingIds: string | undefined, targetUserId: string | null | undefined, targetGroup: string | null | undefined): Promise<string[]> {
+        let url_ = this.baseUrl + "/api/Trainings/clone?";
+        if (trainingIds === null)
+            throw new globalThis.Error("The parameter 'trainingIds' cannot be null.");
+        else if (trainingIds !== undefined)
+            url_ += "trainingIds=" + encodeURIComponent("" + trainingIds) + "&";
+        if (targetUserId !== undefined && targetUserId !== null)
+            url_ += "targetUserId=" + encodeURIComponent("" + targetUserId) + "&";
+        if (targetGroup !== undefined && targetGroup !== null)
+            url_ += "targetGroup=" + encodeURIComponent("" + targetGroup) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPostClone(_response);
+        });
+    }
+
+    protected processPostClone(response: Response): Promise<string[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string[]>(null as any);
+    }
+
     randomizeGroup(groupName: string | undefined, variants: PatchTrainingDto[], userId: string | null | undefined): Promise<Training[]> {
         let url_ = this.baseUrl + "/api/Trainings/randomize?";
         if (groupName === null)

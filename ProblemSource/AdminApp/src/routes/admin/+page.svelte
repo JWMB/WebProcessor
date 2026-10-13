@@ -16,6 +16,7 @@
 	let errorsByUser: { user: string; items: TelemetryItem[] }[] = [];
 	let errorsByType: { type: string; items: TelemetryItem[] }[] = [];
 
+	let cloneTrainingsConfig: { ids: string, targetUser?: string, targetGroup?: string } = { ids: "" };
 	// function createUser(email: string, password: string) {
 	// 	apiFacade.users.post(<CreateUserDto>{ username: email, password: password }).then(() => console.log('user created'));
 	// }
@@ -49,6 +50,12 @@
 	function setMFAEnabled(email: string, enabled: boolean) {
 		patchUser(email, { mfaEnabled: enabled })
 			.then((r) => console.log('MFA enabled changed', r));
+	}
+
+	async function cloneTraining() {
+		console.log("clone trainings", cloneTrainingsConfig);
+		const result = await apiFacade.trainings.postClone(cloneTrainingsConfig.ids, cloneTrainingsConfig.targetUser, cloneTrainingsConfig.targetGroup);
+		console.log("created", result);
 	}
 
 	async function exportTrainingData(user?: GetUserDto) {
@@ -118,8 +125,16 @@
 </details>
 </div>
 
+{#if currentRole == "SuperAdmin"}
 <div>
-	{#if currentRole == "SuperAdmin"}
+	<h2>Clone trainings</h2>
+	Ids: <input type="text" bind:value={cloneTrainingsConfig.ids}/>
+	Target user: <input type="text" bind:value={cloneTrainingsConfig.targetUser}/>
+	Target group: <input type="text" bind:value={cloneTrainingsConfig.targetGroup} />
+	<button on:click={() => cloneTraining()}>Clonse</button>
+</div>
+
+<div>
 	<details>
 		<summary>Errors</summary>
 		{#each errorsByPeriod || [] as period}
@@ -176,8 +191,8 @@
 			{/each}
 		</details>
 	</details>
-	{/if}
 </div>
+{/if}
 
 <table style="">
 	<thead>

@@ -699,7 +699,7 @@ await fetch("/api/Trainings/importmany/Norms", {
         }
 
         [HttpPost("clone")] // a.k.a. copy
-        public async Task PostClone(string trainingIds, string? targetUserId = null, string? targetGroup = null)
+        public async Task<List<string>> PostClone(string trainingIds, string? targetUserId = null, string? targetGroup = null)
         {
 			var user = userProvider.UserOrThrow;
             var ids = trainingIds.Split(",").Select(o => o.Trim()).Select(int.Parse).ToList();
@@ -715,17 +715,24 @@ await fetch("/api/Trainings/importmany/Norms", {
                     throw new Exception("User not found");
                 targetUser = found;
 			}
+            targetGroup ??= "Cloned";
 
 			var trainings = await trainingRepository.GetByIds(ids);
 			var copier = new TrainingDataCopierPlain(dataRepoFactory, aggregationService);
 
+            var created = new List<(int, string)>();
 			foreach (var training in trainings)
             {
                 var dst = new Training { Settings = training.Settings, AgeBracket = training.AgeBracket, BirthDate = training.BirthDate, Gender = training.Gender, TrainingPlanName = training.TrainingPlanName };
 				var dstId = await trainingRepository.Add(trainingUsernameService, dst);
 
 				await copier.CopyPhases(training.Id, dstId, p => true, map: null, deleteInDst: null, updateAggregates: true);
+                created.Add((dstId, dst.Username));
 			}
+            targetUser.Trainings.AddToGroup(created.Select(o => o.Item1), targetGroup);
+            await userRepository.Upsert(targetUser);
+
+            return created.Select(o => o.Item2).ToList();
 		}
 
 		[HttpPatch("randomize")]
