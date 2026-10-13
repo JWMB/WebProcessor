@@ -11,7 +11,6 @@ using ProblemSourceModule.Models.Aggregates;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using ProblemSourceModule.Services.TrainingAnalyzers;
-using System.IO.Compression;
 using TrainingApi.Authorization;
 using TrainingApi.Background;
 using TrainingApi.ErrorHandling;
@@ -284,11 +283,8 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
 });
 */
             var user = userProvider.UserOrThrow;
-            if (!user.Role.Contains("Admin"))
-            {
-				if (!user.Trainings.GetAllIds().Contains(id))
-					throw new ArgumentOutOfRangeException("Not belonging to user");
-			}
+            GetTrainingsWithAccess(user, [id], throwIfNoAccess: true);
+
 			var training = await trainingRepository.Get(id);
             if (training == null)
                 throw new ArgumentOutOfRangeException();
@@ -296,7 +292,19 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
             await trainingRepository.Upsert(training);
         }
 
-        public class PatchTrainingDto
+        private IEnumerable<int> GetTrainingsWithAccess(User user, IEnumerable<int> ids, bool throwIfNoAccess = true)
+        {
+            if (user.Role.Contains("Admin"))
+                return ids;
+
+            var inUser = ids.Intersect(user.Trainings.GetAllIds());
+			if (throwIfNoAccess && inUser.Count() != ids.Count())
+				throw new ArgumentOutOfRangeException("Not belonging to user");
+
+            return inUser;
+		}
+
+		public class PatchTrainingDto
         {
             public string? Gender { get; set; }
             public string? AgeBracket { get; set; }
@@ -690,7 +698,37 @@ await fetch("/api/Trainings/importmany/Norms", {
             await AddTrainingsToUser(user, groupName, exports.Select(o => o.Training!));
         }
 
-        [HttpPatch("randomize")]
+        [HttpPost("clone")] // a.k.a. copy
+        public async Task PostClone(string trainingIds, string? targetUserId = null, string? targetGroup = null)
+        {
+			var user = userProvider.UserOrThrow;
+            var ids = trainingIds.Split(",").Select(o => o.Trim()).Select(int.Parse).ToList();
+			ids = GetTrainingsWithAccess(user, ids, throwIfNoAccess: true).ToList();
+
+            var targetUser = user;
+            if (targetUserId != null)
+            {
+                if (!user.Role.Contains("Admin"))
+                    throw new Exception("Not allowed");
+                var found = await userRepository.Get(targetUserId);
+                if (found == null)
+                    throw new Exception("User not found");
+                targetUser = found;
+			}
+
+			var trainings = await trainingRepository.GetByIds(ids);
+			var copier = new TrainingDataCopierPlain(dataRepoFactory, aggregationService);
+
+			foreach (var training in trainings)
+            {
+                var dst = new Training { Settings = training.Settings, AgeBracket = training.AgeBracket, BirthDate = training.BirthDate, Gender = training.Gender, TrainingPlanName = training.TrainingPlanName };
+				var dstId = await trainingRepository.Add(trainingUsernameService, dst);
+
+				await copier.CopyPhases(training.Id, dstId, p => true, map: null, deleteInDst: null, updateAggregates: true);
+			}
+		}
+
+		[HttpPatch("randomize")]
         public async Task<ActionResult<List<Training>>> RandomizeGroup(string groupName, [FromBody] List<PatchTrainingDto> variants, string? userId = null)
         {
             // await fetch(`https://curricullm.net/api/Trainings/randomize/${encodeURIComponent("År 1 Carina")}`, { "credentials": "include", "headers": { "content-type": "application/json" }, "method": "PATCH", "mode": "cors", "body": '[{ "trainingPlanName": "2026 HT Math" }, { "trainingPlanName": "2026 HT Verbal" }]' });
