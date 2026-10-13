@@ -75,7 +75,7 @@ podman build -t adminapp . -f Dockerfile.web
 > tail -f /var/log/nginx/error.log
 > ### `su - admin-site` for accessing the correct logs
 > podman logs -tf source_app_1
-> podman logs -tf source_api_1
+> podman logs -f --tail 0 source_api_1
 > podman logs -tf --since "2026-10-07T13:00:00" source_api_1
 > podman exec -ti source_api_1 /bin/bash
 > podman stats source_api_1 --no-stream --format "table {{.NetInput}} {{.NetOutput}}"

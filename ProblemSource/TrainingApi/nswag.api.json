@@ -74,6 +74,65 @@
         }
       }
     },
+    "/api/Files/list": {
+      "get": {
+        "tags": [
+          "Files"
+        ],
+        "operationId": "Files_List",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "subPath",
+            "in": "query",
+            "default": "",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FileEntry"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Files": {
+      "get": {
+        "tags": [
+          "Files"
+        ],
+        "operationId": "Files_Get",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "subPath",
+            "in": "query",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
     "/api/Relay/GetSyncUrls": {
       "get": {
         "tags": [
@@ -684,6 +743,38 @@
         }
       }
     },
+    "/api/Trainings/trialdata": {
+      "get": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_GetTrialData",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "trainingIds",
+            "in": "query",
+            "x-nullable": true
+          },
+          {
+            "type": "integer",
+            "name": "maxRows",
+            "in": "query",
+            "format": "int32",
+            "x-nullable": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": true,
+            "description": "",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
     "/api/Trainings/summaries": {
       "get": {
         "tags": [
@@ -894,6 +985,51 @@
         "responses": {
           "200": {
             "description": ""
+          }
+        }
+      }
+    },
+    "/api/Trainings/clone": {
+      "post": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_PostClone",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "trainingIds",
+            "in": "query",
+            "x-nullable": false
+          },
+          {
+            "type": "string",
+            "name": "targetUserId",
+            "in": "query",
+            "x-nullable": true
+          },
+          {
+            "type": "string",
+            "name": "targetGroup",
+            "in": "query",
+            "x-nullable": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
           }
         }
       }
@@ -1688,6 +1824,30 @@
         },
         "completed_planet": {
           "type": "boolean"
+        }
+      }
+    },
+    "FileEntry": {
+      "type": "object",
+      "required": [
+        "name",
+        "length",
+        "isDirectory",
+        "downloadPath"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "length": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "isDirectory": {
+          "type": "boolean"
+        },
+        "downloadPath": {
+          "type": "string"
         }
       }
     },

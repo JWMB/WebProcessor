@@ -1,4 +1,4 @@
-import { UsersClient, AggregatesClient, TestingClient, TrainingsClient, TelemetryClient } from "./apiClient";
+import { UsersClient, AggregatesClient, TestingClient, TrainingsClient, TelemetryClient, FilesClient } from "./apiClient";
 import { RequestAdapter } from "./RequestAdapter";
 
 export class ApiFacade {
@@ -7,10 +7,16 @@ export class ApiFacade {
     private trainingsClient: TrainingsClient;
     private testingClient: TestingClient;
     private telemetryClient: TelemetryClient;
+    private filesClient: FilesClient;
 
     impersonateUser: string | null = null;
 
-    constructor(baseUrl: string) {
+    getUrl(path: string, urlParams?: { [key: string]: any }) {
+        const parms = urlParams == null ? "" : `?${Object.keys(urlParams).map(k => `${k}=${encodeURIComponent(`${urlParams[k]}`)}`).join("&")}`;
+        return `${this.baseUrl}${path}${parms}`;
+    }
+    
+    constructor(private baseUrl: string) {
         // console.log("api baseUrl", baseUrl);
         const http = {
             fetch: (r: Request, init?: RequestInit) => {
@@ -28,6 +34,7 @@ export class ApiFacade {
         this.trainingsClient = new TrainingsClient(baseUrl, http);
         this.testingClient = new TestingClient(baseUrl, http);
         this.telemetryClient = new TelemetryClient(baseUrl, http);
+        this.filesClient = new FilesClient(baseUrl, http);
     }
 
     get aggregates() { return this.aggregatesClient; }
@@ -35,4 +42,5 @@ export class ApiFacade {
     get trainings() { return this.trainingsClient; }
     get testing() { return this.testingClient; }
     get telemetry() { return this.telemetryClient; }
+    get files() { return this.filesClient; }
 }

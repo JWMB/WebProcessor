@@ -101,6 +101,7 @@
     <PackageReference Include="Azure.Data.Tables" />
     <PackageReference Include="Azure.Storage.Queues" />
     <PackageReference Include="CsvHelper" />
+    <PackageReference Include="DeepCloner" />
     <PackageReference Include="JWMB.AzureTableGenerics" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />

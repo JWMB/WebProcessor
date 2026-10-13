@@ -92,6 +92,96 @@ export class AggregatesClient {
     }
 }
 
+export class FilesClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    list(subPath: string | undefined): Promise<FileEntry[]> {
+        let url_ = this.baseUrl + "/api/Files/list?";
+        if (subPath === null)
+            throw new globalThis.Error("The parameter 'subPath' cannot be null.");
+        else if (subPath !== undefined)
+            url_ += "subPath=" + encodeURIComponent("" + subPath) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processList(_response);
+        });
+    }
+
+    protected processList(response: Response): Promise<FileEntry[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as FileEntry[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileEntry[]>(null as any);
+    }
+
+    get(subPath: string | undefined): Promise<FileResponse | null> {
+        let url_ = this.baseUrl + "/api/Files?";
+        if (subPath === null)
+            throw new globalThis.Error("The parameter 'subPath' cannot be null.");
+        else if (subPath !== undefined)
+            url_ += "subPath=" + encodeURIComponent("" + subPath) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGet(_response);
+        });
+    }
+
+    protected processGet(response: Response): Promise<FileResponse | null> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse | null>(null as any);
+    }
+}
+
 export class RelayClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -870,6 +960,48 @@ export class TrainingsClient {
         return Promise.resolve<TrainingSummaryDto[]>(null as any);
     }
 
+    getTrialData(trainingIds: string | null | undefined, maxRows: number | null | undefined): Promise<FileResponse | null> {
+        let url_ = this.baseUrl + "/api/Trainings/trialdata?";
+        if (trainingIds !== undefined && trainingIds !== null)
+            url_ += "trainingIds=" + encodeURIComponent("" + trainingIds) + "&";
+        if (maxRows !== undefined && maxRows !== null)
+            url_ += "maxRows=" + encodeURIComponent("" + maxRows) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetTrialData(_response);
+        });
+    }
+
+    protected processGetTrialData(response: Response): Promise<FileResponse | null> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse | null>(null as any);
+    }
+
     getSummaries(group: string | null | undefined): Promise<TrainingSummaryWithDaysDto[]> {
         let url_ = this.baseUrl + "/api/Trainings/summaries?";
         if (group !== undefined && group !== null)
@@ -1093,6 +1225,47 @@ export class TrainingsClient {
             });
         }
         return Promise.resolve<void>(null as any);
+    }
+
+    postClone(trainingIds: string | undefined, targetUserId: string | null | undefined, targetGroup: string | null | undefined): Promise<string[]> {
+        let url_ = this.baseUrl + "/api/Trainings/clone?";
+        if (trainingIds === null)
+            throw new globalThis.Error("The parameter 'trainingIds' cannot be null.");
+        else if (trainingIds !== undefined)
+            url_ += "trainingIds=" + encodeURIComponent("" + trainingIds) + "&";
+        if (targetUserId !== undefined && targetUserId !== null)
+            url_ += "targetUserId=" + encodeURIComponent("" + targetUserId) + "&";
+        if (targetGroup !== undefined && targetGroup !== null)
+            url_ += "targetGroup=" + encodeURIComponent("" + targetGroup) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPostClone(_response);
+        });
+    }
+
+    protected processPostClone(response: Response): Promise<string[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string[]>(null as any);
     }
 
     randomizeGroup(groupName: string | undefined, variants: PatchTrainingDto[], userId: string | null | undefined): Promise<Training[]> {
@@ -1955,6 +2128,13 @@ export interface PhaseStatistics {
     response_time_total: number;
     won_race?: boolean | undefined;
     completed_planet?: boolean | undefined;
+}
+
+export interface FileEntry {
+    name: string;
+    length: number;
+    isDirectory: boolean;
+    downloadPath: string;
 }
 
 export interface Document {
