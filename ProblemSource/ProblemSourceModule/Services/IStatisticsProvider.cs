@@ -1,9 +1,7 @@
-﻿using Azure.Data.Tables;
-using AzureTableGenerics;
-using ProblemSource.Models.Aggregates;
+﻿using ProblemSource.Models.Aggregates;
 using ProblemSource.Services.Storage;
-using ProblemSource.Services.Storage.AzureTables;
 using ProblemSourceModule.Models.Aggregates;
+using ProblemSourceModule.Services.Storage;
 
 namespace ProblemSource.Services
 {
@@ -15,48 +13,80 @@ namespace ProblemSource.Services
         Task<List<TrainingSummary>> GetAllTrainingSummaries();
     }
 
-    public class StatisticsProvider : IStatisticsProvider
+	public class TempFixDuplicatesStatisticsProvider : StatisticsProvider
+	{
+		public TempFixDuplicatesStatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory, ITrainingSummaryRepository trainingSummaryRepository) : base(userGeneratedDataRepositoryProviderFactory, trainingSummaryRepository)
+		{
+		}
+
+		public override async Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds)
+		{
+			var tmp = await base.GetTrainingSummaries(trainingIds);
+            var aoa = tmp.GroupBy(o => o.Id)
+                .ToDictionary(
+                    o => o.Key,
+                    o => o.OrderByDescending(o => o.TrainedDays).ThenBy(o => o.LastLogin)
+                    );
+
+            return tmp;
+		}
+
+		public override async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int trainingId)
+		{
+			var tmp = await base.GetTrainingDays(trainingId);
+            var aoa = tmp.GroupBy(o => $"{o.TrainingDay}_{o.StartTime}")
+                .ToDictionary(
+                o => o.Key,
+                o => o.OrderByDescending(o => o.NumQuestions).ThenBy(o => o.EndTimeStamp).First()
+                );
+            return aoa.Values;
+		}
+
+		public override async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int trainingId)
+		{
+			var tmp = await base.GetPhaseStatistics(trainingId);
+            var aoa = tmp.GroupBy(o => $"{o.training_day}_${o.exercise}_${o.timestamp}")
+                .ToDictionary(
+                o => o.Key,
+                o => 
+                {
+                    var ordered = o
+                        .OrderByDescending(o => o.end_timestamp)
+                        .ThenByDescending(o => o.num_questions);
+                    return ordered.First();
+                });
+            return aoa.Values;
+		}
+	}
+
+
+	public class StatisticsProvider : IStatisticsProvider
     {
         private readonly IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory;
-        private readonly ITypedTableClientFactory typedTableClientFactory;
+        private readonly ITrainingSummaryRepository trainingSummaryRepository;
 
-        public StatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory, ITypedTableClientFactory typedTableClientFactory)
+        //private readonly ITypedTableClientFactory typedTableClientFactory;
+
+        public StatisticsProvider(IUserGeneratedDataRepositoryProviderFactory userGeneratedDataRepositoryProviderFactory, ITrainingSummaryRepository trainingSummaryRepository) //ITypedTableClientFactory typedTableClientFactory)
         {
             this.userGeneratedDataRepositoryProviderFactory = userGeneratedDataRepositoryProviderFactory;
-            this.typedTableClientFactory = typedTableClientFactory;
+            this.trainingSummaryRepository = trainingSummaryRepository;
+            //this.typedTableClientFactory = typedTableClientFactory;
         }
 
         private IUserGeneratedDataRepositoryProvider GetDataProvider(int trainingId) =>
             userGeneratedDataRepositoryProviderFactory.Create(trainingId);
 
-        public async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int trainingId) =>
+        public virtual async Task<IEnumerable<PhaseStatistics>> GetPhaseStatistics(int trainingId) =>
             (await GetDataProvider(trainingId).PhaseStatistics.GetAll()).OrderBy(o => o.training_day).ThenBy(o => o.timestamp).ToList();
 
-        public async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int trainingId) =>
+        public virtual async Task<IEnumerable<TrainingDayAccount>> GetTrainingDays(int trainingId) =>
             (await GetDataProvider(trainingId).TrainingDays.GetAll()).OrderBy(o => o.TrainingDay).ToList();
 
-        public async Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds)
-        {
-            var result = new List<TrainingSummary?>();
-            foreach (var chunk in IEnumerableExtensions.Chunk(trainingIds, 10))
-            {
-                var tasks = chunk.Select(o => GetDataProvider(o).TrainingSummaries.GetAll());
-                var resolved = await Task.WhenAll(tasks);
-                result.AddRange(resolved.SelectMany(o => o));
-            }
-            return result;
-        }
+        public virtual async Task<IEnumerable<TrainingSummary?>> GetTrainingSummaries(IEnumerable<int> trainingIds) =>
+			await trainingSummaryRepository.GetByIds(trainingIds);
 
-        public async Task<List<TrainingSummary>> GetAllTrainingSummaries()
-        {
-            var q = typedTableClientFactory.TrainingSummaries.QueryAsync<TableEntity>("");
-            var converter = new ExpandableTableEntityConverter<TrainingSummary>(t => new TableFilter("none"));
-            var result = new List<TrainingSummary>();
-            await foreach (var item in q)
-            {
-                result.Add(converter.ToPoco(item));
-            }
-            return result;
-        }
+        public virtual Task<List<TrainingSummary>> GetAllTrainingSummaries() =>
+            trainingSummaryRepository.GetAll();
     }
 }

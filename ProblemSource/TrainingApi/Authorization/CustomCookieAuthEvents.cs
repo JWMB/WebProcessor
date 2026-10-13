@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 
-namespace TrainingApi
+namespace TrainingApi.Authorization
 {
     public class CustomCookieAuthEvents : CookieAuthenticationEvents
     {

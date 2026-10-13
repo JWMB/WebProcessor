@@ -1,5 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using MongoDB.Bson.Serialization.Attributes;
+using Newtonsoft.Json;
 using ProblemSourceModule.Models;
+using ProblemSourceModule.Services.Storage.MongoDb;
 using System.Text.Json;
 
 namespace ProblemSource.Models
@@ -54,7 +56,9 @@ namespace ProblemSource.Models
         public TrainingSettings training_settings { get; set; } = new();
 
         public ExerciseStats exercise_stats { get; set; } = new();
-        public object? user_data { get; set; }
+
+		[BsonSerializer(typeof(XObjectCustomSerializer))]
+		public object? user_data { get; set; }
 
         public object? syncInfo { get; set; }
     }
@@ -252,14 +256,16 @@ namespace ProblemSource.Models
         public long lastTimeStamp { get; set; } = 0;
         public Dictionary<string, bool> triggerData { get; set; } = new();
         public List<GameRunStats> gameRuns { get; set; } = new List<GameRunStats>();
-        public object? metaphorData { get; set; }
+		[BsonSerializer(typeof(XObjectCustomSerializer))]
+		public object? metaphorData { get; set; }
         public TrainingPlanSettings trainingPlanSettings { get; set; } = new TrainingPlanSettings();
         public Dictionary<string, object> gameCustomData { get; set; } = new Dictionary<string, object>();
 
-        public List<object>? planetInfos { get; set; }
+		public List<object>? planetInfos { get; set; }
+        public List<PlanetInfo> PlanetInfosTyped { get; set; } = [];
 
 
-        public class GameStats
+		public class GameStats
         {
             private GameRunStats[] gameRuns;
             public GameStats(IEnumerable<GameRunStats> gameRuns)

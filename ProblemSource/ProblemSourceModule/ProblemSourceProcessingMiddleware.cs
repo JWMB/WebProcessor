@@ -12,8 +12,6 @@ using ProblemSourceModule.Models;
 using ProblemSourceModule.Services;
 using ProblemSourceModule.Services.Storage;
 using System.Security.Claims;
-using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
-using static ProblemSource.Services.LogEventsToPhases;
 
 namespace ProblemSource
 {
@@ -86,6 +84,8 @@ namespace ProblemSource
                     }
 
                     var isValidationOnly = root.SessionToken == "validate";
+                    if ((root.Uuid.StartsWith("test") || root.Uuid.StartsWith("auto_")) && System.Diagnostics.Debugger.IsAttached)
+                    { }
                     if (!usernameHashing.TryGetTrainingIdFromUsername(root.Uuid, isValidationOnly, out var trainingId2)) // TODO: co-opting SessionToken for now
                     {
                         result = new SyncResult { error = $"Username not found ({root.Uuid})" };
@@ -114,6 +114,8 @@ namespace ProblemSource
                                     {
                                         redirectToNewClient = training.Settings.RedirectToClient;
                                     }
+                                    var error = GetLoginErrorString(training);
+
                                     //else if (trainingId2 % 10 == 6) // redirect some users to the new client
                                     //{
                                     //    var sessionInfo = sessionManager.GetByUserId(training.Username);
@@ -148,7 +150,16 @@ namespace ProblemSource
             await context.Response.WriteAsJsonAsync(result);
         }
 
-        public async Task<SyncResult> Sync(SyncInput root, ClaimsPrincipal user)
+        private static string? GetLoginErrorString(Training training)
+        {
+            if (training.BirthDate?.year == null || training.Gender == null) // nope, don't require training.Consent for training - just an indicator to not include in research
+            {
+                return "ConfigurationMissing";
+            }
+            return null;
+    	}
+
+		public async Task<SyncResult> Sync(SyncInput root, ClaimsPrincipal user)
         {
             if (!usernameHashing.TryGetTrainingIdFromUsername(root.Uuid, false, out var trainingId2)) // TODO: co-opting SessionToken for now
             {
@@ -157,7 +168,13 @@ namespace ProblemSource
             else
             {
                 var training = await GetTrainingOrThrow(trainingId2, user); // context.User);
-                var syncResult = await Sync(training, root);
+				var error = GetLoginErrorString(training);
+                if (error != null)
+                {
+					return new SyncResult { error = error };
+				}
+
+				var syncResult = await Sync(training, root);
                 if (syncResult.error != null)
                 {
                     log.LogWarning($"Training id={trainingId2} (user='{root.Uuid}') login: {syncResult.error}");
@@ -246,8 +263,21 @@ namespace ProblemSource
             var result = new SyncResult();
 
             var userRepositories = AssertSession(training, root.SessionToken, result);
-            
-            var currentStoredState = (await userRepositories.UserStates.GetAll()).SingleOrDefault();
+
+			UserGeneratedState? currentStoredState = null;
+			// var currentStoredState = (await userRepositories.UserStates.GetAll()).SingleOrDefault();
+			{
+				// there's only supposed to be 0 or 1! Upsert not working?
+				// TODO: because multiple entries in DB
+				var allUserStates = await userRepositories.UserStates.GetAll();
+                if (allUserStates.Any())
+                {
+                    currentStoredState = allUserStates
+                        .OrderByDescending(o => o.exercise_stats.lastTimeStamp)
+                        .ThenByDescending(o => o.exercise_stats.gameRuns.Count)
+                        .First();
+				}
+			}
 
             if (root.Events?.Any() == true)
             {
@@ -263,7 +293,15 @@ namespace ProblemSource
                     else
                     {
                         currentStoredState = new UserGeneratedState { exercise_stats = pushedStateItem.exercise_stats, user_data = pushedStateItem.user_data };
-                        await userRepositories.UserStates.Upsert(new[] { currentStoredState });
+                        currentStoredState.exercise_stats.PlanetInfosTyped =
+                            currentStoredState.exercise_stats.planetInfos?.Select(o => {
+								PlanetInfo? result = null;
+                                if (o is JObject jo)
+									result = jo.ToObject<PlanetInfo>();
+                                return result ?? new PlanetInfo();
+                            }).ToList() ?? [];
+
+						await userRepositories.UserStates.Upsert(new[] { currentStoredState });
                     }
                 }
 
@@ -305,7 +343,13 @@ namespace ProblemSource
                 // client wants TrainingPlan, stats for trained exercises, training day number etc
                 result.state = await CreateClientState(root, training, currentStoredState);
 
-                try
+                if (root.Device != null)
+                {
+                    // TODO: where to store this?
+                    log.LogInformation($"Device for '{training.Username}'/{training.Id}: {JsonConvert.SerializeObject(root.Device)}");
+				}
+
+				try
                 {
                     var trainingDays = await userRepositories.TrainingDays.GetAll();
                     if (trainingDays.Any() && currentStoredState != null)
@@ -340,16 +384,20 @@ namespace ProblemSource
                 training_settings = training.Settings
             });
 
-            var typedTrainingPlan = JsonConvert.DeserializeObject<TrainingPlan>(JsonConvert.SerializeObject(trainingPlan));
-            var clientRequirements = typedTrainingPlan?.clientRequirements;
-            if (clientRequirements?.Version != null)
-            {
-                SemVerHelper.AssertClientVersion(root.ClientVersion?.Split(',')[^1], clientRequirements.Version.Min, clientRequirements.Version.Max);
-            }
+            //var typedTrainingPlan = JsonConvert.DeserializeObject<TrainingPlan>(JsonConvert.SerializeObject(trainingPlan));
+            //var clientRequirements = typedTrainingPlan?.clientRequirements;
+            //if (clientRequirements?.Version != null)
+            //{
+            //    SemVerHelper.AssertClientVersion(root.ClientVersion?.Split(',')[^1], clientRequirements.Version.Min, clientRequirements.Version.Max);
+            //}
 
             if (currentStoredState != null)
             {
-                fullState["exercise_stats"] = JObject.FromObject(currentStoredState.exercise_stats);
+                if (currentStoredState.exercise_stats.PlanetInfosTyped.Any())
+                {
+					currentStoredState.exercise_stats.planetInfos = currentStoredState.exercise_stats.PlanetInfosTyped.Cast<object>().ToList();
+				}
+				fullState["exercise_stats"] = JObject.FromObject(currentStoredState.exercise_stats);
                 fullState["user_data"] = currentStoredState.user_data == null ? null : JObject.FromObject(currentStoredState.user_data);
             }
 

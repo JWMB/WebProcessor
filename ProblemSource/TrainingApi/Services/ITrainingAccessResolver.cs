@@ -2,7 +2,7 @@
 
 namespace TrainingApi.Services
 {
-    public interface IAccessResolver
+    public interface ITrainingAccessResolver
     {
         bool HasAccess(int trainingId, AccessLevel level);
         bool HasAccess(User user, int trainingId, AccessLevel level);
@@ -15,11 +15,11 @@ namespace TrainingApi.Services
         Write = 2
     }
 
-    public class AccessResolver : IAccessResolver
+    public class TrainingAccessResolver : ITrainingAccessResolver
     {
         private readonly ICurrentUserProvider userProvider;
 
-        public AccessResolver(ICurrentUserProvider userProvider)
+        public TrainingAccessResolver(ICurrentUserProvider userProvider)
         {
             this.userProvider = userProvider;
         }

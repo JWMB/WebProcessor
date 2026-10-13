@@ -1,8 +1,11 @@
 ---
 title: Where can I sign up colleagues?
 categories: faq
-posted: 'Dec 6, 2024'
+posted: 'Sep 26, 2026'
 ---
 
-Currently, we are only allowing a fairly low number of teachers and trainings in our system.
-We are looking into making the program publicly available, but we don't see it happening until the second half of 2023 at the earliest.
+Email **vektorproject2026@gmail.com** with the name and work email address of the colleague who wants to take part.
+
+Colleagues cannot sign themselves up. Each teacher needs their own login to the teacher admin page, and we create it — please do not share your own login with anyone else, since the groups and training data are tied to the account that created them.
+
+Tell us how many classes and roughly how many pupils are involved, so we can send the right information letters for the parents.

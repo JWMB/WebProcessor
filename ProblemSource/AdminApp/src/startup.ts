@@ -1,6 +1,7 @@
 import { goto } from "$app/navigation";
 import { base } from '$app/paths';
 import { PUBLIC_LOCAL_SERVER_PATH } from '$env/static/public'
+import { env as envDyn } from '$env/dynamic/public'
 import { ErrorHandling } from "./errorHandling";
 
 export class Startup {
@@ -23,5 +24,17 @@ export class Startup {
 }
 
 export function resolveLocalServerBaseUrl(location: Location) {
-    return PUBLIC_LOCAL_SERVER_PATH || location.origin;
+    console.log("PUBLIC_LOCAL_SERVER_PATH", PUBLIC_LOCAL_SERVER_PATH);
+    console.log("dyn", envDyn, "meta", import.meta.env);
+    let result = envDyn.PUBLIC_LOCAL_SERVER_PATH || PUBLIC_LOCAL_SERVER_PATH || location.origin;
+
+    // hm, seems .env.local is used even in docker/podman..?
+    if (import.meta?.env?.PUBLIC_LOCAL_SERVER_PATH2)
+        result = import.meta.env.PUBLIC_LOCAL_SERVER_PATH2;
+    if (envDyn.PUBLIC_LOCAL_SERVER_PATH2)
+        result = envDyn.PUBLIC_LOCAL_SERVER_PATH2;
+    // goddamn, doesn't work either...
+    // hard-coding for now in .env.local
+
+    return result;
 }

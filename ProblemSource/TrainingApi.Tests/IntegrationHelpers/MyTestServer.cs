@@ -79,6 +79,8 @@ namespace TrainingApi.Tests.IntegrationHelpers
 
                         configureTestServices?.Invoke(services);
                     });
+
+                    builder.UseEnvironment("Test"); // otherwise, defaults to Development (which allows some auth bypass)
                 });
 
             return factory.Server;

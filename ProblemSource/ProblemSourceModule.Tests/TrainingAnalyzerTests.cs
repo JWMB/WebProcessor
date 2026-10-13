@@ -15,6 +15,8 @@ using Newtonsoft.Json;
 using ProblemSource.Models;
 using ML.Helpers;
 using ProblemSource.Tests;
+using FakeItEasy;
+using ProblemSourceModule.Services.Storage;
 
 namespace ProblemSourceModule.Tests
 {
@@ -298,14 +300,16 @@ namespace ProblemSourceModule.Tests
             result.ShouldNotBeNull();
         }
 
-        [Fact]
-        public async Task AiCoachAnalyzer_Test()
+        [Theory]
+        [InlineData(5)]
+		[InlineData(0)]
+		public async Task AiCoachAnalyzer_Test(int numTrainedDays)
         {
-            var sut = new AiCoachAnalyzer();
+            var sut = new AiCoachAnalyzer(A.Fake<IUserGeneratedDataRepositoryProviderFactory>(), A.Fake<ITrainingRepository>(), A.Fake<IHttpClientFactory>());
             var training = new Training { Settings = new TrainingSettings { timeLimits = [33] }, AgeBracket = "4-5" };
 			var repoProvider = new Mock<IUserGeneratedDataRepositoryProvider>();
 
-            var summary = new TrainingSummary { TrainedDays = 5 };
+            var summary = new TrainingSummary { TrainedDays = numTrainedDays };
 			var trainingSummaries = new Mock<IBatchRepository<TrainingSummary>>();
 			trainingSummaries.Setup(o => o.GetAll()).ReturnsAsync(new List<TrainingSummary> { summary });
 			repoProvider.Setup(o => o.TrainingSummaries).Returns(trainingSummaries.Object);

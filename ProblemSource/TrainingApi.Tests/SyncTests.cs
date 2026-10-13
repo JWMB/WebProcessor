@@ -1,8 +1,6 @@
 ﻿using Common;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using ProblemSource.Models;
-using ProblemSourceModule.Models;
 using Shouldly;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -25,7 +23,13 @@ namespace TrainingApi.Tests
                 ).CreateClient();
         }
 
-        [SkippableFact]
+		/*
+curl --header "Content-Type: application/json" --request POST \
+  --data '{"uuid":"jepe sube", "requestState":true}' \
+  https://localhost:7174/api/sync/sync
+        */
+
+		[SkippableFact]
         public async Task Sync_Auth_WrongSigningKey()
         {
             var response = await Post("/api/sync/sync", """{ "a": 1 }""", GenerateToken(signingKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
@@ -86,18 +90,18 @@ namespace TrainingApi.Tests
             if (fullState == null)
                 throw new Exception("");
 
-            var dp = DynamicTrainingPlan.Create((JObject)JObject.Parse(result.state)["training_plan"]!);
+            //var dp = DynamicTrainingPlan.Create((JObject)JObject.Parse(result.state)["training_plan"]!);
 
-            PlanetBundler.init();
-            var planets = PlanetBundler.getPlanets(fullState.exercise_stats, fullState.training_settings, dp, true)
-                .OrderBy(o => o.lastUsed);
+            //PlanetBundler.init();
+            //var planets = PlanetBundler.getPlanets(fullState.exercise_stats, fullState.training_settings, dp, true)
+            //    .OrderBy(o => o.lastUsed);
 
-            var definedGames = dp.getDefinedGames();
-            var availableGames = dp.getAvailableGames(fullState.exercise_stats);
-            var proposed = dp.getProposedGames(new List<string>(), fullState.exercise_stats);
+            //var definedGames = dp.getDefinedGames();
+            //var availableGames = dp.getAvailableGames(fullState.exercise_stats);
+            //var proposed = dp.getProposedGames(new List<string>(), fullState.exercise_stats);
 
-            var tpOverrides = fullState.training_settings.trainingPlanOverrides;
-            dp.changeWeights(fullState.exercise_stats, new Dictionary<string, decimal> { });
+            //var tpOverrides = fullState.training_settings.trainingPlanOverrides;
+            //dp.changeWeights(fullState.exercise_stats, new Dictionary<string, decimal> { });
         }
 
         private async Task<HttpResponseMessage> Post(string uri, object content, string? bearerToken = null)

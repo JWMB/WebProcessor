@@ -1,26 +1,50 @@
-FROM node:24-alpine
+FROM node:24-alpine as build
+
+# podman build -t adminapp . -f Dockerfile.web
+# podman start adminapp -p 5171:5171 --name adminapp-1
 
 # WORKDIR ProblemSource/AdminApp
-WORKDIR /app
+WORKDIR /usr/src/app
 
-# nothing copied? COPY ProblemSource/AdminApp/* /
-# works, but too much copied?
-COPY ProblemSource/AdminApp/** / 
-# COPY ./ProblemSource/AdminApp/** ./
-# COPY ./ProblemSource/AdminApp/package.json ./
-# COPY ./ProblemSource/AdminApp/src/** ./src/
-# COPY package*.json ./
+COPY ProblemSource/AdminApp/package.json .
 
-# RUN find -maxdepth 2 -ls
-# no output..
+RUN echo "First copy result" 
 RUN ls -ltR 
 
 RUN npm install
+# apk add curl
 
-COPY . .
+COPY ProblemSource/AdminApp/ .
+
+RUN echo "Second copy result" 
+RUN ls -ltR 
+
+ENV NODE_ENV=docker
 
 RUN npm run build
 
-EXPOSE 5173
+# COPY ProblemSource/AdminApp/mime.types /usr/src/app/build/
+COPY ProblemSource/AdminApp/nginx-site.conf /usr/src/app/build/
 
-CMD ["npm", "run", "dev", "--", "--host"]
+
+# Stage 2
+# Need to > podman pull docker.io/library/nginx:latest
+FROM nginx:latest
+# COPY --from=build /usr/src/app/build /usr/share/nginx/html
+COPY --from=build /usr/src/app/build /usr/share/nginx/html/admin
+COPY --from=build /usr/src/app/build/nginx-site.conf /etc/nginx/conf.d/
+
+#FROM node:24-alpine
+#COPY --from=build /usr/src/app/build /usr/share/html
+#RUN npm install -g http-server
+
+EXPOSE 5171
+ENV PORT=5171
+
+# CMD http-server /usr/share/html --proxy http://localhost:5171/index.html? --mimetypes /usr/share/html/mime.types
+# https://stackoverflow.com/questions/61106423/how-to-put-a-svelte-app-in-a-docker-container
+# CMD [ "http-server",  "build", "--proxy", "http://localhost:5171?"]
+# --mimetypes mime.types
+
+# cd ~/source/repos/JWMB/WebProcessor
+# podman build -t adminapp . -f Dockerfile.web
