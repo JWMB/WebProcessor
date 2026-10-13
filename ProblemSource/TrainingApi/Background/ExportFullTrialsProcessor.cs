@@ -72,6 +72,13 @@ namespace TrainingApi.Background
 			else if (!globalPermission)
 				trainingIds = user.Trainings.GetAllIds().ToList();
 
+
+			var trainingsRepo = new ProblemSourceModule.Services.Storage.MongoDb.MongoTrainingRepository(database);
+			var trainings = (trainingIds == null ? await trainingsRepo.GetAll() : await trainingsRepo.GetByIds(trainingIds))
+				.GroupBy(o => o.Id)
+				.ToDictionary(o => o.Key, o => o.First());
+
+
 			var collection = database.GetCollection<ProblemSourceModule.Services.Storage.MongoDb.MongoTrainingAssociatedDocumentWrapper<Phase>>("Phase");
 
 			var all = trainingIds == null ? await collection.FindAsync(o => true) : await collection.FindAsync(o => trainingIds.Contains(o.TrainingId));
@@ -110,15 +117,18 @@ namespace TrainingApi.Background
 				}
 			}
 
+
 			var rxOnlyLetters = new Regex(@"^[a-zA-Z.+]+$");
 			var rxWWM = new Regex(@"WordWithMedia \{ ([^}]+)\}");
-			var exportRows = byTrainingDayAndPhase.SelectMany(training =>
-				training.Value.SelectMany(day =>
+			var exportRows = byTrainingDayAndPhase.SelectMany(trainingKV =>
+			{
+				var training = trainings.GetValueOrDefault(trainingKV.Key);
+				return trainingKV.Value.SelectMany(day =>
 					day.Value.SelectMany(phase =>
 						phase.Value.problems.Select(pb =>
-							new TrialDataExportRow(training.Key, day.Key, phase.Value.exercise, pb.answers.LastOrDefault()?.correct == true,
-							phase.Value.time, rxOnlyLetters.IsMatch(pb.problem_string) ? "" : rxWWM.Replace(pb.problem_string, m => $"{m.Groups[1]}"), Math.Round(pb.level, 3), "tp", 0L, pb.answers.LastOrDefault()?.response_time ?? 0, pb.answers.Count)))))
-				.ToList();
+							new TrialDataExportRow(trainingKV.Key, day.Key, phase.Value.exercise, pb.answers.LastOrDefault()?.correct == true,
+							phase.Value.time, rxOnlyLetters.IsMatch(pb.problem_string) ? "" : rxWWM.Replace(pb.problem_string, m => $"{m.Groups[1]}"), Math.Round(pb.level, 3), training.TrainingPlanName, (int)(pb.answers.LastOrDefault()?.time ?? pb.time - pb.time), pb.answers.Count))));
+			}).ToList();
 
 			return exportRows;
 		}
@@ -173,7 +183,7 @@ namespace TrainingApi.Background
 	string problem_string,
 	decimal level,
 	string training_plan_name,
-	long targetTime,
+	//long targetTime,
 	int response_time,
 	int tries
 	// bool is_intro
