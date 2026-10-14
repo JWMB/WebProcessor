@@ -123,11 +123,23 @@ namespace TrainingApi.Background
 			var exportRows = byTrainingDayAndPhase.SelectMany(trainingKV =>
 			{
 				var training = trainings.GetValueOrDefault(trainingKV.Key);
-				return trainingKV.Value.SelectMany(day =>
-					day.Value.SelectMany(phase =>
-						phase.Value.problems.Select(pb =>
-							new TrialDataExportRow(trainingKV.Key, day.Key, phase.Value.exercise, pb.answers.LastOrDefault()?.correct == true,
-							phase.Value.time, rxOnlyLetters.IsMatch(pb.problem_string) ? "" : rxWWM.Replace(pb.problem_string, m => $"{m.Groups[1]}"), Math.Round(pb.level, 3), training.TrainingPlanName, (int)(pb.answers.LastOrDefault()?.time ?? pb.time - pb.time), pb.answers.Count))));
+				return trainingKV.Value.SelectMany(dayKV =>
+					dayKV.Value.SelectMany(phase =>
+					{
+						var probs = phase.Value.problems.OrderBy(o => o.time).ToList();
+						return probs.Select((pb, i) =>
+						{
+							return new TrialDataExportRow(trainingKV.Key,
+								dayKV.Key,
+								phase.Value.exercise,
+								pb.answers.LastOrDefault()?.correct == true,
+								phase.Value.time, rxOnlyLetters.IsMatch(pb.problem_string) ? "" : rxWWM.Replace(pb.problem_string, m => $"{m.Groups[1]}"),
+								Math.Round(pb.level, 3), training?.TrainingPlanName ?? "",
+								(int)((pb.answers.LastOrDefault()?.time ?? pb.time) - pb.time),
+								pb.answers.Count);
+						});
+					})
+					);
 			}).ToList();
 
 			return exportRows;

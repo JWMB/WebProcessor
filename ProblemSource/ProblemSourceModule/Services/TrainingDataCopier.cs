@@ -88,12 +88,12 @@ namespace ProblemSource.Services
             {
                 await aggregationService.UpdateAggregatesFromPhases(dstProvider, data, dstId);
 
+                var state = (await dstProvider.UserStates.GetAll()).MaxBy(o => o.exercise_stats.lastTimeStamp);
+                var copy = state.DeepClone();
 				// What was this for?
 				//var trainingSummary = (await dstProvider.TrainingSummaries.GetAll()).Single();
-                //var state = (await dstProvider.UserStates.GetAll()).Single();
-                //var copy = state.DeepClone();
-                //copy.exercise_stats.trainingDay = trainingSummary.TrainedDays; // data.Max(o => o.training_day);
-                //await dstProvider.UserStates.Upsert(new[] { copy });
+				//copy.exercise_stats.trainingDay = trainingSummary.TrainedDays; // data.Max(o => o.training_day);
+				await dstProvider.UserStates.Upsert(new[] { copy });
             }
         }
     }
