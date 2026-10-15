@@ -521,9 +521,19 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
         public async Task<List<TrainingSummaryWithDaysDto>> GetSummaries([FromQuery] string? group = null)
         {
             var trainings = await GetUsersTrainings(group: group);
-            var trainingDayTasks = trainings.Select(o => statisticsProvider.GetTrainingDays(o.Id)).ToList();
 
-            IEnumerable<TrainingDayAccount>[] results;
+            List<Task<IEnumerable<TrainingDayAccount>>> trainingDayTasks;
+
+			if (User.AtLeastRole("Admin") && aggregationService is AggregationService agg)
+            {
+				trainingDayTasks = trainings.Select(o => agg.TempRecalcTrainingDayAccount(dataRepoFactory.Create(o.Id), statisticsProvider, o.Id)).ToList(); 
+			}
+			else
+            {
+				trainingDayTasks = trainings.Select(o => statisticsProvider.GetTrainingDays(o.Id)).ToList();
+			}
+
+			IEnumerable<TrainingDayAccount>[] results;
             try
             {
                 results = await Task.WhenAll(trainingDayTasks);

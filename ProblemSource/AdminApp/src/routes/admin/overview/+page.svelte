@@ -4,6 +4,8 @@
 	import { getApi } from '../../../globalStore';
 	import DateInput from "src/components/DateInput.svelte";
 	import type { PhaseStatistics, TrainingSummaryDto } from "../../../apiClient";
+	import { onMount } from "svelte";
+	import { groupBy } from "../../../arrayUtils";
 
     let stackLeft = false;
     let startDate = DateUtils.addDays(Date.now(), -30 * 6);
@@ -35,6 +37,15 @@
             phaseStats = r;
         }
     }
+
+    onMount(async () => {
+        const entries = await getApi()?.aggregates.streamingStatistics();
+        if (entries) {
+            console.log(entries);
+            // const byEx = groupBy(entries, o => o.phase.exercise);
+            // Object.keys(x => groupBy(byEx[x], o => o.phase.problems.map(p => p.))
+        }
+    });
 </script>
 
 <div>Stack left: <input type="checkbox" bind:checked={stackLeft}></div>

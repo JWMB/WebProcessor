@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProblemSource.Models.Aggregates;
 using ProblemSource.Services;
+using ProblemSourceModule.Services;
 using System.Security.Authentication;
+using TrainingApi.Authorization;
 using TrainingApi.Services;
 
 namespace TrainingApi.Controllers
@@ -14,14 +16,16 @@ namespace TrainingApi.Controllers
     {
         private readonly IStatisticsProvider statisticsProvider;
         private readonly ICurrentUserProvider userProvider;
-        private readonly ILogger<AggregatesController> _logger;
+		private readonly IStreamingStatistics streamingStatistics;
+		private readonly ILogger<AggregatesController> _logger;
 
-        public AggregatesController(IStatisticsProvider statisticsProvider, ICurrentUserProvider userProvider,
-            ILogger<AggregatesController> logger)
+        public AggregatesController(IStatisticsProvider statisticsProvider, ICurrentUserProvider userProvider, IStreamingStatistics streamingStatistics,
+			ILogger<AggregatesController> logger)
         {
             this.statisticsProvider = statisticsProvider;
             this.userProvider = userProvider;
-            _logger = logger;
+			this.streamingStatistics = streamingStatistics;
+			_logger = logger;
         }
 
         [HttpGet]
@@ -36,6 +40,13 @@ namespace TrainingApi.Controllers
         {
             AssertAccess(trainingId);
             return await statisticsProvider.GetPhaseStatistics(trainingId);
+        }
+
+        [AtLeastRole(Roless.Admin)]
+        [HttpGet]
+        public async Task<List<IStreamingStatistics.Entry>> StreamingStatistics()
+        {
+            return await streamingStatistics.Get();
         }
 
         private void AssertAccess(int trainingId)

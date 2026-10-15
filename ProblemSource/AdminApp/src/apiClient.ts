@@ -90,6 +90,39 @@ export class AggregatesClient {
         }
         return Promise.resolve<PhaseStatistics[]>(null as any);
     }
+
+    streamingStatistics(): Promise<Entry[]> {
+        let url_ = this.baseUrl + "/api/Aggregates/StreamingStatistics";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processStreamingStatistics(_response);
+        });
+    }
+
+    protected processStreamingStatistics(response: Response): Promise<Entry[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Entry[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Entry[]>(null as any);
+    }
 }
 
 export class FilesClient {
@@ -2106,12 +2139,14 @@ export interface TrainingDayAccount {
     numQuestions: number;
     responseMinutes: number;
     remainingMinutes: number;
+    compoundId: string;
 }
 
 export interface PhaseStatistics {
     id: number;
     phase_id: number;
     account_id: number;
+    compoundId?: string | undefined;
     training_day: number;
     exercise: string;
     phase_type: string;
@@ -2128,6 +2163,53 @@ export interface PhaseStatistics {
     response_time_total: number;
     won_race?: boolean | undefined;
     completed_planet?: boolean | undefined;
+}
+
+export interface Entry {
+    trainingId: number;
+    phase: Phase;
+    added: Date;
+}
+
+export interface Phase {
+    id: number;
+    training_day: number;
+    exercise: string;
+    phase_type: string;
+    time: number;
+    sequence: number;
+    problems: Problem[];
+    user_test?: UserTest | undefined;
+    compoundId: string;
+}
+
+export interface Problem {
+    id: number;
+    phase_id: number;
+    level: number;
+    time: number;
+    problem_type: string;
+    problem_string: string;
+    answers: Answer[];
+}
+
+export interface Answer {
+    id: number;
+    problem_id: number;
+    time: number;
+    correct: boolean;
+    response_time: number;
+    answer: string;
+    tries: number;
+}
+
+export interface UserTest {
+    score: number;
+    target_score: number;
+    planet_target_score: number;
+    won_race: boolean;
+    completed_planet: boolean;
+    ended?: boolean | undefined;
 }
 
 export interface FileEntry {
@@ -2357,46 +2439,6 @@ export interface TrainingSummary {
     firstLogin: Date;
     lastLogin: Date;
     avgDaysPerWeek: number;
-}
-
-export interface Phase {
-    id: number;
-    training_day: number;
-    exercise: string;
-    phase_type: string;
-    time: number;
-    sequence: number;
-    problems: Problem[];
-    user_test?: UserTest | undefined;
-}
-
-export interface Problem {
-    id: number;
-    phase_id: number;
-    level: number;
-    time: number;
-    problem_type: string;
-    problem_string: string;
-    answers: Answer[];
-}
-
-export interface Answer {
-    id: number;
-    problem_id: number;
-    time: number;
-    correct: boolean;
-    response_time: number;
-    answer: string;
-    tries: number;
-}
-
-export interface UserTest {
-    score: number;
-    target_score: number;
-    planet_target_score: number;
-    won_race: boolean;
-    completed_planet: boolean;
-    ended?: boolean | undefined;
 }
 
 export interface UserGeneratedState {

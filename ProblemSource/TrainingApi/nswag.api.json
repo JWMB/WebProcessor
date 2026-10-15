@@ -74,6 +74,31 @@
         }
       }
     },
+    "/api/Aggregates/StreamingStatistics": {
+      "get": {
+        "tags": [
+          "Aggregates"
+        ],
+        "operationId": "Aggregates_StreamingStatistics",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Entry"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Files/list": {
       "get": {
         "tags": [
@@ -1827,6 +1852,191 @@
         }
       }
     },
+    "Entry": {
+      "type": "object",
+      "required": [
+        "trainingId",
+        "phase",
+        "added"
+      ],
+      "properties": {
+        "trainingId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "phase": {
+          "$ref": "#/definitions/Phase"
+        },
+        "added": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "Phase": {
+      "type": "object",
+      "required": [
+        "id",
+        "training_day",
+        "exercise",
+        "phase_type",
+        "time",
+        "sequence",
+        "problems",
+        "compoundId"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "training_day": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "exercise": {
+          "type": "string"
+        },
+        "phase_type": {
+          "type": "string"
+        },
+        "time": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "sequence": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "problems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Problem"
+          }
+        },
+        "user_test": {
+          "$ref": "#/definitions/UserTest"
+        },
+        "compoundId": {
+          "type": "string"
+        }
+      }
+    },
+    "Problem": {
+      "type": "object",
+      "required": [
+        "id",
+        "phase_id",
+        "level",
+        "time",
+        "problem_type",
+        "problem_string",
+        "answers"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "phase_id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "level": {
+          "type": "number",
+          "format": "decimal"
+        },
+        "time": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "problem_type": {
+          "type": "string"
+        },
+        "problem_string": {
+          "type": "string"
+        },
+        "answers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Answer"
+          }
+        }
+      }
+    },
+    "Answer": {
+      "type": "object",
+      "required": [
+        "id",
+        "problem_id",
+        "time",
+        "correct",
+        "response_time",
+        "answer",
+        "tries"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "problem_id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "time": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "response_time": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "answer": {
+          "type": "string"
+        },
+        "tries": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "UserTest": {
+      "type": "object",
+      "required": [
+        "score",
+        "target_score",
+        "planet_target_score",
+        "won_race",
+        "completed_planet"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "target_score": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "planet_target_score": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "won_race": {
+          "type": "boolean"
+        },
+        "completed_planet": {
+          "type": "boolean"
+        },
+        "ended": {
+          "type": "boolean"
+        }
+      }
+    },
     "FileEntry": {
       "type": "object",
       "required": [
@@ -2565,170 +2775,6 @@
         "avgDaysPerWeek": {
           "type": "number",
           "format": "decimal"
-        }
-      }
-    },
-    "Phase": {
-      "type": "object",
-      "required": [
-        "id",
-        "training_day",
-        "exercise",
-        "phase_type",
-        "time",
-        "sequence",
-        "problems",
-        "compoundId"
-      ],
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "training_day": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "exercise": {
-          "type": "string"
-        },
-        "phase_type": {
-          "type": "string"
-        },
-        "time": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "sequence": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "problems": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Problem"
-          }
-        },
-        "user_test": {
-          "$ref": "#/definitions/UserTest"
-        },
-        "compoundId": {
-          "type": "string"
-        }
-      }
-    },
-    "Problem": {
-      "type": "object",
-      "required": [
-        "id",
-        "phase_id",
-        "level",
-        "time",
-        "problem_type",
-        "problem_string",
-        "answers"
-      ],
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "phase_id": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "level": {
-          "type": "number",
-          "format": "decimal"
-        },
-        "time": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "problem_type": {
-          "type": "string"
-        },
-        "problem_string": {
-          "type": "string"
-        },
-        "answers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Answer"
-          }
-        }
-      }
-    },
-    "Answer": {
-      "type": "object",
-      "required": [
-        "id",
-        "problem_id",
-        "time",
-        "correct",
-        "response_time",
-        "answer",
-        "tries"
-      ],
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "problem_id": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "time": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "correct": {
-          "type": "boolean"
-        },
-        "response_time": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "answer": {
-          "type": "string"
-        },
-        "tries": {
-          "type": "integer",
-          "format": "int32"
-        }
-      }
-    },
-    "UserTest": {
-      "type": "object",
-      "required": [
-        "score",
-        "target_score",
-        "planet_target_score",
-        "won_race",
-        "completed_planet"
-      ],
-      "properties": {
-        "score": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "target_score": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "planet_target_score": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "won_race": {
-          "type": "boolean"
-        },
-        "completed_planet": {
-          "type": "boolean"
-        },
-        "ended": {
-          "type": "boolean"
         }
       }
     },

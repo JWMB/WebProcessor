@@ -1,7 +1,5 @@
 ﻿using Common.Web;
 using Common.Web.Services;
-using Microsoft.ApplicationInsights.AspNetCore.Extensions;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using PluginModuleBase;
@@ -19,17 +17,21 @@ namespace TrainingApi
         private IPluginModule[] plugins = Array.Empty<IPluginModule>();
         //private OldDbAdapter.Startup? oldDbStartup = null;
         private RealTime.Startup? realTimeStartup;
+        private StartupLogging? startupLogging;
         private StartupAuthentication startupAuthentication = new();
 
         public void ConfigureServices(IServiceCollection services, ConfigurationManager configurationManager, IWebHostEnvironment env)
         {
-            services.AddScoped<IStatisticsProvider, TempFixDuplicatesStatisticsProvider>(); // StatisticsProvider
+            startupLogging = new StartupLogging(configurationManager);
+
+			services.AddScoped<IStatisticsProvider, TempFixDuplicatesStatisticsProvider>(); // StatisticsProvider
 
 
             services.AddSingleton<CreateUserWithTrainings>();
             
             services.AddSingleton<ICookieProtector, CookieProtector>(); // NullCookieProtector
 
+            services.AddHttpContextAccessor();
 
 			var appSettings = TypedConfiguration.ConfigureTypedConfiguration<AppSettings>(services, configurationManager, "AppSettings");
 
@@ -73,23 +75,7 @@ namespace TrainingApi
             AddSwaggerGen(services);
             services.AddSwaggerDocument();
 
-            services.AddLogging(builder =>
-            {
-                builder.AddApplicationInsights(); // AddAzureWebAppDiagnostics
-			});
-
-            services.Configure<TelemetryConfiguration>(telemetryConfiguration =>
-            {
-                var builder = telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
-                telemetryConfiguration.DefaultTelemetrySink.TelemetryProcessorChainBuilder
-                    .UseAdaptiveSampling(maxTelemetryItemsPerSecond:5, excludedTypes: "Trace;Request;Exception");
-            });
-            services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
-            {
-                EnableAdaptiveSampling = false,
-            });
-
-            services.AddSingleton<ITelemetryInitializer, UserInformationTelemetryInitializer>();
+			startupLogging.ConfigureServices(services, env);
 
             services.AddHostedService<TimedHostedService>();
             services.AddSingleton<IBackgroundProcessor, ExportFullTrialsProcessor>();
@@ -187,13 +173,13 @@ namespace TrainingApi
             app.UseCookiePolicy(new CookiePolicyOptions
             {
                 // TODO: is this needed? We also have it in AddCookie() below.
-                MinimumSameSitePolicy = env.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.None : Microsoft.AspNetCore.Http.SameSiteMode.Lax
+                MinimumSameSitePolicy = env.IsDevelopment() ? SameSiteMode.None : SameSiteMode.Lax
             });
 
-            ServiceConfiguration.ConfigureApplicationInsights(app, config, env.IsDevelopment());
-
-            //if (oldDbStartup != null)
-            //    oldDbStartup.Configure(app);
+            if (startupLogging != null)
+            {
+                startupLogging.Configure(app);
+			}
         }
 
         private IPluginModule[] ConfigureProblemSource(IServiceCollection services, IConfiguration config, IHostEnvironment env)
