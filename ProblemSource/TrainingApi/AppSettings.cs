@@ -27,5 +27,6 @@ namespace TrainingApi
     public class ProcessorSettings
     {
 		public ExportFullTrialsProcessor.Config FullTrialsExport { get; set; } = new ExportFullTrialsProcessor.Config { ExportFilePath = string.Empty };
+		public CleanupDuplicates.Config CleanupDuplicates { get; set; } = new CleanupDuplicates.Config { };
 	}
 }

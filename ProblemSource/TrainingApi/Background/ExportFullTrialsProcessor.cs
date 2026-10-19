@@ -35,6 +35,7 @@ namespace TrainingApi.Background
 			if (file.PhysicalPath == null)
 				return new BackgroundProcessorResult(false, Error: $"No physical path available for '{config.ExportFilePath}'");
 
+
 			var rows = await GetExportRows(new User { Email = "system", Role = Roles.SuperAdmin, Trainings = new() }, config.TrainingIdFilter, database);
 			if (!rows.Any())
 				return new BackgroundProcessorResult(false, Error: $"No data to export {(config.TrainingIdFilter != null ? string.Join(",", config.TrainingIdFilter) : "")}");
@@ -44,7 +45,7 @@ namespace TrainingApi.Background
 			else
 				await WriteTsv(rows, file.PhysicalPath);
 
-			return new BackgroundProcessorResult(true, $"{rows.Count()} rows exported to {file.PhysicalPath}");
+			return new BackgroundProcessorResult(true, Notes: $"{rows.Count()} rows exported to {file.PhysicalPath}");
 		}
 
 		public static async Task<User?> FindOwningUser(IEnumerable<int> trainingIds, IUserRepository userRepository)

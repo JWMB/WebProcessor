@@ -79,7 +79,9 @@ namespace TrainingApi
 
             services.AddHostedService<TimedHostedService>();
             services.AddSingleton<IBackgroundProcessor, ExportFullTrialsProcessor>();
-            services.AddSingleton<IFileProvider>(sp =>
+			services.AddSingleton<IBackgroundProcessor, CleanupDuplicates>();
+
+			services.AddSingleton<IFileProvider>(sp =>
             {
                 var dir = new DirectoryInfo(Path.Join(Directory.GetCurrentDirectory(), "GeneratedFiles"));
                 if (!dir.Exists)

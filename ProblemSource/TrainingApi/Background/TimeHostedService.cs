@@ -47,7 +47,7 @@
 		Task<bool> ShouldProcess();
 		Task<BackgroundProcessorResult> Process();
 	}
-	public record BackgroundProcessorResult(bool Success, string? Notes = null, string? Error = null);
+	public record BackgroundProcessorResult(bool Success, TimeSpan? Duration = null, string? Notes = null, string? Error = null);
 
 	public class ProcessorConfigBase
 	{
@@ -99,11 +99,16 @@
 		public virtual async Task<BackgroundProcessorResult> Process()
 		{
 			if (numFailures > maxFailures)
-				return new(false, string.Empty, "Too many errors");
+				return new(false, null, string.Empty, "Too many errors");
 
 			try
 			{
+				var start = DateTime.UtcNow;
 				var result = await ProcessInner();
+				var duration = DateTime.UtcNow - start;
+				if (result.Duration == null)
+					result = result with { Duration = duration };
+
 				lastRun = DateTime.UtcNow;
 				numFailures = 0;
 				return result;
