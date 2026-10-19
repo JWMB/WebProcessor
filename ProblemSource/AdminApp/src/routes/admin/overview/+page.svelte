@@ -38,13 +38,48 @@
         }
     }
 
-    onMount(async () => {
+    async function loadStreamingStatistics() {
         const entries = await getApi()?.aggregates.streamingStatistics();
         if (entries) {
+            entries[0].phase.exercise
+            const timegroups = [0, 1, 2, 3, 4].map(o => Math.pow(2, o)).map(o => 30 * 1000 * o).map(o => ({ minutes: o / 60 / 1000, threshold: Date.now() - o}));
+            const getTimeGroup = (dateStrOrTimestamp: string | number) => {
+                const d = typeof dateStrOrTimestamp === "string" ? new Date(dateStrOrTimestamp).valueOf() : dateStrOrTimestamp;
+                let index = timegroups.findIndex(o => d > o.threshold);
+                index = index < 0 ? timegroups.length - 1 : index;
+                return `${timegroups[index].minutes}m`;
+            };
+            const byTime = Object.groupBy(entries, ({ added }) => getTimeGroup(`${added}`));
+            const byTimeAndId = Object.keys(byTime).map(k => {
+                const b = Object.groupBy(byTime[k] || [], ({ trainingId }) => `${trainingId}`);
+                return ({
+                    time: k,
+                    ids: Object.keys(b),
+                    // gamesAndLevels: [{ game: "", maxLevel: 1 }]
+                });
+            })
+
+            let alreadyNoted: string[] = [];
+            byTimeAndId.forEach(o => {
+                o.ids = o.ids.filter(id => alreadyNoted.indexOf(id) < 0);
+                alreadyNoted = alreadyNoted.concat(o.ids);
+            });
+
+            const byGame = Object.groupBy(entries, ({ phase }) => `${phase.exercise}`);
+            Object.keys(byGame).map(k => {
+                byGame[k]
+            });
+
+            const byId = Object.groupBy(entries, ({ trainingId }) => `${trainingId}`);
+            // Object.keys(byId).map(k => byId[k]);
             console.log(entries);
             // const byEx = groupBy(entries, o => o.phase.exercise);
             // Object.keys(x => groupBy(byEx[x], o => o.phase.problems.map(p => p.))
         }
+    }
+
+    onMount(async () => {
+
     });
 </script>
 
