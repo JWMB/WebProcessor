@@ -54,6 +54,7 @@
 		public TimeOnly? NotBeforeUtc { get; set; }
 		public TimeOnly? NotAfterUtc { get; set; }
 		public TimeSpan Interval { get; set; } = TimeSpan.FromHours(23);
+		public bool Enabled { get; set; } = true;
 	}
 
 	public abstract class BackgroundProcessorBase : IBackgroundProcessor
@@ -68,8 +69,11 @@
 		public virtual Task<bool> ShouldProcess()
 		{
 			var result = false;
-			if (DateTime.UtcNow - lastRun >= configBase.Interval)
-				result = IsWithinTimeLimits(DateTime.UtcNow, configBase.NotBeforeUtc, configBase.NotAfterUtc);
+			if (configBase.Enabled)
+			{
+				if (DateTime.UtcNow - lastRun >= configBase.Interval)
+					result = IsWithinTimeLimits(DateTime.UtcNow, configBase.NotBeforeUtc, configBase.NotAfterUtc);
+			}
 			return Task.FromResult(result);
 		}
 

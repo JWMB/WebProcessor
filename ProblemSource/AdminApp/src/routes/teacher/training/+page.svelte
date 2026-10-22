@@ -14,7 +14,8 @@
     let training: Training;
     let trainingDays: TrainingDayAccount[] = [];
     let phaseStatistics: PhaseStatistics[] = [];
-    
+    let gameStatistics: { id: string, latestDay: number, latestLevel: number, phaseCount: number }[] = [];
+
     let patchDto: PatchTrainingDto = {};
 
     const currentRole = $userStore?.role || "";
@@ -55,6 +56,12 @@
             .sort((a, b) => (a.key < b.key ? -1 : (a.key > b.key ? 1 : 0)))
             .map(o => ({ exercise: o.key, phases: o.value }));
 
+        gameStatistics = phasesByExercise.map(({ exercise, phases }) => {
+            const sorted = phases.sort((a, b) => new Date(b.timestamp).valueOf() - new Date(a.timestamp).valueOf());
+			return { id: exercise, latestDay: sorted[0].training_day, latestLevel: sorted[0].level_max, phaseCount: sorted.length };
+		});
+
+        
         const byDay = groupBy(phaseStatistics, ps => ps.training_day.toString());
 
         const dayStartEnd = Object.fromEntries(Object.entries(byDay).map(o => (
@@ -134,6 +141,29 @@
         {#if !!trainingDays}
         <TrainingDaysChart data={trainingDays} />
         {/if}
+
+        
+        <table>
+            <thead>
+            <tr>
+                <th>Game</th>
+                <th>LatestDay</th>
+                <th>LatestLevel</th>
+                <th>PhaseCount</th>
+            </tr>
+            </thead>
+            <tbody>
+            {#each gameStatistics as ps}
+            <tr>
+                <td>{ps.id}</td>
+                <td>{ps.latestDay}</td>
+                <td>{ps.latestLevel}</td>
+                <td>{ps.phaseCount}</td>
+            </tr>
+            {/each}
+            </tbody>
+        </table>
+
 
         {#if !!phasesByExercise}
         <table>
