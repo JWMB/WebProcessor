@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { CreatedUserInfo, CreateUserDto, FileEntry, FileResponse, GetUserDto, PatchUserDto, TelemetryItem } from '../../apiClient';
+	import type { CreatedUserInfo, CreateUserDto, FileEntry, FileResponse, GetUserDto, PatchUserDto, TelemetryItem, TrainingInfoDto } from '../../apiClient';
 	import type { ApiFacade } from '../../apiFacade';
 	import { getApi, userStore } from '../../globalStore';
 	import { onMount } from 'svelte';
@@ -71,12 +71,19 @@
 	async function listGeneratedFiles() {
 		return await apiFacade.files.list("");
 	}
-	async function downloadFile(file: string) {
-		const url = apiFacade.getUrl("/api/Files", { subPath: file });
-		window.open(url, "_blank");
+
+	async function gotoUser(user: string, group?: string) {
+		apiFacade.impersonateUser = user;
+		goto(`teacher?impersonate=${encodeURIComponent(user)}${group ? `&group=${group}` : ""}`);
 	}
 
 	const getElementValue = (id: string) => (<HTMLInputElement>document.getElementById(id)).value;
+
+	let trainingIdsForBasic: string = "";
+	let trainingsBasicInfo: TrainingInfoDto[] = [];
+	async function getBasicTrainingsInfo(idsAndOrUsernames: string) {
+		trainingsBasicInfo = await apiFacade.trainings.getTrainingBasics(idsAndOrUsernames);
+	}
 
 	let users: GetUserDto[] = [];
 	let files: FileEntry[] = []; 
@@ -123,6 +130,20 @@
 		<div><a href={file.downloadPath} target="_blank">{file.name}</a> ({Math.ceil(file.length / 1024)} kB)</div>
 	{/each}
 </details>
+</div>
+
+<div>
+	Training info: <input type="text" bind:value={trainingIdsForBasic} /> <button on:click={() => getBasicTrainingsInfo(trainingIdsForBasic)}>Get</button>
+	<table>
+	{#each trainingsBasicInfo as t}
+	<tr>
+		<td>{t.username}</td>
+		<td>{t.id}</td>
+		<td>{t.teacherEmail}</td>
+		<td>{#if t.teacherEmail}<a on:click={() => gotoUser(t.teacherEmail || "", t.group)}>{t.group}</a> {/if}</td>
+	</tr>
+	{/each}
+	</table>
 </div>
 
 {#if currentRole == "SuperAdmin"}
@@ -206,7 +227,7 @@
 {#each users as user}
 <tr>
 	<!-- <td><a href={`teacher?impersonate=${encodeURIComponent(user.username)}`}>{user.username}</a></td> -->
-	<td><a on:click={() => { apiFacade.impersonateUser = user.username; goto(`teacher?impersonate=${encodeURIComponent(user.username)}`)}}>{user.username}</a></td>
+	<td><a on:click={() => gotoUser(user.username)}>{user.username}</a></td>
 	<td>
 	{#if currentRole == "SuperAdmin"}
 		<select value={user.role} on:change={e => patchUser(user.username, { role: e.currentTarget.value})}>
