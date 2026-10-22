@@ -927,6 +927,47 @@ export class TrainingsClient {
         return Promise.resolve<number>(null as any);
     }
 
+    deleteDuplicates(ids: string | undefined, dryRyn: boolean | undefined): Promise<number> {
+        let url_ = this.baseUrl + "/api/Trainings/duplicates?";
+        if (ids === null)
+            throw new globalThis.Error("The parameter 'ids' cannot be null.");
+        else if (ids !== undefined)
+            url_ += "ids=" + encodeURIComponent("" + ids) + "&";
+        if (dryRyn === null)
+            throw new globalThis.Error("The parameter 'dryRyn' cannot be null.");
+        else if (dryRyn !== undefined)
+            url_ += "dryRyn=" + encodeURIComponent("" + dryRyn) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteDuplicates(_response);
+        });
+    }
+
+    protected processDeleteDuplicates(response: Response): Promise<number> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as number;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<number>(null as any);
+    }
+
     getSomePhaseStats(): Promise<any[]> {
         let url_ = this.baseUrl + "/api/Trainings/allphasesstats";
         url_ = url_.replace(/[?&]$/, "");
@@ -1150,6 +1191,43 @@ export class TrainingsClient {
             });
         }
         return Promise.resolve<string>(null as any);
+    }
+
+    getTrainingBasics(ids: string | undefined): Promise<TrainingInfoDto[]> {
+        let url_ = this.baseUrl + "/api/Trainings/trainings-basic-info?";
+        if (ids === null)
+            throw new globalThis.Error("The parameter 'ids' cannot be null.");
+        else if (ids !== undefined)
+            url_ += "ids=" + encodeURIComponent("" + ids) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetTrainingBasics(_response);
+        });
+    }
+
+    protected processGetTrainingBasics(response: Response): Promise<TrainingInfoDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TrainingInfoDto[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TrainingInfoDto[]>(null as any);
     }
 
     getAllTrainings(onlyStarted: boolean | undefined): Promise<{ [key: string]: { [key: string]: TrainingSummaryDto[]; }; }> {
@@ -2419,6 +2497,13 @@ export interface TrainingSummaryWithDaysDto extends TrainingSummaryDto {
 export interface AnalysisDto {
     prompt: string;
     completion: string;
+}
+
+export interface TrainingInfoDto {
+    username: string;
+    id?: number | undefined;
+    teacherEmail?: string | undefined;
+    group?: string | undefined;
 }
 
 export interface TrainingExport {

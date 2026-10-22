@@ -54,9 +54,32 @@ namespace TrainingApi.Background
 
 		public record DupInfo(List<ObjectId> Ids, Type Type, string Key)
 		{
-			public override string ToString() => Ids.Any() ? $"'{Key}'/{Ids.Count}" : "";
+			public override string ToString() => Ids.Any() ? $"{Ids.Count}" : ""; // '{Key}'/
 			public static string ToString(IEnumerable<DupInfo> items) => items.Any() ? $"{items.First().Type.Name}: {string.Join(", ", items.Select(o => o.ToString()))}" : "";
 		}
+
+		public static async Task<int> DeleteDuplicateData(IMongoDatabase db, DuplicateSets duplicates, bool dryRun = true)
+		{
+			var all = duplicates.TrainingSummary.Concat(duplicates.PhaseStatistics).Concat(duplicates.TrainingDayAccount);
+
+			return await Delete(all);
+
+			async Task<int> Delete(IEnumerable<DupInfo> dups)
+			{
+				var byType = dups.GroupBy(o => o.Type).ToDictionary(o => o.Key, o => o.SelectMany(o => o.Ids).ToList());
+				var total = 0;
+				foreach (var item in byType)
+				{
+					var coll = db.GetCollection<BsonDocument>(item.Key.Name);
+					var ids = item.Value;
+					total += ids.Count;
+					if (dryRun == false)
+						await coll.DeleteManyAsync(o => ids.Contains(o["_id"].AsObjectId));
+				}
+				return total;
+			}
+		}
+
 		public static async Task<DuplicateSets> FindDuplicateTrainingData(int trainingId, IMongoDatabase db)
 		{
 			var result = new DuplicateSets();

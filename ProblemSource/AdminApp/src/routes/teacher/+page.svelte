@@ -163,7 +163,7 @@
 
 	function onCreateGroup() {
 		openModal(CreateTrainingsModal, {
-			onCreateGroup: (id) => {
+			onCreateGroup: () => {
 				getData();
 			}
 		});
@@ -219,6 +219,11 @@
 		apiFacade.trainings.randomizeGroup(groupId, [{ trainingPlanName: "2026 HT Verbal"}, { trainingPlanName: "2026 HT Math" }], apiFacade.impersonateUser)
 			.then(result => console.log("result", result));
 		// apiFacade.trainings.randomize
+	}
+
+	async function removeDuplicates(trainingId: number, dryRun: boolean) {
+		const result = await apiFacade.trainings.deleteDuplicates(`${trainingId}`, dryRun);
+		console.log("result", result);
 	}
 
 </script>
@@ -365,6 +370,10 @@
 						{/if}
 						{#if getRealtimeDataForId(t.id).length}
 						<Realtimeline history={getRealtimeDataForId(t.id)} getPositioning={RealtimelineTools.createPositioningFunction(5 * 60 * 1000)} ></Realtimeline>
+						{/if}
+						{#if isAtLeastAdmin}
+						<button on:click={() => removeDuplicates(t.id, true)}>DUPS</button>
+						<button on:click={() => removeDuplicates(t.id, false)}>X</button>
 						{/if}
 					<!-- {#each t.comments as c}
 						{c.description}

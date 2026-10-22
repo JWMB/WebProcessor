@@ -720,6 +720,44 @@
         }
       }
     },
+    "/api/Trainings/duplicates": {
+      "delete": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_DeleteDuplicates",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "ids",
+            "in": "query",
+            "x-nullable": false
+          },
+          {
+            "type": "boolean",
+            "name": "dryRyn",
+            "in": "query",
+            "default": true,
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      }
+    },
     "/api/Trainings/allphasesstats": {
       "get": {
         "tags": [
@@ -901,6 +939,39 @@
             "description": "",
             "schema": {
               "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/api/Trainings/trainings-basic-info": {
+      "get": {
+        "tags": [
+          "Trainings"
+        ],
+        "operationId": "Trainings_GetTrainingBasics",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "name": "ids",
+            "in": "query",
+            "x-nullable": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "x-nullable": false,
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TrainingInfoDto"
+              }
             }
           }
         }
@@ -2695,6 +2766,27 @@
           "type": "string"
         },
         "completion": {
+          "type": "string"
+        }
+      }
+    },
+    "TrainingInfoDto": {
+      "type": "object",
+      "required": [
+        "username"
+      ],
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "teacherEmail": {
+          "type": "string"
+        },
+        "group": {
           "type": "string"
         }
       }

@@ -80,7 +80,7 @@ namespace TrainingApi.Controllers
             var allUsers = await userRepository.GetAll();
             var usersToUpdate = new List<User>();
 
-            var trainingIds = ids.Split(",").Select(o => int.TryParse(o, out var v) ? (int?)v : null).OfType<int>().ToList();
+            var trainingIds = ParseIdString(ids);
             foreach (var id in trainingIds)
             {
                 Training? training = null;
@@ -429,6 +429,21 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
             return trainingIds.Any() ? trainingIds.FirstOrDefault() : 0;
         }
 
+        [HttpDelete("duplicates")]
+        public async Task<int> DeleteDuplicates(string ids, bool dryRyn = true)
+        {
+            var idList = ParseIdString(ids);
+			idList = GetTrainingsWithAccess(userProvider.UserOrThrow, idList);
+			var total = 0;
+            
+            foreach (var id in idList)
+            {
+                var toDelete = await CleanupDuplicates.FindDuplicateTrainingData(id, db);
+    			total += await CleanupDuplicates.DeleteDuplicateData(db, toDelete, dryRyn);
+			}
+            return total;
+		}
+
 		[HttpGet("allphasesstats")]
 		[AtLeastRole(Roless.Admin)]
 		public async Task<List<object>> GetSomePhaseStats()
@@ -506,8 +521,8 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
                 return File([], "text/csv");
 
 			List<int>? idList = null;
-			if (trainingIds?.Any() == true)
-				idList = trainingIds.Split(",").Select(o => o.Trim()).Where(o => o.Any()).Select(int.Parse).Distinct().ToList();
+            if (trainingIds?.Any() == true)
+                idList = ParseIdString(trainingIds).ToList();
 
             var rows = await ExportFullTrialsProcessor.GetExportRows(userProvider.UserOrThrow, idList, database, maxRows);
             var str = TablularDataHelpers.WriteToString(rows);
@@ -524,7 +539,7 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
 
             List<Task<IEnumerable<TrainingDayAccount>>> trainingDayTasks;
 
-			if (User.AtLeastRole("Admin") && aggregationService is AggregationService agg)
+			if (aggregationService is AggregationService agg)
             {
 				trainingDayTasks = trainings.Select(o => agg.TempRecalcTrainingDayAccount(dataRepoFactory.Create(o.Id), statisticsProvider, o.Id)).ToList(); 
 			}
@@ -604,8 +619,30 @@ await fetch("https://curricullm.net/api/Trainings/8591", {
             return "N/A";
         }
 
+        public record TrainingInfoDto(string Username, int? Id, string? TeacherEmail, string? Group);
 		[AtLeastRole(Roless.Admin)]
-		//[Authorize(Policy = RolesRequirement.Admin)]
+		[HttpGet("trainings-basic-info")]
+        public async Task<List<TrainingInfoDto>> GetTrainingBasics(string ids)
+        {
+            var intIds = ParseIdString(ids).ToList();
+            var usernames = ids.Split(",").Select(o => o.Trim()).Where(o => o.Any() && !int.TryParse(o, out _));
+            if (trainingUsernameService is not MnemoJapaneseTrainingUsernameService mjt)
+                throw new NotImplementedException();
+
+            var tmp = usernames
+                .Select(o => new { Id = mjt.ToId(o), Username = o })
+                .Concat(intIds.Select(o => new { Id = (int?)o, Username = mjt.FromId(o) }))
+                .ToList();
+
+            var users = await userRepository.GetAll();
+
+            return tmp.Select(o => {
+                var teacher = o.Id == null ? null : users.FirstOrDefault(p => p.Trainings.GetAllIds().Contains(o.Id.Value));
+                return new TrainingInfoDto(o.Username, o.Id, teacher?.Email, o.Id == null ? null : teacher?.Trainings.FirstOrDefault(p => p.Value.Contains(o.Id.Value)).Key);
+            }).ToList();
+		}
+
+		[AtLeastRole(Roless.Admin)]
 		[HttpGet]
         [Route("alltrainings")]
         public async Task<Dictionary<string, Dictionary<string, List<TrainingSummaryDto>>>> GetAllTrainings(bool onlyStarted = true)
@@ -712,7 +749,7 @@ await fetch("/api/Trainings/importmany/Norms", {
         public async Task<List<string>> PostClone(string trainingIds, string? targetUserId = null, string? targetGroup = null)
         {
 			var user = userProvider.UserOrThrow;
-            var ids = trainingIds.Split(",").Select(o => o.Trim()).Select(int.Parse).ToList();
+            var ids = ParseIdString(trainingIds).ToList();
 			ids = GetTrainingsWithAccess(user, ids, throwIfNoAccess: true).ToList();
 
             var targetUser = user;
@@ -812,7 +849,10 @@ await fetch("/api/Trainings/importmany/Norms", {
             return (await GetUserGroups(user: user, group: group)).SelectMany(o => o.Value).DistinctBy(o => o.Id);
         }
 
-        public class TrainingSummaryDto
+        private IEnumerable<int> ParseIdString(string ids) =>
+			ids.Split(",").Select(o => int.TryParse(o, out var v) ? (int?)v : null).OfType<int>().Distinct();
+
+		public class TrainingSummaryDto
         {
             public int Id { get; set; }
             public string Username { get; set; } = string.Empty;
