@@ -245,7 +245,9 @@ await fetch("https://curricullm.net/api/Users/?id=jbadmin", {
             if (user.Role == Roles.Admin)
                 user.MfaEnabled = true;
 
-            await WebUserProvider.Signin(user, HttpContext, false);
+			var skipMfa = System.Diagnostics.Debugger.IsAttached;
+
+			await WebUserProvider.Signin(user, HttpContext, skipMfa);
 			//var principal = WebUserProvider.CreatePrincipal(user, requireMfa: user.MfaEnabled == true);
    //         var authProperties = new AuthenticationProperties
    //         {
@@ -261,8 +263,6 @@ await fetch("https://curricullm.net/api/Users/?id=jbadmin", {
    //         };
 
    //         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
-
-            var skipMfa = false && System.Diagnostics.Debugger.IsAttached;
 
 			return Ok(new LoginResultDto(user.Role, 
                 MfaMustValidate: skipMfa != true && user.MfaEnabled == true,
