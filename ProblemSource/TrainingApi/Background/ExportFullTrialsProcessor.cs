@@ -130,11 +130,14 @@ namespace TrainingApi.Background
 						var probs = phase.Value.problems.OrderBy(o => o.time).ToList();
 						return probs.Select((pb, i) =>
 						{
-							return new TrialDataExportRow(trainingKV.Key,
+							return new TrialDataExportRow(
+								trainingKV.Key,
+								training?.Username ?? "N/A",
 								dayKV.Key,
 								phase.Value.exercise,
 								pb.answers.LastOrDefault()?.correct == true,
-								phase.Value.time, rxOnlyLetters.IsMatch(pb.problem_string) ? "" : rxWWM.Replace(pb.problem_string, m => $"{m.Groups[1]}"),
+								pb.time, // phase.Value.time,
+								rxOnlyLetters.IsMatch(pb.problem_string) ? "" : rxWWM.Replace(pb.problem_string, m => $"{m.Groups[1]}"),
 								Math.Round(pb.level, 3), training?.TrainingPlanName ?? "",
 								(int)((pb.answers.LastOrDefault()?.time ?? pb.time) - pb.time),
 								pb.answers.Count);
@@ -188,104 +191,26 @@ namespace TrainingApi.Background
 		}
 
 		public record TrialDataExportRow(
-	int account_id,
-	int training_day,
-	string exercise,
-	bool correct,
-	long problem_time,
-	string problem_string,
-	decimal level,
-	string training_plan_name,
-	//long targetTime,
-	int response_time,
-	int tries
-	// bool is_intro
-	// numberline_mod
-	// weight_mod
-	// age_lower
-	// predicted_level
-	// predicted_tier
-	);
+			int account_id,
+			string username,
+			int training_day,
+			string exercise,
+			bool correct,
+			long problem_time,
+			string problem_string,
+			decimal level,
+			string training_plan_name,
+			//long targetTime,
+			int response_time,
+			int tries
+			// bool is_intro
+			// numberline_mod
+			// weight_mod
+			// age_lower
+			// predicted_level
+			// predicted_tier
+		);
 	}
 
 
-	//public class TimedHostedServiceSync(ILogger<TimedHostedServiceSync> logger) : IHostedService, IDisposable
-	//{
-	//	private int executionCount = 0;
-	//	private Timer? _timer = null;
-
-	//	public Task StartAsync(CancellationToken stoppingToken)
-	//	{
-	//		logger.LogInformation("Timed Hosted Service running.");
-
-	//		_timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
-
-	//		return Task.CompletedTask;
-	//	}
-
-	//	private void DoWork(object? state)
-	//	{
-	//		var count = Interlocked.Increment(ref executionCount);
-
-	//		logger.LogInformation("Timed Hosted Service is working. Count: {Count}", count);
-	//	}
-
-	//	public Task StopAsync(CancellationToken stoppingToken)
-	//	{
-	//		_timer?.Change(Timeout.Infinite, 0);
-	//		return Task.CompletedTask;
-	//	}
-
-	//	public void Dispose()
-	//	{
-	//		_timer?.Dispose();
-	//	}
-	//}
-
-	//internal interface IScopedProcessingService
-	//{
-	//	Task DoWork(CancellationToken stoppingToken);
-	//}
-
-	//internal class ScopedProcessingService(ILogger<ScopedProcessingService> logger) : IScopedProcessingService
-	//{
-	//	private int executionCount = 0;
-
-	//	public async Task DoWork(CancellationToken stoppingToken)
-	//	{
-	//		while (!stoppingToken.IsCancellationRequested)
-	//		{
-	//			executionCount++;
-	//			logger.LogInformation("Scoped Processing Service is working. Count: {Count}", executionCount);
-	//			await Task.Delay(10000, stoppingToken);
-	//		}
-	//	}
-	//}
-
-	//public class ConsumeScopedServiceHostedService(IServiceProvider services, ILogger<ConsumeScopedServiceHostedService> logger) : BackgroundService
-	//{
-	//	public IServiceProvider Services { get; } = services;
-
-	//	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-	//	{
-	//		logger.LogInformation("Consume Scoped Service Hosted Service running.");
-	//		await DoWork(stoppingToken);
-	//	}
-
-	//	private async Task DoWork(CancellationToken stoppingToken)
-	//	{
-	//		logger.LogInformation("Consume Scoped Service Hosted Service is working.");
-	//		using (var scope = Services.CreateScope())
-	//		{
-	//			var scopedProcessingService = scope.ServiceProvider.GetRequiredService<IScopedProcessingService>();
-	//			await scopedProcessingService.DoWork(stoppingToken);
-	//		}
-	//	}
-
-	//	public override async Task StopAsync(CancellationToken stoppingToken)
-	//	{
-	//		logger.LogInformation("Consume Scoped Service Hosted Service is stopping.");
-	//		await base.StopAsync(stoppingToken);
-	//	}
-	//}
 }
